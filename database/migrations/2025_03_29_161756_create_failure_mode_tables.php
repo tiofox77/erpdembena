@@ -12,25 +12,43 @@ return new class extends Migration
     public function up(): void
     {
         // Create failure mode categories table
-        Schema::create('failure_mode_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (!Schema::hasTable('failure_mode_categories')) {
+            Schema::create('failure_mode_categories', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        } else {
+            // Add soft delete to existing table if it doesn't have it
+            if (!Schema::hasColumn('failure_mode_categories', 'deleted_at')) {
+                Schema::table('failure_mode_categories', function (Blueprint $table) {
+                    $table->softDeletes();
+                });
+            }
+        }
 
         // Create failure modes table
-        Schema::create('failure_modes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('category_id')->nullable()->constrained('failure_mode_categories')->nullOnDelete();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (!Schema::hasTable('failure_modes')) {
+            Schema::create('failure_modes', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('category_id')->nullable()->constrained('failure_mode_categories')->nullOnDelete();
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        } else {
+            // Add soft delete to existing table if it doesn't have it
+            if (!Schema::hasColumn('failure_modes', 'deleted_at')) {
+                Schema::table('failure_modes', function (Blueprint $table) {
+                    $table->softDeletes();
+                });
+            }
+        }
     }
 
     /**
