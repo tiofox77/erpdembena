@@ -22,7 +22,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Verificar atualizações a cada 12 horas
+        $schedule->command('app:check-for-updates')
+                 ->twiceDaily(8, 20)
+                 ->withoutOverlapping()
+                 ->appendOutputTo(storage_path('logs/update-checker.log'));
+
+        // Outros comandos agendados...
     }
 
     /**

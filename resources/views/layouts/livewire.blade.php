@@ -370,6 +370,9 @@
     @stack('styles')
 </head>
 <body class="font-sans antialiased bg-gray-100">
+    <!-- Notificação de atualização (modal popup) -->
+    @livewire('components.update-notification')
+
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
@@ -492,8 +495,10 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Header -->
-        <div class="header">
-            <h1 class="text-xl font-semibold">Maintenance Dashboard</h1>
+        <div class="header sticky top-0 z-10">
+            <div>
+                <h1 class="text-xl font-semibold">{{ $title ?? 'Maintenance Dashboard' }}</h1>
+            </div>
 
             <div class="flex items-center space-x-4">
                 <!-- Search -->
@@ -504,34 +509,53 @@
                     </div>
                 </div>
 
+                <!-- Verificador de atualizações -->
+                @livewire('components.update-checker')
+
                 <!-- Notification -->
                 <div class="relative">
-                    <button class="p-2 text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">2</span>
+                    <button class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <i class="far fa-bell text-xl"></i>
+                        <span class="badge">3</span>
                     </button>
                 </div>
 
-                <!-- Settings -->
-                <button class="p-2 text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-cog"></i>
-                </button>
+                <!-- User Menu -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
+                            C
+                        </div>
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
 
-                <!-- User -->
-                <div class="flex items-center">
-                    <img src="https://ui-avatars.com/api/?name=carlosfox1782&size=32&background=4f46e5&color=fff" alt="User" class="w-8 h-8 rounded-full object-cover">
-                    <div class="ml-2">
-                        <div class="text-sm font-medium">carlosfox1782</div>
-                        <div class="text-xs text-gray-500">Maintenance Manager</div>
+                    <!-- User Dropdown -->
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                        <div class="py-2 px-4 border-b">
+                            <div class="text-sm font-medium">carlosfox1782</div>
+                            <div class="text-xs text-gray-500">Maintenance Manager</div>
+                        </div>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Meu Perfil
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Configurações
+                        </a>
+                        <form method="POST" action="#">
+                            @csrf
+                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                Sair
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Content -->
-        <div class="p-6">
+        <main class="p-6">
             {{ $slot }}
-        </div>
+        </main>
     </div>
 
     <script>
