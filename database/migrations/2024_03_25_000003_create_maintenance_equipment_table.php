@@ -11,20 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('maintenance_equipment', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('serial_number')->nullable();
-            $table->foreignId('line_id')->nullable()->constrained('maintenance_lines')->onDelete('set null');
-            $table->foreignId('area_id')->nullable()->constrained('maintenance_areas')->onDelete('set null');
-            $table->string('status')->nullable();
-            $table->date('purchase_date')->nullable();
-            $table->date('last_maintenance')->nullable();
-            $table->date('next_maintenance')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (!Schema::hasTable('maintenance_equipment')) {
+            Schema::create('maintenance_equipment', function (Blueprint $table) {
+                $table->id();
+                $table->string('code')->unique()->comment('Equipment identification code');
+                $table->string('name');
+                $table->string('type')->nullable();
+                $table->string('area')->nullable();
+                $table->string('department')->nullable();
+                $table->string('location')->nullable();
+                $table->string('model')->nullable();
+                $table->string('manufacturer')->nullable();
+                $table->string('serial_number')->nullable();
+                $table->year('year_of_manufacture')->nullable();
+                $table->date('installation_date')->nullable();
+                $table->text('description')->nullable();
+                $table->text('specifications')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
     }
 
     /**

@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Doctrine\DBAL\Types\Type;
 
 return new class extends Migration
 {
@@ -35,8 +34,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Não tente mudar a condição de nullable para o campo name
-            // $table->string('name')->nullable(false)->change();
+            // Reverter à condição original
+            $table->string('name')->nullable(false)->change();
 
             // Remover os campos adicionados
             $table->dropColumn([

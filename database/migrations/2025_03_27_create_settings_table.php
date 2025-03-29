@@ -12,19 +12,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('key')->unique();
-            $table->text('value')->nullable();
-            $table->string('group')->default('general');
-            $table->string('type')->default('string');
-            $table->text('description')->nullable();
-            $table->boolean('is_public')->default(false);
-            $table->timestamps();
-        });
+        // Verifica se a tabela já existe
+        if (!Schema::hasTable('settings')) {
+            Schema::create('settings', function (Blueprint $table) {
+                $table->id();
+                $table->string('key')->unique();
+                $table->text('value')->nullable();
+                $table->string('group')->default('general');
+                $table->string('type')->default('string');
+                $table->text('description')->nullable();
+                $table->boolean('is_public')->default(false);
+                $table->timestamps();
+            });
 
-        // Inserir configurações iniciais
-        $this->seedDefaultSettings();
+            // Inserir configurações iniciais apenas se a tabela for criada
+            $this->seedDefaultSettings();
+        }
     }
 
     /**
@@ -48,6 +51,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Nome da empresa',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'app_timezone',
@@ -56,6 +61,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Fuso horário padrão do sistema',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'date_format',
@@ -64,6 +71,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Formato de data padrão',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'currency',
@@ -72,6 +81,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Moeda padrão',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'language',
@@ -80,6 +91,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Idioma padrão',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'github_repository',
@@ -88,6 +101,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Repositório GitHub para atualizações',
                 'is_public' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'app_version',
@@ -96,6 +111,8 @@ return new class extends Migration
                 'type' => 'string',
                 'description' => 'Versão atual do sistema',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'maintenance_mode',
@@ -104,6 +121,8 @@ return new class extends Migration
                 'type' => 'boolean',
                 'description' => 'Modo de manutenção',
                 'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'key' => 'debug_mode',
@@ -112,6 +131,8 @@ return new class extends Migration
                 'type' => 'boolean',
                 'description' => 'Modo de debug',
                 'is_public' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
         ];
 
