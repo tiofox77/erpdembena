@@ -13,11 +13,19 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div class="metrics-card">
-                <div class="icon blue">
-                    <i class="fas fa-wrench"></i>
+                <div class="icon purple">
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
-                <div class="number">{{ $equipmentCount }}</div>
-                <div class="text-sm text-gray-500">Total Equipment</div>
+                <div class="number">{{ $scheduledTasks }}</div>
+                <div class="text-sm text-gray-500">Total Maintenance Plans</div>
+            </div>
+
+            <div class="metrics-card">
+                <div class="icon red">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="number">{{ $overdueTasks }}</div>
+                <div class="text-sm text-gray-500">Overdue Tasks</div>
             </div>
 
             <div class="metrics-card">
@@ -28,6 +36,8 @@
                 <div class="text-sm text-gray-500">Equipment in Maintenance</div>
             </div>
 
+
+
             <div class="metrics-card">
                 <div class="icon red">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -36,21 +46,18 @@
                 <div class="text-sm text-gray-500">Equipment Out of Service</div>
             </div>
 
-            <div class="metrics-card">
-                <div class="icon purple">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <div class="number">{{ $scheduledTasks }}</div>
-                <div class="text-sm text-gray-500">Scheduled Tasks</div>
-            </div>
 
             <div class="metrics-card">
-                <div class="icon red">
-                    <i class="fas fa-exclamation-circle"></i>
+                <div class="icon blue">
+                    <i class="fas fa-wrench"></i>
                 </div>
-                <div class="number">{{ $overdueTasks }}</div>
-                <div class="text-sm text-gray-500">Overdue Tasks</div>
+                <div class="number">{{ $equipmentCount }}</div>
+                <div class="text-sm text-gray-500">Total Equipment</div>
             </div>
+
+
+
+
         </div>
     </div>
 

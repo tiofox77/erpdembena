@@ -18,6 +18,8 @@ class MaintenanceNote extends Model
         'maintenance_plan_id',
         'status',
         'notes',
+        'file_path',
+        'file_name',
         'user_id',
     ];
 

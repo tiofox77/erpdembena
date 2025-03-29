@@ -22,9 +22,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Verificar atualizações a cada 12 horas
+        // Verificar atualizações a cada hora
         $schedule->command('app:check-for-updates')
-                 ->twiceDaily(8, 20)
+                 ->hourly()
                  ->withoutOverlapping()
                  ->appendOutputTo(storage_path('logs/update-checker.log'));
 
