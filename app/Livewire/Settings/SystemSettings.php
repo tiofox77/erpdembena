@@ -410,23 +410,15 @@ class SystemSettings extends Component
             // Handle case where updatedFiles might not be an array
             if (!is_array($updatedFiles)) {
                 $updatedFiles = [];
-                $this->logToFile($logFile, "Files extracted but no files were updated.");
-            } else {
-                $this->logToFile($logFile, "Files extracted. Total files updated: " . count($updatedFiles));
-
-                // Log all updated files
-                foreach ($updatedFiles as $file) {
-                    $this->logToFile($logFile, "Updated file: $file");
-                }
             }
 
-            // Run migrations if database file exists
+            // Run database migrations
             $this->update_status = 'Running database migrations...';
-            $this->update_progress = 80;
+            $this->update_progress = 70;
             $migrationsResult = $this->runMigrations($logFile);
+
             if ($migrationsResult['success']) {
                 $this->logToFile($logFile, "Database migrations completed successfully");
-                $this->logToFile($logFile, "Migrations executed: " . implode(", ", $migrationsResult['executed']));
             } else {
                 $this->logToFile($logFile, "Database migrations failed: " . $migrationsResult['error']);
             }
@@ -435,19 +427,49 @@ class SystemSettings extends Component
             $this->update_status = 'Finalizing update...';
             $this->update_progress = 90;
 
-            // Garante que a versão seja atualizada na base de dados
+            // Ensure the version is updated in the database
             try {
-                $oldVersion = Setting::get('app_version', $this->current_version);
+                // Make sure we get the current version from the database, not from memory
+                $oldVersion = Setting::get('app_version', config('app.version', '1.0.0'));
+                $this->logToFile($logFile, "Retrieved current version from database: {$oldVersion}");
 
-                Setting::set('app_version', $this->latest_version, 'updates', 'string', 'Current system version', true);
+                // Explicitly update with forced cache refresh
+                DB::beginTransaction();
 
-                $this->logToFile($logFile, "Version updated in database from {$oldVersion} to {$this->latest_version}");
-                Log::info("System version updated in database settings", [
-                    'old_version' => $oldVersion,
-                    'new_version' => $this->latest_version
+                // First delete any existing version setting to avoid conflicts
+                DB::table('settings')->where('key', 'app_version')->delete();
+
+                // Then insert the new version
+                DB::table('settings')->insert([
+                    'key' => 'app_version',
+                    'value' => $this->latest_version,
+                    'group' => 'updates',
+                    'type' => 'string',
+                    'description' => 'Current system version',
+                    'is_public' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
-                // Atualiza a configuração em tempo de execução
+                DB::commit();
+
+                // Now update the setting in the regular way to ensure cache is updated
+                Setting::set('app_version', $this->latest_version, 'updates', 'string', 'Current system version', true);
+
+                // Double check that the setting was updated
+                Setting::clearCache();
+                $newVersionInDb = Setting::get('app_version', 'unknown');
+
+                $this->logToFile($logFile, "Version updated in database from {$oldVersion} to {$this->latest_version}");
+                $this->logToFile($logFile, "Verified new version in database: {$newVersionInDb}");
+
+                Log::info("System version updated in database settings", [
+                    'old_version' => $oldVersion,
+                    'new_version' => $this->latest_version,
+                    'verified_db_value' => $newVersionInDb
+                ]);
+
+                // Update runtime configuration
                 config(['app.version' => $this->latest_version]);
 
                 $this->current_version = $this->latest_version;
@@ -460,7 +482,7 @@ class SystemSettings extends Component
                     'line' => $e->getLine()
                 ]);
 
-                // Continua mesmo se falhar a atualização da versão na BD
+                // Continue even if version update in DB fails
                 $this->current_version = $this->latest_version;
                 $this->update_available = false;
             }
