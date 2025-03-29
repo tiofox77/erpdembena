@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class Setting extends Model
 {
@@ -20,6 +21,16 @@ class Setting extends Model
     ];
 
     /**
+     * The cache prefix for settings
+     */
+    protected static $cachePrefix = 'settings_';
+
+    /**
+     * Cache duration in seconds (1 day)
+     */
+    protected static $cacheDuration = 86400;
+
+    /**
      * Get a setting value by key
      *
      * @param string $key
@@ -28,19 +39,27 @@ class Setting extends Model
      */
     public static function get(string $key, $default = null)
     {
-        $cacheKey = "setting_{$key}";
-
         // Try to get from cache first
-        return Cache::remember($cacheKey, 86400, function () use ($key, $default) {
-            $setting = self::where('key', $key)->first();
+        $cacheKey = static::$cachePrefix . $key;
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
 
-            if (!$setting) {
-                return $default;
+        // If not in cache, get from database
+        try {
+            $setting = static::where('key', $key)->first();
+
+            if ($setting) {
+                $value = static::castValue($setting->value, $setting->type);
+                // Cache the result
+                Cache::put($cacheKey, $value, static::$cacheDuration);
+                return $value;
             }
+        } catch (\Exception $e) {
+            Log::error("Error getting setting {$key}: " . $e->getMessage());
+        }
 
-            // Cast value according to type
-            return self::castValue($setting->value, $setting->type);
-        });
+        return $default;
     }
 
     /**
@@ -48,33 +67,83 @@ class Setting extends Model
      *
      * @param string $key
      * @param mixed $value
-     * @param string|null $group
-     * @param string|null $type
+     * @param string $group
+     * @param string $type
      * @param string|null $description
-     * @param bool|null $isPublic
-     * @return Setting
+     * @param bool $isPublic
+     * @return bool
      */
-    public static function set(string $key, $value, string $group = null, string $type = null, string $description = null, bool $isPublic = null)
+    public static function set(string $key, $value, string $group = 'general', string $type = 'string', ?string $description = null, bool $isPublic = false)
     {
-        $setting = self::updateOrCreate(
-            ['key' => $key],
-            array_filter([
-                'value' => $value,
-                'group' => $group,
-                'type' => $type ?: 'string',
-                'description' => $description,
-                'is_public' => $isPublic,
-            ])
-        );
+        try {
+            // Check if the setting already exists
+            $setting = static::where('key', $key)->first();
 
-        // Clear the cache for this key
-        Cache::forget("setting_{$key}");
+            if ($setting) {
+                // Update existing setting
+                $setting->value = $value;
+                $setting->group = $group;
+                $setting->type = $type;
 
-        return $setting;
+                if ($description !== null) {
+                    $setting->description = $description;
+                }
+
+                $setting->is_public = $isPublic;
+                $setting->save();
+            } else {
+                // Create new setting
+                $setting = static::create([
+                    'key' => $key,
+                    'value' => $value,
+                    'group' => $group,
+                    'type' => $type,
+                    'description' => $description,
+                    'is_public' => $isPublic,
+                ]);
+            }
+
+            // Update cache
+            $cacheKey = static::$cachePrefix . $key;
+            $castedValue = static::castValue($value, $type);
+            Cache::put($cacheKey, $castedValue, static::$cacheDuration);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Error setting {$key}: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
-     * Cast the value based on type
+     * Clear the settings cache
+     *
+     * @return void
+     */
+    public static function clearCache()
+    {
+        try {
+            // Get all settings
+            $settings = static::all();
+
+            // Clear each setting cache
+            foreach ($settings as $setting) {
+                Cache::forget(static::$cachePrefix . $setting->key);
+            }
+
+            // Also clear the whole settings cache pattern if possible
+            if (method_exists(Cache::getStore(), 'flush')) {
+                Cache::getStore()->flush();
+            }
+
+            Log::info("Settings cache cleared");
+        } catch (\Exception $e) {
+            Log::error("Error clearing settings cache: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cast value according to type
      *
      * @param mixed $value
      * @param string $type
@@ -92,11 +161,10 @@ class Setting extends Model
                 return (float) $value;
             case 'array':
             case 'json':
-                return json_decode($value, true);
-            case 'object':
-                return json_decode($value);
+                return is_string($value) ? json_decode($value, true) : $value;
+            case 'string':
             default:
-                return $value;
+                return (string) $value;
         }
     }
 
@@ -131,20 +199,5 @@ class Setting extends Model
                 return [$setting->key => self::castValue($setting->value, $setting->type)];
             })->toArray();
         });
-    }
-
-    /**
-     * Clear all settings cache
-     *
-     * @return void
-     */
-    public static function clearCache()
-    {
-        Cache::forget('public_settings');
-
-        // Clear individual setting caches
-        foreach (self::all() as $setting) {
-            Cache::forget("setting_{$setting->key}");
-        }
     }
 }
