@@ -1,3 +1,17 @@
+# Laravel .gitignore
+
+# Ignore large backup files
+*.zip
+*.rar
+*.tar
+*.gz
+*.7z
+
+# Backup folders
+/bk
+/backup
+/backups
+
 /.phpunit.cache
 /node_modules
 /public/build
