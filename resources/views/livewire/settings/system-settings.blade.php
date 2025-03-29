@@ -223,131 +223,99 @@
                     <div class="{{ $activeTab === 'updates' ? '' : 'hidden' }}">
                         <div class="mb-6">
                             <div class="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h3 class="text-lg font-medium text-gray-900">System Version</h3>
-                                        <p class="mt-1 text-sm text-gray-600">Current version: v{{ $current_version }}</p>
-                                        <p class="mt-1 text-sm text-gray-600">{{ $update_status }}</p>
-                                    </div>
-                                    <div>
-                                        <button
-                                            wire:click="checkForUpdates"
-                                            wire:loading.attr="disabled"
-                                            wire:target="checkForUpdates"
-                                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                            <i class="fas fa-sync-alt mr-2" wire:loading.class="animate-spin" wire:target="checkForUpdates"></i>
-                                            <span wire:loading.remove wire:target="checkForUpdates">Check for Updates</span>
-                                            <span wire:loading wire:target="checkForUpdates">Checking...</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                                <h3 class="text-lg font-semibold">System Version</h3>
+                                <p>Current version: <span class="font-semibold">v{{ $current_version }}</span></p>
 
-                            @if($update_available)
-                            <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="fas fa-check-circle text-green-400 h-5 w-5"></i>
-                                    </div>
-                                    <div class="ml-3">
-                                        <h3 class="text-sm font-medium text-green-800">Update Available: v{{ $latest_version }}</h3>
-                                        <div class="mt-2 text-sm text-green-700">
-                                            <p>{{ $update_notes['title'] ?? 'New Version Available' }}</p>
-                                            <div class="mt-1 whitespace-pre-line">{{ $update_notes['body'] ?? '' }}</div>
-                                        </div>
-                                        <div class="mt-4">
-                                            <div class="flex items-center mb-2">
-                                                <input
-                                                    id="backup_before_update"
-                                                    wire:model.live="backup_before_update"
-                                                    type="checkbox"
-                                                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                                <label for="backup_before_update" class="ml-2 block text-sm text-gray-700">Create backup before updating</label>
+                                @if($update_status)
+                                    <div class="mt-2 text-sm text-gray-600">{{ $update_status }}</div>
+
+                                    @if($isUpdating)
+                                        <div class="mt-2">
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $update_progress }}%"></div>
                                             </div>
-                                            <button
-                                                wire:click="confirmStartUpdate"
-                                                wire:loading.attr="disabled"
-                                                wire:target="startUpdate"
-                                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                <i class="fas fa-download mr-2"></i>
-                                                <span wire:loading.remove wire:target="startUpdate">Install Update</span>
-                                                <span wire:loading wire:target="startUpdate">Installing...</span>
-                                            </button>
                                         </div>
-                                    </div>
-                                </div>
+                                    @endif
+                                @endif
                             </div>
-                            @endif
 
-                            @if($isUpdating)
-                            <div class="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Update Progress</h3>
-                                <p class="mb-2 text-sm text-gray-600">{{ $update_status }}</p>
-                                <div class="relative pt-1">
-                                    <div class="overflow-hidden h-2 text-xs flex rounded bg-indigo-200">
-                                        <div style="width: {{ $update_progress }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"></div>
-                                    </div>
-                                    <div class="text-right mt-1">
-                                        <span class="text-xs font-semibold inline-block text-indigo-600">
-                                            {{ $update_progress }}%
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
+                            <div class="mt-4">
+                                <button type="button" wire:click="checkForUpdates" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="checkForUpdates">
+                                        <i class="fas fa-sync-alt mr-2"></i> Check for Updates
+                                    </span>
+                                    <span wire:loading wire:target="checkForUpdates">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i> Checking...
+                                    </span>
+                                </button>
 
-                            <form wire:submit.prevent="saveUpdateSettings" class="bg-white rounded-md">
-                                @if($errors->any())
-                                    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-                                        <p class="font-bold flex items-center">
-                                            <i class="fas fa-exclamation-circle mr-2"></i>
-                                            Please correct the following errors:
-                                        </p>
-                                        <ul class="mt-2 list-disc list-inside text-sm">
-                                            @foreach($errors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                                @if($update_available)
+                                    <button type="button" wire:click="confirmStartUpdate" wire:loading.attr="disabled" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
+                                        <i class="fas fa-download mr-2"></i> Update to v{{ $latest_version }}
+                                    </button>
                                 @endif
 
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Update Settings</h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label for="github_repository" class="block text-sm font-medium text-gray-700 mb-1">GitHub Repository</label>
-                                            <div class="mt-1 relative rounded-md shadow-sm">
-                                                <input
-                                                    type="text"
-                                                    wire:model.live="github_repository"
-                                                    id="github_repository"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                    @error('github_repository') border-red-300 text-red-900 placeholder-red-300 @enderror"
-                                                    placeholder="username/repository">
-                                                @error('github_repository')
-                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                        <i class="fas fa-exclamation-circle text-red-500"></i>
-                                                    </div>
-                                                @enderror
+                                <!-- Botão para teste de migração -->
+                                <button type="button" wire:click="testUpdateWithMigration" wire:loading.attr="disabled" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="testUpdateWithMigration">
+                                        <i class="fas fa-flask mr-2"></i> Testar Migração
+                                    </span>
+                                    <span wire:loading wire:target="testUpdateWithMigration">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i> Testando...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <form wire:submit.prevent="saveUpdateSettings">
+                            @if($errors->any())
+                                <div class="mb-4 p-4 rounded-md bg-red-50">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                                            <div class="mt-2 text-sm text-red-700">
+                                                <ul class="list-disc pl-5 space-y-1">
+                                                    @foreach($errors->all() as $error)
+                                                        <li>{{ $error }}</li>
+                                                    @endforeach
+                                                </ul>
                                             </div>
-                                            @error('github_repository')
-                                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                            @else
-                                                <p class="mt-1 text-xs text-gray-500">Example: laravel/framework</p>
-                                            @enderror
                                         </div>
                                     </div>
                                 </div>
+                            @endif
 
-                                <div class="mt-6">
-                                    <button
-                                        type="submit"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <i class="fas fa-save mr-2"></i> Save Update Settings
+                            <div class="bg-white shadow rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-5">Update Settings</h3>
+
+                                <div class="mb-4">
+                                    <label for="github_repository" class="block text-sm font-medium text-gray-700 mb-1">GitHub Repository</label>
+                                    <input type="text" id="github_repository" wire:model="github_repository" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="username/repository">
+                                    <p class="mt-1 text-xs text-gray-500">Example: laravel/framework</p>
+                                    @error('github_repository')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" wire:model="backup_before_update" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+                                        <span class="ml-2 text-sm text-gray-600">Backup database and files before update</span>
+                                    </label>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        Save Update Settings
                                     </button>
                                 </div>
-                            </form>
-                        </div>
+                            </div>
+                        </form>
                     </div>
 
                     <!-- Maintenance Tab -->

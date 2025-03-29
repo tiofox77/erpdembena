@@ -727,4 +727,124 @@ class SystemSettings extends Component
             'ar' => 'Arabic',
         ];
     }
+
+    /**
+     * Simula o processo de atualização usando a migração de teste
+     */
+    public function testUpdateWithMigration()
+    {
+        $this->update_status = 'Iniciando teste de atualização...';
+        $this->update_progress = 10;
+
+        try {
+            // Simular o processo de atualização passo a passo
+
+            // 1. Backup (opcional para teste)
+            $this->update_status = 'Criando backup (simulação)...';
+            $this->update_progress = 20;
+
+            // 2. Colocar o sistema em modo de manutenção
+            $this->update_status = 'Ativando modo de manutenção...';
+            $this->update_progress = 30;
+            $this->enableMaintenanceMode();
+
+            // 3. Executar apenas a migração de teste
+            $this->update_status = 'Executando migração de teste...';
+            $this->update_progress = 50;
+
+            $result = $this->runTestMigration();
+
+            if (!$result) {
+                throw new \Exception('Falha ao executar migração de teste');
+            }
+
+            // 4. Limpar cache
+            $this->update_status = 'Limpando cache...';
+            $this->update_progress = 70;
+            $this->clearSettingsCache();
+
+            // 5. Desativar modo de manutenção
+            $this->update_status = 'Desativando modo de manutenção...';
+            $this->update_progress = 90;
+            $this->disableMaintenanceMode();
+
+            $this->update_status = 'Teste de atualização concluído com sucesso!';
+            $this->update_progress = 100;
+
+            $this->dispatch('notify', type: 'success', message: "Teste de migração executado com sucesso!");
+
+        } catch (\Exception $e) {
+            $this->update_status = "Falha no teste: " . $e->getMessage();
+            Log::error("Erro no teste de atualização: " . $e->getMessage());
+
+            // Garantir que o sistema saia do modo de manutenção
+            $this->disableMaintenanceMode();
+
+            $this->dispatch('notify', type: 'error', message: "Falha no teste: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Executa especificamente a migração de teste
+     */
+    protected function runTestMigration()
+    {
+        try {
+            // Verificar se a migração existe
+            $migrationFile = $this->findTestMigrationFile();
+
+            if (!$migrationFile) {
+                throw new \Exception('Arquivo de migração de teste não encontrado');
+            }
+
+            Log::info("Executando migração de teste: " . $migrationFile);
+
+            // Carregar a migração
+            require_once $migrationFile;
+
+            // Obter o nome da classe da migração
+            $className = $this->getMigrationClassName($migrationFile);
+
+            if (class_exists($className)) {
+                // Instanciar a classe da migração
+                $migration = new $className();
+
+                // Executar o método up()
+                if (method_exists($migration, 'up')) {
+                    $migration->up();
+                    Log::info("Migração de teste executada: " . $migrationFile);
+                    return true;
+                }
+            }
+
+            throw new \Exception('Classe ou método de migração não encontrado');
+        } catch (\Exception $e) {
+            Log::error("Erro ao executar migração de teste: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Encontra o arquivo de migração de teste
+     */
+    protected function findTestMigrationFile()
+    {
+        $migrationPath = database_path('migrations');
+        $files = glob($migrationPath . '/*create_test_update_table.php');
+
+        return !empty($files) ? $files[0] : null;
+    }
+
+    /**
+     * Obtém o nome da classe da migração a partir do arquivo
+     */
+    protected function getMigrationClassName($file)
+    {
+        // Padrão para migração Laravel que usa classe anônima
+        // Vamos criar um nome de classe com base no timestamp da migração
+        $filename = basename($file, '.php');
+        $timestamp = substr($filename, 0, 17); // Pega o timestamp YYYY_MM_DD_HHMMSS
+
+        return 'Migration_' . str_replace(['_', '.'], '', $timestamp);
+    }
 }
