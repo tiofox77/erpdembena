@@ -13,7 +13,7 @@
             <div
                 x-cloak
                 x-show="showTooltip"
-                class="absolute bottom-full mb-2 left-0 bg-white shadow-lg rounded-md p-2 text-xs w-48 z-50"
+                class="absolute top-full mt-2 left-0 bg-white shadow-lg rounded-md p-2 text-xs w-48 z-50"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 transform scale-95"
                 x-transition:enter-end="opacity-100 transform scale-100"
