@@ -1,0 +1,141 @@
+/*!
+ * Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ */
+
+@font-face {
+    font-family: 'Font Awesome 5 Free';
+    font-style: normal;
+    font-weight: 900;
+    font-display: block;
+    src: url("../webfonts/fa-solid-900.eot");
+    src: url("../webfonts/fa-solid-900.eot?#iefix") format("embedded-opentype"), url("../webfonts/fa-solid-900.woff2") format("woff2"), url("../webfonts/fa-solid-900.woff") format("woff"), url("../webfonts/fa-solid-900.ttf") format("truetype"), url("../webfonts/fa-solid-900.svg#fontawesome") format("svg");
+}
+
+.fa,
+.fas {
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+}
+
+.fa-tools:before {
+    content: "\f7d9";
+}
+
+.fa-chevron-left:before {
+    content: "\f053";
+}
+
+.fa-chevron-right:before {
+    content: "\f054";
+}
+
+.fa-tachometer-alt:before {
+    content: "\f3fd";
+}
+
+.fa-calendar-alt:before {
+    content: "\f073";
+}
+
+.fa-wrench:before {
+    content: "\f0ad";
+}
+
+.fa-map-marked-alt:before {
+    content: "\f5a0";
+}
+
+.fa-tasks:before {
+    content: "\f0ae";
+}
+
+.fa-chart-bar:before {
+    content: "\f080";
+}
+
+.fa-users:before {
+    content: "\f0c0";
+}
+
+.fa-user-shield:before {
+    content: "\f505";
+}
+
+.fa-calendar-day:before {
+    content: "\f783";
+}
+
+.fa-cog:before {
+    content: "\f013";
+}
+
+.fa-truck:before {
+    content: "\f0d1";
+}
+
+.fa-search:before {
+    content: "\f002";
+}
+
+.fa-bell:before {
+    content: "\f0f3";
+}
+
+.fa-exclamation-triangle:before {
+    content: "\f071";
+}
+
+.fa-exclamation-circle:before {
+    content: "\f06a";
+}
+
+.fa-check-circle:before {
+    content: "\f058";
+}
+
+.far.fa-clock:before {
+    content: "\f017";
+}
+
+.far.fa-calendar-plus:before {
+    content: "\f271";
+}
+
+.fa-plus-circle:before {
+    content: "\f055";
+}
+
+.fa-tags:before {
+    content: "\f02c";
+}
+
+.fa-building:before {
+    content: "\f1ad";
+}
+
+.fa-chart-line:before {
+    content: "\f201";
+}
+
+
+/* Basic framework for CSS font icons */
+
+.fa,
+.fas,
+.far,
+.fal,
+.fab {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+}
+
+
+/* Let's use Bootstrap icons as backup - they are similar and good for web */
+
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css");
