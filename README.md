@@ -511,3 +511,111 @@ A estrutura da view blade para o CRUD com modal:
 ---
 
 Este padrão de implementação foi desenvolvido para o Sistema ERP DEMBENA como uma referência para criação de operações CRUD com modal usando Livewire v3.
+
+# ERP Dembena - Sistema de Gestão Empresarial
+
+Sistema ERP desenvolvido para atender às necessidades da empresa Dembena, com foco na gestão de manutenção de equipamentos, controle de falhas e gestão de ativos.
+
+## Versão Atual
+
+**1.0.3**
+
+## Módulos Principais
+
+-   **Manutenção Corretiva**: Gestão de manutenções não-planejadas, com registro de falhas e causas
+-   **Manutenção Preventiva**: Planejamento de manutenções periódicas para evitar falhas
+-   **Gestão de Equipamentos**: Cadastro e controle de equipamentos, áreas e linhas de produção
+-   **Gestão de Falhas**: Categorização de modos e causas de falhas para análise
+
+## Tecnologias Utilizadas
+
+-   Laravel 10.x
+-   Livewire 3.x
+-   Tailwind CSS
+-   MySQL
+
+## Requisitos do Sistema
+
+-   PHP 8.1 ou superior
+-   Composer
+-   Node.js e NPM
+-   MySQL 5.7 ou superior
+
+## Instalação
+
+1. Clone o repositório
+
+```bash
+git clone https://github.com/tiofox77/erpdembena.git
+```
+
+2. Instale as dependências do PHP
+
+```bash
+composer install
+```
+
+3. Instale as dependências do JavaScript
+
+```bash
+npm install
+```
+
+4. Compile os assets
+
+```bash
+npm run build
+```
+
+5. Configure o arquivo .env
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+6. Configure o banco de dados no .env e execute as migrações
+
+```bash
+php artisan migrate
+```
+
+7. Inicie o servidor de desenvolvimento
+
+```bash
+php artisan serve
+```
+
+## Atualizações
+
+Para atualizar o sistema para a versão mais recente:
+
+1. Atualize o código-fonte
+
+```bash
+git pull origin master
+```
+
+2. Atualize as dependências
+
+```bash
+composer update
+npm update
+```
+
+3. Execute as migrações pendentes
+
+```bash
+php artisan migrate
+```
+
+## Contato e Suporte
+
+Para suporte técnico, entre em contato:
+
+-   Email: tiofox2019@gmail.com
+-   Telefone: (123) 456-7890
+
+## Licença
+
+Este software é de propriedade exclusiva da Dembena.
