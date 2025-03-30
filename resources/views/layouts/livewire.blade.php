@@ -35,6 +35,9 @@
     <!-- FullCalendar Locale -->
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/pt-br.global.min.js'></script>
 
+    <!-- Chart.js - MOVIDO AQUI PARA EVITAR DUPLICAÇÃO -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
     <style>
         [x-cloak] { display: none !important; }
 
@@ -466,6 +469,74 @@
                 <span>Holidays</span>
             </a>
 
+            <!-- Replace the existing Reports & History link with a submenu -->
+            <div class="sidebar-submenu-item" id="reportsHistoryMenu">
+                <i class="fas fa-chart-bar"></i>
+                <span>Reports & History</span>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto"></i>
+            </div>
+
+            <!-- Reports & History Submenu -->
+            <div class="sidebar-nested-submenu" id="reportsHistorySubmenu">
+                <!-- Equipment Performance Reports -->
+                <a href="{{ route('reports.equipment.availability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.availability') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Equipment Availability</span>
+                </a>
+                <a href="{{ route('reports.equipment.reliability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.reliability') ? 'active' : '' }}">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Equipment Reliability</span>
+                </a>
+
+                <!-- Maintenance Effectiveness Reports -->
+                <a href="{{ route('reports.maintenance.types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.types') ? 'active' : '' }}">
+                    <i class="fas fa-tools"></i>
+                    <span>Maintenance Types</span>
+                </a>
+                <a href="{{ route('reports.maintenance.compliance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.compliance') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Maintenance Compliance</span>
+                </a>
+
+                <!-- Cost & Resource Analysis Reports -->
+                <!--<a href="{{ route('reports.cost.analysis') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.cost.analysis') ? 'active' : '' }}">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Cost Analysis</span>
+                </a>-->
+                <a href="{{ route('reports.resource.utilization') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.resource.utilization') ? 'active' : '' }}">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Resource Utilization</span>
+                </a>
+
+                <!-- Failure Analysis Reports -->
+                <a href="{{ route('reports.failure.analysis') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.failure.analysis') ? 'active' : '' }}">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Root Cause Analysis</span>
+                </a>
+                <a href="{{ route('reports.downtime.impact') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.downtime.impact') ? 'active' : '' }}">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Downtime Impact</span>
+                </a>
+
+                <!-- History Tracking Components -->
+                <a href="{{ route('history.equipment.timeline') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.equipment.timeline') ? 'active' : '' }}">
+                    <i class="fas fa-history"></i>
+                    <span>Equipment Timeline</span>
+                </a>
+                <a href="{{ route('history.maintenance.audit') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.maintenance.audit') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Maintenance Audit Log</span>
+                </a>
+                <a href="{{ route('history.parts.lifecycle') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.parts.lifecycle') ? 'active' : '' }}">
+                    <i class="fas fa-cogs"></i>
+                    <span>Part/Supply Lifecycle</span>
+                </a>
+                <a href="{{ route('history.team.performance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.team.performance') ? 'active' : '' }}">
+                    <i class="fas fa-user-clock"></i>
+                    <span>Team Performance</span>
+                </a>
+            </div>
+
             <a href="{{ route('maintenance.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }}">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
@@ -482,14 +553,14 @@
             <!-- Supply Chain submenu items will go here -->
         </div>
 
-        <div class="user-info">
+        <!--<div class="user-info">
             <div class="user-avatar">MS</div>
             <div class="user-details">
                 <div class="user-name">Maintenance System</div>
                 <div class="user-role">Admin</div>
             </div>
             <i class="fas fa-sign-out-alt ml-auto" style="color: #6c757d;"></i>
-        </div>
+        </div>-->
     </div>
 
     <!-- Main Content -->
@@ -578,7 +649,8 @@
         });
 
         // Toggle for maintenance settings submenu
-        document.getElementById('maintenanceSettingsMenu').addEventListener('click', function() {
+        document.getElementById('maintenanceSettingsMenu').addEventListener('click', function(e) {
+            e.stopPropagation(); // Evitar que o clique propague para outros elementos
             const submenu = document.getElementById('maintenanceSettingsSubmenu');
             const indicator = this.querySelector('.dropdown-indicator');
 
@@ -623,6 +695,30 @@
                 settingsIndicator.classList.add('open');
             }
         });
+
+        // Toggle for reports & history submenu
+        document.getElementById('reportsHistoryMenu').addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent click from propagating to other elements
+            const submenu = document.getElementById('reportsHistorySubmenu');
+            const indicator = this.querySelector('.dropdown-indicator');
+
+            submenu.classList.toggle('open');
+            indicator.classList.toggle('open');
+        });
+
+        // Check if we're on a reports or history page and auto-open the menu
+        const isReportsOrHistoryPage =
+            window.location.pathname.includes('/reports') ||
+            window.location.pathname.includes('/history');
+
+        if (isReportsOrHistoryPage) {
+            const reportsHistorySubmenu = document.getElementById('reportsHistorySubmenu');
+            const reportsHistoryIndicator = document.querySelector('#reportsHistoryMenu .dropdown-indicator');
+            if (reportsHistorySubmenu && reportsHistoryIndicator) {
+                reportsHistorySubmenu.classList.add('open');
+                reportsHistoryIndicator.classList.add('open');
+            }
+        }
     </script>
 
     @livewireScripts

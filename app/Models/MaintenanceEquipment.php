@@ -42,15 +42,24 @@ class MaintenanceEquipment extends Model
 
 
     /**
-     * Get the category that the equipment belongs to.
+     * Get the line that the equipment belongs to.
      */
     public function line()
     {
-        return $this->belongsTo(MaintenanceLine::class, 'Line_id');
+        return $this->belongsTo(MaintenanceLine::class, 'line_id');
+    }
+
+    /**
+     * Get the area that the equipment belongs to.
+     */
+    public function area()
+    {
+        return $this->belongsTo(MaintenanceArea::class, 'area_id');
     }
 
     /**
      * Get the department that the equipment belongs to.
+     * @deprecated Use area() instead
      */
     public function department()
     {
@@ -71,6 +80,14 @@ class MaintenanceEquipment extends Model
     public function maintenancePlans()
     {
         return $this->hasMany(MaintenancePlan::class, 'equipment_id');
+    }
+
+    /**
+     * Get the corrective maintenance records associated with the equipment.
+     */
+    public function correctives()
+    {
+        return $this->hasMany(MaintenanceCorrective::class, 'equipment_id');
     }
 
     /**

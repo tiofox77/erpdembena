@@ -362,6 +362,7 @@
                             <select id="status" wire:model="status" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm py-1.5 px-2">
                                 <option value="pending">Pending</option>
                                 <option value="in_progress">In Progress</option>
+                                <option value="Scheduled">Scheduled</option>
                                 <option value="completed">Completed</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>

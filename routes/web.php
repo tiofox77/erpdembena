@@ -56,11 +56,42 @@ Route::prefix('maintenance')->name('maintenance.')->group(function() {
 
 // Rotas de Relatórios
 Route::prefix('reports')->name('reports.')->group(function () {
-    // Histórico de Manutenção
-    Route::get('/history', App\Livewire\Reports\MaintenanceHistory::class)->name('history');
-
     // Dashboard de Relatórios
     Route::get('/dashboard', App\Livewire\Reports\ReportsDashboard::class)->name('dashboard');
+
+    // Equipment Performance Reports
+    Route::get('/equipment-availability', App\Livewire\Reports\EquipmentAvailability::class)->name('equipment.availability');
+    Route::get('/equipment-reliability', App\Livewire\Reports\EquipmentReliability::class)->name('equipment.reliability');
+
+    // Maintenance Effectiveness Reports
+    Route::get('/maintenance-types', App\Livewire\Reports\MaintenanceTypes::class)->name('maintenance.types');
+    Route::get('/maintenance-compliance', App\Livewire\Reports\MaintenanceCompliance::class)->name('maintenance.compliance');
+
+    // Cost & Resource Analysis Reports
+    Route::get('/cost-analysis', App\Livewire\Reports\CostAnalysis::class)->name('cost.analysis');
+    Route::get('/resource-utilization', App\Livewire\Reports\ResourceUtilization::class)->name('resource.utilization');
+
+    // Failure Analysis Reports
+    Route::get('/failure-analysis', App\Livewire\Reports\FailureAnalysis::class)->name('failure.analysis');
+    Route::get('/downtime-impact', App\Livewire\Reports\DowntimeImpact::class)->name('downtime.impact');
+
+    // Histórico de Manutenção (legacy route)
+    Route::get('/history', App\Livewire\Reports\MaintenanceHistory::class)->name('history');
+});
+
+// History Tracking Routes
+Route::prefix('history')->name('history.')->group(function () {
+    // Equipment History Timeline
+    Route::get('/equipment-timeline', App\Livewire\History\EquipmentTimeline::class)->name('equipment.timeline');
+
+    // Maintenance Audit Log
+    Route::get('/maintenance-audit', App\Livewire\History\MaintenanceAudit::class)->name('maintenance.audit');
+
+    // Part/Supply Lifecycle Tracking
+    Route::get('/parts-lifecycle', App\Livewire\History\PartsLifecycle::class)->name('parts.lifecycle');
+
+    // Team Performance History
+    Route::get('/team-performance', App\Livewire\History\TeamPerformance::class)->name('team.performance');
 });
 
 // Rota de Gerenciamento de Usuários

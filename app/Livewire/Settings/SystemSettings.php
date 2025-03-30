@@ -454,7 +454,7 @@ class SystemSettings extends Component
                 DB::commit();
 
                 // Now update the setting in the regular way to ensure cache is updated
-                Setting::set('app_version', $this->latest_version, 'updates', 'string', 'Current system version', true);
+            Setting::set('app_version', $this->latest_version, 'updates', 'string', 'Current system version', true);
 
                 // Double check that the setting was updated
                 Setting::clearCache();
@@ -472,8 +472,8 @@ class SystemSettings extends Component
                 // Update runtime configuration
                 config(['app.version' => $this->latest_version]);
 
-                $this->current_version = $this->latest_version;
-                $this->update_available = false;
+            $this->current_version = $this->latest_version;
+            $this->update_available = false;
             } catch (\Exception $e) {
                 $this->logToFile($logFile, "Error updating version in database: " . $e->getMessage());
                 Log::error("Failed to update version in database", [
