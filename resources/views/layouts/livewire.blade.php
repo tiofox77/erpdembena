@@ -408,6 +408,11 @@
                 <span>Equipment Management</span>
             </a>
 
+            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }}">
+                <i class="fas fa-tools"></i>
+                <span>Equipment Parts</span>
+            </a>
+
             <a href="{{ route('maintenance.linearea') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.linearea') ? 'active' : '' }}">
                 <i class="fas fa-project-diagram"></i>
                 <span>Line & Area</span>

@@ -94,6 +94,13 @@ class MaintenanceEquipment extends Model
      * Get the files associated with the equipment.
      */
 
+    /**
+     * Get the parts associated with the equipment.
+     */
+    public function parts()
+    {
+        return $this->hasMany(EquipmentPart::class, 'maintenance_equipment_id');
+    }
 
 
 }

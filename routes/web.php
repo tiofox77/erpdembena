@@ -7,6 +7,7 @@ use App\Livewire\MaintenanceEquipment;
 use App\Livewire\MaintenanceTaskComponent;
 use App\Livewire\MaintenancePlan;
 use App\Livewire\MaintenanceCategory;
+use App\Livewire\EquipmentParts;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,10 @@ Route::prefix('maintenance')->name('maintenance.')->group(function() {
     Route::get('/failure-causes', App\Livewire\Maintenance\FailureCauses::class)->name('failure-causes');
     Route::get('/failure-cause-categories', App\Livewire\Maintenance\FailureCauseCategories::class)->name('failure-cause-categories');
 });
+
+// Equipment Parts Management
+Route::get('/equipment/parts', EquipmentParts::class)->name('equipment.parts');
+Route::get('/equipment/parts/{equipmentId}', EquipmentParts::class)->name('equipment.parts.filtered');
 
 // Rotas de Relatórios
 Route::prefix('reports')->name('reports.')->group(function () {

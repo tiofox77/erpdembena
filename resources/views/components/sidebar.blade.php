@@ -13,6 +13,10 @@
                 </a>
                 <div class="collapse" id="collapseMaintenanceSettings" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
                     <nav class="sb-sidenav-menu-nested nav">
+                        <a class="nav-link" href="{{ route('equipment.parts') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tools"></i></div>
+                            Equipment Parts
+                        </a>
                         <a class="nav-link" href="{{ route('maintenance.failure-modes') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-exclamation-triangle"></i></div>
                             Failure Modes
