@@ -24,7 +24,8 @@ class EquipmentPart extends Model
         'unit_cost',
         'last_restock_date',
         'minimum_stock_level',
-        'maintenance_equipment_id'
+        'maintenance_equipment_id',
+        'bar_code'
     ];
 
     /**

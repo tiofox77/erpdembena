@@ -167,6 +167,11 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('maintenance.holidays');
     })->name('holidays.management');
 
+    // Stocks Management Routes
+    Route::prefix('stocks')->name('stocks.')->group(function() {
+        Route::get('/stockout', App\Livewire\Stocks\StockOut::class)->name('stockout');
+    });
+
     // Rotas de Configurações - Requer permissão settings.manage
     Route::middleware(['permission:settings.manage'])->prefix('settings')->name('settings.')->group(function () {
         // Configurações do Sistema

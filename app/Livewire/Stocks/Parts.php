@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Stocks;
 
 use App\Models\EquipmentPart;
 use App\Models\MaintenanceEquipment;
@@ -12,7 +12,7 @@ use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-class EquipmentParts extends Component
+class Parts extends Component
 {
     use WithPagination;
 
@@ -36,7 +36,7 @@ class EquipmentParts extends Component
     public $part = [
         'name' => '',
         'part_number' => '',
-        'bar_code' => '',
+        'bac_code' => '',
         'description' => '',
         'stock_quantity' => 0,
         'unit_cost' => null,
@@ -49,16 +49,27 @@ class EquipmentParts extends Component
      */
     protected function rules()
     {
-        return [
+        $rules = [
             'part.name' => 'required|string|max:255',
             'part.part_number' => 'nullable|string|max:255',
-            'part.bar_code' => 'nullable|string|max:255',
+            'part.bac_code' => 'nullable|string|max:255',
             'part.description' => 'nullable|string',
             'part.stock_quantity' => 'required|integer|min:0',
             'part.unit_cost' => 'nullable|numeric|min:0',
             'part.minimum_stock_level' => 'required|integer|min:0',
             'part.maintenance_equipment_id' => 'required|exists:maintenance_equipment,id',
         ];
+
+        // Add unique validation only when creating a new part or changing part_number
+        if (!$this->isEditing || ($this->isEditing && isset($this->part['id']))) {
+            $uniqueRule = $this->isEditing 
+                ? 'unique:equipment_parts,part_number,' . $this->part['id']
+                : 'unique:equipment_parts,part_number';
+            
+            $rules['part.part_number'] = 'nullable|string|max:255|' . $uniqueRule;
+        }
+
+        return $rules;
     }
 
     /**
@@ -72,6 +83,7 @@ class EquipmentParts extends Component
             'part.stock_quantity.min' => 'The stock quantity cannot be negative.',
             'part.minimum_stock_level.required' => 'The minimum stock level is required.',
             'part.maintenance_equipment_id.required' => 'Please select an equipment.',
+            'part.part_number.unique' => 'This part number already exists. Duplicate parts are not allowed.',
         ];
     }
 
@@ -107,8 +119,8 @@ class EquipmentParts extends Component
                 return $query->where(function($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
                         ->orWhere('part_number', 'like', '%' . $this->search . '%')
-                        ->orWhere('description', 'like', '%' . $this->search . '%')
-                        ->orWhere('bar_code', 'like', '%' . $this->search . '%');
+                        ->orWhere('bac_code', 'like', '%' . $this->search . '%')
+                        ->orWhere('description', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->equipmentId, function ($query) {
@@ -162,12 +174,26 @@ class EquipmentParts extends Component
         $this->validate();
 
         try {
+            // Check for duplicate part
+            $existingPart = EquipmentPart::where('part_number', $this->part['part_number'])
+                                        ->when($this->isEditing, function($query) {
+                                            return $query->where('id', '!=', $this->part['id']);
+                                        })
+                                        ->first();
+
+            if ($existingPart) {
+                $notificationType = 'error';
+                $message = "A part with part number '{$this->part['part_number']}' already exists. Duplicate parts are not allowed.";
+                $this->dispatch('notify', type: $notificationType, message: $message);
+                return;
+            }
+
             if ($this->isEditing) {
                 $part = EquipmentPart::findOrFail($this->part['id']);
                 $part->update([
                     'name' => $this->part['name'],
                     'part_number' => $this->part['part_number'],
-                    'bar_code' => $this->part['bar_code'],
+                    'bac_code' => $this->part['bac_code'],
                     'description' => $this->part['description'],
                     'stock_quantity' => $this->part['stock_quantity'],
                     'unit_cost' => $this->part['unit_cost'],
@@ -181,7 +207,7 @@ class EquipmentParts extends Component
                 $result = DB::table('equipment_parts')->insert([
                     'name' => $this->part['name'],
                     'part_number' => $this->part['part_number'],
-                    'bar_code' => $this->part['bar_code'] ?? null,
+                    'bac_code' => $this->part['bac_code'],
                     'description' => $this->part['description'],
                     'stock_quantity' => $this->part['stock_quantity'],
                     'unit_cost' => $this->part['unit_cost'],
@@ -360,6 +386,6 @@ class EquipmentParts extends Component
      */
     public function render()
     {
-        return view('livewire.equipment-parts');
+        return view('livewire.stocks.parts');
     }
 }

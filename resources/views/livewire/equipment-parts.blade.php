@@ -509,6 +509,19 @@
                                 </div>
 
                                 <div>
+                                    <label for="barcode" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                        <i class="fas fa-barcode mr-1 text-gray-500"></i> Barcode
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="barcode"
+                                        wire:model.live="part.bar_code"
+                                        placeholder="Enter barcode (optional)"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    >
+                                </div>
+
+                                <div>
                                     <label for="equipment-id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
                                         <i class="fas fa-tools mr-1 text-gray-500"></i> Equipment <span class="text-red-500">*</span>
                                     </label>

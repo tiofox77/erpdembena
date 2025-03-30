@@ -443,10 +443,23 @@
                 <span>Equipment Management</span>
             </a>
 
-            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+            <!-- Parts & Stock Submenu -->
+            <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="partsMenu">
                 <i class="fas fa-tools text-gray-500"></i>
                 <span>Equipment Parts</span>
-            </a>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+            </div>
+
+            <div class="sidebar-nested-submenu" id="partsSubmenu">
+                <a href="{{ route('equipment.parts') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-cogs text-gray-500"></i>
+                    <span>Parts List</span>
+                </a>
+                <a href="{{ route('stocks.stockout') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.stockout') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-arrow-circle-down text-gray-500"></i>
+                    <span>Stock Out</span>
+                </a>
+            </div>
             @endcan
 
             @can('areas.view')
@@ -601,6 +614,23 @@
 
         <div class="sidebar-submenu" id="supplyChainSubmenu">
             <!-- Supply Chain submenu items will go here -->
+        </div>
+
+        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="stocksMenu">
+            <i class="fas fa-boxes text-indigo-500"></i>
+            <span>Stocks</span>
+            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+        </div>
+
+        <div class="sidebar-submenu" id="stocksSubmenu">
+            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('stocks.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-cogs text-gray-500"></i>
+                <span>Equipment Parts</span>
+            </a>
+            <a href="{{ route('stocks.stockout') }}" class="sidebar-submenu-item {{ request()->routeIs('stocks.stockout') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-arrow-circle-down text-gray-500"></i>
+                <span>Stock Out</span>
+            </a>
         </div>
 
         <!-- Moved user info to footer of sidebar
@@ -768,6 +798,30 @@
                 reportsHistoryMenu.addEventListener('click', function(e) {
                     e.stopPropagation(); // Prevent event bubbling to parent menu
                     const submenu = document.getElementById('reportsHistorySubmenu');
+                    const indicator = this.querySelector('.dropdown-indicator');
+                    submenu.classList.toggle('open');
+                    indicator.classList.toggle('open');
+                });
+            }
+
+            // Stocks submenu toggle
+            const stocksMenu = document.getElementById('stocksMenu');
+            if (stocksMenu) {
+                stocksMenu.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent event bubbling to parent menu
+                    const submenu = document.getElementById('stocksSubmenu');
+                    const indicator = this.querySelector('.dropdown-indicator');
+                    submenu.classList.toggle('open');
+                    indicator.classList.toggle('open');
+                });
+            }
+
+            // Parts submenu toggle
+            const partsMenu = document.getElementById('partsMenu');
+            if (partsMenu) {
+                partsMenu.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent event bubbling to parent menu
+                    const submenu = document.getElementById('partsSubmenu');
                     const indicator = this.querySelector('.dropdown-indicator');
                     submenu.classList.toggle('open');
                     indicator.classList.toggle('open');
