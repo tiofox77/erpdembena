@@ -49,6 +49,10 @@ class MaintenancePlan extends Component
     public $statusFilter = '';
     public $frequencyFilter = '';
 
+    // Search for technicians
+    public $technicianSearch = '';
+    public $filteredTechnicians = [];
+
     protected $rules = [
         'task_id' => 'required|exists:maintenance_tasks,id',
         'equipment_id' => 'required|exists:maintenance_equipment,id',
@@ -288,7 +292,7 @@ class MaintenancePlan extends Component
      */
     protected function getNextValidWorkingDate(Carbon $date)
     {
-        $nextDate = $date->copy()->addDay();
+        $nextDate = $date->copy();
 
         // Continue advancing until finding a valid date
         while ($this->isHoliday($nextDate) || $this->isSunday($nextDate)) {
@@ -720,6 +724,36 @@ class MaintenancePlan extends Component
     }
 
     /**
+     * Filter technicians based on search term
+     */
+    public function updatedTechnicianSearch()
+    {
+        if (empty($this->technicianSearch)) {
+            $this->filteredTechnicians = [];
+            return;
+        }
+
+        $this->filteredTechnicians = User::where(function($query) {
+                $query->where('name', 'like', '%' . $this->technicianSearch . '%')
+                      ->orWhere('email', 'like', '%' . $this->technicianSearch . '%')
+                      ->orWhere('full_name', 'like', '%' . $this->technicianSearch . '%');
+            })
+            ->limit(10)
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Set the selected technician
+     */
+    public function selectTechnician($id)
+    {
+        $this->assigned_to = $id;
+        $this->technicianSearch = '';
+        $this->filteredTechnicians = [];
+    }
+
+    /**
      * Edit maintenance plan schedule
      */
     public function edit($id)
@@ -823,7 +857,7 @@ class MaintenancePlan extends Component
             'lines' => MaintenanceLine::all(),
             'areas' => MaintenanceArea::all(),
             'tasks' => MaintenanceTask::all(),
-            'technicians' => User::where('role', 'technician')->get(),
+            'technicians' => User::all(),
             'frequencies' => [
                 'once' => 'Once',
                 'daily' => 'Daily',

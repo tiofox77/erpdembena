@@ -371,12 +371,48 @@
 
                         <div>
                             <label for="assigned_to" class="block text-xs sm:text-sm font-medium text-gray-700">Assigned To</label>
-                            <select id="assigned_to" wire:model="assigned_to" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm py-1.5 px-2">
-                                <option value="">Select technician</option>
-                                @foreach($technicians as $technician)
-                                    <option value="{{ $technician->id }}">{{ $technician->full_name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="relative">
+                                <!-- Combined select and search -->
+                                <select
+                                    id="assigned_to"
+                                    wire:model="assigned_to"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm py-1.5 px-2"
+                                >
+                                    <option value="">Select technician</option>
+                                    @foreach($technicians as $technician)
+                                        <option value="{{ $technician->id }}">{{ $technician->full_name ?? $technician->name }}</option>
+                                    @endforeach
+                                </select>
+
+                                <!-- Search overlay input -->
+                                <div class="mt-2">
+                                    <input
+                                        type="text"
+                                        wire:model.live.debounce.300ms="technicianSearch"
+                                        placeholder="Search for a technician..."
+                                        class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm py-1.5 px-2"
+                                    >
+
+                                    @if(!empty($filteredTechnicians))
+                                        <div class="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md max-h-60 overflow-auto">
+                                            @forelse($filteredTechnicians as $tech)
+                                                <div
+                                                    wire:key="tech-{{ $tech['id'] }}"
+                                                    wire:click="selectTechnician({{ $tech['id'] }})"
+                                                    class="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                                                >
+                                                    {{ $tech['full_name'] ?? $tech['name'] }}
+                                                    @if(!empty($tech['email']))
+                                                        <span class="text-xs text-gray-500 block">{{ $tech['email'] }}</span>
+                                                    @endif
+                                                </div>
+                                            @empty
+                                                <div class="px-4 py-2 text-sm text-gray-700">No technicians found</div>
+                                            @endforelse
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                             @error('assigned_to') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>

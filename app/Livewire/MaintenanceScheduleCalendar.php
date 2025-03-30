@@ -394,7 +394,7 @@ class MaintenanceScheduleCalendar extends Component
      */
     private function findNextValidWorkingDay($date)
     {
-        $nextDate = $date->copy()->addDay();
+        $nextDate = $date->copy();
 
         while ($nextDate->isSunday() || isset($this->holidays[$nextDate->format('Y-m-d')])) {
             $nextDate->addDay();
