@@ -126,7 +126,7 @@
 
                                     @if($this->canDeleteArea())
                                     <button type="button" class="text-red-600 hover:text-red-900 mx-2 text-lg"
-                                        wire:click="confirmDeleteArea({{ $area->id }})" title="Delete">
+                                        wire:click="confirmDelete({{ $area->id }}, 'area')" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                     @endif
@@ -208,7 +208,7 @@
 
                                     @if($this->canDeleteLine())
                                     <button type="button" class="text-red-600 hover:text-red-900 mx-2 text-lg"
-                                        wire:click="confirmDeleteLine({{ $line->id }})" title="Delete">
+                                        wire:click="confirmDelete({{ $line->id }}, 'line')" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                     @endif
