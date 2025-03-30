@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -87,6 +88,13 @@ class User extends Authenticatable
     // Verificar se o usuário tem um papel específico
     public function hasRole($role)
     {
+        // Usar o método do trait para verificar a role
+        if (is_string($role)) {
+            // Verificar usando o método do Spatie
+            return parent::hasRole($role);
+        }
+
+        // Fallback para a verificação antiga
         return $this->role === $role;
     }
 

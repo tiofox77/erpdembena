@@ -9,6 +9,7 @@ use Livewire\WithPagination;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Url;
+use Spatie\Permission\Models\Role;
 
 class UserManagement extends Component
 {
@@ -52,13 +53,9 @@ class UserManagement extends Component
         'is_active' => true
     ];
 
-    // Define roles and departments
-    public $roles = [
-        'admin' => 'Administrator',
-        'manager' => 'Manager',
-        'technician' => 'Technician',
-        'user' => 'Regular User'
-    ];
+    // Define roles e departments
+    public $roles = [];
+    public $spatieRoles = [];
 
     public $departments = [
         'maintenance' => 'Maintenance',
@@ -69,6 +66,21 @@ class UserManagement extends Component
         'it' => 'IT',
         'hr' => 'Human Resources'
     ];
+
+    public function mount()
+    {
+        // Carregar os roles do Spatie
+        $this->loadRoles();
+    }
+
+    protected function loadRoles()
+    {
+        // Carregar todos os roles do sistema
+        $this->spatieRoles = Role::all();
+
+        // Criar um array para o select de roles
+        $this->roles = $this->spatieRoles->pluck('name', 'name')->toArray();
+    }
 
     // Validation rules
     protected function rules()
@@ -191,14 +203,18 @@ class UserManagement extends Component
         $this->resetValidation();
         $this->isEditing = true;
 
-        $userToEdit = User::findOrFail($id);
+        $userToEdit = User::with('roles')->findOrFail($id);
+
+        // Obter o primeiro role do usuário
+        $userRole = $userToEdit->roles->first() ? $userToEdit->roles->first()->name : '';
+
         $this->user = [
             'id' => $userToEdit->id,
             'first_name' => $userToEdit->first_name,
             'last_name' => $userToEdit->last_name,
             'email' => $userToEdit->email,
             'phone' => $userToEdit->phone,
-            'role' => $userToEdit->role,
+            'role' => $userRole, // Usar o role do Spatie
             'department' => $userToEdit->department,
             'password' => '',
             'password_confirmation' => '',
@@ -223,7 +239,6 @@ class UserManagement extends Component
                     'last_name' => $this->user['last_name'],
                     'email' => $this->user['email'],
                     'phone' => $this->user['phone'],
-                    'role' => $this->user['role'],
                     'department' => $this->user['department'],
                     'is_active' => $this->user['is_active']
                 ];
@@ -234,21 +249,31 @@ class UserManagement extends Component
                 }
 
                 $user->update($userData);
+
+                // Atualizar o role usando o sistema de permissões do Spatie
+                if (!empty($this->user['role'])) {
+                    $user->syncRoles([$this->user['role']]);
+                }
+
                 $message = 'User updated successfully';
                 $notificationType = 'info';
 
             } else {
                 // Create new user
-                User::create([
+                $user = User::create([
                     'first_name' => $this->user['first_name'],
                     'last_name' => $this->user['last_name'],
                     'email' => $this->user['email'],
                     'phone' => $this->user['phone'],
-                    'role' => $this->user['role'],
                     'department' => $this->user['department'],
                     'password' => Hash::make($this->user['password']),
                     'is_active' => $this->user['is_active']
                 ]);
+
+                // Atribuir o role usando o sistema de permissões do Spatie
+                if (!empty($this->user['role'])) {
+                    $user->assignRole($this->user['role']);
+                }
 
                 $message = 'User created successfully';
                 $notificationType = 'success';
@@ -321,7 +346,7 @@ class UserManagement extends Component
     // Get users with filters and sorting
     public function getUsersProperty()
     {
-        return User::query()
+        return User::with('roles')
             ->when($this->search, function ($query) {
                 return $query->where(function ($q) {
                     $q->where('first_name', 'like', '%' . $this->search . '%')
@@ -331,7 +356,8 @@ class UserManagement extends Component
                 });
             })
             ->when($this->filterRole, function ($query) {
-                return $query->where('role', $this->filterRole);
+                // Filtrar por role usando relacionamento do Spatie
+                return $query->role($this->filterRole);
             })
             ->when($this->filterDepartment, function ($query) {
                 return $query->where('department', $this->filterDepartment);

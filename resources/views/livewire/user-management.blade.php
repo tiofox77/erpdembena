@@ -224,7 +224,17 @@
                                                 {{ $userItem->email }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $roles[$userItem->role] ?? $userItem->role }}
+                                                @if($userItem->roles->isNotEmpty())
+                                                    @foreach($userItem->roles as $role)
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
+                                                            {{ $role->name }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800">
+                                                        No role assigned
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $departments[$userItem->department] ?? $userItem->department }}
