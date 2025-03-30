@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} - Login</title>
+    <title>DEMBENA ERP - Login</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -20,27 +20,41 @@
         <div class="w-full max-w-md">
             <div class="mb-6 text-center">
                 <h1 class="text-3xl font-bold text-gray-800">
-                    <i class="far fa-clipboard mr-2"></i>
-                    {{ config('app.name', 'Laravel') }}
+                    <i class="fas fa-industry mr-2"></i>
+                    DEMBENA ERP
                 </h1>
-                <p class="text-gray-600 mt-2">Sistema de Manutenção</p>
+                <p class="text-gray-600 mt-2">Industrial Maintenance Integrated System</p>
             </div>
 
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800">Login</h2>
+                <div class="px-6 py-4 bg-blue-600 border-b border-blue-700">
+                    <h2 class="text-xl font-semibold text-white">System Access</h2>
                 </div>
 
                 <div class="p-6">
                     @if (session('success'))
                         <div class="mb-4 p-4 rounded-md bg-green-50 text-green-800 border-l-4 border-green-500">
-                            {{ session('success') }}
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle text-green-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">{{ session('success') }}</p>
+                                </div>
+                            </div>
                         </div>
                     @endif
 
                     @if (session('error'))
                         <div class="mb-4 p-4 rounded-md bg-red-50 text-red-800 border-l-4 border-red-500">
-                            {{ session('error') }}
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">{{ session('error') }}</p>
+                                </div>
+                            </div>
                         </div>
                     @endif
 
@@ -49,35 +63,51 @@
 
                         <div class="mb-4">
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input
-                                id="email"
-                                type="email"
-                                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('email') border-red-300 focus:ring-red-500 @enderror"
-                                name="email"
-                                value="{{ old('email') }}"
-                                required
-                                autocomplete="email"
-                                autofocus
-                            >
-
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-envelope text-gray-400"></i>
+                                </div>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    class="w-full pl-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('email') border-red-300 focus:ring-red-500 @enderror"
+                                    name="email"
+                                    value="{{ old('email') }}"
+                                    required
+                                    autocomplete="email"
+                                    autofocus
+                                    placeholder="name@company.com"
+                                >
+                            </div>
                             @error('email')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    {{ $message === 'These credentials do not match our records.' ? 'Invalid credentials. Please check your email and password.' : $message }}
+                                </p>
                             @enderror
                         </div>
 
                         <div class="mb-4">
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                            <input
-                                id="password"
-                                type="password"
-                                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('password') border-red-300 focus:ring-red-500 @enderror"
-                                name="password"
-                                required
-                                autocomplete="current-password"
-                            >
-
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                </div>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    class="w-full pl-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('password') border-red-300 focus:ring-red-500 @enderror"
+                                    name="password"
+                                    required
+                                    autocomplete="current-password"
+                                    placeholder="••••••••"
+                                >
+                            </div>
                             @error('password')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -91,7 +121,7 @@
                                     {{ old('remember') ? 'checked' : '' }}
                                 >
                                 <label class="ml-2 block text-sm text-gray-700" for="remember">
-                                    Lembrar-me
+                                    Remember me
                                 </label>
                             </div>
                         </div>
@@ -99,23 +129,32 @@
                         <div class="mt-6 flex items-center justify-between">
                             <button
                                 type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
                             >
-                                Entrar
+                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                Login
                             </button>
-
-                            @if (Route::has('password.request'))
-                                <a class="text-sm text-blue-600 hover:text-blue-800" href="{{ route('password.request') }}">
-                                    Esqueceu sua senha?
-                                </a>
-                            @endif
                         </div>
+
+                        @if (Route::has('password.request'))
+                            <div class="mt-4 text-center">
+                                <a class="text-sm text-blue-600 hover:text-blue-800" href="{{ route('password.request') }}">
+                                    <i class="fas fa-key mr-1"></i>
+                                    Forgot your password?
+                                </a>
+                            </div>
+                        @endif
                     </form>
                 </div>
             </div>
 
             <div class="mt-6 text-center text-gray-500 text-sm">
-                &copy; {{ date('Y') }} {{ config('app.name', 'Laravel') }}. Todos os direitos reservados.
+                <div>
+                    <strong>DEMBENA ERP</strong> - Industrial Management System
+                </div>
+                <div class="mt-1">
+                    &copy; {{ date('Y') }} DEMBENA. All rights reserved.
+                </div>
             </div>
         </div>
     </div>

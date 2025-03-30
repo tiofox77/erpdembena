@@ -1,28 +1,5 @@
 <div>
-    <!-- JavaScript for Notifications -->
-    <script>
-        function showNotification(message, type = 'success') {
-            if (window.toastr) {
-                toastr.options = {
-                    closeButton: true,
-                    progressBar: true,
-                    positionClass: 'toast-top-right',
-                    timeOut: 5000
-                };
 
-                toastr[type](message);
-            } else {
-                alert(message);
-            }
-        }
-
-        document.addEventListener('livewire:initialized', () => {
-            Livewire.on('notify', (params) => {
-                console.log('Evento de notificação recebido:', params);
-                showNotification(params.message, params.type);
-            });
-        });
-    </script>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

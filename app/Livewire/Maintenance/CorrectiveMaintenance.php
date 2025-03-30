@@ -85,12 +85,12 @@ class CorrectiveMaintenance extends Component
             'corrective.year' => 'required|numeric|digits:4',
             'corrective.month' => 'required|numeric|min:1|max:12',
             'corrective.week' => 'nullable|numeric|min:1|max:53',
-            'corrective.system_process' => 'nullable|string|max:255',
+            'corrective.system_process' => 'required|string|max:255',
             'corrective.equipment_id' => 'required|exists:maintenance_equipment,id',
-            'corrective.failure_mode_id' => 'nullable|exists:failure_modes,id',
-            'corrective.failure_mode_category_id' => 'nullable|exists:failure_mode_categories,id',
-            'corrective.failure_cause_id' => 'nullable|exists:failure_causes,id',
-            'corrective.failure_cause_category_id' => 'nullable|exists:failure_cause_categories,id',
+            'corrective.failure_mode_id' => 'required|exists:failure_modes,id',
+            'corrective.failure_mode_category_id' => 'required|exists:failure_mode_categories,id',
+            'corrective.failure_cause_id' => 'required|exists:failure_causes,id',
+            'corrective.failure_cause_category_id' => 'required|exists:failure_cause_categories,id',
             'corrective.start_time' => 'required|date',
             'corrective.end_time' => 'nullable|date|after_or_equal:corrective.start_time',
             'corrective.downtime_length' => 'nullable|string',
@@ -108,8 +108,17 @@ class CorrectiveMaintenance extends Component
         return [
             'corrective.year.required' => 'Year is required',
             'corrective.month.required' => 'Month is required',
+            'corrective.system_process.required' => 'System/Process is required',
             'corrective.equipment_id.required' => 'Equipment is required',
             'corrective.equipment_id.exists' => 'Selected equipment is invalid',
+            'corrective.failure_mode_id.required' => 'Failure Mode is required',
+            'corrective.failure_mode_id.exists' => 'Selected failure mode is invalid',
+            'corrective.failure_mode_category_id.required' => 'Failure Mode Category is required',
+            'corrective.failure_mode_category_id.exists' => 'Selected failure mode category is invalid',
+            'corrective.failure_cause_id.required' => 'Failure Cause is required',
+            'corrective.failure_cause_id.exists' => 'Selected failure cause is invalid',
+            'corrective.failure_cause_category_id.required' => 'Failure Cause Category is required',
+            'corrective.failure_cause_category_id.exists' => 'Selected failure cause category is invalid',
             'corrective.start_time.required' => 'Start time is required',
             'corrective.end_time.after_or_equal' => 'End time must be after start time',
             'corrective.status.required' => 'Status is required',
@@ -158,6 +167,24 @@ class CorrectiveMaintenance extends Component
     public function updatedFilterMonth()
     {
         $this->resetPage();
+    }
+
+    /**
+     * Clear all filters and reset to default values
+     */
+    public function clearFilters()
+    {
+        // Reset all filter values
+        $this->reset(['search', 'filterStatus', 'filterEquipment', 'filterMonth']);
+
+        // Set default year to current year
+        $this->filterYear = now()->year;
+
+        // Reset pagination
+        $this->resetPage();
+
+        // Dispatch an event to force UI refresh
+        $this->dispatch('filters-cleared');
     }
 
     // Real-time validation
@@ -245,9 +272,9 @@ class CorrectiveMaintenance extends Component
             'system_process' => $correctiveRecord->system_process,
             'equipment_id' => $correctiveRecord->equipment_id,
             'failure_mode_id' => $correctiveRecord->failure_mode_id,
-            'failure_mode_category_id' => $correctiveRecord->failureMode?->category_id,
+            'failure_mode_category_id' => is_object($correctiveRecord->failureMode) ? $correctiveRecord->failureMode->category_id : null,
             'failure_cause_id' => $correctiveRecord->failure_cause_id,
-            'failure_cause_category_id' => $correctiveRecord->failureCause?->category_id,
+            'failure_cause_category_id' => is_object($correctiveRecord->failureCause) ? $correctiveRecord->failureCause->category_id : null,
             'start_time' => $correctiveRecord->start_time ? $correctiveRecord->start_time->format('Y-m-d H:i') : null,
             'end_time' => $correctiveRecord->end_time ? $correctiveRecord->end_time->format('Y-m-d H:i') : null,
             'downtime_length' => $correctiveRecord->downtime_length,
@@ -287,10 +314,11 @@ class CorrectiveMaintenance extends Component
             Log::info("View modal opened, showViewModal = " . ($this->showViewModal ? 'true' : 'false'));
         } catch (\Exception $e) {
             Log::error("Error in view method: " . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => 'Error loading record: ' . $e->getMessage()
-            ]);
+            $this->dispatch(
+                'notify',
+                type: 'error',
+                message: 'Error loading record: ' . $e->getMessage()
+            );
         }
     }
 
@@ -383,22 +411,24 @@ class CorrectiveMaintenance extends Component
             // Close the modal
             $this->showModal = false;
 
-            // Show success message
-            $this->dispatch('notify', [
-                'type' => $isCreate ? 'success' : 'info',
-                'message' => $isCreate
+            // Show success message using named parameters
+            $this->dispatch(
+                'notify',
+                type: $isCreate ? 'success' : 'info',
+                message: $isCreate
                     ? 'Equipment downtime reported successfully!'
                     : 'Equipment downtime updated successfully!'
-            ]);
+            );
 
         } catch (\Exception $e) {
             Log::error('Error saving corrective maintenance: ' . $e->getMessage());
 
-            // Show error message
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => 'Error: ' . $e->getMessage()
-            ]);
+            // Show error message using named parameters
+            $this->dispatch(
+                'notify',
+                type: 'error',
+                message: 'Error: ' . $e->getMessage()
+            );
         }
     }
 

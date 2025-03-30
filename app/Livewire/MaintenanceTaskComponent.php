@@ -22,6 +22,10 @@ class MaintenanceTaskComponent extends Component
     #[Validate('nullable')]
     public $description = '';
 
+    // Propriedades para o modal de visualização
+    public $showViewModal = false;
+    public $viewingTask = null;
+
     // Propriedades para listagem/filtro
     public $search = '';
     public $sortField = 'created_at';
@@ -32,7 +36,7 @@ class MaintenanceTaskComponent extends Component
     protected function getListeners()
     {
         return [
-            'escape-pressed' => 'closeModal'
+            'escape-pressed' => 'closeAllModals'
         ];
     }
 
@@ -48,6 +52,26 @@ class MaintenanceTaskComponent extends Component
         $this->resetForm();
     }
 
+    // Método para fechar todos os modais
+    public function closeAllModals()
+    {
+        $this->closeModal();
+        $this->closeViewModal();
+    }
+
+    // Métodos para o modal de visualização
+    public function viewTask($id)
+    {
+        $this->viewingTask = MaintenanceTask::findOrFail($id);
+        $this->showViewModal = true;
+    }
+
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewingTask = null;
+    }
+
     public function createTask()
     {
         $this->resetForm();
@@ -56,6 +80,11 @@ class MaintenanceTaskComponent extends Component
 
     public function editTask($id)
     {
+        // Fechar o modal de visualização se estiver aberto
+        if ($this->showViewModal) {
+            $this->closeViewModal();
+        }
+
         $task = MaintenanceTask::findOrFail($id);
         $this->taskId = $task->id;
         $this->title = $task->title;
@@ -67,6 +96,16 @@ class MaintenanceTaskComponent extends Component
     {
         $this->reset(['taskId', 'title', 'description']);
         $this->resetValidation();
+    }
+
+    // Método para limpar os filtros
+    public function clearFilters()
+    {
+        $this->reset(['search']);
+        $this->resetPage();
+
+        // Dispatch an event to force UI refresh
+        $this->dispatch('filters-cleared');
     }
 
     // Método para salvar os dados

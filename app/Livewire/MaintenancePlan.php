@@ -24,6 +24,7 @@ class MaintenancePlan extends Component
     public $originalScheduledDate = null;
     public $suggestedDate = null;
     public $holidayTitle = null;
+    public $showViewModal = false;
 
     // Form fields
     public $task_id;
@@ -118,7 +119,8 @@ class MaintenancePlan extends Component
         'calendarEventClick' => 'editSchedule',
         'createOnDate' => 'createOnDate',
         'openPlanModal' => 'openPlanModalWithDate',
-        'acceptSuggestedDate' => 'acceptSuggestedDate'
+        'acceptSuggestedDate' => 'acceptSuggestedDate',
+        'view' => 'viewSchedule'
     ];
 
     public function mount()
@@ -152,7 +154,8 @@ class MaintenancePlan extends Component
             'showHolidayWarning',
             'originalScheduledDate',
             'suggestedDate',
-            'holidayTitle'
+            'holidayTitle',
+            'showViewModal'
         ]);
         $this->resetValidation();
     }
@@ -356,18 +359,19 @@ class MaintenancePlan extends Component
             $schedule->save();
 
             // Send notification
-            $msg = $this->isEditing ? 'The maintenance plan was successfully updated.' : 'A new maintenance plan was successfully created.';
-            $title = $this->isEditing ? 'Plan Updated' : 'Plan Created';
-            $type = $this->isEditing ? 'info' : 'success';
-
-            $this->js("toastr.$type('$msg', '$title')");
+            $notificationType = $this->isEditing ? 'info' : 'success';
+            $message = $this->isEditing
+                ? 'The maintenance plan was successfully updated.'
+                : 'A new maintenance plan was successfully created.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
 
             $this->closeModal();
             $this->updateCalendarEvents();
         } catch (\Exception $e) {
             // Send error notification
-            $msg = 'An error occurred while saving the plan: ' . $e->getMessage();
-            $this->js("toastr.error('$msg', 'Error')");
+            $notificationType = 'error';
+            $message = 'An error occurred while saving the plan: ' . $e->getMessage();
+            $this->dispatch('notify', type: $notificationType, message: $message);
         }
     }
 
@@ -448,13 +452,16 @@ class MaintenancePlan extends Component
             $schedule->delete();
 
             // Send notification
-            $this->js("toastr.warning('The maintenance plan was successfully deleted.', 'Plan Deleted')");
+            $notificationType = 'success';
+            $message = 'The maintenance plan was successfully deleted.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
 
             $this->updateCalendarEvents();
         } catch (\Exception $e) {
             // Send error notification
-            $msg = 'An error occurred while deleting the plan. Please try again.';
-            $this->js("toastr.error('$msg', 'Error')");
+            $notificationType = 'error';
+            $message = 'An error occurred while deleting the plan. Please try again.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
         }
     }
 
@@ -735,8 +742,7 @@ class MaintenancePlan extends Component
 
         $this->filteredTechnicians = User::where(function($query) {
                 $query->where('name', 'like', '%' . $this->technicianSearch . '%')
-                      ->orWhere('email', 'like', '%' . $this->technicianSearch . '%')
-                      ->orWhere('full_name', 'like', '%' . $this->technicianSearch . '%');
+                      ->orWhere('email', 'like', '%' . $this->technicianSearch . '%');
             })
             ->limit(10)
             ->get()
@@ -791,7 +797,10 @@ class MaintenancePlan extends Component
             $this->scheduled_date = $suggestedDate->format('Y-m-d');
 
             $this->holidayTitle = "Sunday (Rest Day)";
-            $msg = "The selected date is a Sunday (rest day). The plan has been scheduled for the next available date: " . $suggestedDate->format('m/d/Y');
+            $notificationType = 'info';
+            $message = "The selected date is a Sunday (rest day). The plan has been scheduled for the next available date: " . $suggestedDate->format('m/d/Y');
+            $this->dispatch('notify', type: $notificationType, message: $message);
+
             $this->suggestedDate = $suggestedDate->format('Y-m-d');
             $this->showHolidayWarning = true;
         }
@@ -814,6 +823,11 @@ class MaintenancePlan extends Component
             $this->originalScheduledDate = $date;
             $this->scheduled_date = $suggestedDate->format('Y-m-d');
             $this->holidayTitle = $holiday ? $holiday->title : "Holiday";
+
+            $notificationType = 'info';
+            $message = "The selected date is a holiday (" . $this->holidayTitle . "). The plan has been scheduled for the next available date: " . $suggestedDate->format('m/d/Y');
+            $this->dispatch('notify', type: $notificationType, message: $message);
+
             $this->suggestedDate = $suggestedDate->format('Y-m-d');
             $this->showHolidayWarning = true;
         }
@@ -831,6 +845,56 @@ class MaintenancePlan extends Component
     public function openPlanModalWithDate($date)
     {
         $this->createOnDate($date);
+    }
+
+    public function viewSchedule($id)
+    {
+        $schedule = MaintenancePlanModel::findOrFail($id);
+        $this->scheduleId = $schedule->id;
+        $this->task_id = $schedule->task_id;
+        $this->equipment_id = $schedule->equipment_id;
+        $this->line_id = $schedule->line_id;
+        $this->area_id = $schedule->area_id;
+        $this->frequency_type = $schedule->frequency_type;
+        $this->custom_days = $schedule->custom_days;
+        $this->day_of_week = $schedule->day_of_week;
+        $this->day_of_month = $schedule->day_of_month;
+        $this->month = $schedule->month;
+        $this->month_day = $schedule->month_day;
+        $this->scheduled_date = $schedule->scheduled_date ? $schedule->scheduled_date->format('Y-m-d') : null;
+        $this->priority = $schedule->priority;
+        $this->type = $schedule->type;
+        $this->assigned_to = $schedule->assigned_to;
+        $this->description = $schedule->description;
+        $this->notes = $schedule->notes;
+        $this->status = $schedule->status;
+
+        $this->showViewModal = true;
+    }
+
+    /**
+     * Close the view modal
+     */
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+    }
+
+    /**
+     * Clear all filters
+     */
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->statusFilter = '';
+        $this->frequencyFilter = '';
+        $this->resetPage();
+
+        $notificationType = 'info';
+        $message = 'All filters have been cleared.';
+        $this->dispatch('notify', type: $notificationType, message: $message);
+
+        $this->updateCalendarEvents();
     }
 
     public function render()

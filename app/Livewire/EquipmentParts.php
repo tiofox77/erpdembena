@@ -25,8 +25,12 @@ class EquipmentParts extends Component
     public $perPage = 10;
     public $showModal = false;
     public $showDeleteModal = false;
+    public $showViewModal = false;
+    public $viewingPart = null;
     public $isEditing = false;
     public $deleteId = null;
+    public $sortField = 'name';
+    public $sortDirection = 'asc';
 
     // Form data
     public $part = [
@@ -78,6 +82,8 @@ class EquipmentParts extends Component
             $this->equipmentId = $equipmentId;
             $this->part['maintenance_equipment_id'] = $equipmentId;
         }
+        $this->sortField = 'name';
+        $this->sortDirection = 'asc';
     }
 
     /**
@@ -105,8 +111,10 @@ class EquipmentParts extends Component
             ->when($this->equipmentId, function ($query) {
                 return $query->where('maintenance_equipment_id', $this->equipmentId);
             })
+            ->when($this->sortField, function ($query) {
+                $query->orderBy($this->sortField, $this->sortDirection);
+            })
             ->with('equipment')
-            ->orderBy('name')
             ->paginate($this->perPage);
     }
 
@@ -137,7 +145,9 @@ class EquipmentParts extends Component
             $this->showModal = true;
         } catch (\Exception $e) {
             Log::error('Error editing part: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Part not found.');
+            $notificationType = 'error';
+            $message = 'Part not found.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
         }
     }
 
@@ -160,8 +170,8 @@ class EquipmentParts extends Component
                     'minimum_stock_level' => $this->part['minimum_stock_level'],
                     'maintenance_equipment_id' => $this->part['maintenance_equipment_id'],
                 ]);
-                $message = 'Part updated successfully';
                 $notificationType = 'info';
+                $message = "Part '{$this->part['name']}' has been updated successfully.";
             } else {
                 // Add a direct database insert as a fallback
                 $result = DB::table('equipment_parts')->insert([
@@ -181,8 +191,8 @@ class EquipmentParts extends Component
                     throw new \Exception('Failed to insert record directly');
                 }
 
-                $message = 'Part created successfully';
                 $notificationType = 'success';
+                $message = "Part '{$this->part['name']}' has been created successfully.";
             }
 
             $this->dispatch('notify', type: $notificationType, message: $message);
@@ -191,7 +201,9 @@ class EquipmentParts extends Component
         } catch (\Exception $e) {
             Log::error('Error saving part: ' . $e->getMessage());
             Log::error('Part data: ' . json_encode($this->part));
-            $this->dispatch('notify', type: 'error', message: 'Error saving part: ' . $e->getMessage());
+            $notificationType = 'error';
+            $message = 'Error saving part: ' . $e->getMessage();
+            $this->dispatch('notify', type: $notificationType, message: $message);
         }
     }
 
@@ -211,15 +223,45 @@ class EquipmentParts extends Component
     {
         try {
             $part = EquipmentPart::findOrFail($this->deleteId);
+            $name = $part->name;
             $part->delete();
 
-            $this->dispatch('notify', type: 'warning', message: 'Part deleted successfully');
+            $notificationType = 'success';
+            $message = "Part '{$name}' has been deleted successfully.";
+            $this->dispatch('notify', type: $notificationType, message: $message);
             $this->showDeleteModal = false;
             $this->deleteId = null;
         } catch (\Exception $e) {
             Log::error('Error deleting part: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error deleting part: ' . $e->getMessage());
+            $notificationType = 'error';
+            $message = 'Error deleting part: ' . $e->getMessage();
+            $this->dispatch('notify', type: $notificationType, message: $message);
         }
+    }
+
+    /**
+     * Open modal to view part details
+     */
+    public function viewPart($id)
+    {
+        try {
+            $this->viewingPart = EquipmentPart::with('equipment')->findOrFail($id);
+            $this->showViewModal = true;
+        } catch (\Exception $e) {
+            Log::error('Error viewing part: ' . $e->getMessage());
+            $notificationType = 'error';
+            $message = 'Part not found.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
+        }
+    }
+
+    /**
+     * Close the view modal
+     */
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewingPart = null;
     }
 
     /**
@@ -229,6 +271,8 @@ class EquipmentParts extends Component
     {
         $this->showModal = false;
         $this->showDeleteModal = false;
+        $this->showViewModal = false;
+        $this->viewingPart = null;
         $this->reset('part');
     }
 
@@ -242,7 +286,9 @@ class EquipmentParts extends Component
             $newQuantity = $part->stock_quantity + $amount;
 
             if ($newQuantity < 0) {
-                $this->dispatch('notify', type: 'error', message: 'Stock quantity cannot be negative');
+                $notificationType = 'error';
+                $message = 'Stock quantity cannot be negative';
+                $this->dispatch('notify', type: $notificationType, message: $message);
                 return;
             }
 
@@ -252,10 +298,14 @@ class EquipmentParts extends Component
             ]);
 
             $action = $amount > 0 ? 'added to' : 'removed from';
-            $this->dispatch('notify', type: 'info', message: abs($amount) . ' items ' . $action . ' stock for ' . $part->name);
+            $notificationType = 'info';
+            $message = abs($amount) . ' items ' . $action . ' stock for ' . $part->name;
+            $this->dispatch('notify', type: $notificationType, message: $message);
         } catch (\Exception $e) {
             Log::error('Error updating stock: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error updating stock: ' . $e->getMessage());
+            $notificationType = 'error';
+            $message = 'Error updating stock: ' . $e->getMessage();
+            $this->dispatch('notify', type: $notificationType, message: $message);
         }
     }
 
@@ -268,11 +318,43 @@ class EquipmentParts extends Component
     }
 
     /**
+     * Sort parts by a specific field
+     */
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+
+        // Reinicia para a primeira página quando ordenar
+        $this->resetPage();
+    }
+
+    /**
+     * Clear filters
+     */
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->equipmentId = '';
+        $this->resetPage();
+
+        // Emite evento para feedback visual
+        $this->dispatch('filters-cleared');
+
+        $notificationType = 'info';
+        $message = 'All search filters have been reset.';
+        $this->dispatch('notify', type: $notificationType, message: $message);
+    }
+
+    /**
      * Render the component
      */
     public function render()
     {
-        return view('livewire.equipment-parts')
-            ->layout('layouts.livewire');
+        return view('livewire.equipment-parts');
     }
 }

@@ -1,5 +1,5 @@
 <div>
-    @if($updateAvailable)
+    @if($updateAvailable && auth()->check() && (auth()->user()->hasRole(['admin', 'super-admin']) || (isset(auth()->user()->role) && in_array(auth()->user()->role, ['admin', 'super-admin']))))
         <!-- Evento JavaScript para abrir o modal automaticamente quando o evento for despachado -->
         <script>
             document.addEventListener('showUpdateModal', function() {
@@ -36,21 +36,21 @@
 
                     <!-- Cabeçalho do modal -->
                     <div class="text-center mb-4">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">Nova atualização disponível!</h3>
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">New update available!</h3>
                         <p class="mt-2 text-sm text-gray-500">
-                            Versão {{ $latestVersion }} disponível para instalação
+                            Version {{ $latestVersion }} available for installation
                         </p>
-                        <p class="text-xs text-gray-400 mt-1">Versão atual: {{ $currentVersion }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Current version: {{ $currentVersion }}</p>
                     </div>
 
                     <!-- Corpo do modal -->
                     <div class="mt-3 text-center">
                         <div class="mt-2 px-1">
                             <div class="bg-gray-50 p-3 rounded-lg mb-3 text-left">
-                                <h4 class="font-semibold">{{ $updateNotes['title'] ?? 'Nova versão' }}</h4>
-                                <p class="text-xs text-gray-500 mb-2">Publicada em: {{ $updateNotes['published_at'] ?? now()->format('d/m/Y') }}</p>
+                                <h4 class="font-semibold">{{ $updateNotes['title'] ?? 'New version' }}</h4>
+                                <p class="text-xs text-gray-500 mb-2">Published on: {{ $updateNotes['published_at'] ?? now()->format('d/m/Y') }}</p>
                                 <div class="text-sm text-gray-700 whitespace-pre-line">
-                                    {{ $updateNotes['body'] ?? 'Esta atualização inclui melhorias e correções de bugs.' }}
+                                    {{ $updateNotes['body'] ?? 'This update includes improvements and bug fixes.' }}
                                 </div>
                             </div>
                         </div>
@@ -59,10 +59,10 @@
                     <!-- Botões de ação -->
                     <div class="flex justify-center space-x-3 mt-4">
                         <button wire:click="dismissUpdate" class="py-2 px-4 text-gray-600 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm">
-                            Lembrar depois
+                            Remind me later
                         </button>
                         <button wire:click="goToUpdatePage" class="py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm">
-                            Atualizar agora
+                            Update now
                         </button>
                     </div>
 
