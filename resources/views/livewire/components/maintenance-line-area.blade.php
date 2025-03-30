@@ -73,8 +73,19 @@
             </div>
         </div>
 
-        <!-- Areas Table -->
-        <div class="{{ $activeTab === 'areas' ? '' : 'hidden' }}">
+        <!-- Areas Tab -->
+        <div class="{{ $activeTab === 'areas' ? 'block' : 'hidden' }}">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700">Area Management</h2>
+                </div>
+                @if($this->canCreateArea())
+                <button type="button" wire:click="openCreateAreaModal" class="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    <i class="fas fa-plus mr-2"></i> New Area
+                </button>
+                @endif
+            </div>
+
             <div class="overflow-x-auto bg-white rounded-lg shadow">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -106,14 +117,19 @@
                                     {{ $area->description }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                    @if($this->canEditArea())
                                     <button type="button" class="text-blue-600 hover:text-blue-900 mx-2 text-lg"
                                         wire:click="editArea({{ $area->id }})" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    @endif
+
+                                    @if($this->canDeleteArea())
                                     <button type="button" class="text-red-600 hover:text-red-900 mx-2 text-lg"
                                         wire:click="confirmDeleteArea({{ $area->id }})" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -139,8 +155,19 @@
             </div>
         </div>
 
-        <!-- Lines Table -->
-        <div class="{{ $activeTab === 'lines' ? '' : 'hidden' }}">
+        <!-- Lines Tab -->
+        <div class="{{ $activeTab === 'lines' ? 'block' : 'hidden' }}">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700">Line Management</h2>
+                </div>
+                @if($this->canCreateLine())
+                <button type="button" wire:click="openCreateLineModal" class="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    <i class="fas fa-plus mr-2"></i> New Line
+                </button>
+                @endif
+            </div>
+
             <div class="overflow-x-auto bg-white rounded-lg shadow">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -172,14 +199,19 @@
                                     {{ $line->description }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                    @if($this->canEditLine())
                                     <button type="button" class="text-blue-600 hover:text-blue-900 mx-2 text-lg"
                                         wire:click="editLine({{ $line->id }})" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    @endif
+
+                                    @if($this->canDeleteLine())
                                     <button type="button" class="text-red-600 hover:text-red-900 mx-2 text-lg"
                                         wire:click="confirmDeleteLine({{ $line->id }})" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -380,7 +412,7 @@
                         </button>
                         <button type="button"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
-                            wire:click="deleteConfirmed">
+                            wire:click="delete">
                             <i class="fas fa-trash-alt mr-1"></i> Delete
                         </button>
                     </div>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} - Sistema de Manutenção</title>
+    <title>{{ config('app.name', 'Laravel') }} - Maintenance System</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -15,10 +15,38 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Toastr CSS e JS -->
+    <!-- Toastr CSS and JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <!-- Custom Toastr Styling -->
+    <style>
+        /* Make error notifications more visible */
+        .toast-error {
+            background-color: #e53e3e !important; /* Bright red */
+            opacity: 1 !important;
+        }
+        .toast-info {
+            background-color: #3498db !important; /* Brighter blue */
+            opacity: 1 !important;
+        }
+        .toast-success {
+            background-color: #10b981 !important; /* Brighter green */
+            opacity: 1 !important;
+        }
+        .toast-warning {
+            background-color: #f59e0b !important; /* Brighter orange */
+            opacity: 1 !important;
+        }
+        .toast-message {
+            font-size: 14px !important;
+            font-weight: 500 !important;
+        }
+        .toast-title {
+            font-weight: 600 !important;
+        }
+    </style>
 
     <!-- FullCalendar Core -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
@@ -35,7 +63,7 @@
     <!-- FullCalendar Locale -->
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/pt-br.global.min.js'></script>
 
-    <!-- Chart.js - MOVIDO AQUI PARA EVITAR DUPLICAÇÃO -->
+    <!-- Chart.js - MOVED HERE TO AVOID DUPLICATION -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
     <style>
@@ -45,14 +73,15 @@
             width: 255px;
             height: 100vh;
             position: fixed;
-            background-color: #f8f9fa;
+            background-color: #ffffff;
             z-index: 10;
             overflow-y: auto;
-            box-shadow: 1px 0 5px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         .main-content {
             margin-left: 255px;
+            background-color: #f9fafb;
         }
 
         .sidebar-header {
@@ -74,7 +103,7 @@
             display: flex;
             align-items: center;
             padding: 12px 20px;
-            color: #5a6268;
+            color: #4b5563;
             transition: all 0.2s;
             cursor: pointer;
             border-bottom: 1px solid rgba(0,0,0,0.05);
@@ -83,46 +112,48 @@
         }
 
         .sidebar-menu-item:hover {
-            background-color: rgba(0,0,0,0.02);
+            background-color: #f3f4f6;
+            color: #4f46e5;
         }
 
         .sidebar-menu-item.active {
-            background-color: #e9ecef;
+            background-color: #f3f4f6;
             color: #4f46e5;
+            border-left: 3px solid #4f46e5;
         }
 
         .sidebar-menu-item i {
             margin-right: 12px;
             width: 20px;
             text-align: center;
-            color: #6c757d;
         }
 
         .sidebar-submenu-item {
             display: flex;
             align-items: center;
             padding: 10px 16px 10px 46px;
-            color: #666;
+            color: #4b5563;
             transition: all 0.2s;
             cursor: pointer;
             font-size: 14px;
         }
 
         .sidebar-submenu-item:hover {
-            background-color: rgba(0,0,0,0.02);
+            background-color: #f3f4f6;
+            color: #4f46e5;
         }
 
         .sidebar-submenu-item.active {
             color: #4f46e5;
             font-weight: 500;
-            background-color: rgba(79, 70, 229, 0.1);
+            background-color: #eff6ff;
+            border-left: 3px solid #4f46e5;
         }
 
         .sidebar-submenu-item i {
             margin-right: 12px;
             width: 20px;
             text-align: center;
-            color: #6c757d;
         }
 
         .sidebar-submenu {
@@ -134,7 +165,7 @@
         }
 
         .sidebar-submenu.open {
-            max-height: 1000px; /* Arbitrary large value */
+            max-height: 1500px; /* Increased to accommodate all items */
         }
 
         .dropdown-indicator {
@@ -334,38 +365,39 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
-            background-color: #f5f5f5;
+            background-color: #f9fafb;
         }
 
         .sidebar-nested-submenu.open {
-            max-height: 1000px; /* Arbitrary large value */
+            max-height: 1500px; /* Increased to accommodate all items */
         }
 
         .sidebar-nested-submenu-item {
             display: flex;
             align-items: center;
-            padding: 10px 16px 10px 56px;
-            color: #666;
+            padding: 8px 16px 8px 60px;
+            color: #4b5563;
             transition: all 0.2s;
             cursor: pointer;
             font-size: 13px;
         }
 
         .sidebar-nested-submenu-item:hover {
-            background-color: rgba(0,0,0,0.03);
+            background-color: #f3f4f6;
+            color: #4f46e5;
         }
 
         .sidebar-nested-submenu-item.active {
             color: #4f46e5;
             font-weight: 500;
-            background-color: rgba(79, 70, 229, 0.05);
+            background-color: #eff6ff;
+            border-left: 3px solid #4f46e5;
         }
 
         .sidebar-nested-submenu-item i {
             margin-right: 12px;
             width: 16px;
             text-align: center;
-            color: #6c757d;
         }
     </style>
 
@@ -373,254 +405,320 @@
     @stack('styles')
 </head>
 <body class="font-sans antialiased bg-gray-100">
-    <!-- Notificação de atualização (modal popup) -->
+    <!-- Update notification (modal popup) -->
     @livewire('components.update-notification')
 
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar bg-white shadow-md">
         <div class="sidebar-header">
             <div class="flex items-center">
-                <i class="far fa-clipboard"></i>
-                <span>Maintenance MS</span>
+                <i class="fas fa-cogs text-indigo-600"></i>
+                <span class="ml-2 font-semibold text-gray-800">Maintenance MS</span>
             </div>
-            <i class="fas fa-angle-left cursor-pointer"></i>
+            <i class="fas fa-angle-left cursor-pointer text-gray-500 hover:text-indigo-600 transition duration-200"></i>
         </div>
 
-        <div class="sidebar-menu-item" id="maintenanceMenu">
-            <i class="fas fa-wrench"></i>
+        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="maintenanceMenu">
+            <i class="fas fa-wrench text-indigo-500"></i>
             <span>Maintenance</span>
-            <i class="fas fa-chevron-down dropdown-indicator ml-auto"></i>
+            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
         </div>
 
         <div class="sidebar-submenu" id="maintenanceSubmenu">
-            <a href="{{ route('maintenance.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.dashboard') ? 'active' : '' }}">
-                <i class="fas fa-th"></i>
+            <a href="{{ route('maintenance.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-th text-gray-500"></i>
                 <span>Dashboard</span>
             </a>
 
-            <a href="{{ route('maintenance.plan') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.plan') ? 'active' : '' }}">
-                <i class="far fa-calendar-alt"></i>
+            @can('preventive.view')
+            <a href="{{ route('maintenance.plan') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.plan') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="far fa-calendar-alt text-gray-500"></i>
                 <span>Maintenance Plan</span>
             </a>
+            @endcan
 
-            <a href="{{ route('maintenance.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.equipment') ? 'active' : '' }}">
-                <i class="fas fa-wrench"></i>
+            @can('equipment.view')
+            <a href="{{ route('maintenance.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-wrench text-gray-500"></i>
                 <span>Equipment Management</span>
             </a>
 
-            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }}">
-                <i class="fas fa-tools"></i>
+            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tools text-gray-500"></i>
                 <span>Equipment Parts</span>
             </a>
+            @endcan
 
-            <a href="{{ route('maintenance.linearea') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.linearea') ? 'active' : '' }}">
-                <i class="fas fa-project-diagram"></i>
+            @can('areas.view')
+            <a href="{{ route('maintenance.linearea') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.linearea') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-project-diagram text-gray-500"></i>
                 <span>Line & Area</span>
             </a>
+            @endcan
 
-            <a href="{{ route('maintenance.task') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.task') ? 'active' : '' }}">
-                <i class="fas fa-tasks"></i>
+            @can('preventive.view')
+            <a href="{{ route('maintenance.task') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.task') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tasks text-gray-500"></i>
                 <span>Task Management</span>
             </a>
+            @endcan
 
-            <a href="{{ route('maintenance.corrective') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.corrective') ? 'active' : '' }}">
-                <i class="fas fa-wrench"></i>
+            @can('corrective.view')
+            <a href="{{ route('maintenance.corrective') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.corrective') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-wrench text-gray-500"></i>
                 <span>Corrective Maintenance</span>
             </a>
 
+            @can('corrective.manage')
             <!-- Maintenance Settings Submenu -->
-            <div class="sidebar-submenu-item" id="maintenanceSettingsMenu">
-                <i class="fas fa-cogs"></i>
+            <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="maintenanceSettingsMenu">
+                <i class="fas fa-cogs text-gray-500"></i>
                 <span>Maintenance Corrective Settings</span>
-                <i class="fas fa-chevron-down dropdown-indicator ml-auto"></i>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
             </div>
 
             <div class="sidebar-nested-submenu" id="maintenanceSettingsSubmenu">
-                <a href="{{ route('maintenance.failure-modes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-modes') ? 'active' : '' }}">
-                    <i class="fas fa-exclamation-triangle"></i>
+                <a href="{{ route('maintenance.failure-modes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-modes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-exclamation-triangle text-gray-500"></i>
                     <span>Failure Modes</span>
                 </a>
-                <a href="{{ route('maintenance.failure-mode-categories') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-mode-categories') ? 'active' : '' }}">
-                    <i class="fas fa-tags"></i>
+                <a href="{{ route('maintenance.failure-mode-categories') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-mode-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-tags text-gray-500"></i>
                     <span>Failure Mode Categories</span>
                 </a>
-                <a href="{{ route('maintenance.failure-causes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-causes') ? 'active' : '' }}">
-                    <i class="fas fa-question-circle"></i>
+                <a href="{{ route('maintenance.failure-causes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-causes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-question-circle text-gray-500"></i>
                     <span>Failure Causes</span>
                 </a>
-                <a href="{{ route('maintenance.failure-cause-categories') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }}">
-                    <i class="fas fa-sitemap"></i>
+                <a href="{{ route('maintenance.failure-cause-categories') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-sitemap text-gray-500"></i>
                     <span>Failure Cause Categories</span>
                 </a>
             </div>
+            @endcan
+            @endcan
 
-            <a href="{{ route('maintenance.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.reports') ? 'active' : '' }}">
-                <i class="fas fa-chart-bar"></i>
-                <span>Reports & History</span>
-            </a>
-
-            <a href="{{ route('maintenance.users') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.users') ? 'active' : '' }}">
-                <i class="fas fa-users"></i>
+            @can('users.manage')
+            <a href="{{ route('maintenance.users') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.users') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-users text-gray-500"></i>
                 <span>User Management</span>
             </a>
+            @endcan
 
-            <a href="{{ route('maintenance.roles') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.roles') ? 'active' : '' }}">
-                <i class="fas fa-shield-alt"></i>
+            @can('roles.manage')
+            <a href="{{ route('maintenance.roles') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.roles') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-shield-alt text-gray-500"></i>
                 <span>Role Permissions</span>
             </a>
+            @endcan
 
-            <a href="{{ route('maintenance.holidays') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.holidays') ? 'active' : '' }}">
-                <i class="far fa-calendar"></i>
+            @can('settings.manage')
+            <a href="{{ route('maintenance.holidays') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.holidays') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="far fa-calendar text-gray-500"></i>
                 <span>Holidays</span>
             </a>
+            @endcan
 
+            @can('reports.view')
             <!-- Replace the existing Reports & History link with a submenu -->
-            <div class="sidebar-submenu-item" id="reportsHistoryMenu">
-                <i class="fas fa-chart-bar"></i>
+            <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="reportsHistoryMenu">
+                <i class="fas fa-chart-bar text-gray-500"></i>
                 <span>Reports & History</span>
-                <i class="fas fa-chevron-down dropdown-indicator ml-auto"></i>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
             </div>
 
             <!-- Reports & History Submenu -->
             <div class="sidebar-nested-submenu" id="reportsHistorySubmenu">
                 <!-- Equipment Performance Reports -->
-                <a href="{{ route('reports.equipment.availability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.availability') ? 'active' : '' }}">
-                    <i class="fas fa-chart-line"></i>
+                <a href="{{ route('reports.equipment.availability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.availability') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-chart-line text-gray-500"></i>
                     <span>Equipment Availability</span>
                 </a>
-                <a href="{{ route('reports.equipment.reliability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.reliability') ? 'active' : '' }}">
-                    <i class="fas fa-heartbeat"></i>
+                <a href="{{ route('reports.equipment.reliability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.reliability') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-heartbeat text-gray-500"></i>
                     <span>Equipment Reliability</span>
                 </a>
 
                 <!-- Maintenance Effectiveness Reports -->
-                <a href="{{ route('reports.maintenance.types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.types') ? 'active' : '' }}">
-                    <i class="fas fa-tools"></i>
+                <a href="{{ route('reports.maintenance.types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-tools text-gray-500"></i>
                     <span>Maintenance Types</span>
                 </a>
-                <a href="{{ route('reports.maintenance.compliance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.compliance') ? 'active' : '' }}">
-                    <i class="fas fa-clipboard-check"></i>
+                <a href="{{ route('reports.maintenance.compliance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.compliance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-clipboard-check text-gray-500"></i>
                     <span>Maintenance Compliance</span>
                 </a>
 
                 <!-- Cost & Resource Analysis Reports -->
-                <!--<a href="{{ route('reports.cost.analysis') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.cost.analysis') ? 'active' : '' }}">
-                    <i class="fas fa-dollar-sign"></i>
-                    <span>Cost Analysis</span>
-                </a>-->
-                <a href="{{ route('reports.resource.utilization') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.resource.utilization') ? 'active' : '' }}">
-                    <i class="fas fa-users-cog"></i>
+                <a href="{{ route('reports.resource.utilization') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.resource.utilization') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-users-cog text-gray-500"></i>
                     <span>Resource Utilization</span>
                 </a>
 
                 <!-- Failure Analysis Reports -->
-                <a href="{{ route('reports.failure.analysis') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.failure.analysis') ? 'active' : '' }}">
-                    <i class="fas fa-exclamation-triangle"></i>
+                <a href="{{ route('reports.failure.analysis') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.failure.analysis') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-exclamation-triangle text-gray-500"></i>
                     <span>Root Cause Analysis</span>
                 </a>
-                <a href="{{ route('reports.downtime.impact') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.downtime.impact') ? 'active' : '' }}">
-                    <i class="fas fa-hourglass-half"></i>
+                <a href="{{ route('reports.downtime.impact') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.downtime.impact') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-hourglass-half text-gray-500"></i>
                     <span>Downtime Impact</span>
                 </a>
 
                 <!-- History Tracking Components -->
-                <a href="{{ route('history.equipment.timeline') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.equipment.timeline') ? 'active' : '' }}">
-                    <i class="fas fa-history"></i>
+                <a href="{{ route('history.equipment.timeline') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.equipment.timeline') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-history text-gray-500"></i>
                     <span>Equipment Timeline</span>
                 </a>
-                <a href="{{ route('history.maintenance.audit') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.maintenance.audit') ? 'active' : '' }}">
-                    <i class="fas fa-clipboard-list"></i>
+                <a href="{{ route('history.maintenance.audit') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.maintenance.audit') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-clipboard-list text-gray-500"></i>
                     <span>Maintenance Audit Log</span>
                 </a>
-                <a href="{{ route('history.parts.lifecycle') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.parts.lifecycle') ? 'active' : '' }}">
-                    <i class="fas fa-cogs"></i>
+                <a href="{{ route('history.parts.lifecycle') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.parts.lifecycle') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-cogs text-gray-500"></i>
                     <span>Part/Supply Lifecycle</span>
                 </a>
-                <a href="{{ route('history.team.performance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.team.performance') ? 'active' : '' }}">
-                    <i class="fas fa-user-clock"></i>
+                <a href="{{ route('history.team.performance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.team.performance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-user-clock text-gray-500"></i>
                     <span>Team Performance</span>
                 </a>
             </div>
+            @endcan
 
-            <a href="{{ route('maintenance.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }}">
-                <i class="fas fa-cog"></i>
+            @can('settings.manage')
+            <a href="{{ route('maintenance.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-cog text-gray-500"></i>
                 <span>Settings</span>
             </a>
+            @endcan
         </div>
 
-        <div class="sidebar-menu-item" id="supplyChainMenu">
-            <i class="fas fa-truck"></i>
+        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="supplyChainMenu">
+            <i class="fas fa-truck text-indigo-500"></i>
             <span>Supply Chain</span>
-            <i class="fas fa-chevron-down dropdown-indicator ml-auto"></i>
+            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
         </div>
 
         <div class="sidebar-submenu" id="supplyChainSubmenu">
             <!-- Supply Chain submenu items will go here -->
         </div>
 
-        <!--<div class="user-info">
-            <div class="user-avatar">MS</div>
-            <div class="user-details">
-                <div class="user-name">Maintenance System</div>
-                <div class="user-role">Admin</div>
+        <!-- Moved user info to footer of sidebar
+        <div class="absolute bottom-0 w-full border-t border-gray-100">
+            <div class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 transition duration-200">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold shadow-sm">
+                    {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
+                </div>
+                <div class="ml-3 truncate">
+                    <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
+                    <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'No role' }}</div>
+                </div>
+                <form method="POST" action="{{ route('logout') }}" class="ml-auto">
+                    @csrf
+                    <button type="submit" class="text-gray-400 hover:text-red-500 transition duration-200">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
             </div>
-            <i class="fas fa-sign-out-alt ml-auto" style="color: #6c757d;"></i>
         </div>-->
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
         <!-- Header -->
-        <div class="header sticky top-0 z-10">
+        <div class="header sticky top-0 z-10 shadow-sm">
             <div>
-                <h1 class="text-xl font-semibold">{{ $title ?? 'Maintenance Dashboard' }}</h1>
+                <h1 class="text-xl font-semibold text-gray-800">{{ $title ?? 'Maintenance Dashboard' }}</h1>
             </div>
 
             <div class="flex items-center space-x-4">
                 <!-- Search -->
                 <div class="relative">
-                    <input type="text" placeholder="Search equipment, tasks..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="text" placeholder="Search equipment, tasks..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 hover:bg-white transition duration-200">
                     <div class="absolute left-3 top-2.5 text-gray-400">
                         <i class="fas fa-search"></i>
                     </div>
                 </div>
 
-                <!-- Verificador de atualizações -->
+                <!-- Update checker -->
                 @livewire('components.update-checker')
 
                 <!-- Notification -->
-                <div class="relative">
-                    <button class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                        <i class="far fa-bell text-xl"></i>
-                        <span class="badge">3</span>
+                <div class="relative" x-data="{ showNotifications: false }">
+                    <button @click="showNotifications = !showNotifications" class="relative p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition duration-200 focus:outline-none">
+                        <i class="far fa-bell text-lg"></i>
+                        @if(true) <!-- Replace with actual notification count condition -->
+                        <span class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">3</span>
+                        @endif
                     </button>
+
+                    <!-- Notifications dropdown -->
+                    <div x-show="showNotifications" @click.away="showNotifications = false" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                        <div class="py-2 px-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                            <h3 class="text-sm font-semibold text-gray-700">Notifications</h3>
+                            <span class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">Mark all as read</span>
+                        </div>
+
+                        <div class="max-h-72 overflow-y-auto">
+                            <!-- Notification items go here -->
+                            <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150">
+                                <p class="text-sm text-gray-800 font-medium">Maintenance task due</p>
+                                <p class="text-xs text-gray-500 mt-1">Equipment #123 requires scheduled maintenance</p>
+                                <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                            </div>
+                            <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150">
+                                <p class="text-sm text-gray-800 font-medium">New corrective task assigned</p>
+                                <p class="text-xs text-gray-500 mt-1">You've been assigned to a new urgent task</p>
+                                <p class="text-xs text-gray-400 mt-1">Yesterday</p>
+                            </div>
+                            <div class="px-4 py-3 hover:bg-gray-50 transition duration-150">
+                                <p class="text-sm text-gray-800 font-medium">System update complete</p>
+                                <p class="text-xs text-gray-500 mt-1">The system has been updated to version 2.3.0</p>
+                                <p class="text-xs text-gray-400 mt-1">3 days ago</p>
+                            </div>
+                        </div>
+
+                        <div class="py-2 px-3 bg-gray-50 border-t border-gray-200 text-center">
+                            <a href="#" class="text-xs text-indigo-600 hover:text-indigo-800">View all notifications</a>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- User Menu -->
-                <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none">
-                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
-                            C
+                <div class="relative flex items-center" x-data="{ open: false }">
+                    <!-- User info visible in header -->
+                    <div class="flex items-center mr-2">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shadow-sm">
+                            {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
                         </div>
-                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        <div class="ml-2 hidden md:block">
+                            <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
+                            <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'No role' }}</div>
+                        </div>
+                    </div>
+
+                    <button @click="open = !open" class="text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition duration-200">
+                        <i class="fas fa-chevron-down text-xs"></i>
                     </button>
 
                     <!-- User Dropdown -->
-                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-                        <div class="py-2 px-4 border-b">
-                            <div class="text-sm font-medium">carlosfox1782</div>
-                            <div class="text-xs text-gray-500">Maintenance Manager</div>
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-40 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                        <div class="py-3 border-b border-gray-100 md:hidden">
+                            <div class="px-4">
+                                <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
+                                <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'Not defined' }}</div>
+                            </div>
                         </div>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            Meu Perfil
+                        <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
+                            <i class="fas fa-user-circle mr-3 text-gray-500"></i> My Profile
                         </a>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            Configurações
+                        <a href="{{ route('settings.system') }}" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
+                            <i class="fas fa-cog mr-3 text-gray-500"></i> Settings
                         </a>
-                        <form method="POST" action="#">
+                        <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100">
                             @csrf
-                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                Sair
+                            <button type="submit" class="flex items-center w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors duration-150">
+                                <i class="fas fa-sign-out-alt mr-3 text-red-500"></i> Log Out
                             </button>
                         </form>
                     </div>
@@ -635,43 +733,54 @@
     </div>
 
     <script>
-        // Toggle for maintenance menu
-        document.getElementById('maintenanceMenu').addEventListener('click', function() {
-            const submenu = document.getElementById('maintenanceSubmenu');
-            const indicator = this.querySelector('.dropdown-indicator');
-
-            submenu.classList.toggle('open');
-            indicator.classList.toggle('open');
-        });
-
-        // Toggle for supply chain menu
-        document.getElementById('supplyChainMenu').addEventListener('click', function() {
-            const submenu = document.getElementById('supplyChainSubmenu');
-            const indicator = this.querySelector('.dropdown-indicator');
-
-            submenu.classList.toggle('open');
-            indicator.classList.toggle('open');
-        });
-
-        // Toggle for maintenance settings submenu
-        document.getElementById('maintenanceSettingsMenu').addEventListener('click', function(e) {
-            e.stopPropagation(); // Evitar que o clique propague para outros elementos
-            const submenu = document.getElementById('maintenanceSettingsSubmenu');
-            const indicator = this.querySelector('.dropdown-indicator');
-
-            submenu.classList.toggle('open');
-            indicator.classList.toggle('open');
-        });
-
-        // Open relevant menus by default based on current page
         document.addEventListener('DOMContentLoaded', function() {
-            // Always open the main maintenance menu
+            // Setup menu items toggle functionality
+            document.getElementById('maintenanceMenu').addEventListener('click', function() {
+                const submenu = document.getElementById('maintenanceSubmenu');
+                const indicator = this.querySelector('.dropdown-indicator');
+                submenu.classList.toggle('open');
+                indicator.classList.toggle('open');
+            });
+
+            document.getElementById('supplyChainMenu').addEventListener('click', function() {
+                const submenu = document.getElementById('supplyChainSubmenu');
+                const indicator = this.querySelector('.dropdown-indicator');
+                submenu.classList.toggle('open');
+                indicator.classList.toggle('open');
+            });
+
+            // Fix for nested submenus - add click handlers
+            // Maintenance Settings submenu toggle
+            const maintenanceSettingsMenu = document.getElementById('maintenanceSettingsMenu');
+            if (maintenanceSettingsMenu) {
+                maintenanceSettingsMenu.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent event bubbling to parent menu
+                    const submenu = document.getElementById('maintenanceSettingsSubmenu');
+                    const indicator = this.querySelector('.dropdown-indicator');
+                    submenu.classList.toggle('open');
+                    indicator.classList.toggle('open');
+                });
+            }
+
+            // Reports & History submenu toggle
+            const reportsHistoryMenu = document.getElementById('reportsHistoryMenu');
+            if (reportsHistoryMenu) {
+                reportsHistoryMenu.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent event bubbling to parent menu
+                    const submenu = document.getElementById('reportsHistorySubmenu');
+                    const indicator = this.querySelector('.dropdown-indicator');
+                    submenu.classList.toggle('open');
+                    indicator.classList.toggle('open');
+                });
+            }
+
+            // Keep the maintenance menu always open by default
             const maintenanceSubmenu = document.getElementById('maintenanceSubmenu');
             const maintenanceIndicator = document.querySelector('#maintenanceMenu .dropdown-indicator');
             maintenanceSubmenu.classList.add('open');
             maintenanceIndicator.classList.add('open');
 
-            // Check if we're on a maintenance settings page based on route
+            // Check if we are on a corrective maintenance settings page
             const currentPath = window.location.pathname;
             const currentRouteName = "{{ Route::currentRouteName() }}";
 
@@ -692,65 +801,100 @@
                     'maintenance.corrective'
                 ].includes(currentRouteName);
 
-            // Open the maintenance settings submenu if we're on a relevant page
+            // Automatically open the settings submenu if we are on a relevant page
             if (isMaintenanceSettingsPage) {
                 const settingsSubmenu = document.getElementById('maintenanceSettingsSubmenu');
                 const settingsIndicator = document.querySelector('#maintenanceSettingsMenu .dropdown-indicator');
-                settingsSubmenu.classList.add('open');
-                settingsIndicator.classList.add('open');
+                if (settingsSubmenu && settingsIndicator) {
+                    settingsSubmenu.classList.add('open');
+                    settingsIndicator.classList.add('open');
+                }
+            }
+
+            // Check if we are on a reports or history page
+            const isReportsHistoryPage = currentRouteName && (
+                currentRouteName.startsWith('reports.') ||
+                currentRouteName.startsWith('history.')
+            );
+
+            // Automatically open the reports and history submenu if we are on a relevant page
+            if (isReportsHistoryPage) {
+                const reportsHistorySubmenu = document.getElementById('reportsHistorySubmenu');
+                const reportsHistoryIndicator = document.querySelector('#reportsHistoryMenu .dropdown-indicator');
+                if (reportsHistorySubmenu && reportsHistoryIndicator) {
+                    reportsHistorySubmenu.classList.add('open');
+                    reportsHistoryIndicator.classList.add('open');
+                }
             }
         });
-
-        // Toggle for reports & history submenu
-        document.getElementById('reportsHistoryMenu').addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent click from propagating to other elements
-            const submenu = document.getElementById('reportsHistorySubmenu');
-            const indicator = this.querySelector('.dropdown-indicator');
-
-            submenu.classList.toggle('open');
-            indicator.classList.toggle('open');
-        });
-
-        // Check if we're on a reports or history page and auto-open the menu
-        const isReportsOrHistoryPage =
-            window.location.pathname.includes('/reports') ||
-            window.location.pathname.includes('/history');
-
-        if (isReportsOrHistoryPage) {
-            const reportsHistorySubmenu = document.getElementById('reportsHistorySubmenu');
-            const reportsHistoryIndicator = document.querySelector('#reportsHistoryMenu .dropdown-indicator');
-            if (reportsHistorySubmenu && reportsHistoryIndicator) {
-                reportsHistorySubmenu.classList.add('open');
-                reportsHistoryIndicator.classList.add('open');
-            }
-        }
     </script>
 
     @livewireScripts
     @stack('scripts')
 
     <script>
-        document.addEventListener('livewire:initialized', () => {
-            // Debug: registrar quando o evento de notificação é recebido
-            Livewire.on('notify', (params) => {
-                console.log('Evento de notificação recebido:', params);
+        // Check for flash messages when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for error message in session
+            @if(session('error'))
+                if (typeof toastr !== 'undefined') {
+                    toastr.options = {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: 'toast-top-right',
+                        timeOut: 8000,
+                        extendedTimeOut: 2000,
+                        preventDuplicates: true,
+                        newestOnTop: true
+                    };
+                    toastr.error("{{ session('error') }}", 'Access Denied');
+                } else {
+                    alert("{{ session('error') }}");
+                }
+            @endif
+        });
 
-                // Verificar se o toastr está definido
+        document.addEventListener('livewire:initialized', () => {
+            // Debug: log when notification event is received
+            Livewire.on('notify', (params) => {
+                console.log('Notification event received:', params);
+
+                // Check if toastr is defined
                 if (typeof toastr === 'undefined') {
-                    console.error('Toastr não está definido!');
-                    alert(params.message); // Fallback para alert se toastr não estiver disponível
+                    console.error('Toastr is not defined!');
+                    alert(params.message || 'An error occurred'); // Add fallback message
                     return;
                 }
 
-                // Configurar o toastr
+                // Make sure we have a message
+                if (!params.message) {
+                    // Default messages based on type
+                    if (params.type === 'error') {
+                        params.message = 'You do not have permission to perform this action.';
+                    } else if (params.type === 'success') {
+                        params.message = 'Operation completed successfully.';
+                    } else if (params.type === 'warning') {
+                        params.message = 'Warning: Please check your input.';
+                    } else {
+                        params.message = 'Information notice';
+                    }
+                }
+
+                // Configure toastr with specific settings for error messages
                 toastr.options = {
                     closeButton: true,
                     progressBar: true,
                     positionClass: 'toast-top-right',
-                    timeOut: 5000
+                    timeOut: params.type === 'error' ? 8000 : 5000, // Longer display for errors
+                    preventDuplicates: true,
+                    newestOnTop: true,
+                    showEasing: 'swing',
+                    hideEasing: 'linear',
+                    showMethod: 'fadeIn',
+                    hideMethod: 'fadeOut'
                 };
 
-                // Exibir a notificação
+                // Display notification
                 if (params.type === 'success') {
                     toastr.success(params.message, params.title || 'Success');
                 } else if (params.type === 'error') {
@@ -758,15 +902,20 @@
                 } else if (params.type === 'warning') {
                     toastr.warning(params.message, params.title || 'Warning');
                 } else {
-                    toastr.info(params.message, params.title || 'Information');
+                    // If no type is specified, default to error for permission issues
+                    if (params.message.toLowerCase().includes('permission')) {
+                        toastr.error(params.message, params.title || 'Permission Denied');
+                    } else {
+                        toastr.info(params.message, params.title || 'Information');
+                    }
                 }
             });
 
-            // Monitorar envios de formulários no console
+            // Monitor form submissions in console
             document.querySelectorAll('form[wire\\:submit]').forEach(form => {
-                console.log('Form monitorado:', form);
+                console.log('Form monitored:', form);
                 form.addEventListener('submit', (e) => {
-                    console.log('Formulário enviado:', e.target);
+                    console.log('Form submitted:', e.target);
                 });
             });
         });

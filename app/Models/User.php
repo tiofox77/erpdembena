@@ -85,19 +85,6 @@ class User extends Authenticatable
         }
     }
 
-    // Verificar se o usuário tem um papel específico
-    public function hasRole($role)
-    {
-        // Usar o método do trait para verificar a role
-        if (is_string($role)) {
-            // Verificar usando o método do Spatie
-            return parent::hasRole($role);
-        }
-
-        // Fallback para a verificação antiga
-        return $this->role === $role;
-    }
-
     // Verificar se o usuário está ativo
     public function isActive()
     {

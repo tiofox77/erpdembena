@@ -14,7 +14,7 @@ class RolePermissions extends Component
 {
     use WithPagination;
 
-    // Propriedades com URL
+    // URL properties
     #[Url(history: true)]
     public $search = '';
 
@@ -24,7 +24,7 @@ class RolePermissions extends Component
     #[Url]
     public $filterPermissionGroup = '';
 
-    // Propriedades de estado
+    // State properties
     public $perPage = 30;
     public $showRoleModal = false;
     public $showPermissionModal = false;
@@ -33,7 +33,7 @@ class RolePermissions extends Component
     public $deleteType = '';
     public $deleteId = null;
 
-    // Dados de formulário
+    // Form data
     public $role = [
         'name' => '',
         'permissions' => [],
@@ -44,10 +44,31 @@ class RolePermissions extends Component
         'guard_name' => 'web',
     ];
 
-    // Propriedade temporária para edição de permissões
+    // Temporary property for permission editing
     public $selectedPermissions = [];
 
-    // Regras de validação
+    public function mount()
+    {
+        if (!auth()->user()->can('roles.manage')) {
+            return redirect()->route('maintenance.dashboard')->with('error', 'You do not have permission to access this page.');
+        }
+
+        $this->loadPermissions();
+    }
+
+    /**
+     * Load permissions data
+     */
+    protected function loadPermissions()
+    {
+        // This method is intentionally left empty as permissions
+        // are loaded through the computed properties
+        // Permission groups are loaded in getPermissionGroupsProperty
+        // Roles are loaded in getRolesProperty
+        // Permissions are loaded in getPermissionsProperty
+    }
+
+    // Validation rules
     protected function rules()
     {
         return [
@@ -57,16 +78,16 @@ class RolePermissions extends Component
         ];
     }
 
-    // Mensagens de validação
+    // Validation messages
     protected function messages()
     {
         return [
-            'role.name.required' => 'O nome da função é obrigatório.',
-            'permission.name.required' => 'O nome da permissão é obrigatório.',
+            'role.name.required' => 'The role name is required.',
+            'permission.name.required' => 'The permission name is required.',
         ];
     }
 
-    // Agrupa permissões por módulo para facilitar visualização
+    // Group permissions by module for easier viewing
     #[Computed]
     public function getPermissionGroupsProperty()
     {
@@ -88,14 +109,14 @@ class RolePermissions extends Component
         return $groups;
     }
 
-    // Lista de grupos de permissões para filtro
+    // List of permission groups for filtering
     #[Computed]
     public function getPermissionGroupNamesProperty()
     {
         return array_keys($this->permissionGroups);
     }
 
-    // Lista de roles paginada
+    // Paginated list of roles
     #[Computed]
     public function getRolesProperty()
     {
@@ -107,7 +128,7 @@ class RolePermissions extends Component
             ->paginate($this->perPage);
     }
 
-    // Lista de permissões paginada
+    // Paginated list of permissions
     #[Computed]
     public function getPermissionsProperty()
     {
@@ -121,7 +142,7 @@ class RolePermissions extends Component
             ->paginate($this->perPage);
     }
 
-    // Abrir modal para criar role
+    // Open modal to create role
     public function openCreateRoleModal()
     {
         $this->reset('role', 'selectedPermissions');
@@ -129,7 +150,7 @@ class RolePermissions extends Component
         $this->showRoleModal = true;
     }
 
-    // Abrir modal para editar role
+    // Open modal to edit role
     public function editRole($id)
     {
         try {
@@ -139,18 +160,18 @@ class RolePermissions extends Component
                 'name' => $role->name,
             ];
 
-            // Preencher as permissões selecionadas
+            // Fill in selected permissions
             $this->selectedPermissions = $role->permissions->pluck('id')->toArray();
 
             $this->isEditing = true;
             $this->showRoleModal = true;
         } catch (\Exception $e) {
-            Log::error('Erro ao editar função: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Função não encontrada.');
+            Log::error('Error editing role: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Role not found.');
         }
     }
 
-    // Salvar role (criar ou atualizar)
+    // Save role (create or update)
     public function saveRole()
     {
         $this->validate([
@@ -158,15 +179,27 @@ class RolePermissions extends Component
         ]);
 
         try {
+            // Check if selectedPermissions contains valid IDs
+            if (!empty($this->selectedPermissions)) {
+                // Filter only valid numeric IDs
+                $this->selectedPermissions = array_filter($this->selectedPermissions, function($id) {
+                    return is_numeric($id);
+                });
+
+                // Check if permissions exist in the database
+                $validPermissionIds = Permission::whereIn('id', $this->selectedPermissions)->pluck('id')->toArray();
+                $this->selectedPermissions = $validPermissionIds;
+            }
+
             if ($this->isEditing) {
                 $role = Role::findOrFail($this->role['id']);
                 $role->name = $this->role['name'];
                 $role->save();
 
-                // Sincronizar permissões
+                // Sync permissions with valid IDs
                 $role->syncPermissions($this->selectedPermissions);
 
-                $message = 'Função atualizada com sucesso.';
+                $message = 'Role updated successfully.';
                 $notificationType = 'info';
             } else {
                 $role = Role::create([
@@ -174,10 +207,12 @@ class RolePermissions extends Component
                     'guard_name' => 'web',
                 ]);
 
-                // Atribuir permissões
-                $role->syncPermissions($this->selectedPermissions);
+                // Assign permissions with valid IDs
+                if (!empty($this->selectedPermissions)) {
+                    $role->syncPermissions($this->selectedPermissions);
+                }
 
-                $message = 'Função criada com sucesso.';
+                $message = 'Role created successfully.';
                 $notificationType = 'success';
             }
 
@@ -185,12 +220,13 @@ class RolePermissions extends Component
             $this->showRoleModal = false;
             $this->reset('role', 'selectedPermissions');
         } catch (\Exception $e) {
-            Log::error('Erro ao salvar função: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Erro ao salvar função: ' . $e->getMessage());
+            Log::error('Error saving role: ' . $e->getMessage());
+            Log::error('selectedPermissions: ' . json_encode($this->selectedPermissions));
+            $this->dispatch('notify', type: 'error', message: 'Error saving role: ' . $e->getMessage());
         }
     }
 
-    // Abrir modal para criar permissão
+    // Open modal to create permission
     public function openCreatePermissionModal()
     {
         $this->reset('permission');
@@ -198,7 +234,7 @@ class RolePermissions extends Component
         $this->showPermissionModal = true;
     }
 
-    // Abrir modal para editar permissão
+    // Open modal to edit permission
     public function editPermission($id)
     {
         try {
@@ -212,12 +248,12 @@ class RolePermissions extends Component
             $this->isEditing = true;
             $this->showPermissionModal = true;
         } catch (\Exception $e) {
-            Log::error('Erro ao editar permissão: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Permissão não encontrada.');
+            Log::error('Error editing permission: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Permission not found.');
         }
     }
 
-    // Salvar permissão (criar ou atualizar)
+    // Save permission (create or update)
     public function savePermission()
     {
         $this->validate([
@@ -232,7 +268,7 @@ class RolePermissions extends Component
                 $permission->guard_name = $this->permission['guard_name'];
                 $permission->save();
 
-                $message = 'Permissão atualizada com sucesso.';
+                $message = 'Permission updated successfully.';
                 $notificationType = 'info';
             } else {
                 Permission::create([
@@ -240,7 +276,7 @@ class RolePermissions extends Component
                     'guard_name' => $this->permission['guard_name'],
                 ]);
 
-                $message = 'Permissão criada com sucesso.';
+                $message = 'Permission created successfully.';
                 $notificationType = 'success';
             }
 
@@ -248,12 +284,12 @@ class RolePermissions extends Component
             $this->showPermissionModal = false;
             $this->reset('permission');
         } catch (\Exception $e) {
-            Log::error('Erro ao salvar permissão: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Erro ao salvar permissão: ' . $e->getMessage());
+            Log::error('Error saving permission: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Error saving permission: ' . $e->getMessage());
         }
     }
 
-    // Abrir modal de confirmação de exclusão
+    // Open delete confirmation modal
     public function confirmDelete($id, $type)
     {
         $this->deleteId = $id;
@@ -261,36 +297,36 @@ class RolePermissions extends Component
         $this->showDeleteModal = true;
     }
 
-    // Processar exclusão confirmada
+    // Process confirmed deletion
     public function deleteConfirmed()
     {
         try {
             if ($this->deleteType === 'role') {
                 $role = Role::findOrFail($this->deleteId);
 
-                // Evitar exclusão de funções críticas
+                // Prevent deletion of critical roles
                 if (in_array($role->name, ['super-admin', 'admin'])) {
-                    throw new \Exception('Não é possível excluir funções do sistema.');
+                    throw new \Exception('Cannot delete system roles.');
                 }
 
                 $role->delete();
-                $message = 'Função excluída com sucesso.';
+                $message = 'Role deleted successfully.';
             } else if ($this->deleteType === 'permission') {
                 $permission = Permission::findOrFail($this->deleteId);
                 $permission->delete();
-                $message = 'Permissão excluída com sucesso.';
+                $message = 'Permission deleted successfully.';
             }
 
             $this->dispatch('notify', type: 'warning', message: $message);
             $this->showDeleteModal = false;
             $this->reset(['deleteId', 'deleteType']);
         } catch (\Exception $e) {
-            Log::error('Erro ao excluir ' . $this->deleteType . ': ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Erro ao excluir: ' . $e->getMessage());
+            Log::error('Error deleting ' . $this->deleteType . ': ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Error deleting: ' . $e->getMessage());
         }
     }
 
-    // Fechar modais
+    // Close modals
     public function closeModal()
     {
         $this->showRoleModal = false;
@@ -299,7 +335,7 @@ class RolePermissions extends Component
         $this->reset(['role', 'permission', 'selectedPermissions', 'deleteId', 'deleteType']);
     }
 
-    // Método para validação em tempo real
+    // Method for real-time validation
     public function updated($propertyName)
     {
         $this->validateOnly($propertyName);

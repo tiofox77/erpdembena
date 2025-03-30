@@ -18,8 +18,8 @@ class RolePermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Criar permissões por módulo
-        // Permissões para Equipamentos
+        // Create permissions by module
+        // Equipment permissions
         $equipmentPermissions = [
             'equipment.view',
             'equipment.create',
@@ -29,7 +29,7 @@ class RolePermissionSeeder extends Seeder
             'equipment.export',
         ];
 
-        // Permissões para Manutenção Preventiva
+        // Preventive Maintenance permissions
         $preventivePermissions = [
             'preventive.view',
             'preventive.create',
@@ -39,37 +39,41 @@ class RolePermissionSeeder extends Seeder
             'preventive.complete',
         ];
 
-        // Permissões para Manutenção Corretiva
+        // Corrective Maintenance permissions
         $correctivePermissions = [
             'corrective.view',
             'corrective.create',
             'corrective.edit',
             'corrective.delete',
             'corrective.complete',
+            'corrective.manage',
         ];
 
-        // Permissões para Relatórios
+        // Report permissions
         $reportPermissions = [
             'reports.view',
             'reports.export',
             'reports.dashboard',
         ];
 
-        // Permissões para Usuários e Perfis
+        // User and Role permissions
         $userPermissions = [
             'users.view',
             'users.create',
             'users.edit',
             'users.delete',
+            'users.manage',
+            'roles.manage',
         ];
 
-        // Permissões para Configurações
+        // Settings permissions
         $settingsPermissions = [
             'settings.view',
             'settings.edit',
+            'settings.manage',
         ];
 
-        // Permissões para Áreas e Linhas
+        // Areas and Lines permissions
         $areaLinePermissions = [
             'areas.view',
             'areas.create',
@@ -81,7 +85,7 @@ class RolePermissionSeeder extends Seeder
             'lines.delete',
         ];
 
-        // Juntar todas as permissões
+        // Merge all permissions
         $allPermissions = array_merge(
             $equipmentPermissions,
             $preventivePermissions,
@@ -92,22 +96,22 @@ class RolePermissionSeeder extends Seeder
             $areaLinePermissions
         );
 
-        // Criar permissões no banco de dados
+        // Create permissions in database (using firstOrCreate to avoid duplicates)
         foreach ($allPermissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission], ['guard_name' => 'web']);
         }
 
-        // Criar roles
-        // Super Admin - tem todas as permissões
-        $superAdminRole = Role::create(['name' => 'super-admin']);
-        $superAdminRole->givePermissionTo(Permission::all());
+        // Create roles (only if they don't exist)
+        // Super Admin - has all permissions
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
+        $superAdminRole->syncPermissions(Permission::all());
 
-        // Admin - pode gerenciar quase tudo, exceto permissões de super admin
-        $adminRole = Role::create(['name' => 'admin']);
-        $adminRole->givePermissionTo(array_diff($allPermissions, ['users.delete']));
+        // Admin - can manage almost everything, except super admin permissions
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $adminRole->syncPermissions(array_diff($allPermissions, ['users.delete']));
 
-        // Manager - pode ver tudo e gerenciar algumas coisas
-        $managerRole = Role::create(['name' => 'manager']);
+        // Manager - can view everything and manage some things
+        $managerRole = Role::firstOrCreate(['name' => 'manager']);
         $managerPermissions = array_merge(
             ['equipment.view', 'equipment.edit'],
             ['preventive.view', 'preventive.edit', 'preventive.schedule', 'preventive.complete'],
@@ -117,10 +121,10 @@ class RolePermissionSeeder extends Seeder
             ['settings.view'],
             ['areas.view', 'lines.view']
         );
-        $managerRole->givePermissionTo($managerPermissions);
+        $managerRole->syncPermissions($managerPermissions);
 
-        // Technician - foco operacional
-        $technicianRole = Role::create(['name' => 'technician']);
+        // Technician - operational focus
+        $technicianRole = Role::firstOrCreate(['name' => 'technician']);
         $technicianPermissions = [
             'equipment.view',
             'preventive.view', 'preventive.complete',
@@ -128,23 +132,25 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
             'areas.view', 'lines.view'
         ];
-        $technicianRole->givePermissionTo($technicianPermissions);
+        $technicianRole->syncPermissions($technicianPermissions);
 
-        // User - acesso básico de visualização
-        $userRole = Role::create(['name' => 'user']);
+        // User - basic view access
+        $userRole = Role::firstOrCreate(['name' => 'user']);
         $userPermissions = [
             'equipment.view',
             'preventive.view',
-            'corrective.view', 'corrective.create',
-            'areas.view', 'lines.view'
+            'corrective.view',
+            'areas.view',
+            'lines.view',
+            'reports.view'
         ];
-        $userRole->givePermissionTo($userPermissions);
+        $userRole->syncPermissions($userPermissions);
 
-        // Report - apenas para visualização de relatórios
-        $reportRole = Role::create(['name' => 'report']);
-        $reportRole->givePermissionTo($reportPermissions);
+        // Report - for report viewing only
+        $reportRole = Role::firstOrCreate(['name' => 'report']);
+        $reportRole->syncPermissions($reportPermissions);
 
-        // Atribuir role super-admin para um usuário (se existir)
+        // Assign super-admin role to a user (if exists)
         $admin = User::where('email', 'admin@example.com')->first();
         if ($admin) {
             $admin->assignRole('super-admin');

@@ -69,17 +69,27 @@ class UserManagement extends Component
 
     public function mount()
     {
-        // Carregar os roles do Spatie
+        if (!auth()->user()->can('users.manage')) {
+            return redirect()->route('maintenance.dashboard')->with('error', 'You do not have permission to access this page.');
+        }
+
+        // Load roles and users data
         $this->loadRoles();
+        $this->loadUsers();
     }
 
     protected function loadRoles()
     {
-        // Carregar todos os roles do sistema
+        // Load all system roles
         $this->spatieRoles = Role::all();
 
-        // Criar um array para o select de roles
+        // Create an array for the roles select
         $this->roles = $this->spatieRoles->pluck('name', 'name')->toArray();
+    }
+
+    protected function loadUsers()
+    {
+        // This method will be called through getUsersProperty
     }
 
     // Validation rules
