@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 
 class Setting extends Model
 {
@@ -108,6 +109,12 @@ class Setting extends Model
             $castedValue = static::castValue($value, $type);
             Cache::put($cacheKey, $castedValue, static::$cacheDuration);
 
+            // Special handling for app_version
+            if ($key === 'app_version') {
+                Config::set('app.version', $castedValue);
+                Log::info("App version updated to: {$castedValue}");
+            }
+
             return true;
         } catch (\Exception $e) {
             Log::error("Error setting {$key}: " . $e->getMessage());
@@ -129,11 +136,27 @@ class Setting extends Model
             // Clear each setting cache
             foreach ($settings as $setting) {
                 Cache::forget(static::$cachePrefix . $setting->key);
+
+                // Special handling for app_version to update config
+                if ($setting->key === 'app_version') {
+                    Config::set('app.version', $setting->value);
+                    Log::info("App version updated in runtime config: {$setting->value}");
+                }
             }
 
             // Also clear the whole settings cache pattern if possible
             if (method_exists(Cache::getStore(), 'flush')) {
                 Cache::getStore()->flush();
+            }
+
+            // Sync app version in config after cache flush
+            try {
+                $appVersion = static::where('key', 'app_version')->first();
+                if ($appVersion) {
+                    Config::set('app.version', $appVersion->value);
+                }
+            } catch (\Exception $e) {
+                Log::error("Error syncing app version after cache clear: " . $e->getMessage());
             }
 
             Log::info("Settings cache cleared");

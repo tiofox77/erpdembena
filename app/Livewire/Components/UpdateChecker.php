@@ -18,7 +18,21 @@ class UpdateChecker extends Component
 
     public function mount()
     {
-        $this->currentVersion = config('app.version', '1.0.0');
+        // First try to get version from database, then fall back to config
+        try {
+            $dbVersion = Setting::get('app_version');
+            $this->currentVersion = !empty($dbVersion) ? $dbVersion : config('app.version', '1.0.0');
+
+            // Log the version being used
+            Log::info("Update checker using version: {$this->currentVersion}", [
+                'source' => !empty($dbVersion) ? 'database' : 'config'
+            ]);
+        } catch (\Exception $e) {
+            // If database error, use config version
+            $this->currentVersion = config('app.version', '1.0.0');
+            Log::warning("Error getting version from database, using config: {$this->currentVersion}");
+        }
+
         $this->getUpdateStatusFromCache();
     }
 

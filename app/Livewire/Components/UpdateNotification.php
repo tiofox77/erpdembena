@@ -5,6 +5,7 @@ namespace App\Livewire\Components;
 use Livewire\Component;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Log;
 
 class UpdateNotification extends Component
 {
@@ -23,7 +24,20 @@ class UpdateNotification extends Component
 
     public function mount()
     {
-        $this->currentVersion = config('app.version', '1.0.0');
+        // First try to get version from database, then fall back to config
+        try {
+            $dbVersion = Setting::get('app_version');
+            $this->currentVersion = !empty($dbVersion) ? $dbVersion : config('app.version', '1.0.0');
+
+            // Log the version being used
+            Log::info("Update notification using version: {$this->currentVersion}", [
+                'source' => !empty($dbVersion) ? 'database' : 'config'
+            ]);
+        } catch (\Exception $e) {
+            // If database error, use config version
+            $this->currentVersion = config('app.version', '1.0.0');
+            Log::warning("Error getting version from database, using config: {$this->currentVersion}");
+        }
 
         // Verifica se há atualização no cache
         if (Cache::has('update_status')) {
