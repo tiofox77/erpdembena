@@ -70,6 +70,7 @@ class StockOut extends Component
 
     public function mount() {
         $this->stockOut['date'] = date('Y-m-d');
+        $this->stockOut['reference_number'] = 'SO-' . date('YmdHis');
         $this->resetNewPart();
     }
 
@@ -87,30 +88,56 @@ class StockOut extends Component
             'newPart.quantity' => 'required|integer|min:1',
         ]);
 
+        // Get part details to display in the list
+        $part = EquipmentPart::find($this->newPart['equipment_part_id']);
+        
+        // Check if part exists and has stock
+        if (!$part) {
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'error',
+                'message' => 'Part not found.'
+            ]);
+            return;
+        }
+        
+        if ($part->stock_quantity < $this->newPart['quantity']) {
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'error',
+                'message' => 'Insufficient stock quantity. Only ' . $part->stock_quantity . ' available.'
+            ]);
+            return;
+        }
+
         // Check if part already exists in the list
-        foreach ($this->selectedParts as $index => $part) {
-            if ($part['equipment_part_id'] == $this->newPart['equipment_part_id']) {
+        foreach ($this->selectedParts as $index => $selectedPart) {
+            if ($selectedPart['equipment_part_id'] == $this->newPart['equipment_part_id']) {
                 // Just update the quantity
                 $this->selectedParts[$index]['quantity'] += $this->newPart['quantity'];
+                
+                // Check if the new quantity exceeds stock
+                if ($this->selectedParts[$index]['quantity'] > $part->stock_quantity) {
+                    $this->selectedParts[$index]['quantity'] = $part->stock_quantity;
+                    $this->dispatchBrowserEvent('showToast', [
+                        'type' => 'warning',
+                        'message' => 'Quantity adjusted to maximum available stock.'
+                    ]);
+                }
+                
                 $this->resetNewPart();
                 return;
             }
         }
 
-        // Get part details to display in the list
-        $part = EquipmentPart::find($this->newPart['equipment_part_id']);
-        
-        // Add the new part to the list
+        // Add new part with details
         $this->selectedParts[] = [
-            'equipment_part_id' => $this->newPart['equipment_part_id'],
-            'quantity' => $this->newPart['quantity'],
+            'equipment_part_id' => $part->id,
             'part_name' => $part->name,
             'part_number' => $part->part_number,
             'bac_code' => $part->bac_code,
-            'stock_quantity' => $part->stock_quantity
+            'quantity' => $this->newPart['quantity'],
+            'available_stock' => $part->stock_quantity
         ];
 
-        // Reset the new part form
         $this->resetNewPart();
     }
 
@@ -119,16 +146,91 @@ class StockOut extends Component
         $this->selectedParts = array_values($this->selectedParts);
     }
 
-    public function getStockOutsProperty() {
+    public function saveStockOut() {
+        $this->validate();
+        
+        DB::beginTransaction();
+        
+        try {
+            // If editing, we need to process differently - restore previous quantities first
+            if ($this->isEditing) {
+                $stockOut = StockOutModel::with('items.equipmentPart')->findOrFail($this->stockOutId);
+                
+                // First return all parts to inventory
+                foreach ($stockOut->items as $item) {
+                    $part = $item->equipmentPart;
+                    $part->stock_quantity += $item->quantity;
+                    $part->save();
+                }
+                
+                // Delete all previous items
+                $stockOut->items()->delete();
+                
+                // Update the main record
+                $stockOut->update([
+                    'date' => $this->stockOut['date'],
+                    'reason' => $this->stockOut['reason'],
+                    'notes' => $this->stockOut['notes'],
+                ]);
+            } else {
+                // Create new stock out record
+                $stockOut = StockOutModel::create([
+                    'date' => $this->stockOut['date'],
+                    'reason' => $this->stockOut['reason'],
+                    'notes' => $this->stockOut['notes'],
+                    'reference_number' => $this->stockOut['reference_number'],
+                    'user_id' => Auth::id(),
+                ]);
+            }
+            
+            // Process all selected parts
+            foreach ($this->selectedParts as $selectedPart) {
+                // Create the stock out item
+                StockOutItem::create([
+                    'stock_out_id' => $stockOut->id,
+                    'equipment_part_id' => $selectedPart['equipment_part_id'],
+                    'quantity' => $selectedPart['quantity'],
+                ]);
+                
+                // Update the part's stock quantity
+                $part = EquipmentPart::findOrFail($selectedPart['equipment_part_id']);
+                $part->stock_quantity -= $selectedPart['quantity'];
+                
+                // Ensure we don't have negative stock
+                if ($part->stock_quantity < 0) {
+                    throw new \Exception("Cannot have negative stock for part: {$part->name}");
+                }
+                
+                $part->save();
+            }
+            
+            DB::commit();
+            
+            $this->closeModal();
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'success',
+                'message' => $this->isEditing ? 'Stock out record updated successfully.' : 'Stock out record created successfully.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'error',
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getPaginatedStockOutsProperty() {
         return StockOutModel::with(['items.equipmentPart', 'user'])
             ->when($this->search, function($query) {
-                return $query->whereHas('items.equipmentPart', function($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('part_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('bac_code', 'like', '%' . $this->search . '%');
-                })
-                ->orWhere('reason', 'like', '%' . $this->search . '%')
-                ->orWhere('reference_number', 'like', '%' . $this->search . '%');
+                return $query->where(function($q) {
+                    $q->where('reference_number', 'like', '%' . $this->search . '%')
+                      ->orWhere('reason', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('items.equipmentPart', function($qr) {
+                          $qr->where('name', 'like', '%' . $this->search . '%')
+                             ->orWhere('part_number', 'like', '%' . $this->search . '%');
+                      });
+                });
             })
             ->when($this->equipmentPartId, function($query) {
                 return $query->whereHas('items', function($q) {
@@ -140,40 +242,18 @@ class StockOut extends Component
     }
 
     public function getPartsListProperty() {
-        return EquipmentPart::orderBy('name')->get();
+        return EquipmentPart::orderBy('name')
+            ->where('stock_quantity', '>', 0)
+            ->get();
     }
 
-    public function sortBy($field) {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
-        }
-    }
-
-    public function clearFilters() {
-        $this->search = '';
-        $this->equipmentPartId = '';
-        $this->resetPage();
-    }
-
-    public function openCreateModal() {
-        $this->isEditing = false;
-        $this->stockOutId = null;
-        $this->stockOut = [
-            'date' => date('Y-m-d'),
-            'reason' => '',
-            'notes' => '',
-            'reference_number' => 'SO-' . date('YmdHis'),
-        ];
-        $this->selectedParts = [];
-        $this->showModal = true;
+    public function getStockOutsProperty() {
+        return $this->getPaginatedStockOutsProperty();
     }
 
     public function editStockOut($id) {
-        $this->isEditing = true;
         $this->stockOutId = $id;
+        $this->isEditing = true;
         
         $stockOut = StockOutModel::with('items.equipmentPart')->findOrFail($id);
         
@@ -184,101 +264,20 @@ class StockOut extends Component
             'reference_number' => $stockOut->reference_number,
         ];
         
-        // Load the related parts
         $this->selectedParts = [];
         foreach ($stockOut->items as $item) {
             $this->selectedParts[] = [
                 'equipment_part_id' => $item->equipment_part_id,
-                'quantity' => $item->quantity,
                 'part_name' => $item->equipmentPart->name,
                 'part_number' => $item->equipmentPart->part_number,
                 'bac_code' => $item->equipmentPart->bac_code,
-                'stock_quantity' => $item->equipmentPart->stock_quantity
+                'quantity' => $item->quantity,
+                'available_stock' => $item->equipmentPart->stock_quantity + $item->quantity, // Add back the current quantity for proper validation
             ];
         }
         
-        $this->showViewModal = false;
         $this->showModal = true;
-    }
-
-    public function closeModal() {
-        $this->showModal = false;
-        $this->showDeleteModal = false;
-        $this->resetValidation();
-    }
-
-    public function saveStockOut() {
-        $this->validate();
-        
-        try {
-            DB::beginTransaction();
-            
-            if ($this->isEditing) {
-                // Update existing stock out
-                $stockOut = StockOutModel::findOrFail($this->stockOutId);
-                $stockOut->update([
-                    'date' => $this->stockOut['date'],
-                    'reason' => $this->stockOut['reason'],
-                    'notes' => $this->stockOut['notes'],
-                    'reference_number' => $this->stockOut['reference_number'],
-                ]);
-                
-                // Handle returning quantities from old items
-                foreach ($stockOut->items as $item) {
-                    $part = $item->equipmentPart;
-                    $part->stock_quantity += $item->quantity;
-                    $part->save();
-                }
-                
-                // Delete old items
-                $stockOut->items()->delete();
-            } else {
-                // Create new stock out
-                $stockOut = StockOutModel::create([
-                    'date' => $this->stockOut['date'],
-                    'reason' => $this->stockOut['reason'],
-                    'notes' => $this->stockOut['notes'],
-                    'reference_number' => $this->stockOut['reference_number'],
-                    'user_id' => Auth::id()
-                ]);
-            }
-            
-            // Process each selected part
-            foreach ($this->selectedParts as $partData) {
-                // Create stock out item
-                StockOutItem::create([
-                    'stock_out_id' => $stockOut->id,
-                    'equipment_part_id' => $partData['equipment_part_id'],
-                    'quantity' => $partData['quantity']
-                ]);
-                
-                // Update equipment part stock quantity
-                $part = EquipmentPart::find($partData['equipment_part_id']);
-                $part->stock_quantity -= $partData['quantity'];
-                
-                // Ensure stock doesn't go negative
-                if ($part->stock_quantity < 0) {
-                    throw new \Exception("Cannot have negative stock for part: {$part->name}");
-                }
-                
-                $part->save();
-            }
-            
-            DB::commit();
-            
-            $this->showModal = false;
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'message' => $this->isEditing ? 'Stock out updated successfully!' : 'Stock out recorded successfully!'
-            ]);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => 'Error: ' . $e->getMessage()
-            ]);
-        }
+        $this->showViewModal = false;
     }
 
     public function viewStockOut($id) {
@@ -289,6 +288,14 @@ class StockOut extends Component
     public function closeViewModal() {
         $this->showViewModal = false;
         $this->viewingStockOut = null;
+    }
+
+    public function openCreateModal() {
+        $this->reset(['stockOut', 'selectedParts', 'stockOutId', 'isEditing']);
+        $this->stockOut['date'] = date('Y-m-d');
+        $this->stockOut['reference_number'] = 'SO-' . date('YmdHis');
+        $this->resetNewPart();
+        $this->showModal = true;
     }
 
     public function confirmDelete($id) {
@@ -315,14 +322,14 @@ class StockOut extends Component
             DB::commit();
             
             $this->showDeleteModal = false;
-            $this->dispatch('notify', [
+            $this->dispatchBrowserEvent('showToast', [
                 'type' => 'success',
                 'message' => 'Stock out deleted successfully!'
             ]);
             
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('notify', [
+            $this->dispatchBrowserEvent('showToast', [
                 'type' => 'error',
                 'message' => 'Error: ' . $e->getMessage()
             ]);
@@ -370,11 +377,32 @@ class StockOut extends Component
                 }, 'stock-outs-report-' . date('Y-m-d') . '.pdf');
             }
         } catch (\Exception $e) {
-            $this->dispatch('notify', [
+            $this->dispatchBrowserEvent('showToast', [
                 'type' => 'error',
                 'message' => 'Error generating PDF: ' . $e->getMessage()
             ]);
         }
+    }
+
+    public function closeModal() {
+        $this->showModal = false;
+        $this->showDeleteModal = false;
+        $this->resetValidation();
+    }
+
+    public function sortBy($field) {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+
+    public function clearFilters() {
+        $this->search = '';
+        $this->equipmentPartId = '';
+        $this->resetPage();
     }
 
     public function render()

@@ -42,7 +42,7 @@ class SystemSettings extends Component
     public $debug_mode = false;
 
     // System Requirements
-    public $systemRequirements = [];
+    public $requirements = [];
     public $isCheckingRequirements = false;
     public $requirementsStatus = [
         'passed' => 0,
@@ -1344,25 +1344,48 @@ class SystemSettings extends Component
      */
     protected function clearCaches()
     {
-        // Clear various cache files
-        $cacheDirs = [
-            storage_path('framework/cache'),
-            storage_path('framework/views'),
-            storage_path('framework/sessions'),
-        ];
+        // Use Laravel Artisan commands for thorough cache clearing
+        try {
+            // Limpa o cache de configuração
+            Artisan::call('config:clear');
+            
+            // Limpa o cache de rotas
+            Artisan::call('route:clear');
+            
+            // Limpa o cache de visões compiladas
+            Artisan::call('view:clear');
+            
+            // Limpa o cache do aplicativo
+            Artisan::call('cache:clear');
+            
+            // Comando optimize:clear para limpar todos os caches de uma vez
+            // Este comando executa todas as limpezas acima mais 'compiled' e 'event:clear'
+            Artisan::call('optimize:clear');
+            
+            Log::info('Application caches cleared successfully after update');
+        } catch (\Exception $e) {
+            Log::error('Error clearing caches via Artisan: ' . $e->getMessage());
+            
+            // Fallback para limpeza manual do cache se Artisan falhar
+            $cacheDirs = [
+                storage_path('framework/cache'),
+                storage_path('framework/views'),
+                storage_path('framework/sessions'),
+            ];
 
-        foreach ($cacheDirs as $dir) {
-            if (is_dir($dir)) {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
-                    \RecursiveIteratorIterator::CHILD_FIRST
-                );
+            foreach ($cacheDirs as $dir) {
+                if (is_dir($dir)) {
+                    $files = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                        \RecursiveIteratorIterator::CHILD_FIRST
+                    );
 
-                foreach ($files as $file) {
-                    if ($file->isDir()) {
-                        continue;
+                    foreach ($files as $file) {
+                        if ($file->isDir()) {
+                            continue;
+                        }
+                        @unlink($file->getRealPath());
                     }
-                    @unlink($file->getRealPath());
                 }
             }
         }
@@ -1497,9 +1520,49 @@ class SystemSettings extends Component
     /**
      * Check system requirements
      */
-    public function checkSystemRequirements()
+    public function checkRequirements()
+    {
+        try {
+            Log::info('Iniciando verificação de requisitos');
+            return $this->checkSystemRequirements();
+        } catch (\Exception $e) {
+            Log::error('Erro ao verificar requisitos: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Erro ao verificar requisitos: ' . $e->getMessage());
+            $this->isCheckingRequirements = false;
+            return false;
+        }
+    }
+
+    /**
+     * Check system requirements
+     */
+    protected function checkSystemRequirements()
     {
         $this->isCheckingRequirements = true;
+        // Inicializa a estrutura de dados no formato que a view espera
+        $this->requirements = [
+            'php' => [
+                'required' => '7.4.0',
+                'current' => phpversion(),
+                'status' => version_compare(phpversion(), '7.4.0', '>=')
+            ],
+            'mysql' => [
+                'required' => '5.7.0',
+                'current' => 'Unknown', // Será atualizado abaixo
+                'status' => false
+            ],
+            'storage' => [
+                'required' => 'Writable',
+                'current' => 'Not Writable', // Será atualizado abaixo
+                'status' => false
+            ],
+            'bootstrap' => [
+                'required' => 'Writable',
+                'current' => 'Not Writable', // Será atualizado abaixo
+                'status' => false
+            ]
+        ];
+        
         $this->systemRequirements = [];
         $this->requirementsStatus = [
             'passed' => 0,
@@ -1507,161 +1570,70 @@ class SystemSettings extends Component
             'failed' => 0
         ];
 
-        // PHP Version
-        $phpVersion = phpversion();
-        $requiredPhpVersion = '8.0.0';
-        $phpVersionStatus = version_compare($phpVersion, $requiredPhpVersion, '>=') ? 'passed' : 'failed';
-        $this->addRequirement(
-            'PHP Version',
-            "PHP $requiredPhpVersion or higher required",
-            $phpVersion,
-            $phpVersionStatus,
-            true
-        );
-
-        // PHP Extensions
-        $requiredExtensions = [
-            'zip' => 'Required for backup and update functionality',
-            'curl' => 'Required for API requests and updates',
-            'pdo' => 'Required for database connections',
-            'pdo_mysql' => 'Required for MySQL database',
-            'openssl' => 'Required for secure connections',
-            'mbstring' => 'Required for UTF-8 string handling',
-            'tokenizer' => 'Required by Laravel framework',
-            'json' => 'Required for data processing',
-            'fileinfo' => 'Required for file uploads',
-            'xml' => 'Required by Laravel framework',
-            'gd' => 'Recommended for image processing',
-        ];
-
-        foreach ($requiredExtensions as $extension => $description) {
-            $isLoaded = extension_loaded($extension);
-            $isCritical = in_array($extension, ['zip', 'curl', 'pdo', 'pdo_mysql', 'openssl', 'mbstring', 'json']);
-            $status = $isLoaded ? 'passed' : ($isCritical ? 'failed' : 'warning');
-
-            $this->addRequirement(
-                "PHP Extension: $extension",
-                $description,
-                $isLoaded ? 'Installed' : 'Not installed',
-                $status,
-                $isCritical
-            );
-        }
-
-        // PHP Settings
-        $this->checkPhpSetting('max_execution_time', 60, 'seconds', 'Minimum 60 seconds recommended for updates', false);
-        $this->checkPhpSetting('memory_limit', 128, 'M', 'Minimum 128M recommended', false);
-        $this->checkPhpSetting('upload_max_filesize', 10, 'M', 'Minimum 10M recommended for file uploads', false);
-        $this->checkPhpSetting('post_max_size', 10, 'M', 'Minimum 10M recommended for form submissions', false);
-
-        // Directory Permissions
-        $this->checkDirectoryPermission(storage_path(), 'Required for file storage', true);
-        $this->checkDirectoryPermission(storage_path('app/public'), 'Required for public file access', true);
-        $this->checkDirectoryPermission(storage_path('app/backups'), 'Required for backup functionality', true);
-        $this->checkDirectoryPermission(storage_path('app/updates'), 'Required for update functionality', true);
-        $this->checkDirectoryPermission(storage_path('framework/cache'), 'Required for caching', true);
-        $this->checkDirectoryPermission(storage_path('framework/views'), 'Required for views compilation', true);
-        $this->checkDirectoryPermission(storage_path('framework/sessions'), 'Required for sessions', true);
-        $this->checkDirectoryPermission(storage_path('logs'), 'Required for logging', true);
-        $this->checkDirectoryPermission(base_path('bootstrap/cache'), 'Required by Laravel', true);
-
-        // Database Connection
         try {
-            DB::connection()->getPdo();
-            $dbConnection = DB::connection()->getDatabaseName();
-            $this->addRequirement(
-                'Database Connection',
-                'Connection to database server',
-                'Connected to: ' . $dbConnection,
-                'passed',
-                true
-            );
+            Log::debug('PHP Version: ' . $this->requirements['php']['current']);
+            
+            // A verificação do PHP já foi feita na inicialização
+            if ($this->requirements['php']['status']) {
+                $this->requirementsStatus['passed']++;
+            } else {
+                $this->requirementsStatus['failed']++;
+            }
+
+            // MySQL Version
+            try {
+                $pdo = DB::connection()->getPdo();
+                $mysqlVersion = $pdo->query('select version()')->fetchColumn();
+                Log::debug('MySQL Version: ' . $mysqlVersion);
+                
+                $this->requirements['mysql']['current'] = $mysqlVersion;
+                $this->requirements['mysql']['status'] = version_compare($mysqlVersion, '5.7.0', '>=');
+                
+                if ($this->requirements['mysql']['status']) {
+                    $this->requirementsStatus['passed']++;
+                } else {
+                    $this->requirementsStatus['failed']++;
+                }
+            } catch (\Exception $e) {
+                Log::error('Erro ao obter versão do MySQL: ' . $e->getMessage());
+                $this->requirements['mysql']['current'] = 'Unknown';
+                $this->requirements['mysql']['status'] = false;
+                $this->requirementsStatus['failed']++;
+            }
+
+            // Storage Directory
+            $storagePath = storage_path();
+            $isStorageWritable = is_writable($storagePath);
+            $this->requirements['storage']['current'] = $isStorageWritable ? 'Writable' : 'Not Writable';
+            $this->requirements['storage']['status'] = $isStorageWritable;
+            
+            if ($isStorageWritable) {
+                $this->requirementsStatus['passed']++;
+            } else {
+                $this->requirementsStatus['failed']++;
+            }
+
+            // Bootstrap Directory
+            $bootstrapPath = base_path('bootstrap/cache');
+            $isBootstrapWritable = is_writable($bootstrapPath);
+            $this->requirements['bootstrap']['current'] = $isBootstrapWritable ? 'Writable' : 'Not Writable';
+            $this->requirements['bootstrap']['status'] = $isBootstrapWritable;
+            
+            if ($isBootstrapWritable) {
+                $this->requirementsStatus['passed']++;
+            } else {
+                $this->requirementsStatus['failed']++;
+            }
+
         } catch (\Exception $e) {
-            $this->addRequirement(
-                'Database Connection',
-                'Connection to database server',
-                'Error: ' . $e->getMessage(),
-                'failed',
-                true
-            );
+            Log::error('Erro durante verificação de requisitos: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Erro durante verificação de requisitos: ' . $e->getMessage());
         }
-
-        // ZIP Archive Test
-        if (class_exists('\ZipArchive')) {
-            try {
-                $tempZipFile = storage_path('app/temp_test.zip');
-                $zip = new \ZipArchive();
-                if ($zip->open($tempZipFile, \ZipArchive::CREATE) === TRUE) {
-                    $zip->addFromString('test.txt', 'Testing zip functionality.');
-                    $zip->close();
-                    @unlink($tempZipFile); // Clean up
-                    $this->addRequirement(
-                        'ZIP Archive Test',
-                        'Ability to create and manipulate ZIP files',
-                        'Working properly',
-                        'passed',
-                        true
-                    );
-                } else {
-                    $this->addRequirement(
-                        'ZIP Archive Test',
-                        'Ability to create and manipulate ZIP files',
-                        'Failed to create test ZIP file',
-                        'failed',
-                        true
-                    );
-                }
-            } catch (\Exception $e) {
-                $this->addRequirement(
-                    'ZIP Archive Test',
-                    'Ability to create and manipulate ZIP files',
-                    'Error: ' . $e->getMessage(),
-                    'failed',
-                    true
-                );
-            }
-        }
-
-        // cURL Test
-        if (function_exists('curl_init')) {
-            try {
-                $ch = curl_init('https://api.github.com');
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HEADER, false);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                $response = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
-
-                if ($response !== false) {
-                    $this->addRequirement(
-                        'cURL Test',
-                        'Ability to make HTTP requests',
-                        'Working properly (HTTP code: ' . $httpCode . ')',
-                        'passed',
-                        true
-                    );
-                } else {
-                    $this->addRequirement(
-                        'cURL Test',
-                        'Ability to make HTTP requests',
-                        'Failed to connect to GitHub API',
-                        'warning',
-                        true
-                    );
-                }
-            } catch (\Exception $e) {
-                $this->addRequirement(
-                    'cURL Test',
-                    'Ability to make HTTP requests',
-                    'Error: ' . $e->getMessage(),
-                    'warning',
-                    true
-                );
-            }
-        }
-
+        
         $this->isCheckingRequirements = false;
+        Log::info('Verificação de requisitos concluída. Passed: ' . $this->requirementsStatus['passed'] . ', Failed: ' . $this->requirementsStatus['failed']);
+        
+        return true;
     }
 
     /**
@@ -1677,7 +1649,9 @@ class SystemSettings extends Component
             'is_critical' => $isCritical
         ];
 
-        $this->requirementsStatus[$status]++;
+        if (isset($this->requirementsStatus[$status])) {
+            $this->requirementsStatus[$status]++;
+        }
     }
 
     /**
@@ -1687,23 +1661,27 @@ class SystemSettings extends Component
     {
         $currentValue = ini_get($setting);
         $numericValue = (int) $currentValue;
-
-        // Convert to MB if needed for comparison
-        if (strpos($currentValue, 'G') !== false) {
-            $numericValue = (int) $currentValue * 1024;
-        } elseif (strpos($currentValue, 'K') !== false) {
-            $numericValue = (int) $currentValue / 1024;
+        $currentUnit = '';
+        
+        // Detecta a unidade corretamente
+        if (preg_match('/^(\d+)([KMG]?)$/', $currentValue, $matches)) {
+            $numericValue = (int) $matches[1];
+            $currentUnit = $matches[2];
         }
 
-        $status = 'passed';
-        if ($numericValue < $minValue) {
-            $status = $isCritical ? 'failed' : 'warning';
+        // Converte para MB para comparação
+        if ($currentUnit === 'G') {
+            $numericValue = $numericValue * 1024;
+        } elseif ($currentUnit === 'K') {
+            $numericValue = $numericValue / 1024;
         }
+
+        $status = ($numericValue >= $minValue) ? 'passed' : ($isCritical ? 'failed' : 'warning');
 
         $this->addRequirement(
             "PHP Setting: $setting",
             $description,
-            "$currentValue (Recommended: $minValue$unit or higher)",
+            "$currentValue (Recomendado: $minValue$unit ou superior)",
             $status,
             $isCritical
         );
@@ -1714,29 +1692,35 @@ class SystemSettings extends Component
      */
     private function checkDirectoryPermission($path, $description, $isCritical)
     {
-        if (!file_exists($path)) {
-            // Try to create directory if it doesn't exist
+        $exists = file_exists($path);
+        $isWritable = false;
+        
+        if (!$exists) {
+            // Tenta criar o diretório se não existir
             try {
-                mkdir($path, 0755, true);
+                if (@mkdir($path, 0755, true)) {
+                    $exists = true;
+                    $isWritable = true;
+                }
             } catch (\Exception $e) {
-                $this->addRequirement(
-                    "Directory: " . basename($path),
-                    $description,
-                    "Directory doesn't exist and couldn't be created",
-                    $isCritical ? 'failed' : 'warning',
-                    $isCritical
-                );
-                return;
+                // Erro ao criar o diretório
+            }
+        } else {
+            // Testa a permissão de escrita com um arquivo temporário
+            $testFile = $path . '/test_write_' . time() . '.tmp';
+            $isWritable = @file_put_contents($testFile, 'test') !== false;
+            if ($isWritable) {
+                @unlink($testFile); // Remove o arquivo de teste
             }
         }
 
-        $isWritable = is_writable($path);
         $status = $isWritable ? 'passed' : ($isCritical ? 'failed' : 'warning');
+        $result = !$exists ? 'Diretório não existe' : ($isWritable ? 'Gravável' : 'Não gravável');
 
         $this->addRequirement(
             "Directory: " . basename($path),
             $description,
-            $isWritable ? 'Writable' : 'Not writable',
+            $result,
             $status,
             $isCritical
         );

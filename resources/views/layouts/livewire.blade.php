@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} - Maintenance System</title>
+    <title>{{ config('app.name', 'Dembena ERP') }} - Maintenance System</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link href="{{ asset('css/figtree.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/tailwind.min.js') }}"></script>
 
     <!-- Toastr CSS and JS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('css/toastr.min.css') }}">
+    <script src="{{ asset('js/jquery.min.js') }}"></script>
+    <script src="{{ asset('js/toastr.min.js') }}"></script>
 
     <!-- Custom Toastr Styling -->
     <style>
@@ -48,23 +48,20 @@
         }
     </style>
 
-    <!-- FullCalendar Core -->
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet' />
 
     <!-- Tippy.js -->
-    <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script src="https://unpkg.com/tippy.js@6"></script>
-    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css"/>
+    <script src="{{ asset('js/popper.min.js') }}"></script>
+    <script src="{{ asset('js/tippy.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('css/tippy-light-border.css') }}"/>
 
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="{{ asset('js/alpine.min.js') }}"></script>
 
     <!-- FullCalendar Locale -->
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/pt-br.global.min.js'></script>
+    <script src="{{ asset('js/fullcalendar-pt-br.min.js') }}"></script>
 
     <!-- Chart.js - MOVED HERE TO AVOID DUPLICATION -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="{{ asset('js/chart.min.js') }}"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -909,7 +906,47 @@
         });
 
         document.addEventListener('livewire:initialized', () => {
-            // Debug: log when notification event is received
+            // Listen for toast events
+            Livewire.on('toast', (params) => {
+                console.log('Toast event received:', params);
+
+                // Check if toastr is defined
+                if (typeof toastr === 'undefined') {
+                    console.error('Toastr is not defined!');
+                    alert(params.message || 'An notification occurred');
+                    return;
+                }
+
+                // Configure toastr options
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-right',
+                    timeOut: params.type === 'error' ? 8000 : 5000,
+                    preventDuplicates: true,
+                    newestOnTop: true,
+                    showEasing: 'swing',
+                    hideEasing: 'linear',
+                    showMethod: 'fadeIn',
+                    hideMethod: 'fadeOut'
+                };
+
+                // Display toast notification based on type
+                if (params.type === 'success') {
+                    toastr.success(params.message, params.title || 'Success');
+                } else if (params.type === 'error') {
+                    toastr.error(params.message, params.title || 'Error');
+                } else if (params.type === 'warning') {
+                    toastr.warning(params.message, params.title || 'Warning');
+                } else if (params.type === 'info') {
+                    toastr.info(params.message, params.title || 'Information');
+                } else {
+                    // Default to info if type is not recognized
+                    toastr.info(params.message, params.title || 'Information');
+                }
+            });
+
+            // Debug: log when notification event is received (legacy support)
             Livewire.on('notify', (params) => {
                 console.log('Notification event received:', params);
 

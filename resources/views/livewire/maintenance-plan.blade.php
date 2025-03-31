@@ -277,8 +277,29 @@
             </div>
 
             <!-- Modal Body -->
-            <div class="px-4 sm:px-6 py-3 sm:py-4">
+            <div class="px-4 sm:px-6 py-4 sm:py-5">
                 <p class="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">Fill in the details to schedule a new maintenance task.</p>
+
+                <!-- Mensagens de erro gerais -->
+                @if ($errors->any())
+                <div class="rounded-md bg-red-50 p-4 mb-4 border border-red-200">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Há {{ $errors->count() }} erros no formulário</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <form wire:submit.prevent="save">
                     <div class="bg-gray-50 p-4 rounded-md mb-4">
@@ -295,7 +316,7 @@
                                     <select
                                         id="task_id"
                                         wire:model="task_id"
-                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('task_id') border-red-300 text-red-900 @enderror"
+                                        class="block w-full py-2 px-3 border @error('task_id') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                     >
                                         <option value="">Select task</option>
                                         @foreach($tasks as $task)
@@ -303,15 +324,19 @@
                                         @endforeach
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                    @error('task_id')
-                                        <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                        @error('task_id')
                                             <i class="fas fa-exclamation-circle text-red-500"></i>
-                                        </div>
-                                    @enderror
+                                        @else
+                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                        @enderror
+                                    </div>
                                 </div>
-                                @error('task_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                @error('task_id') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
                             </div>
 
                             <div>
@@ -322,7 +347,7 @@
                                     <select
                                         id="equipment_id"
                                         wire:model="equipment_id"
-                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('equipment_id') border-red-300 text-red-900 @enderror"
+                                        class="block w-full py-2 px-3 border @error('equipment_id') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                     >
                                         <option value="">Select equipment</option>
                                         @foreach($equipment as $item)
@@ -330,15 +355,19 @@
                                         @endforeach
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                    @error('equipment_id')
-                                        <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                        @error('equipment_id')
                                             <i class="fas fa-exclamation-circle text-red-500"></i>
-                                        </div>
-                                    @enderror
+                                        @else
+                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                        @enderror
+                                    </div>
                                 </div>
-                                @error('equipment_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                @error('equipment_id') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
                             </div>
 
                             <!-- Line & Area -->
@@ -400,18 +429,24 @@
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <input
-                                        type="date"
                                         id="scheduled_date"
+                                        type="date"
                                         wire:model="scheduled_date"
-                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('scheduled_date') border-red-300 text-red-900 @enderror"
+                                        placeholder="YYYY-MM-DD"
+                                        class="block w-full py-2 px-3 border @error('scheduled_date') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                     >
                                     @error('scheduled_date')
-                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-exclamation-circle text-red-500"></i>
-                                        </div>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-exclamation-circle text-red-500"></i>
+                                    </div>
                                     @enderror
                                 </div>
-                                @error('scheduled_date') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                @error('scheduled_date') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
                             </div>
 
                             <div>
@@ -419,30 +454,183 @@
                                     <i class="fas fa-sync-alt mr-1 text-gray-500"></i> Frequency <span class="text-red-500">*</span>
                                 </label>
                                 <div class="flex gap-2">
-                                    <div class="relative rounded-md shadow-sm w-full">
+                                    <div class="relative rounded-md shadow-sm">
                                         <select
                                             id="frequency_type"
-                                            wire:model="frequency_type"
+                                            wire:model.live="frequency_type"
                                             class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('frequency_type') border-red-300 text-red-900 @enderror"
                                         >
-                                            @foreach($frequencies as $value => $label)
-                                                <option value="{{ $value }}">{{ $label }}</option>
-                                            @endforeach
+                                            <option value="once">Once</option>
+                                            <option value="daily">Daily</option>
+                                            <option value="custom">Custom</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="yearly">Yearly</option>
                                         </select>
                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            @error('frequency_type')
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            @else
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            @enderror
                                         </div>
                                     </div>
-                                    <input
-                                        type="number"
-                                        id="custom_days"
-                                        wire:model="custom_days"
-                                        class="w-24 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('custom_days') border-red-300 text-red-900 @enderror"
-                                        placeholder="Days"
-                                        style="display: none;">
+                                    
+                                    @if($frequency_type === 'custom')
+                                    <div class="relative rounded-md shadow-sm">
+                                        <input
+                                            id="custom_days"
+                                            type="number"
+                                            wire:model="custom_days"
+                                            min="1"
+                                            placeholder="Dias entre"
+                                            class="block w-full py-2 px-3 border @error('custom_days') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
+                                        >
+                                        @error('custom_days')
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                        </div>
+                                        @enderror
+                                    </div>
+                                    @endif
+                                    
+                                    @if($frequency_type === 'weekly')
+                                    <div class="relative rounded-md shadow-sm">
+                                        <select
+                                            id="day_of_week"
+                                            wire:model="day_of_week"
+                                            class="block w-full py-2 px-3 border @error('day_of_week') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
+                                        >
+                                            <option value="">Dia da semana</option>
+                                            <option value="0">Domingo</option>
+                                            <option value="1">Segunda</option>
+                                            <option value="2">Terça</option>
+                                            <option value="3">Quarta</option>
+                                            <option value="4">Quinta</option>
+                                            <option value="5">Sexta</option>
+                                            <option value="6">Sábado</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            @error('day_of_week')
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            @else
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    @endif
+                                    
+                                    @if($frequency_type === 'monthly')
+                                    <div class="relative rounded-md shadow-sm">
+                                        <select
+                                            id="day_of_month"
+                                            wire:model="day_of_month"
+                                            class="block w-full py-2 px-3 border @error('day_of_month') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
+                                        >
+                                            <option value="">Dia do mês</option>
+                                            @for($i = 1; $i <= 31; $i++)
+                                                <option value="{{ $i }}">{{ $i }}</option>
+                                            @endfor
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            @error('day_of_month')
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            @else
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    @endif
+                                    
+                                    @if($frequency_type === 'yearly')
+                                    <div class="flex gap-2">
+                                        <div class="relative rounded-md shadow-sm">
+                                            <select
+                                                id="month"
+                                                wire:model="month"
+                                                class="block w-full py-2 px-3 border @error('month') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
+                                            >
+                                                <option value="">Mês</option>
+                                                <option value="1">Janeiro</option>
+                                                <option value="2">Fevereiro</option>
+                                                <option value="3">Março</option>
+                                                <option value="4">Abril</option>
+                                                <option value="5">Maio</option>
+                                                <option value="6">Junho</option>
+                                                <option value="7">Julho</option>
+                                                <option value="8">Agosto</option>
+                                                <option value="9">Setembro</option>
+                                                <option value="10">Outubro</option>
+                                                <option value="11">Novembro</option>
+                                                <option value="12">Dezembro</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                @error('month')
+                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                @else
+                                                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <div class="relative rounded-md shadow-sm">
+                                            <select
+                                                id="month_day"
+                                                wire:model="month_day"
+                                                class="block w-full py-2 px-3 border @error('month_day') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
+                                            >
+                                                <option value="">Dia</option>
+                                                @for($i = 1; $i <= 31; $i++)
+                                                    <option value="{{ $i }}">{{ $i }}</option>
+                                                @endfor
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                @error('month_day')
+                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                @else
+                                                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
-                                @error('frequency_type') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                                @error('custom_days') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                
+                                @error('frequency_type') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
+                                @error('custom_days') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
+                                @error('day_of_week') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
+                                @error('day_of_month') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
+                                @error('month') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
+                                @error('month_day') 
+                                    <p class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p> 
+                                @enderror
                             </div>
 
                             <!-- Status & Priority -->
@@ -491,118 +679,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Frequency Option Fields -->
-                    @if($frequency_type === 'weekly' || $frequency_type === 'monthly' || $frequency_type === 'yearly')
-                    <div class="bg-gray-50 p-4 rounded-md mb-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                            <i class="fas fa-calendar-week mr-2 text-blue-500"></i> {{ ucfirst($frequency_type) }} Schedule Options
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            @if($frequency_type === 'weekly')
-                            <div>
-                                <label for="day_of_week" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-calendar-day mr-1 text-gray-500"></i> Day of Week <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <select
-                                        id="day_of_week"
-                                        wire:model="day_of_week"
-                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('day_of_week') border-red-300 text-red-900 @enderror"
-                                    >
-                                        <option value="0">Sunday</option>
-                                        <option value="1">Monday</option>
-                                        <option value="2">Tuesday</option>
-                                        <option value="3">Wednesday</option>
-                                        <option value="4">Thursday</option>
-                                        <option value="5">Friday</option>
-                                        <option value="6">Saturday</option>
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                </div>
-                                @error('day_of_week') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                            @endif
-
-                            @if($frequency_type === 'monthly')
-                            <div>
-                                <label for="day_of_month" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-calendar-day mr-1 text-gray-500"></i> Day of Month <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <select
-                                        id="day_of_month"
-                                        wire:model="day_of_month"
-                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('day_of_month') border-red-300 text-red-900 @enderror"
-                                    >
-                                        @for($i = 1; $i <= 31; $i++)
-                                            <option value="{{ $i }}">{{ $i }}</option>
-                                        @endfor
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                </div>
-                                @error('day_of_month') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                            @endif
-
-                            @if($frequency_type === 'yearly')
-                            <div>
-                                <label for="month" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-calendar-alt mr-1 text-gray-500"></i> Month <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <select
-                                        id="month"
-                                        wire:model="month"
-                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('month') border-red-300 text-red-900 @enderror"
-                                    >
-                                        <option value="1">January</option>
-                                        <option value="2">February</option>
-                                        <option value="3">March</option>
-                                        <option value="4">April</option>
-                                        <option value="5">May</option>
-                                        <option value="6">June</option>
-                                        <option value="7">July</option>
-                                        <option value="8">August</option>
-                                        <option value="9">September</option>
-                                        <option value="10">October</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                </div>
-                                @error('month') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label for="month_day" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-calendar-day mr-1 text-gray-500"></i> Day <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <select
-                                        id="month_day"
-                                        wire:model="month_day"
-                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('month_day') border-red-300 text-red-900 @enderror"
-                                    >
-                                        @for($i = 1; $i <= 31; $i++)
-                                            <option value="{{ $i }}">{{ $i }}</option>
-                                        @endfor
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                </div>
-                                @error('month_day') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    @endif
 
                     <div class="bg-gray-50 p-4 rounded-md mb-4">
                         <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
@@ -729,26 +805,28 @@
                         <i class="fas fa-info-circle mr-1 text-blue-500"></i> Fields marked with <span class="text-red-500">*</span> are required
                     </p>
 
-                    <!-- Modal Footer -->
-                    <div class="flex justify-end space-x-3 border-t border-gray-200 pt-4">
+                    <!-- Botões do formulário -->
+                    <div class="flex justify-end space-x-3 border-t border-gray-200 pt-4 mt-6">
                         <button
                             type="button"
                             wire:click="closeModal"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
                             wire:loading.attr="disabled"
                         >
                             <i class="fas fa-times mr-2"></i> Cancel
                         </button>
                         <button
                             type="submit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 flex items-center"
-                            wire:loading.class="opacity-75 cursor-wait"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             wire:loading.attr="disabled"
+                            wire:target="save"
                         >
-                            <i class="fas {{ $isEditing ? 'fa-save' : 'fa-calendar-check' }} mr-2" wire:loading.class="hidden" wire:target="save"></i>
-                            <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="save"></i>
-                            <span wire:loading.remove wire:target="save">{{ $isEditing ? 'Update' : 'Schedule' }} Task</span>
-                            <span wire:loading wire:target="save">Processing...</span>
+                            <div wire:loading.remove wire:target="save" class="flex items-center">
+                                <i class="fas fa-save mr-2"></i> {{ $isEditing ? 'Update' : 'Save' }}
+                            </div>
+                            <div wire:loading wire:target="save" class="flex items-center">
+                                <i class="fas fa-spinner fa-spin mr-2"></i> {{ $isEditing ? 'Updating...' : 'Saving...' }}
+                            </div>
                         </button>
                     </div>
                 </form>

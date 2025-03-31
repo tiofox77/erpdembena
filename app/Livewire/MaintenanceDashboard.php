@@ -65,6 +65,32 @@ class MaintenanceDashboard extends Component
         $this->loadDashboardData();
     }
 
+    /**
+     * Método para atualizar o dashboard quando os filtros são alterados
+     */
+    public function refreshDashboard()
+    {
+        // Registrar os valores de filtro no log para debug
+        Log::info('Updating dashboard with filters:', [
+            'year' => $this->filterYear,
+            'month' => $this->filterMonth,
+            'status' => $this->filterStatus,
+            'area' => $this->filterArea
+        ]);
+
+        // Limpar dados anteriores
+        $this->resetExcept(['filterYear', 'filterMonth', 'filterStatus', 'filterArea']);
+        
+        // Recarregar dados com novos filtros
+        $this->loadDashboardData();
+        
+        // Notificar o frontend
+        $this->dispatch('dashboardDataLoaded');
+        $this->dispatch('refreshCharts');
+        
+        session()->flash('message', 'Dashboard updated successfully!');
+    }
+
     public function loadDashboardData()
     {
         // Carregar contagens de equipamentos
@@ -173,14 +199,43 @@ class MaintenanceDashboard extends Component
      */
     protected function loadKpiData()
     {
+        // Inicializar query base com os filtros atuais
+        $query = MaintenancePlan::query();
+        
+        // Aplicar filtro de ano se não for 'all'
+        if ($this->filterYear !== 'all') {
+            $query->whereYear('scheduled_date', $this->filterYear);
+        }
+        
+        // Aplicar filtro de mês se não for 'all'
+        if ($this->filterMonth !== 'all') {
+            $query->whereMonth('scheduled_date', $this->filterMonth);
+        }
+        
+        // Aplicar filtro de status se não for 'all'
+        if ($this->filterStatus !== 'all') {
+            $query->where('status', $this->filterStatus);
+        }
+        
+        // Aplicar filtro de área se não for 'all'
+        if ($this->filterArea !== 'all') {
+            $query->whereHas('equipment', function($q) {
+                $q->where('area_id', $this->filterArea);
+            });
+        }
+
         // Contagem de tarefas planejadas
-        $this->plannedTasksCount = MaintenancePlan::count();
+        $this->plannedTasksCount = $query->count();
+
+        // Clone a query para não perder as condições
+        $completedQuery = clone $query;
+        $pendingQuery = clone $query;
 
         // Contagem de tarefas realizadas
-        $this->actualTasksCount = MaintenancePlan::where('status', 'completed')->count();
+        $this->actualTasksCount = $completedQuery->where('status', 'completed')->count();
 
         // Contagem de tarefas pendentes
-        $this->pendingTasksCount = MaintenancePlan::where('status', 'pending')->count();
+        $this->pendingTasksCount = $pendingQuery->where('status', 'pending')->count();
 
         // Cálculo da taxa de conformidade
         if ($this->plannedTasksCount > 0) {
@@ -197,8 +252,32 @@ class MaintenanceDashboard extends Component
      */
     protected function loadPlannedDates()
     {
-        $dates = MaintenancePlan::whereNotNull('scheduled_date')
-            ->where('scheduled_date', '>=', now()->subDays(30))
+        // Inicializar query com os filtros atuais
+        $query = MaintenancePlan::whereNotNull('scheduled_date');
+        
+        // Aplicar filtro de ano se não for 'all'
+        if ($this->filterYear !== 'all') {
+            $query->whereYear('scheduled_date', $this->filterYear);
+        }
+        
+        // Aplicar filtro de mês se não for 'all'
+        if ($this->filterMonth !== 'all') {
+            $query->whereMonth('scheduled_date', $this->filterMonth);
+        }
+        
+        // Aplicar filtro de status se não for 'all'
+        if ($this->filterStatus !== 'all') {
+            $query->where('status', $this->filterStatus);
+        }
+        
+        // Aplicar filtro de área se não for 'all'
+        if ($this->filterArea !== 'all') {
+            $query->whereHas('equipment', function($q) {
+                $q->where('area_id', $this->filterArea);
+            });
+        }
+        
+        $dates = $query->where('scheduled_date', '>=', now()->subDays(30))
             ->where('scheduled_date', '<=', now()->addDays(30))
             ->orderBy('scheduled_date')
             ->pluck('scheduled_date')
@@ -210,10 +289,17 @@ class MaintenanceDashboard extends Component
     }
 
     /**
-     * Carregar dados para os gráficos com base nos filtros atuais
+     * Carregar dados para os gráficos com base nos filtros
      */
     protected function loadChartsData()
     {
+        Log::info('Loading chart data with filters:', [
+            'year' => $this->filterYear,
+            'month' => $this->filterMonth,
+            'status' => $this->filterStatus,
+            'area' => $this->filterArea
+        ]);
+        
         // Inicializar query base com filtro de ano
         $baseQuery = MaintenancePlan::whereYear('scheduled_date', $this->filterYear);
         $correctiveQuery = MaintenanceCorrective::whereYear('created_at', $this->filterYear);
@@ -1334,28 +1420,8 @@ class MaintenanceDashboard extends Component
     }
 
     /**
-     * Atualizar dados ao mudar filtros
+     * Marcar um alerta como concluído
      */
-    public function updatedFilterYear()
-    {
-        $this->loadDashboardData();
-    }
-
-    public function updatedFilterMonth()
-    {
-        $this->loadDashboardData();
-    }
-
-    public function updatedFilterStatus()
-    {
-        $this->loadDashboardData();
-    }
-
-    public function updatedFilterArea()
-    {
-        $this->loadDashboardData();
-    }
-
     public function markAlertAsCompleted($alertId)
     {
         // Encontrar a tarefa no banco de dados
@@ -1364,33 +1430,21 @@ class MaintenanceDashboard extends Component
             // Atualizar status no banco de dados
             $task->update([
                 'status' => 'completed',
-                'completion_date' => now()
+                'completed_at' => now(),
             ]);
 
-            // Criar uma nota de manutenção para registrar a conclusão
+            // Adicionar nota de manutenção
             MaintenanceNote::create([
-                'maintenance_plan_id' => $alertId,
+                'maintenance_plan_id' => $task->id,
+                'notes' => 'Marked as completed from dashboard',
                 'status' => 'completed',
-                'notes' => 'Tarefa marcada como concluída pelo dashboard',
                 'user_id' => auth()->id(),
             ]);
 
-            // Atualizar os alertas locais
-            foreach ($this->maintenanceAlerts as $key => $alert) {
-                if ($alert['id'] == $alertId) {
-                    $this->maintenanceAlerts[$key]['completed'] = true;
-                    break;
-                }
-            }
-
-            // Atualizar contadores
-            $this->overdueTasks--;
-            $this->completedTasks++;
-
-            // Atualizar gráficos
+            // Recarregar dados
             $this->loadDashboardData();
 
-            session()->flash('message', 'Tarefa concluída com sucesso!');
+            session()->flash('message', 'Task marked as completed successfully!');
         }
     }
 

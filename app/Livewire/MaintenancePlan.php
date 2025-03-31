@@ -335,114 +335,50 @@ class MaintenancePlan extends Component
 
     public function save()
     {
+        $this->validate();
+
         try {
-            // Validate the form fields
-            $validatedData = $this->validate();
-
-            // IMPORTANT: Check if the selected date is a holiday or Sunday before saving
-            // If it is, display a warning and don't save yet
-            if ($this->checkScheduledDate()) {
-                return;
-            }
-
-            // Handle new or update
             if ($this->isEditing) {
                 $schedule = MaintenancePlanModel::findOrFail($this->scheduleId);
-                $schedule->update($validatedData);
             } else {
-                $schedule = MaintenancePlanModel::create($validatedData);
+                $schedule = new MaintenancePlanModel();
             }
 
-            // Calculate next maintenance date
-            $nextMaintenanceDate = $this->calculateNextMaintenanceDate($schedule);
-            $schedule->next_maintenance_date = $nextMaintenanceDate;
+            $schedule->task_id = $this->task_id;
+            $schedule->equipment_id = $this->equipment_id;
+            $schedule->line_id = $this->line_id;
+            $schedule->area_id = $this->area_id;
+            $schedule->scheduled_date = $this->scheduled_date;
+            $schedule->frequency_type = $this->frequency_type;
+            $schedule->custom_days = $this->frequency_type === 'custom' ? $this->custom_days : null;
+            $schedule->day_of_week = $this->frequency_type === 'weekly' ? $this->day_of_week : null;
+            $schedule->day_of_month = $this->frequency_type === 'monthly' ? $this->day_of_month : null;
+            $schedule->month = $this->frequency_type === 'yearly' ? $this->month : null;
+            $schedule->month_day = $this->frequency_type === 'yearly' ? $this->month_day : null;
+            $schedule->priority = $this->priority;
+            $schedule->type = $this->type;
+            $schedule->assigned_to = $this->assigned_to;
+            $schedule->description = $this->description;
+            $schedule->notes = $this->notes;
+            $schedule->status = $this->status;
             $schedule->save();
 
-            // Send notification
-            $notificationType = $this->isEditing ? 'info' : 'success';
-            $message = $this->isEditing
-                ? 'The maintenance plan was successfully updated.'
-                : 'A new maintenance plan was successfully created.';
-            $this->dispatch('notify', type: $notificationType, message: $message);
-
+            $this->dispatch('refreshCalendar');
+            
+            $actionType = $this->isEditing ? 'updated' : 'created';
+            $message = "Maintenance schedule {$actionType} successfully!";
+            
+            session()->flash('message', $message);
+            $this->dispatch('notify', type: 'success', message: $message);
+            
+            // Reset form and refresh data without redirecting
             $this->closeModal();
-            $this->updateCalendarEvents();
+            $this->dispatch('refresh');
         } catch (\Exception $e) {
-            // Send error notification
-            $notificationType = 'error';
-            $message = 'An error occurred while saving the plan: ' . $e->getMessage();
-            $this->dispatch('notify', type: $notificationType, message: $message);
+            $errorMessage = "Error saving schedule: {$e->getMessage()}";
+            session()->flash('error', $errorMessage);
+            $this->dispatch('notify', type: 'error', message: $errorMessage);
         }
-    }
-
-    /**
-     * Calculate the next maintenance date based on frequency,
-     * avoiding holidays and Sundays
-     *
-     * @param MaintenancePlanModel $schedule
-     * @return Carbon
-     */
-    protected function calculateNextMaintenanceDate($schedule)
-    {
-        $baseDate = $schedule->scheduled_date ?? now();
-        $nextDate = null;
-
-        switch ($schedule->frequency_type) {
-            case 'once':
-                $nextDate = $baseDate->copy(); // Not recurring, return the scheduled date
-                break;
-
-            case 'daily':
-                $nextDate = $baseDate->copy()->addDay();
-                break;
-
-            case 'custom':
-                $nextDate = $baseDate->copy()->addDays($schedule->custom_days);
-                break;
-
-            case 'weekly':
-                $nextDate = $baseDate->copy()->addWeek();
-                if (!is_null($schedule->day_of_week)) {
-                    // Adjust to the specified day of the week
-                    while ($nextDate->dayOfWeek != $schedule->day_of_week) {
-                        $nextDate->addDay();
-                    }
-                }
-                break;
-
-            case 'monthly':
-                $nextDate = $baseDate->copy()->addMonth();
-                // Ensure we don't exceed the days in the month
-                if (!is_null($schedule->day_of_month)) {
-                    $daysInMonth = $nextDate->daysInMonth;
-                    $day = min($schedule->day_of_month, $daysInMonth);
-                    $nextDate->setDay($day);
-                }
-                break;
-
-            case 'yearly':
-                $nextDate = $baseDate->copy()->addYear();
-                // Handle February 29 in non-leap years
-                if (!is_null($schedule->month) && !is_null($schedule->month_day)) {
-                    if ($schedule->month == 2 && $schedule->month_day == 29 && !$nextDate->isLeapYear()) {
-                        $nextDate->setMonth(2)->setDay(28);
-                    } else {
-                        $nextDate->setMonth($schedule->month)->setDay($schedule->month_day);
-                    }
-                }
-                break;
-
-            default:
-                $nextDate = $baseDate->copy();
-                break;
-        }
-
-        // Check and adjust to the next valid date (not a holiday and not a Sunday)
-        while ($this->isHoliday($nextDate) || $this->isSunday($nextDate)) {
-            $nextDate->addDay();
-        }
-
-        return $nextDate;
     }
 
     public function delete($id)
@@ -451,17 +387,17 @@ class MaintenancePlan extends Component
             $schedule = MaintenancePlanModel::findOrFail($id);
             $schedule->delete();
 
-            // Send notification
-            $notificationType = 'success';
+            // Send notification with correct type
             $message = 'The maintenance plan was successfully deleted.';
-            $this->dispatch('notify', type: $notificationType, message: $message);
+            session()->flash('message', $message);
+            $this->dispatch('notify', type: 'success', message: $message);
 
             $this->updateCalendarEvents();
         } catch (\Exception $e) {
-            // Send error notification
-            $notificationType = 'error';
+            // Send error notification with correct type
             $message = 'An error occurred while deleting the plan. Please try again.';
-            $this->dispatch('notify', type: $notificationType, message: $message);
+            session()->flash('error', $message);
+            $this->dispatch('notify', type: 'error', message: $message);
         }
     }
 
