@@ -1941,9 +1941,10 @@ class SystemSettings extends Component
         // Registrar para depuração
         \Illuminate\Support\Facades\Log::emergency('SIMPLE_UPDATE: Método chamado', [
             'time' => now()->format('Y-m-d H:i:s'),
-            'update_available' => $this->update_available
+            'update_available' => $this->update_available,
+            'request_timestamp' => time()
         ]);
-
+        
         // Verificar se há atualização disponível
         if (!$this->update_available) {
             $this->dispatch('notify', type: 'error', message: 'Não há atualizações disponíveis.');

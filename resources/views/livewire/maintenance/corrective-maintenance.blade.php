@@ -548,7 +548,7 @@
                                     >
                                         <option value="">Select Equipment</option>
                                         @foreach($equipment as $equipItem)
-                                            <option value="{{ $equipItem->id }}">{{ $equipItem->name }}</option>
+                                            <option value="{{ $equipItem->id }}">{{ $equipItem->name }} - {{ $equipItem->serial_number }}</option>
                                         @endforeach
                                     </select>
                                     @error('corrective.equipment_id')
