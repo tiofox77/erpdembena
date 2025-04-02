@@ -22,6 +22,24 @@
             text-align: center;
             padding-bottom: 10px;
             border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .company-logo {
+            max-height: 60px;
+            max-width: 180px;
+            margin-bottom: 10px;
+        }
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
         .report-info {
             margin-bottom: 20px;
@@ -114,7 +132,15 @@
 </head>
 <body>
     <div class="header">
-        <h1>Maintenance Plan Report</h1>
+        <div class="header-content">
+            @if(isset($companyLogo) && $companyLogo)
+                <img src="{{ $companyLogo }}" alt="Company Logo" class="company-logo">
+            @endif
+            @if(isset($companyName) && $companyName)
+                <div class="company-name">{{ $companyName }}</div>
+            @endif
+            <h1>Maintenance Plan Report</h1>
+        </div>
     </div>
 
     <div class="report-info">

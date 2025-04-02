@@ -42,7 +42,7 @@ class SystemSettings extends Component
     public $debug_mode = false;
 
     // System Requirements
-    public $requirements = [];
+    public $systemRequirements = [];
     public $isCheckingRequirements = false;
     public $requirementsStatus = [
         'passed' => 0,
@@ -105,14 +105,6 @@ class SystemSettings extends Component
     {
         $this->loadSettings();
         $this->current_version = config('app.version', '1.0.0');
-        $this->github_repository = Setting::get('github_repository', 'tiofox77/erpdembena');
-        
-        // Para depuração
-        Log::info('SystemSettings component inicializado', [
-            'version' => $this->current_version,
-            'repository' => $this->github_repository,
-            'activeTab' => $this->activeTab
-        ]);
 
         // Auto check system requirements if that tab is active
         if ($this->activeTab === 'requirements') {
@@ -140,6 +132,7 @@ class SystemSettings extends Component
         $this->date_format = Setting::get('date_format', 'm/d/Y');
         $this->currency = Setting::get('currency', 'USD');
         $this->language = Setting::get('language', 'en');
+        $this->github_repository = Setting::get('github_repository', $this->github_repository);
         $this->maintenance_mode = (bool) Setting::get('maintenance_mode', false);
         $this->debug_mode = (bool) Setting::get('debug_mode', false);
     }
@@ -157,30 +150,12 @@ class SystemSettings extends Component
      */
     public function setActiveTab($tab)
     {
-        // Garantir que o tab seja um valor válido
-        $validTabs = ['general', 'updates', 'maintenance', 'requirements'];
-        
-        if (in_array($tab, $validTabs)) {
-            // Registrar a mudança para depuração
-            Log::info("Mudando aba para: {$tab}");
-            
-            // Atualizar o valor
-            $this->activeTab = $tab;
-            
-            // Acionar ações específicas baseadas na aba selecionada
-            if ($tab === 'requirements') {
-                // Acionar verificação de requisitos do sistema
-                $this->checkSystemRequirements();
-            } elseif ($tab === 'updates') {
-                // Acionar verificação de atualizações quando mudar para a aba updates
-                $this->checkForUpdates(true);
-            }
-        } else {
-            Log::warning("Tentativa de definir aba inválida: {$tab}");
+        $this->activeTab = $tab;
+
+        // Auto check system requirements when switching to that tab
+        if ($tab === 'requirements') {
+            $this->checkSystemRequirements();
         }
-        
-        // Emitir evento para qualquer javascript que precise saber sobre a mudança de aba
-        $this->dispatch('system-tab-changed', tab: $tab);
     }
 
     /**
@@ -304,19 +279,11 @@ class SystemSettings extends Component
 
     /**
      * Check for updates
-     * 
-     * @param bool $silent Se true, não exibirá notificações (usado para verificações automáticas)
      */
-    public function checkForUpdates($silent = false)
+    public function checkForUpdates()
     {
         $this->isCheckingForUpdates = true;
         $this->update_status = 'Checking for updates...';
-        
-        // Registrar a operação no log para fins de depuração
-        Log::info('Iniciando verificação de atualizações', [
-            'silent' => $silent,
-            'repository' => $this->github_repository
-        ]);
 
         try {
             // Fetch repository information first - this checks if the repo exists and is accessible
@@ -325,9 +292,7 @@ class SystemSettings extends Component
             if (!$infoResponse->successful()) {
                 $this->update_status = "Repository not found or not accessible. Status code: {$infoResponse->status()}";
                 Log::error("GitHub Repository Error: {$infoResponse->body()}");
-                if (!$silent) {
-                    $this->dispatch('notify', type: 'error', message: "Repository not found or not accessible. Make sure the repository exists and is public or has proper access tokens configured.");
-                }
+                $this->dispatch('notify', type: 'error', message: "Repository not found or not accessible. Make sure the repository exists and is public or has proper access tokens configured.");
                 $this->isCheckingForUpdates = false;
                 return;
             }
@@ -340,9 +305,7 @@ class SystemSettings extends Component
 
                 if (empty($releases)) {
                     $this->update_status = "No releases found in the repository.";
-                    if (!$silent) {
-                        $this->dispatch('notify', type: 'warning', message: "No releases found in the repository. Please create releases with version tags.");
-                    }
+                    $this->dispatch('notify', type: 'warning', message: "No releases found in the repository. Please create releases with version tags.");
                     $this->isCheckingForUpdates = false;
                     return;
                 }
@@ -361,29 +324,21 @@ class SystemSettings extends Component
                         'download_url' => $latest['zipball_url'] ?? null
                     ];
                     $this->update_status = "Update available: v{$this->latest_version}";
-                    if (!$silent) {
-                        $this->dispatch('notify', type: 'info', message: "Update v{$this->latest_version} is available for installation.");
-                    }
+                    $this->dispatch('notify', type: 'info', message: "Update v{$this->latest_version} is available for installation.");
                 } else {
                     $this->update_available = false;
                     $this->update_status = "You are running the latest version: v{$this->current_version}";
-                    if (!$silent) {
-                        $this->dispatch('notify', type: 'success', message: "Your system is up to date (v{$this->current_version}).");
-                    }
+                    $this->dispatch('notify', type: 'success', message: "Your system is up to date (v{$this->current_version}).");
                 }
             } else {
                 $this->update_status = "Could not fetch releases. Status code: {$response->status()}";
                 Log::error("GitHub API Error: {$response->body()}");
-                if (!$silent) {
-                    $this->dispatch('notify', type: 'error', message: "Could not fetch releases from GitHub. Please check repository settings.");
-                }
+                $this->dispatch('notify', type: 'error', message: "Could not fetch releases from GitHub. Please check repository settings.");
             }
         } catch (\Exception $e) {
             $this->update_status = "Error checking for updates: " . $e->getMessage();
             Log::error("Update check error: {$e->getMessage()}");
-            if (!$silent) {
-                $this->dispatch('notify', type: 'error', message: "Error checking for updates: {$e->getMessage()}");
-            }
+            $this->dispatch('notify', type: 'error', message: "Error checking for updates: {$e->getMessage()}");
         }
 
         $this->isCheckingForUpdates = false;
@@ -394,12 +349,6 @@ class SystemSettings extends Component
      */
     public function confirmStartUpdate()
     {
-        // Registrar a operação para fins de depuração
-        Log::info('Método confirmStartUpdate chamado', [
-            'update_available' => $this->update_available,
-            'latest_version' => $this->latest_version
-        ]);
-        
         if (!$this->update_available) {
             $this->dispatch('notify', type: 'error', message: 'No updates available to install.');
             return;
@@ -408,12 +357,6 @@ class SystemSettings extends Component
         $this->confirmAction = 'startUpdate';
         $this->confirmMessage = "Are you sure you want to update to version {$this->latest_version}? This action will temporarily make your site unavailable during the update process.";
         $this->showConfirmModal = true;
-        
-        // Registrar o status do modal para depuração
-        Log::info('Modal de confirmação configurado', [
-            'showConfirmModal' => $this->showConfirmModal,
-            'confirmAction' => $this->confirmAction
-        ]);
     }
 
     /**
@@ -421,41 +364,24 @@ class SystemSettings extends Component
      */
     public function startUpdate()
     {
-        // Registrar início do processo para depuração
-        Log::info('Método startUpdate iniciado', [
-            'update_available' => $this->update_available,
-            'latest_version' => $this->latest_version,
-            'current_version' => $this->current_version,
-            'update_notes' => $this->update_notes
-        ]);
-        
         $this->showConfirmModal = false;
 
         if (!$this->update_available) {
             $this->dispatch('notify', type: 'error', message: 'No updates available to install.');
-            Log::warning('Tentativa de atualização sem atualizações disponíveis');
             return;
         }
 
+        $this->isUpdating = true;
+        $this->update_progress = 0;
+        $this->update_status = 'Starting update process...';
+
+        // Create a log file for this update
+        $timestamp = date('Y-m-d_H-i-s');
+        $logFile = storage_path("logs/update_{$timestamp}.log");
+        $this->logToFile($logFile, "Starting update process to version {$this->latest_version}");
+        $this->logToFile($logFile, "Current version: {$this->current_version}");
+
         try {
-            $this->isUpdating = true;
-            $this->update_progress = 0;
-            $this->update_status = 'Starting update process...';
-            
-            // Notificar o usuário que o processo começou
-            $this->dispatch('notify', type: 'info', message: "Starting update to version {$this->latest_version}...");
-
-            // Create a log file for this update
-            $timestamp = date('Y-m-d_H-i-s');
-            $logFile = storage_path("logs/update_{$timestamp}.log");
-            $this->logToFile($logFile, "Starting update process to version {$this->latest_version}");
-            $this->logToFile($logFile, "Current version: {$this->current_version}");
-            
-            Log::info('Processo de atualização iniciado', [
-                'log_file' => $logFile,
-                'update_progress' => $this->update_progress
-            ]);
-
             // Create backup if option selected
             if ($this->backup_before_update) {
                 $this->update_status = 'Creating backup...';
@@ -1418,48 +1344,25 @@ class SystemSettings extends Component
      */
     protected function clearCaches()
     {
-        // Use Laravel Artisan commands for thorough cache clearing
-        try {
-            // Limpa o cache de configuração
-            Artisan::call('config:clear');
-            
-            // Limpa o cache de rotas
-            Artisan::call('route:clear');
-            
-            // Limpa o cache de visões compiladas
-            Artisan::call('view:clear');
-            
-            // Limpa o cache do aplicativo
-            Artisan::call('cache:clear');
-            
-            // Comando optimize:clear para limpar todos os caches de uma vez
-            // Este comando executa todas as limpezas acima mais 'compiled' e 'event:clear'
-            Artisan::call('optimize:clear');
-            
-            Log::info('Application caches cleared successfully after update');
-        } catch (\Exception $e) {
-            Log::error('Error clearing caches via Artisan: ' . $e->getMessage());
-            
-            // Fallback para limpeza manual do cache se Artisan falhar
-            $cacheDirs = [
-                storage_path('framework/cache'),
-                storage_path('framework/views'),
-                storage_path('framework/sessions'),
-            ];
+        // Clear various cache files
+        $cacheDirs = [
+            storage_path('framework/cache'),
+            storage_path('framework/views'),
+            storage_path('framework/sessions'),
+        ];
 
-            foreach ($cacheDirs as $dir) {
-                if (is_dir($dir)) {
-                    $files = new \RecursiveIteratorIterator(
-                        new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
-                        \RecursiveIteratorIterator::CHILD_FIRST
-                    );
+        foreach ($cacheDirs as $dir) {
+            if (is_dir($dir)) {
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::CHILD_FIRST
+                );
 
-                    foreach ($files as $file) {
-                        if ($file->isDir()) {
-                            continue;
-                        }
-                        @unlink($file->getRealPath());
+                foreach ($files as $file) {
+                    if ($file->isDir()) {
+                        continue;
                     }
+                    @unlink($file->getRealPath());
                 }
             }
         }
@@ -1592,51 +1495,11 @@ class SystemSettings extends Component
     }
 
     /**
-     * Check system requirements (wrapper method)
-     */
-    public function checkRequirements()
-    {
-        try {
-            Log::info('Iniciando verificação de requisitos');
-            return $this->checkSystemRequirements();
-        } catch (\Exception $e) {
-            Log::error('Erro ao verificar requisitos: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Erro ao verificar requisitos: ' . $e->getMessage());
-            $this->isCheckingRequirements = false;
-            return false;
-        }
-    }
-
-    /**
      * Check system requirements
      */
     public function checkSystemRequirements()
     {
         $this->isCheckingRequirements = true;
-        // Inicializa a estrutura de dados no formato que a view espera
-        $this->requirements = [
-            'php' => [
-                'required' => '7.4.0',
-                'current' => phpversion(),
-                'status' => version_compare(phpversion(), '7.4.0', '>=')
-            ],
-            'mysql' => [
-                'required' => '5.7.0',
-                'current' => 'Unknown', // Será atualizado abaixo
-                'status' => false
-            ],
-            'storage' => [
-                'required' => 'Writable',
-                'current' => 'Not Writable', // Será atualizado abaixo
-                'status' => false
-            ],
-            'bootstrap' => [
-                'required' => 'Writable',
-                'current' => 'Not Writable', // Será atualizado abaixo
-                'status' => false
-            ]
-        ];
-        
         $this->systemRequirements = [];
         $this->requirementsStatus = [
             'passed' => 0,
@@ -1644,70 +1507,161 @@ class SystemSettings extends Component
             'failed' => 0
         ];
 
-        try {
-            Log::debug('PHP Version: ' . $this->requirements['php']['current']);
-            
-            // A verificação do PHP já foi feita na inicialização
-            if ($this->requirements['php']['status']) {
-                $this->requirementsStatus['passed']++;
-            } else {
-                $this->requirementsStatus['failed']++;
-            }
+        // PHP Version
+        $phpVersion = phpversion();
+        $requiredPhpVersion = '8.0.0';
+        $phpVersionStatus = version_compare($phpVersion, $requiredPhpVersion, '>=') ? 'passed' : 'failed';
+        $this->addRequirement(
+            'PHP Version',
+            "PHP $requiredPhpVersion or higher required",
+            $phpVersion,
+            $phpVersionStatus,
+            true
+        );
 
-            // MySQL Version
+        // PHP Extensions
+        $requiredExtensions = [
+            'zip' => 'Required for backup and update functionality',
+            'curl' => 'Required for API requests and updates',
+            'pdo' => 'Required for database connections',
+            'pdo_mysql' => 'Required for MySQL database',
+            'openssl' => 'Required for secure connections',
+            'mbstring' => 'Required for UTF-8 string handling',
+            'tokenizer' => 'Required by Laravel framework',
+            'json' => 'Required for data processing',
+            'fileinfo' => 'Required for file uploads',
+            'xml' => 'Required by Laravel framework',
+            'gd' => 'Recommended for image processing',
+        ];
+
+        foreach ($requiredExtensions as $extension => $description) {
+            $isLoaded = extension_loaded($extension);
+            $isCritical = in_array($extension, ['zip', 'curl', 'pdo', 'pdo_mysql', 'openssl', 'mbstring', 'json']);
+            $status = $isLoaded ? 'passed' : ($isCritical ? 'failed' : 'warning');
+
+            $this->addRequirement(
+                "PHP Extension: $extension",
+                $description,
+                $isLoaded ? 'Installed' : 'Not installed',
+                $status,
+                $isCritical
+            );
+        }
+
+        // PHP Settings
+        $this->checkPhpSetting('max_execution_time', 60, 'seconds', 'Minimum 60 seconds recommended for updates', false);
+        $this->checkPhpSetting('memory_limit', 128, 'M', 'Minimum 128M recommended', false);
+        $this->checkPhpSetting('upload_max_filesize', 10, 'M', 'Minimum 10M recommended for file uploads', false);
+        $this->checkPhpSetting('post_max_size', 10, 'M', 'Minimum 10M recommended for form submissions', false);
+
+        // Directory Permissions
+        $this->checkDirectoryPermission(storage_path(), 'Required for file storage', true);
+        $this->checkDirectoryPermission(storage_path('app/public'), 'Required for public file access', true);
+        $this->checkDirectoryPermission(storage_path('app/backups'), 'Required for backup functionality', true);
+        $this->checkDirectoryPermission(storage_path('app/updates'), 'Required for update functionality', true);
+        $this->checkDirectoryPermission(storage_path('framework/cache'), 'Required for caching', true);
+        $this->checkDirectoryPermission(storage_path('framework/views'), 'Required for views compilation', true);
+        $this->checkDirectoryPermission(storage_path('framework/sessions'), 'Required for sessions', true);
+        $this->checkDirectoryPermission(storage_path('logs'), 'Required for logging', true);
+        $this->checkDirectoryPermission(base_path('bootstrap/cache'), 'Required by Laravel', true);
+
+        // Database Connection
+        try {
+            DB::connection()->getPdo();
+            $dbConnection = DB::connection()->getDatabaseName();
+            $this->addRequirement(
+                'Database Connection',
+                'Connection to database server',
+                'Connected to: ' . $dbConnection,
+                'passed',
+                true
+            );
+        } catch (\Exception $e) {
+            $this->addRequirement(
+                'Database Connection',
+                'Connection to database server',
+                'Error: ' . $e->getMessage(),
+                'failed',
+                true
+            );
+        }
+
+        // ZIP Archive Test
+        if (class_exists('\ZipArchive')) {
             try {
-                $pdo = DB::connection()->getPdo();
-                $mysqlVersion = $pdo->query('select version()')->fetchColumn();
-                Log::debug('MySQL Version: ' . $mysqlVersion);
-                
-                $this->requirements['mysql']['current'] = $mysqlVersion;
-                $this->requirements['mysql']['status'] = version_compare($mysqlVersion, '5.7.0', '>=');
-                
-                if ($this->requirements['mysql']['status']) {
-                    $this->requirementsStatus['passed']++;
+                $tempZipFile = storage_path('app/temp_test.zip');
+                $zip = new \ZipArchive();
+                if ($zip->open($tempZipFile, \ZipArchive::CREATE) === TRUE) {
+                    $zip->addFromString('test.txt', 'Testing zip functionality.');
+                    $zip->close();
+                    @unlink($tempZipFile); // Clean up
+                    $this->addRequirement(
+                        'ZIP Archive Test',
+                        'Ability to create and manipulate ZIP files',
+                        'Working properly',
+                        'passed',
+                        true
+                    );
                 } else {
-                    $this->requirementsStatus['failed']++;
+                    $this->addRequirement(
+                        'ZIP Archive Test',
+                        'Ability to create and manipulate ZIP files',
+                        'Failed to create test ZIP file',
+                        'failed',
+                        true
+                    );
                 }
             } catch (\Exception $e) {
-                Log::error('Erro ao obter versão do MySQL: ' . $e->getMessage());
-                $this->requirements['mysql']['current'] = 'Unknown';
-                $this->requirements['mysql']['status'] = false;
-                $this->requirementsStatus['failed']++;
+                $this->addRequirement(
+                    'ZIP Archive Test',
+                    'Ability to create and manipulate ZIP files',
+                    'Error: ' . $e->getMessage(),
+                    'failed',
+                    true
+                );
             }
-
-            // Storage Directory
-            $storagePath = storage_path();
-            $isStorageWritable = is_writable($storagePath);
-            $this->requirements['storage']['current'] = $isStorageWritable ? 'Writable' : 'Not Writable';
-            $this->requirements['storage']['status'] = $isStorageWritable;
-            
-            if ($isStorageWritable) {
-                $this->requirementsStatus['passed']++;
-            } else {
-                $this->requirementsStatus['failed']++;
-            }
-
-            // Bootstrap Directory
-            $bootstrapPath = base_path('bootstrap/cache');
-            $isBootstrapWritable = is_writable($bootstrapPath);
-            $this->requirements['bootstrap']['current'] = $isBootstrapWritable ? 'Writable' : 'Not Writable';
-            $this->requirements['bootstrap']['status'] = $isBootstrapWritable;
-            
-            if ($isBootstrapWritable) {
-                $this->requirementsStatus['passed']++;
-            } else {
-                $this->requirementsStatus['failed']++;
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Erro durante verificação de requisitos: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Erro durante verificação de requisitos: ' . $e->getMessage());
         }
-        
+
+        // cURL Test
+        if (function_exists('curl_init')) {
+            try {
+                $ch = curl_init('https://api.github.com');
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HEADER, false);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($response !== false) {
+                    $this->addRequirement(
+                        'cURL Test',
+                        'Ability to make HTTP requests',
+                        'Working properly (HTTP code: ' . $httpCode . ')',
+                        'passed',
+                        true
+                    );
+                } else {
+                    $this->addRequirement(
+                        'cURL Test',
+                        'Ability to make HTTP requests',
+                        'Failed to connect to GitHub API',
+                        'warning',
+                        true
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->addRequirement(
+                    'cURL Test',
+                    'Ability to make HTTP requests',
+                    'Error: ' . $e->getMessage(),
+                    'warning',
+                    true
+                );
+            }
+        }
+
         $this->isCheckingRequirements = false;
-        Log::info('Verificação de requisitos concluída. Passed: ' . $this->requirementsStatus['passed'] . ', Failed: ' . $this->requirementsStatus['failed']);
-        
-        return true;
     }
 
     /**
@@ -1723,9 +1677,7 @@ class SystemSettings extends Component
             'is_critical' => $isCritical
         ];
 
-        if (isset($this->requirementsStatus[$status])) {
-            $this->requirementsStatus[$status]++;
-        }
+        $this->requirementsStatus[$status]++;
     }
 
     /**
@@ -1735,27 +1687,23 @@ class SystemSettings extends Component
     {
         $currentValue = ini_get($setting);
         $numericValue = (int) $currentValue;
-        $currentUnit = '';
-        
-        // Detecta a unidade corretamente
-        if (preg_match('/^(\d+)([KMG]?)$/', $currentValue, $matches)) {
-            $numericValue = (int) $matches[1];
-            $currentUnit = $matches[2];
+
+        // Convert to MB if needed for comparison
+        if (strpos($currentValue, 'G') !== false) {
+            $numericValue = (int) $currentValue * 1024;
+        } elseif (strpos($currentValue, 'K') !== false) {
+            $numericValue = (int) $currentValue / 1024;
         }
 
-        // Converte para MB para comparação
-        if ($currentUnit === 'G') {
-            $numericValue = $numericValue * 1024;
-        } elseif ($currentUnit === 'K') {
-            $numericValue = $numericValue / 1024;
+        $status = 'passed';
+        if ($numericValue < $minValue) {
+            $status = $isCritical ? 'failed' : 'warning';
         }
-
-        $status = ($numericValue >= $minValue) ? 'passed' : ($isCritical ? 'failed' : 'warning');
 
         $this->addRequirement(
             "PHP Setting: $setting",
             $description,
-            "$currentValue (Recomendado: $minValue$unit ou superior)",
+            "$currentValue (Recommended: $minValue$unit or higher)",
             $status,
             $isCritical
         );
@@ -1766,35 +1714,29 @@ class SystemSettings extends Component
      */
     private function checkDirectoryPermission($path, $description, $isCritical)
     {
-        $exists = file_exists($path);
-        $isWritable = false;
-        
-        if (!$exists) {
-            // Tenta criar o diretório se não existir
+        if (!file_exists($path)) {
+            // Try to create directory if it doesn't exist
             try {
-                if (@mkdir($path, 0755, true)) {
-                    $exists = true;
-                    $isWritable = true;
-                }
+                mkdir($path, 0755, true);
             } catch (\Exception $e) {
-                // Erro ao criar o diretório
-            }
-        } else {
-            // Testa a permissão de escrita com um arquivo temporário
-            $testFile = $path . '/test_write_' . time() . '.tmp';
-            $isWritable = @file_put_contents($testFile, 'test') !== false;
-            if ($isWritable) {
-                @unlink($testFile); // Remove o arquivo de teste
+                $this->addRequirement(
+                    "Directory: " . basename($path),
+                    $description,
+                    "Directory doesn't exist and couldn't be created",
+                    $isCritical ? 'failed' : 'warning',
+                    $isCritical
+                );
+                return;
             }
         }
 
+        $isWritable = is_writable($path);
         $status = $isWritable ? 'passed' : ($isCritical ? 'failed' : 'warning');
-        $result = !$exists ? 'Diretório não existe' : ($isWritable ? 'Gravável' : 'Não gravável');
 
         $this->addRequirement(
             "Directory: " . basename($path),
             $description,
-            $result,
+            $isWritable ? 'Writable' : 'Not writable',
             $status,
             $isCritical
         );
@@ -1828,7 +1770,7 @@ class SystemSettings extends Component
             'America/Chicago' => 'America/Chicago',
             'America/Los_Angeles' => 'America/Los Angeles',
             'America/New_York' => 'America/New York',
-            'America/Sao_Paulo' => 'America/São Paulo',
+            'America/Sao_Paulo' => 'America/S達o Paulo',
             'Asia/Bangkok' => 'Asia/Bangkok',
             'Asia/Dubai' => 'Asia/Dubai',
             'Asia/Hong_Kong' => 'Asia/Hong Kong',
@@ -1931,36 +1873,5 @@ class SystemSettings extends Component
         }
 
         return $className;
-    }
-
-    /**
-     * Simple update method with immediate feedback
-     */
-    public function simpleUpdate()
-    {
-        // Registrar para depuração
-        \Illuminate\Support\Facades\Log::emergency('SIMPLE_UPDATE: Método chamado', [
-            'time' => now()->format('Y-m-d H:i:s'),
-            'update_available' => $this->update_available,
-            'request_timestamp' => time()
-        ]);
-        
-        // Verificar se há atualização disponível
-        if (!$this->update_available) {
-            $this->dispatch('notify', type: 'error', message: 'Não há atualizações disponíveis.');
-            return;
-        }
-
-        // Simular processo de atualização sem complexidade
-        $this->current_version = $this->latest_version;
-        $this->update_available = false;
-        
-        // Mensagem de sucesso
-        $this->dispatch('notify', type: 'success', message: "Sistema atualizado para versão {$this->latest_version}!");
-        
-        // Registrar sucesso
-        \Illuminate\Support\Facades\Log::info('SIMPLE_UPDATE: Atualização concluída com sucesso', [
-            'versao' => $this->latest_version
-        ]);
     }
 }

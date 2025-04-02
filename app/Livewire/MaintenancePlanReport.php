@@ -10,6 +10,7 @@ use App\Models\MaintenanceTask;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Setting;
 
 class MaintenancePlanReport extends Component
 {
@@ -22,6 +23,8 @@ class MaintenancePlanReport extends Component
     public $type = '';
     public $equipment_id = '';
     public $task_id = '';
+    public $line_id = '';
+    public $area_id = '';
     
     // Sorting
     public $sortField = 'scheduled_date';
@@ -50,7 +53,7 @@ class MaintenancePlanReport extends Component
 
     public function clearFilters()
     {
-        $this->reset(['status', 'type', 'equipment_id', 'task_id']);
+        $this->reset(['status', 'type', 'equipment_id', 'task_id', 'line_id', 'area_id']);
         $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d');
     }
@@ -62,12 +65,26 @@ class MaintenancePlanReport extends Component
         // Get the filtered data without pagination
         $plans = $this->getFilteredPlans(false);
         
+        // Get company information
+        $companyName = Setting::get('company_name', config('app.name'));
+        $companyLogoPath = Setting::get('company_logo', null);
+        $companyLogo = null;
+        
+        // Process logo for PDF if it exists
+        if ($companyLogoPath && Storage::disk('public')->exists($companyLogoPath)) {
+            $companyLogo = 'data:image/png;base64,' . base64_encode(
+                Storage::disk('public')->get($companyLogoPath)
+            );
+        }
+        
         // Generate PDF
         $pdf = PDF::loadView('pdf.maintenance-plan-report', [
             'plans' => $plans,
             'startDate' => $this->startDate,
             'endDate' => $this->endDate,
             'generatedAt' => Carbon::now()->format('Y-m-d H:i:s'),
+            'companyName' => $companyName,
+            'companyLogo' => $companyLogo
         ]);
         
         // Generate a unique filename
@@ -110,6 +127,12 @@ class MaintenancePlanReport extends Component
             ->when($this->task_id, function ($query) {
                 return $query->where('task_id', $this->task_id);
             })
+            ->when($this->line_id, function ($query) {
+                return $query->where('line_id', $this->line_id);
+            })
+            ->when($this->area_id, function ($query) {
+                return $query->where('area_id', $this->area_id);
+            })
             ->orderBy($this->sortField, $this->sortDirection);
             
         return $paginate ? $query->paginate(15) : $query->get();
@@ -120,10 +143,16 @@ class MaintenancePlanReport extends Component
         $equipments = MaintenanceEquipment::orderBy('name')->get();
         $tasks = MaintenanceTask::orderBy('title')->get();
         
+        // Get lines and areas for filters
+        $lines = \App\Models\MaintenanceLine::orderBy('name')->get();
+        $areas = \App\Models\MaintenanceArea::orderBy('name')->get();
+        
         return view('livewire.maintenance-plan-report', [
             'plans' => $this->getFilteredPlans(),
             'equipments' => $equipments,
             'tasks' => $tasks,
+            'lines' => $lines,
+            'areas' => $areas,
             'statusOptions' => [
                 'pending' => 'Pending',
                 'in_progress' => 'In Progress',

@@ -368,31 +368,9 @@ class CorrectiveMaintenance extends Component
             $correctiveRecord->system_process = $this->corrective['system_process'];
             $correctiveRecord->equipment_id = $this->corrective['equipment_id'];
 
-            // Handle failure mode selection
+            // Directly use selected failure mode and cause without automatic linking
             $correctiveRecord->failure_mode_id = $this->corrective['failure_mode_id'];
-
-            // If a mode doesn't exist but category is selected, try to use first from that category
-            if (empty($correctiveRecord->failure_mode_id) && !empty($this->corrective['failure_mode_category_id'])) {
-                $firstMode = FailureMode::where('category_id', $this->corrective['failure_mode_category_id'])
-                    ->where('is_active', true)
-                    ->first();
-                if ($firstMode) {
-                    $correctiveRecord->failure_mode_id = $firstMode->id;
-                }
-            }
-
-            // Handle failure cause selection
             $correctiveRecord->failure_cause_id = $this->corrective['failure_cause_id'];
-
-            // If a cause doesn't exist but category is selected, try to use first from that category
-            if (empty($correctiveRecord->failure_cause_id) && !empty($this->corrective['failure_cause_category_id'])) {
-                $firstCause = FailureCause::where('category_id', $this->corrective['failure_cause_category_id'])
-                    ->where('is_active', true)
-                    ->first();
-                if ($firstCause) {
-                    $correctiveRecord->failure_cause_id = $firstCause->id;
-                }
-            }
 
             $correctiveRecord->start_time = $this->corrective['start_time'];
             $correctiveRecord->end_time = $this->corrective['end_time'];
@@ -545,52 +523,7 @@ class CorrectiveMaintenance extends Component
         return CauseCategory::where('is_active', true)->orderBy('name')->get();
     }
 
-    // Add methods to get filtered modes and causes by category
-    public function getFilteredFailureModes()
-    {
-        $modes = FailureMode::with('category')->where('is_active', true);
-
-        if (!empty($this->corrective['failure_mode_category_id'])) {
-            $modes->where('category_id', $this->corrective['failure_mode_category_id']);
-        }
-
-        return $modes->orderBy('name')->get();
-    }
-
-    public function getFilteredFailureCauses()
-    {
-        $causes = FailureCause::with('category')->where('is_active', true);
-
-        if (!empty($this->corrective['failure_cause_category_id'])) {
-            $causes->where('category_id', $this->corrective['failure_cause_category_id']);
-        }
-
-        return $causes->orderBy('name')->get();
-    }
-
-    // Fix watcher method names
-    public function updatedCorrectiveFailureModeCategory()
-    {
-        return $this->updatedCorrectiveFailureModeCategoryId();
-    }
-
-    public function updatedCorrectiveFailureCauseCategory()
-    {
-        return $this->updatedCorrectiveFailureCauseCategoryId();
-    }
-
-    public function updatedCorrectiveFailureModeCategoryId()
-    {
-        // When category changes, reset the mode ID
-        $this->corrective['failure_mode_id'] = null;
-    }
-
-    public function updatedCorrectiveFailureCauseCategoryId()
-    {
-        // When category changes, reset the cause ID
-        $this->corrective['failure_cause_id'] = null;
-    }
-
+    // Modify the render method to use all available modes and causes regardless of category
     public function render()
     {
         return view('livewire.maintenance.corrective-maintenance', [
@@ -600,10 +533,21 @@ class CorrectiveMaintenance extends Component
             'years' => $this->getYearOptions(),
             'months' => $this->getMonthOptions(),
             'statuses' => $this->getStatusOptions(),
-            'failureModes' => $this->getFilteredFailureModes(),
-            'failureCauses' => $this->getFilteredFailureCauses(),
+            'failureModes' => $this->getFailureModes(), // Use all failure modes regardless of category
+            'failureCauses' => $this->getFailureCauses(), // Use all failure causes regardless of category
             'modeCategories' => $this->getModeCategories(),
             'causeCategories' => $this->getCauseCategories(),
         ]);
+    }
+
+    // Complete removal of any filtering or resetting logic
+    public function updatedCorrectiveFailureModeCategoryId()
+    {
+        // Completely removed - no action needed
+    }
+
+    public function updatedCorrectiveFailureCauseCategoryId()
+    {
+        // Completely removed - no action needed
     }
 }
