@@ -124,6 +124,7 @@ Route::middleware(['auth'])->group(function () {
         // Maintenance Effectiveness Reports
         Route::get('/maintenance-types', App\Livewire\Reports\MaintenanceTypes::class)->name('maintenance.types');
         Route::get('/maintenance-compliance', App\Livewire\Reports\MaintenanceCompliance::class)->name('maintenance.compliance');
+        Route::get('/maintenance-plan-report', App\Livewire\MaintenancePlanReport::class)->name('maintenance.plan');
 
         // Cost & Resource Analysis Reports
         Route::get('/cost-analysis', App\Livewire\Reports\CostAnalysis::class)->name('cost.analysis');

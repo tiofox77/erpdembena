@@ -48,11 +48,13 @@
         }
     </style>
 
-
     <!-- Tippy.js -->
     <script src="{{ asset('js/popper.min.js') }}"></script>
     <script src="{{ asset('js/tippy.min.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('css/tippy-light-border.css') }}"/>
+
+    <!-- Alpine.js - Necessário para os dropdowns customizados -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Alpine.js -->
     <script defer src="{{ asset('js/alpine.min.js') }}"></script>
@@ -396,6 +398,47 @@
             width: 16px;
             text-align: center;
         }
+        
+        /* Estilos para o dropdown customizado */
+        .custom-dropdown {
+            position: relative;
+        }
+        
+        .custom-dropdown-menu {
+            position: absolute;
+            z-index: 1000;
+            min-width: 10rem;
+            padding: 0.5rem 0;
+            margin: 0.125rem 0 0;
+            font-size: 0.875rem;
+            color: #212529;
+            text-align: left;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: 0.25rem;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+        }
+        
+        .custom-dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 0.25rem 1.5rem;
+            clear: both;
+            font-weight: 400;
+            color: #212529;
+            text-align: inherit;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            cursor: pointer;
+        }
+        
+        .custom-dropdown-item:hover {
+            color: #16181b;
+            text-decoration: none;
+            background-color: #f8f9fa;
+        }
     </style>
 
     @livewireStyles
@@ -557,6 +600,10 @@
                 <a href="{{ route('reports.maintenance.compliance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.compliance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-clipboard-check text-gray-500"></i>
                     <span>Maintenance Compliance</span>
+                </a>
+                <a href="{{ route('reports.maintenance.plan') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.plan') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-file-alt text-gray-500"></i>
+                    <span>Maintenance Plan Report</span>
                 </a>
 
                 <!-- Cost & Resource Analysis Reports -->
@@ -760,90 +807,44 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Setup menu items toggle functionality
-            document.getElementById('maintenanceMenu').addEventListener('click', function() {
-                const submenu = document.getElementById('maintenanceSubmenu');
-                const indicator = this.querySelector('.dropdown-indicator');
-                submenu.classList.toggle('open');
-                indicator.classList.toggle('open');
-            });
-
-            document.getElementById('supplyChainMenu').addEventListener('click', function() {
-                const submenu = document.getElementById('supplyChainSubmenu');
-                const indicator = this.querySelector('.dropdown-indicator');
-                submenu.classList.toggle('open');
-                indicator.classList.toggle('open');
-            });
-
-            // Fix for nested submenus - add click handlers
-            // Maintenance Settings submenu toggle
-            const maintenanceSettingsMenu = document.getElementById('maintenanceSettingsMenu');
-            if (maintenanceSettingsMenu) {
-                maintenanceSettingsMenu.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent event bubbling to parent menu
-                    const submenu = document.getElementById('maintenanceSettingsSubmenu');
-                    const indicator = this.querySelector('.dropdown-indicator');
-                    submenu.classList.toggle('open');
-                    indicator.classList.toggle('open');
-                });
-            }
-
-            // Reports & History submenu toggle
-            const reportsHistoryMenu = document.getElementById('reportsHistoryMenu');
-            if (reportsHistoryMenu) {
-                reportsHistoryMenu.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent event bubbling to parent menu
-                    const submenu = document.getElementById('reportsHistorySubmenu');
-                    const indicator = this.querySelector('.dropdown-indicator');
-                    submenu.classList.toggle('open');
-                    indicator.classList.toggle('open');
-                });
-            }
-
-            // Stocks submenu toggle
-            const stocksMenu = document.getElementById('stocksMenu');
-            if (stocksMenu) {
-                stocksMenu.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent event bubbling to parent menu
-                    const submenu = document.getElementById('stocksSubmenu');
-                    const indicator = this.querySelector('.dropdown-indicator');
-                    submenu.classList.toggle('open');
-                    indicator.classList.toggle('open');
-                });
-            }
-
-            // Parts submenu toggle
-            const partsMenu = document.getElementById('partsMenu');
-            if (partsMenu) {
-                partsMenu.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent event bubbling to parent menu
-                    const submenu = document.getElementById('partsSubmenu');
-                    const indicator = this.querySelector('.dropdown-indicator');
-                    submenu.classList.toggle('open');
-                    indicator.classList.toggle('open');
-                });
-            }
-
-            // Keep the maintenance menu always open by default
-            const maintenanceSubmenu = document.getElementById('maintenanceSubmenu');
-            const maintenanceIndicator = document.querySelector('#maintenanceMenu .dropdown-indicator');
-            maintenanceSubmenu.classList.add('open');
-            maintenanceIndicator.classList.add('open');
-
-            // Check if we are on a corrective maintenance settings page
+        // Função para verificar e abrir submenus com base na URL atual
+        function checkAndOpenMenus() {
             const currentPath = window.location.pathname;
             const currentRouteName = "{{ Route::currentRouteName() }}";
-
+            
+            console.log('Verificando menus para:', currentPath, currentRouteName);
+            
+            // 1. Sempre manter o menu de manutenção aberto
+            const maintenanceSubmenu = document.getElementById('maintenanceSubmenu');
+            const maintenanceIndicator = document.querySelector('#maintenanceMenu .dropdown-indicator');
+            if (maintenanceSubmenu && maintenanceIndicator) {
+                maintenanceSubmenu.classList.add('open');
+                maintenanceIndicator.classList.add('open');
+            }
+            
+            // 2. Verificar se estamos na página de Equipment Parts
+            const isEquipmentPartsPage = 
+                ['/equipment/parts', '/stocks/stockout'].some(path => currentPath.includes(path)) ||
+                ['equipment.parts', 'stocks.stockout'].includes(currentRouteName);
+                
+            if (isEquipmentPartsPage) {
+                console.log('Abrindo menu de Equipment Parts');
+                const partsSubmenu = document.getElementById('partsSubmenu');
+                const partsIndicator = document.querySelector('#partsMenu .dropdown-indicator');
+                if (partsSubmenu && partsIndicator) {
+                    partsSubmenu.classList.add('open');
+                    partsIndicator.classList.add('open');
+                }
+            }
+            
+            // 3. Verificar se estamos na página de configurações de manutenção
             const isMaintenanceSettingsPage =
-                // Check URL path
                 [
                     '/maintenance/failure-modes',
                     '/maintenance/failure-mode-categories',
                     '/maintenance/failure-causes',
                     '/maintenance/failure-cause-categories'
                 ].some(path => currentPath.includes(path)) ||
-                // Check route name
                 [
                     'maintenance.failure-modes',
                     'maintenance.failure-mode-categories',
@@ -851,9 +852,9 @@
                     'maintenance.failure-cause-categories',
                     'maintenance.corrective'
                 ].includes(currentRouteName);
-
-            // Automatically open the settings submenu if we are on a relevant page
+                
             if (isMaintenanceSettingsPage) {
+                console.log('Abrindo menu de configurações de manutenção');
                 const settingsSubmenu = document.getElementById('maintenanceSettingsSubmenu');
                 const settingsIndicator = document.querySelector('#maintenanceSettingsMenu .dropdown-indicator');
                 if (settingsSubmenu && settingsIndicator) {
@@ -861,15 +862,15 @@
                     settingsIndicator.classList.add('open');
                 }
             }
-
-            // Check if we are on a reports or history page
+            
+            // 4. Verificar se estamos na página de relatórios ou histórico
             const isReportsHistoryPage = currentRouteName && (
                 currentRouteName.startsWith('reports.') ||
                 currentRouteName.startsWith('history.')
             );
-
-            // Automatically open the reports and history submenu if we are on a relevant page
+            
             if (isReportsHistoryPage) {
+                console.log('Abrindo menu de relatórios e histórico');
                 const reportsHistorySubmenu = document.getElementById('reportsHistorySubmenu');
                 const reportsHistoryIndicator = document.querySelector('#reportsHistoryMenu .dropdown-indicator');
                 if (reportsHistorySubmenu && reportsHistoryIndicator) {
@@ -877,6 +878,45 @@
                     reportsHistoryIndicator.classList.add('open');
                 }
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup menu toggle functionality com evento para manter menus abertos
+            const setupMenuToggle = (menuId, submenuId) => {
+                const menuElement = document.getElementById(menuId);
+                if (!menuElement) return;
+                
+                menuElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const submenu = document.getElementById(submenuId);
+                    const indicator = this.querySelector('.dropdown-indicator');
+                    
+                    if (submenu && indicator) {
+                        submenu.classList.toggle('open');
+                        indicator.classList.toggle('open');
+                    }
+                    
+                    // Verificar e reabrir menus relacionados à página atual
+                    setTimeout(checkAndOpenMenus, 100);
+                });
+            };
+            
+            // Configurar todos os menus
+            setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
+            setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
+            setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
+            setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
+            setupMenuToggle('stocksMenu', 'stocksSubmenu');
+            setupMenuToggle('partsMenu', 'partsSubmenu');
+            
+            // Executar a verificação inicial
+            checkAndOpenMenus();
+        });
+        
+        // Manter os menus abertos durante a navegação SPA do Livewire
+        document.addEventListener('livewire:navigated', function() {
+            console.log('Navegação Livewire detectada, reabrindo menus');
+            setTimeout(checkAndOpenMenus, 200);
         });
     </script>
 

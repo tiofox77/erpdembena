@@ -21,6 +21,19 @@
                 console.log('Notification event received:', params);
                 showNotification(params.message, params.type);
             });
+            
+            // Adicionar listener para mudança de abas
+            Livewire.on('system-tab-changed', (params) => {
+                console.log('Tab changed:', params);
+                // Atualizar a visualização das abas
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                const selectedTab = document.getElementById('tab-' + params.tab);
+                if (selectedTab) {
+                    selectedTab.style.display = 'block';
+                }
+            });
         });
     </script>
 
@@ -46,17 +59,8 @@
                                     wire:click="setActiveTab('general')" 
                                     type="button" 
                                     role="tab"
-                                    x-data="{ tooltip: false }"
-                                    @mouseenter="tooltip = true"
-                                    @mouseleave="tooltip = false"
                                 >
                                     <i class="fas fa-sliders-h mr-2"></i> General
-                                    <div x-cloak x-show="tooltip" class="absolute bg-gray-800 text-white text-xs rounded py-1 px-2 mt-16 z-50 w-48">
-                                        <div class="flex items-center mb-1 font-semibold">
-                                            <i class="fas fa-info-circle mr-1.5"></i> General Settings
-                                        </div>
-                                        <p>Configure basic system properties like company name, timezone, date format and regional preferences.</p>
-                                    </div>
                                 </button>
                             </li>
                             <li class="mr-2" role="presentation">
@@ -65,17 +69,8 @@
                                     wire:click="setActiveTab('updates')" 
                                     type="button" 
                                     role="tab"
-                                    x-data="{ tooltip: false }"
-                                    @mouseenter="tooltip = true"
-                                    @mouseleave="tooltip = false"
                                 >
                                     <i class="fas fa-sync-alt mr-2"></i> Updates
-                                    <div x-cloak x-show="tooltip" class="absolute bg-gray-800 text-white text-xs rounded py-1 px-2 mt-16 z-50 w-48">
-                                        <div class="flex items-center mb-1 font-semibold">
-                                            <i class="fas fa-info-circle mr-1.5"></i> System Updates
-                                        </div>
-                                        <p>Check for new versions, manage application updates and track version history of the system.</p>
-                                    </div>
                                 </button>
                             </li>
                             <li class="mr-2" role="presentation">
@@ -84,17 +79,8 @@
                                     wire:click="setActiveTab('maintenance')" 
                                     type="button" 
                                     role="tab"
-                                    x-data="{ tooltip: false }"
-                                    @mouseenter="tooltip = true"
-                                    @mouseleave="tooltip = false"
                                 >
                                     <i class="fas fa-tools mr-2"></i> Maintenance
-                                    <div x-cloak x-show="tooltip" class="absolute bg-gray-800 text-white text-xs rounded py-1 px-2 mt-16 z-50 w-48">
-                                        <div class="flex items-center mb-1 font-semibold">
-                                            <i class="fas fa-info-circle mr-1.5"></i> System Maintenance
-                                        </div>
-                                        <p>Perform maintenance tasks like cache clearing, debugging, database optimizations and backups.</p>
-                                    </div>
                                 </button>
                             </li>
                             <li class="mr-2" role="presentation">
@@ -103,26 +89,17 @@
                                     wire:click="setActiveTab('requirements')" 
                                     type="button" 
                                     role="tab"
-                                    x-data="{ tooltip: false }"
-                                    @mouseenter="tooltip = true"
-                                    @mouseleave="tooltip = false"
                                 >
                                     <i class="fas fa-check-square mr-2"></i> Requirements
-                                    <div x-cloak x-show="tooltip" class="absolute bg-gray-800 text-white text-xs rounded py-1 px-2 mt-16 z-50 w-48">
-                                        <div class="flex items-center mb-1 font-semibold">
-                                            <i class="fas fa-info-circle mr-1.5"></i> System Requirements
-                                        </div>
-                                        <p>Check if your server meets all necessary requirements for optimal system performance.</p>
-                                    </div>
                                 </button>
                             </li>
                         </ul>
                     </div>
 
-                    <!-- Tab contents -->
-                    <div class="p-4 bg-white rounded-lg">
-                        <!-- General Settings Tab -->
-                        <div class="{{ $activeTab === 'general' ? 'block' : 'hidden' }}" role="tabpanel">
+                    <!-- Tab Contents -->
+                    <div class="mt-6">
+                        <!-- General Tab Content -->
+                        <div id="tab-general" class="tab-content space-y-6" style="display: {{ $activeTab === 'general' ? 'block' : 'none' }};">
                             <form wire:submit.prevent="saveGeneralSettings">
                                 @if($errors->any())
                                     <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
@@ -373,8 +350,8 @@
                             </form>
                         </div>
 
-                        <!-- Updates Tab -->
-                        <div class="{{ $activeTab === 'updates' ? 'block' : 'hidden' }}" role="tabpanel">
+                        <!-- Updates Tab Content -->
+                        <div id="tab-updates" class="tab-content space-y-6" style="display: {{ $activeTab === 'updates' ? 'block' : 'none' }};">
                             <div class="mb-6">
                                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 mb-4">
                                     <div class="flex items-center justify-between">
@@ -393,7 +370,7 @@
                                                 </div>
                                                 
                                                 @if($update_available)
-                                                <div>
+                                                <div class="ml-6">
                                                     <p class="text-sm text-gray-500 flex items-center">
                                                         <i class="fas fa-arrow-circle-up text-green-500 mr-2"></i>
                                                         Available Version:
@@ -407,35 +384,26 @@
                                         <div class="flex-shrink-0">
                                             @if($update_available)
                                                 <button
-                                                    wire:click="startUpdate"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="startUpdate"
-                                                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                                    x-data="{ tooltip: false }"
-                                                    @mouseenter="tooltip = true"
-                                                    @mouseleave="tooltip = false"
+                                                    type="button"
+                                                    wire:click="simpleUpdate"
+                                                    x-on:click="console.log('Botão de atualização clicado via Alpine')"
+                                                    id="updateNowButton"
+                                                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md flex items-center gap-2"
                                                 >
-                                                    <span wire:loading.remove wire:target="startUpdate">
-                                                        <i class="fas fa-arrow-circle-up mr-2"></i> Update Now
+                                                    <span wire:loading.remove wire:target="simpleUpdate">
+                                                        <i class="fas fa-arrow-circle-up"></i> Atualizar Agora
                                                     </span>
-                                                    <span wire:loading wire:target="startUpdate">
-                                                        <i class="fas fa-spinner fa-spin mr-2"></i> Updating...
+                                                    <span wire:loading wire:target="simpleUpdate">
+                                                        <i class="fas fa-spinner fa-spin"></i> Atualizando...
                                                     </span>
-                                                    
-                                                    <div x-cloak x-show="tooltip" class="absolute mt-10 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 z-50 w-56">
-                                                        <div class="font-semibold mb-1">System Update</div>
-                                                        <p>Start the update process to version {{ $latest_version }}. A backup of your system will be made before updating.</p>
-                                                    </div>
                                                 </button>
                                             @else
                                                 <button
+                                                    type="button"
                                                     wire:click="checkForUpdates(false)"
                                                     wire:loading.attr="disabled"
                                                     wire:target="checkForUpdates"
                                                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                                    x-data="{ tooltip: false }"
-                                                    @mouseenter="tooltip = true"
-                                                    @mouseleave="tooltip = false"
                                                 >
                                                     <span wire:loading.remove wire:target="checkForUpdates">
                                                         <i class="fas fa-sync-alt mr-2"></i> Check for Updates
@@ -443,11 +411,6 @@
                                                     <span wire:loading wire:target="checkForUpdates">
                                                         <i class="fas fa-spinner fa-spin mr-2"></i> Checking...
                                                     </span>
-                                                    
-                                                    <div x-cloak x-show="tooltip" class="absolute mt-10 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 z-50 w-56">
-                                                        <div class="font-semibold mb-1">Check for Updates</div>
-                                                        <p>Connect to the repository to check if a newer version of the system is available.</p>
-                                                    </div>
                                                 </button>
                                             @endif
                                         </div>
@@ -610,8 +573,8 @@
                             </div>
                         </div>
 
-                        <!-- Maintenance Tab -->
-                        <div class="{{ $activeTab === 'maintenance' ? 'block' : 'hidden' }}" role="tabpanel">
+                        <!-- Maintenance Tab Content -->
+                        <div id="tab-maintenance" class="tab-content space-y-6" style="display: {{ $activeTab === 'maintenance' ? 'block' : 'none' }};">
                             <form wire:submit.prevent="saveMaintenanceSettings">
                                 <div class="space-y-6">
                                     <div class="bg-white border border-gray-200 rounded-lg p-5">
@@ -849,8 +812,8 @@
                             </form>
                         </div>
 
-                        <!-- System Requirements Tab -->
-                        <div class="{{ $activeTab === 'requirements' ? 'block' : 'hidden' }}" role="tabpanel">
+                        <!-- System Requirements Tab Content -->
+                        <div id="tab-requirements" class="tab-content space-y-6" style="display: {{ $activeTab === 'requirements' ? 'block' : 'none' }};" wire:init="checkSystemRequirements">
                             <div class="space-y-6">
                                 <div class="bg-white border border-gray-200 rounded-lg p-5">
                                     <div class="flex items-center justify-between mb-4">
@@ -1192,40 +1155,29 @@
             </div>
         </div>
     </div>
-
-    <!-- Confirmation Modal -->
-    @if($showConfirmModal)
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
-                    Confirmation Required
-                </h3>
-                <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeConfirmModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="bg-yellow-50 p-4 rounded-md mb-4">
-                <p class="text-sm text-yellow-700">{{ $confirmMessage }}</p>
-            </div>
-
-            <div class="flex justify-end space-x-3">
-                <button
-                    type="button"
-                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    wire:click="closeConfirmModal">
-                    <i class="fas fa-times mr-1"></i> Cancel
-                </button>
-                <button
-                    type="button"
-                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                    wire:click="processConfirmedAction">
-                    <i class="fas fa-check mr-1"></i> Confirm
-                </button>
-            </div>
-        </div>
-    </div>
-    @endif
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('livewire:initialized', () => {
+        // Adicionar listener para depurar eventos do Livewire
+        console.log('Debug: Inicializando monitoramento de eventos Livewire');
+        
+        Livewire.hook('message.sent', (message, component) => {
+            console.log('Debug: Mensagem Livewire enviada:', message);
+        });
+        
+        Livewire.hook('message.failed', (message, component) => {
+            console.error('Debug: Falha na mensagem Livewire:', message);
+        });
+        
+        Livewire.hook('message.received', (message, component) => {
+            console.log('Debug: Mensagem Livewire recebida:', message);
+        });
+        
+        Livewire.hook('message.processed', (message, component) => {
+            console.log('Debug: Mensagem Livewire processada:', message);
+        });
+    });
+</script>
+@endpush

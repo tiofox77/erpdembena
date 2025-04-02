@@ -55,6 +55,7 @@
                                         <option value="in_progress">In Progress</option>
                                         <option value="completed">Completed</option>
                                         <option value="cancelled">Cancelled</option>
+                                        <option value="schedule">Schedule</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -201,6 +202,10 @@
                                             @elseif($schedule->status === 'completed')
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                     Completed
+                                                </span>
+                                            @elseif($schedule->status === 'schedule')
+                                                <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                                    Schedule
                                                 </span>
                                             @else
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
@@ -351,7 +356,7 @@
                                     >
                                         <option value="">Select equipment</option>
                                         @foreach($equipment as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                            <option value="{{ $item->id }}">{{ $item->name }} - {{ $item->serial_number }}</option>
                                         @endforeach
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -646,9 +651,9 @@
                                     >
                                         <option value="pending">Pending</option>
                                         <option value="in_progress">In Progress</option>
-                                        <option value="Scheduled">Scheduled</option>
                                         <option value="completed">Completed</option>
                                         <option value="cancelled">Cancelled</option>
+                                        <option value="schedule">Schedule</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -697,6 +702,7 @@
                                     >
                                         <option value="preventive">Preventive</option>
                                         <option value="predictive">Predictive</option>
+                                        <option value="conditional">Conditional</option>
                                         <option value="other">Other</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -1030,6 +1036,11 @@
                                                 <i class="fas fa-chart-line mr-1"></i> Predictive
                                             </span>
                                             @break
+                                        @case('conditional')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                <i class="fas fa-exclamation-circle mr-1"></i> Conditional
+                                            </span>
+                                            @break
                                         @default
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 <i class="fas fa-cog mr-1"></i> {{ ucfirst($type) }}
@@ -1059,6 +1070,11 @@
                                         @case('cancelled')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 <i class="fas fa-ban mr-1"></i> Cancelled
+                                            </span>
+                                            @break
+                                        @case('schedule')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                <i class="fas fa-calendar-alt mr-1"></i> Schedule
                                             </span>
                                             @break
                                         @default

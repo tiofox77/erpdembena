@@ -43,7 +43,7 @@ class MaintenancePlan extends Component
     public $assigned_to;
     public $description;
     public $notes;
-    public $status = 'in_progress';
+    public $status = 'pending';
 
     // Filters
     public $search = '';
@@ -67,11 +67,11 @@ class MaintenancePlan extends Component
         'month' => 'required_if:frequency_type,yearly|nullable|integer|min:1|max:12',
         'month_day' => 'required_if:frequency_type,yearly|nullable|integer|min:1|max:31',
         'priority' => 'required|in:low,medium,high,critical',
-        'type' => 'required|in:preventive,predictive,other',
+        'type' => 'required|in:preventive,predictive,conditional,other',
         'assigned_to' => 'nullable|exists:users,id',
         'description' => 'nullable|string',
         'notes' => 'nullable|string',
-        'status' => 'required|in:pending,in_progress,completed,cancelled',
+        'status' => 'required|in:pending,in_progress,completed,cancelled,schedule',
     ];
 
     protected $messages = [
@@ -403,13 +403,28 @@ class MaintenancePlan extends Component
 
     public function getFrequencyText($schedule)
     {
+        $months = [
+            1 => 'January',
+            2 => 'February',
+            3 => 'March', 
+            4 => 'April',
+            5 => 'May',
+            6 => 'June',
+            7 => 'July',
+            8 => 'August',
+            9 => 'September',
+            10 => 'October',
+            11 => 'November',
+            12 => 'December'
+        ];
+        
         return match ($schedule->frequency_type) {
             'once' => "Once",
             'daily' => "Daily",
             'custom' => "Every {$schedule->custom_days} days",
             'weekly' => "Weekly" . (isset($schedule->day_of_week) ? " (". Carbon::getDays()[$schedule->day_of_week] .")" : ""),
             'monthly' => "Monthly" . (isset($schedule->day_of_month) ? " (day {$schedule->day_of_month})" : ""),
-            'yearly' => "Yearly" . (isset($schedule->month) && isset($schedule->month_day) ? " (" . Carbon::getMonthsOfYear()[$schedule->month] . " {$schedule->month_day})" : ""),
+            'yearly' => "Yearly" . (isset($schedule->month) && isset($schedule->month_day) ? " (" . $months[$schedule->month] . " {$schedule->month_day})" : ""),
             default => "Unknown frequency"
         };
     }
@@ -432,6 +447,7 @@ class MaintenancePlan extends Component
                     'in_progress' => '#3B82F6', // blue
                     'completed' => '#059669',   // dark green
                     'cancelled' => '#6B7280',   // gray
+                    'schedule' => '#F59E0B',    // orange
                     default => '#10B981'        // default green
                 };
 
@@ -875,13 +891,15 @@ class MaintenancePlan extends Component
             'types' => [
                 'preventive' => 'Preventive',
                 'predictive' => 'Predictive',
+                'conditional' => 'Conditional',
                 'other' => 'Other'
             ],
             'statuses' => [
                 'pending' => 'Pending',
                 'in_progress' => 'In Progress',
                 'completed' => 'Completed',
-                'cancelled' => 'Cancelled'
+                'cancelled' => 'Cancelled',
+                'schedule' => 'Schedule'
             ]
         ]);
     }

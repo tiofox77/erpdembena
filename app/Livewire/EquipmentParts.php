@@ -339,20 +339,53 @@ class EquipmentParts extends Component
     }
 
     /**
-     * Clear filters
+     * Get the name of the selected equipment 
+     */
+    public function getSelectedEquipmentName()
+    {
+        if (empty($this->part['maintenance_equipment_id']) && empty($this->equipmentId)) {
+            return '';
+        }
+        
+        // Para o dropdown de filtro
+        if (!empty($this->equipmentId)) {
+            $equipment = MaintenanceEquipment::find($this->equipmentId);
+            return $equipment ? $equipment->name : '';
+        }
+        
+        // Para o dropdown do formulário
+        if (!empty($this->part['maintenance_equipment_id'])) {
+            $equipment = MaintenanceEquipment::find($this->part['maintenance_equipment_id']);
+            return $equipment ? $equipment->name : '';
+        }
+        
+        return '';
+    }
+    
+    /**
+     * Select equipment in the form dropdown
+     */
+    public function selectEquipment($id, $name)
+    {
+        $this->part['maintenance_equipment_id'] = $id;
+    }
+    
+    /**
+     * Select equipment in the filter dropdown
+     */
+    public function selectEquipmentId($id)
+    {
+        $this->equipmentId = $id;
+        $this->resetPage();
+    }
+    
+    /**
+     * Clear all filters
      */
     public function clearFilters()
     {
-        $this->search = '';
-        $this->equipmentId = '';
+        $this->reset('search', 'equipmentId');
         $this->resetPage();
-
-        // Emite evento para feedback visual
-        $this->dispatch('filters-cleared');
-
-        $notificationType = 'info';
-        $message = 'All search filters have been reset.';
-        $this->dispatch('notify', type: $notificationType, message: $message);
     }
 
     /**

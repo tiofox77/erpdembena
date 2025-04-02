@@ -44,19 +44,47 @@
                             <label for="equipmentId" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
                                 <i class="fas fa-tools mr-1 text-gray-500"></i> Equipment
                             </label>
-                            <div class="relative rounded-md shadow-sm">
-                                <select
-                                    id="equipmentId"
-                                    wire:model.live="equipmentId"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            <div class="relative" x-data="{ open: false, selectedName: '{{ $this->getSelectedEquipmentName() }}' }">
+                                <!-- Hidden input for Livewire binding -->
+                                <input type="hidden" wire:model.live="equipmentId" id="equipmentId">
+                                
+                                <!-- Custom dropdown trigger -->
+                                <div 
+                                    @click="open = !open" 
+                                    class="cursor-pointer mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 >
-                                    <option value="">All Equipment</option>
-                                    @foreach($this->equipmentList as $equipment)
-                                        <option value="{{ $equipment->id }}">{{ $equipment->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                    <div class="flex justify-between items-center">
+                                        <span x-text="selectedName || 'All Equipment'"></span>
+                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- Dropdown menu -->
+                                <div 
+                                    x-show="open" 
+                                    @click.away="open = false"
+                                    class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                    style="display: none;"
+                                >
+                                    <div class="py-1">
+                                        <div 
+                                            class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            wire:click="clearFilters"
+                                            @click="selectedName = 'All Equipment'; open = false"
+                                        >
+                                            All Equipment
+                                        </div>
+                                        
+                                        @foreach($this->equipmentList as $equipment)
+                                            <div 
+                                                class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                wire:click="selectEquipmentId('{{ $equipment->id }}')"
+                                                @click="selectedName = '{{ $equipment->name }}'; open = false"
+                                            >
+                                                {{ $equipment->name }}
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -69,7 +97,7 @@
                                 <select
                                     id="perPage"
                                     wire:model.live="perPage"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 >
                                     <option value="10">10 per page</option>
                                     <option value="25">25 per page</option>
@@ -525,20 +553,49 @@
                                     <label for="equipment-id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
                                         <i class="fas fa-tools mr-1 text-gray-500"></i> Equipment <span class="text-red-500">*</span>
                                     </label>
-                                    <div class="relative rounded-md shadow-sm">
-                                        <select
-                                            id="equipment-id"
-                                            wire:model.live="part.maintenance_equipment_id"
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('part.maintenance_equipment_id') border-red-300 text-red-900 @enderror"
+                                    <div class="relative" x-data="{ open: false, selectedName: '{{ $this->getSelectedEquipmentName() }}' }">
+                                        <!-- Hidden input for Livewire binding -->
+                                        <input type="hidden" wire:model.live="part.maintenance_equipment_id" id="equipment-id">
+                                        
+                                        <!-- Custom dropdown trigger -->
+                                        <div 
+                                            @click="open = !open" 
+                                            class="cursor-pointer mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('part.maintenance_equipment_id') border-red-300 text-red-900 @enderror"
                                         >
-                                            <option value="">Select Equipment</option>
-                                            @foreach($this->equipmentList as $equipment)
-                                                <option value="{{ $equipment->id }}">{{ $equipment->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            <div class="flex justify-between items-center">
+                                                <span x-text="selectedName || 'Select Equipment'"></span>
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            </div>
                                         </div>
+                                        
+                                        <!-- Dropdown menu -->
+                                        <div 
+                                            x-show="open" 
+                                            @click.away="open = false"
+                                            class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                            style="display: none;"
+                                        >
+                                            <div class="py-1">
+                                                <div 
+                                                    class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                    wire:click="selectEquipment('', '')"
+                                                    @click="selectedName = 'Select Equipment'; open = false"
+                                                >
+                                                    Select Equipment
+                                                </div>
+                                                
+                                                @foreach($this->equipmentList as $equipment)
+                                                    <div 
+                                                        class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                        wire:click="selectEquipment('{{ $equipment->id }}', '{{ $equipment->name }}')"
+                                                        @click="selectedName = '{{ $equipment->name }}'; open = false"
+                                                    >
+                                                        {{ $equipment->name }}
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        
                                         @error('part.maintenance_equipment_id')
                                             <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-exclamation-circle text-red-500"></i>
@@ -710,7 +767,4 @@
             </div>
         </div>
     @endif
-
-    <!-- Notification Script -->
-
 </div>
