@@ -260,9 +260,35 @@
 
         .sidebar.collapsed .sidebar-header span, 
         .sidebar.collapsed .sidebar-menu-item span,
-        .sidebar.collapsed .dropdown-indicator,
-        .sidebar.collapsed .sidebar-submenu {
+        .sidebar.collapsed .dropdown-indicator {
             display: none;
+        }
+
+        /* Removi .sidebar-submenu daqui para não esconder submenus ativos */
+
+        .sidebar.collapsed .sidebar-submenu:not(.active) {
+            display: none;
+        }
+
+        /* Comportamento específico para submenus quando a sidebar está recolhida */
+        .sidebar.collapsed .sidebar-submenu.active {
+            position: absolute;
+            left: 64px;
+            background: white;
+            width: 220px;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .sidebar.collapsed .sidebar-nested-submenu.active {
+            position: absolute;
+            left: 220px;
+            background: white;
+            width: 220px;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 10;
         }
 
         .sidebar.collapsed .sidebar-header {
@@ -741,158 +767,129 @@
     </div>
 
     <script>
-        // Função para verificar e abrir submenus com base na URL atual
-        function checkAndOpenMenus() {
-            const currentPath = window.location.pathname;
-            const currentRouteName = "{{ Route::currentRouteName() }}";
-            
-            console.log('Verificando menus para:', currentPath, currentRouteName);
-            
-            // Fechar todos os submenus primeiro
-            const allSubmenus = document.querySelectorAll('.sidebar-submenu');
-            const allIndicators = document.querySelectorAll('.dropdown-indicator');
-            
-            allSubmenus.forEach(function(submenu) {
-                submenu.classList.remove('active');
+        // Funções definidas fora do DOMContentLoaded para serem acessíveis globalmente
+        function saveMenuState() {
+            const activeMenus = Array.from(document.querySelectorAll('.sidebar-submenu.active'))
+                .map(element => element.id);
+            localStorage.setItem('activeMenus', JSON.stringify(activeMenus));
+        }
+        
+        function restoreMenuState() {
+            const activeMenus = JSON.parse(localStorage.getItem('activeMenus') || '[]');
+            activeMenus.forEach(menuId => {
+                const submenu = document.getElementById(menuId);
+                if (submenu) {
+                    submenu.classList.add('active');
+                    
+                    // Ativar o indicador correspondente
+                    const parentMenuItem = document.getElementById(menuId.replace('Submenu', 'Menu'));
+                    if (parentMenuItem) {
+                        const indicator = parentMenuItem.querySelector('.dropdown-indicator');
+                        if (indicator) {
+                            indicator.classList.add('active');
+                        }
+                    }
+                }
             });
+        }
+        
+        function setupSidebar() {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const toggleIcon = sidebarToggle ? sidebarToggle.querySelector('i') : null;
+            const menuItems = document.querySelectorAll('.sidebar-menu-item');
             
-            allIndicators.forEach(function(indicator) {
-                indicator.classList.remove('active');
-            });
+            // Check if sidebar state is stored in localStorage
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             
-            // Verificar qual é a seção atual e abrir apenas o menu correspondente
-            const isHrPage = currentPath.includes('/hr') || 
-                            (currentRouteName && currentRouteName.startsWith('hr.'));
+            // Apply initial state
+            if (sidebarCollapsed && sidebar && mainContent && toggleIcon) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                toggleIcon.classList.remove('fa-chevron-left');
+                toggleIcon.classList.add('fa-chevron-right');
+            }
+            
+            // Restaurar estados dos menus
+            restoreMenuState();
+            
+            // Handle hover effects for collapsed sidebar
+            menuItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    if (sidebar && sidebar.classList.contains('collapsed')) {
+                        const subMenu = document.getElementById(this.id.replace('Menu', 'Submenu'));
+                        if (subMenu) {
+                            // Open this submenu
+                            subMenu.classList.add('active');
                             
-            const isMaintenancePage = currentPath.includes('/maintenance') || 
-                                     (currentRouteName && currentRouteName.startsWith('maintenance.'));
-                                     
-            const isSupplyChainPage = currentPath.includes('/supply-chain') || 
-                                     (currentRouteName && currentRouteName.startsWith('supply.'));
+                            // Position the submenu correctly
+                            const rect = this.getBoundingClientRect();
+                            subMenu.style.top = `${rect.top}px`;
+                        }
+                    }
+                });
+            });
             
-            // Abrir o menu específico da seção atual
-            if (isHrPage) {
-                const hrSubmenu = document.getElementById('hrSubmenu');
-                const hrIndicator = document.querySelector('#hrMenu .dropdown-indicator');
-                if (hrSubmenu && hrIndicator) {
-                    hrSubmenu.classList.add('active');
-                    hrIndicator.classList.add('active');
-                }
-            } else if (isMaintenancePage) {
-                const maintenanceSubmenu = document.getElementById('maintenanceSubmenu');
-                const maintenanceIndicator = document.querySelector('#maintenanceMenu .dropdown-indicator');
-                if (maintenanceSubmenu && maintenanceIndicator) {
-                    maintenanceSubmenu.classList.add('active');
-                    maintenanceIndicator.classList.add('active');
-                }
-                
-                // Verificar submenus específicos de manutenção
-                checkMaintenanceSubmenus(currentPath, currentRouteName);
-            } else if (isSupplyChainPage) {
-                const supplyChainSubmenu = document.getElementById('supplyChainSubmenu');
-                const supplyChainIndicator = document.querySelector('#supplyChainMenu .dropdown-indicator');
-                if (supplyChainSubmenu && supplyChainIndicator) {
-                    supplyChainSubmenu.classList.add('active');
-                    supplyChainIndicator.classList.add('active');
-                }
+            // Handle mouseout for entire sidebar to close submenus when mouse leaves
+            if (sidebar) {
+                sidebar.addEventListener('mouseleave', function() {
+                    if (sidebar.classList.contains('collapsed')) {
+                        // Fechar apenas menus que não estão salvos no estado
+                        const activeMenus = JSON.parse(localStorage.getItem('activeMenus') || '[]');
+                        document.querySelectorAll('.sidebar-submenu, .sidebar-nested-submenu').forEach(sm => {
+                            if (!activeMenus.includes(sm.id)) {
+                                sm.classList.remove('active');
+                            }
+                        });
+                    }
+                });
+            }
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('collapsed');
+                    mainContent.classList.toggle('expanded');
+                    
+                    // Toggle icon direction
+                    if (sidebar.classList.contains('collapsed')) {
+                        toggleIcon.classList.remove('fa-chevron-left');
+                        toggleIcon.classList.add('fa-chevron-right');
+                        localStorage.setItem('sidebarCollapsed', 'true');
+                    } else {
+                        toggleIcon.classList.remove('fa-chevron-right');
+                        toggleIcon.classList.add('fa-chevron-left');
+                        localStorage.setItem('sidebarCollapsed', 'false');
+                    }
+                });
             }
         }
         
-        function checkMaintenanceSubmenus(currentPath, currentRouteName) {
-            // Verificar se estamos na página de Equipment Parts
-            const isEquipmentPartsPage = 
-                ['/equipment/parts', '/stocks/stockout'].some(path => currentPath.includes(path)) ||
-                ['equipment.parts', 'stocks.stockout'].includes(currentRouteName);
+        // Setup menu toggle functionality com evento para manter menus abertos
+        function setupMenuToggle(menuId, submenuId) {
+            const menuElement = document.getElementById(menuId);
+            const submenu = document.getElementById(submenuId);
+            if (!menuElement || !submenu) return;
+            
+            menuElement.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Toggle current submenu
+                submenu.classList.toggle('active');
                 
-            if (isEquipmentPartsPage) {
-                console.log('Abrindo menu de Equipment Parts');
-                const partsSubmenu = document.getElementById('partsSubmenu');
-                const partsIndicator = document.querySelector('#partsMenu .dropdown-indicator');
-                if (partsSubmenu && partsIndicator) {
-                    partsSubmenu.classList.add('active');
-                    partsIndicator.classList.add('active');
+                // Toggle dropdown indicator
+                const indicator = this.querySelector('.dropdown-indicator');
+                if (indicator) {
+                    indicator.classList.toggle('active', submenu.classList.contains('active'));
                 }
-            }
-            
-            // Verificar se estamos na página de configurações de manutenção
-            const isMaintenanceSettingsPage =
-                [
-                    '/maintenance/failure-modes',
-                    '/maintenance/failure-mode-categories',
-                    '/maintenance/failure-causes',
-                    '/maintenance/failure-cause-categories'
-                ].some(path => currentPath.includes(path)) ||
-                [
-                    'maintenance.failure-modes',
-                    'maintenance.failure-mode-categories',
-                    'maintenance.failure-causes',
-                    'maintenance.failure-cause-categories',
-                    'maintenance.corrective'
-                ].includes(currentRouteName);
                 
-            if (isMaintenanceSettingsPage) {
-                console.log('Abrindo menu de configurações de manutenção');
-                const settingsSubmenu = document.getElementById('maintenanceSettingsSubmenu');
-                const settingsIndicator = document.querySelector('#maintenanceSettingsMenu .dropdown-indicator');
-                if (settingsSubmenu && settingsIndicator) {
-                    settingsSubmenu.classList.add('active');
-                    settingsIndicator.classList.add('active');
-                }
-            }
-            
-            // Verificar se estamos na página de relatórios ou histórico
-            const isReportsHistoryPage = currentRouteName && (
-                currentRouteName.startsWith('reports.') ||
-                currentRouteName.startsWith('history.')
-            );
-            
-            if (isReportsHistoryPage) {
-                console.log('Abrindo menu de relatórios e histórico');
-                const reportsHistorySubmenu = document.getElementById('reportsHistorySubmenu');
-                const reportsHistoryIndicator = document.querySelector('#reportsHistoryMenu .dropdown-indicator');
-                if (reportsHistorySubmenu && reportsHistoryIndicator) {
-                    reportsHistorySubmenu.classList.add('active');
-                    reportsHistoryIndicator.classList.add('active');
-                }
-            }
+                // Save state to localStorage
+                saveMenuState();
+            });
         }
-
+        
+        // Inicialização inicial
         document.addEventListener('DOMContentLoaded', function() {
-            // Setup menu toggle functionality com evento para manter menus abertos
-            const setupMenuToggle = (menuId, submenuId) => {
-                const menuElement = document.getElementById(menuId);
-                if (!menuElement) return;
-                
-                menuElement.addEventListener('click', function() {
-                    const submenu = document.getElementById(submenuId);
-                    
-                    // Close all other submenus first
-                    const allSubmenus = document.querySelectorAll('.sidebar-submenu');
-                    allSubmenus.forEach(function(sm) {
-                        if (sm.id !== submenuId) {
-                            sm.classList.remove('active');
-                            
-                            // Also reset all dropdown indicators
-                            const parentMenuItem = document.getElementById(sm.id.replace('Submenu', 'Menu'));
-                            if (parentMenuItem) {
-                                const indicator = parentMenuItem.querySelector('.dropdown-indicator');
-                                if (indicator) {
-                                    indicator.classList.remove('active');
-                                }
-                            }
-                        }
-                    });
-                    
-                    // Toggle current submenu
-                    submenu.classList.toggle('active');
-                    
-                    // Toggle dropdown indicator
-                    const indicator = this.querySelector('.dropdown-indicator');
-                    if (indicator) {
-                        indicator.classList.toggle('active', submenu.classList.contains('active'));
-                    }
-                });
-            };
+            setupSidebar();
             
             // Configurar todos os menus
             setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
@@ -902,17 +899,27 @@
             setupMenuToggle('stocksMenu', 'stocksSubmenu');
             setupMenuToggle('partsMenu', 'partsSubmenu');
             setupMenuToggle('hrMenu', 'hrSubmenu');
-            
-            // Executar a verificação inicial
-            checkAndOpenMenus();
         });
         
-        // Manter os menus abertos durante a navegação SPA do Livewire
-        document.addEventListener('livewire:navigated', function() {
-            console.log('Navegação Livewire detectada, reabrindo menus');
-            setTimeout(checkAndOpenMenus, 200);
+        // Integração com Livewire para reconfigurar menus após atualizações do DOM
+        document.addEventListener('livewire:load', function() {
+            Livewire.hook('message.processed', (message, component) => {
+                // Reconfigurar a sidebar após cada atualização do Livewire
+                setupSidebar();
+                
+                // Reconfigurar todos os menus
+                setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
+                setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
+                setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
+                setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
+                setupMenuToggle('stocksMenu', 'stocksSubmenu');
+                setupMenuToggle('partsMenu', 'partsSubmenu');
+                setupMenuToggle('hrMenu', 'hrSubmenu');
+            });
         });
-        
+    </script>
+
+    <script>
         // Check for flash messages when page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Check for error message in session
@@ -1037,43 +1044,6 @@
                 form.addEventListener('submit', (e) => {
                     console.log('Form submitted:', e.target);
                 });
-            });
-        });
-    </script>
-
-    <!-- Sidebar toggle script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.querySelector('.main-content');
-            const toggleIcon = sidebarToggle.querySelector('i');
-            
-            // Check if sidebar state is stored in localStorage
-            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            
-            // Apply initial state
-            if (sidebarCollapsed) {
-                sidebar.classList.add('collapsed');
-                mainContent.classList.add('expanded');
-                toggleIcon.classList.remove('fa-chevron-left');
-                toggleIcon.classList.add('fa-chevron-right');
-            }
-            
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
-                
-                // Toggle icon direction
-                if (sidebar.classList.contains('collapsed')) {
-                    toggleIcon.classList.remove('fa-chevron-left');
-                    toggleIcon.classList.add('fa-chevron-right');
-                    localStorage.setItem('sidebarCollapsed', 'true');
-                } else {
-                    toggleIcon.classList.remove('fa-chevron-right');
-                    toggleIcon.classList.add('fa-chevron-left');
-                    localStorage.setItem('sidebarCollapsed', 'false');
-                }
             });
         });
     </script>
