@@ -178,4 +178,49 @@ Route::middleware(['auth'])->group(function () {
         // Configurações do Sistema
         Route::get('/system', App\Livewire\Settings\SystemSettings::class)->name('system');
     });
+
+    // HR Module Routes
+    Route::prefix('hr')->name('hr.')->group(function() {
+        // Dashboard
+        Route::get('/dashboard', App\Livewire\HR\Reports::class)->name('dashboard');
+        
+        // Employees Management
+        Route::get('/employees', App\Livewire\HR\Employees::class)->name('employees');
+        
+        // Departments Management
+        Route::get('/departments', App\Livewire\HR\Departments::class)->name('departments');
+        
+        // Job Categories Management
+        Route::get('/job-categories', App\Livewire\HR\JobCategories::class)->name('job-categories');
+        
+        // Job Positions Management
+        Route::get('/job-positions', App\Livewire\HR\JobPositions::class)->name('job-positions');
+        
+        // Attendance Management
+        Route::get('/attendance', App\Livewire\HR\Attendance::class)->name('attendance');
+        
+        // Leave Management
+        Route::get('/leave', App\Livewire\HR\Leaves::class)->name('leave');
+        
+        // Leave Types Management
+        Route::get('/leave-types', App\Livewire\HR\LeaveTypes::class)->name('leave-types');
+        
+        // Shift Management
+        Route::get('/shifts', App\Livewire\HR\ShiftManagement::class)->name('shifts');
+        
+        // Payroll Management
+        Route::get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
+        
+        // Payroll Periods Management
+        Route::get('/payroll-periods', App\Livewire\HR\PayrollPeriods::class)->name('payroll-periods');
+        
+        // Payroll Items Management
+        Route::get('/payroll-items', App\Livewire\HR\PayrollItems::class)->name('payroll-items');
+        
+        // Equipment Management
+        Route::get('/equipment', App\Livewire\HR\WorkEquipment::class)->name('equipment');
+        
+        // Reports
+        Route::get('/reports', App\Livewire\HR\Reports::class)->name('reports');
+    });
 });

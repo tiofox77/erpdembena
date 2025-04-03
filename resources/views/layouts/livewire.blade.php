@@ -163,200 +163,8 @@
             background-color: #fff;
         }
 
-        .sidebar-submenu.open {
+        .sidebar-submenu.active {
             max-height: 1500px; /* Increased to accommodate all items */
-        }
-
-        .dropdown-indicator {
-            margin-left: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .dropdown-indicator.open {
-            transform: rotate(180deg);
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            border-top: 1px solid rgba(0,0,0,0.05);
-            background-color: #f8f9fa;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            margin-right: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #e9ecef;
-            color: #6c757d;
-            font-weight: 600;
-        }
-
-        .user-details {
-            line-height: 1.2;
-        }
-
-        .user-name {
-            font-weight: 500;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .user-role {
-            font-size: 12px;
-            color: #6c757d;
-        }
-
-        .header {
-            height: 65px;
-            border-bottom: 1px solid #e5e7eb;
-            background-color: white;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 9999px;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .metrics-card {
-            text-align: center;
-            padding: 24px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .metrics-card .icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-
-        .metrics-card .icon.blue {
-            background-color: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .metrics-card .icon.yellow {
-            background-color: #fef9c3;
-            color: #ca8a04;
-        }
-
-        .metrics-card .icon.red {
-            background-color: #fee2e2;
-            color: #dc2626;
-        }
-
-        .metrics-card .icon.green {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-
-        .metrics-card .icon.purple {
-            background-color: #f3e8ff;
-            color: #9333ea;
-        }
-
-        .metrics-card .number {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .alert-item {
-            background-color: #fef2f2;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-
-        .overdue-badge {
-            background-color: #ef4444;
-            color: white;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .action-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s;
-        }
-
-        .action-card:hover {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .action-card .icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-
-        .action-card .icon.blue {
-            background-color: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .action-card .icon.green {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-
-        .action-card .icon.purple {
-            background-color: #f3e8ff;
-            color: #9333ea;
-        }
-
-        .action-card .icon.orange {
-            background-color: #ffedd5;
-            color: #ea580c;
-        }
-
-        .action-card .title {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .action-card .subtitle {
-            font-size: 12px;
-            color: #6b7280;
         }
 
         .sidebar-nested-submenu {
@@ -367,7 +175,7 @@
             background-color: #f9fafb;
         }
 
-        .sidebar-nested-submenu.open {
+        .sidebar-nested-submenu.active {
             max-height: 1500px; /* Increased to accommodate all items */
         }
 
@@ -439,6 +247,47 @@
             text-decoration: none;
             background-color: #f8f9fa;
         }
+
+        /* Sidebar collapse animation */
+        .sidebar {
+            width: 240px;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .sidebar.collapsed {
+            width: 64px;
+        }
+
+        .sidebar.collapsed .sidebar-header span, 
+        .sidebar.collapsed .sidebar-menu-item span,
+        .sidebar.collapsed .dropdown-indicator,
+        .sidebar.collapsed .sidebar-submenu {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 16px 0;
+        }
+
+        .main-content {
+            transition: margin-left 0.3s ease-in-out;
+            margin-left: 240px;
+        }
+
+        .main-content.expanded {
+            margin-left: 64px;
+        }
+
+        /* Ensure icons stay centered when collapsed */
+        .sidebar.collapsed .sidebar-menu-item {
+            justify-content: center;
+            padding: 12px 0;
+        }
+
+        .sidebar.collapsed .sidebar-menu-item i:first-child {
+            margin-right: 0;
+        }
     </style>
 
     @livewireStyles
@@ -452,10 +301,12 @@
     <div class="sidebar bg-white shadow-md">
         <div class="sidebar-header">
             <div class="flex items-center">
-                <i class="fas fa-cogs text-indigo-600"></i>
-                <span class="ml-2 font-semibold text-gray-800">Maintenance MS</span>
+                <img src="{{ asset('images/logo-icon.png') }}" alt="Logo" class="w-6 h-6">
+                <span class="ml-2 font-semibold text-gray-800">{{ config('app.name', 'Dembena ERP') }}</span>
             </div>
-            <i class="fas fa-angle-left cursor-pointer text-gray-500 hover:text-indigo-600 transition duration-200"></i>
+            <button id="sidebar-toggle" class="focus:outline-none">
+                <i class="fas fa-chevron-left cursor-pointer text-gray-500 hover:text-indigo-600 transition duration-200"></i>
+            </button>
         </div>
 
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="maintenanceMenu">
@@ -660,6 +511,87 @@
             <!-- Supply Chain submenu items will go here -->
         </div>
 
+
+        <!-- Human Resources -->
+        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="hrMenu">
+            <i class="fas fa-users text-indigo-500"></i>
+            <span>Human Resources</span>
+            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+        </div>
+
+        <div class="sidebar-submenu" id="hrSubmenu">
+            <a href="{{ route('hr.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tachometer-alt text-gray-500"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ route('hr.employees') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.employees') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-id-card text-gray-500"></i>
+                <span>Employee Management</span>
+            </a>
+            
+            <a href="{{ route('hr.departments') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.departments') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-building text-gray-500"></i>
+                <span>Departments</span>
+            </a>
+            
+            <a href="{{ route('hr.job-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.job-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tags text-gray-500"></i>
+                <span>Job Categories</span>
+            </a>
+            
+            <a href="{{ route('hr.job-positions') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.job-positions') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-briefcase text-gray-500"></i>
+                <span>Job Positions</span>
+            </a>
+            
+            <a href="{{ route('hr.attendance') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.attendance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-user-clock text-gray-500"></i>
+                <span>Attendance & Absence</span>
+            </a>
+            
+            <a href="{{ route('hr.leave') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.leave') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-calendar-alt text-gray-500"></i>
+                <span>Leave Management</span>
+            </a>
+            
+            <a href="{{ route('hr.leave-types') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.leave-types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tags text-gray-500"></i>
+                <span>Leave Types</span>
+            </a>
+            
+            <a href="{{ route('hr.payroll') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-money-check-alt text-gray-500"></i>
+                <span>Payroll Processing</span>
+            </a>
+            
+            <a href="{{ route('hr.payroll-periods') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-periods') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-calendar-week text-gray-500"></i>
+                <span>Payroll Periods</span>
+            </a>
+            
+            <a href="{{ route('hr.payroll-items') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-items') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-list-alt text-gray-500"></i>
+                <span>Payroll Items</span>
+            </a>
+            
+            <a href="{{ route('hr.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-business-time text-gray-500"></i>
+                <span>Shift Management</span>
+            </a>
+            
+            <a href="{{ route('hr.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-laptop text-gray-500"></i>
+                <span>Work Equipment Control</span>
+            </a>
+            
+            <a href="{{ route('hr.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-chart-bar text-gray-500"></i>
+                <span>Reports & Dashboard</span>
+            </a>
+        </div>
+
+        <!-- Stocks Menu -->
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="stocksMenu">
             <i class="fas fa-boxes text-indigo-500"></i>
             <span>Stocks</span>
@@ -700,101 +632,103 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Header -->
-        <div class="header sticky top-0 z-10 shadow-sm">
-            <div>
-                <h1 class="text-xl font-semibold text-gray-800">{{ $title ?? 'Maintenance Dashboard' }}</h1>
-            </div>
-
-            <div class="flex items-center space-x-4">
-                <!-- Search -->
-                <div class="relative">
-                    <input type="text" placeholder="Search equipment, tasks..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 hover:bg-white transition duration-200">
-                    <div class="absolute left-3 top-2.5 text-gray-400">
-                        <i class="fas fa-search"></i>
-                    </div>
-                </div>
-
-                <!-- Update checker -->
-                @livewire('components.update-checker')
-
-                <!-- Notification -->
-                <div class="relative" x-data="{ showNotifications: false }">
-                    <button @click="showNotifications = !showNotifications" class="relative p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition duration-200 focus:outline-none">
-                        <i class="far fa-bell text-lg"></i>
-                        @if(true) <!-- Replace with actual notification count condition -->
-                        <span class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">3</span>
-                        @endif
-                    </button>
-
-                    <!-- Notifications dropdown -->
-                    <div x-show="showNotifications" @click.away="showNotifications = false" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
-                        <div class="py-2 px-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                            <h3 class="text-sm font-semibold text-gray-700">Notifications</h3>
-                            <span class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">Mark all as read</span>
-                        </div>
-
-                        <div class="max-h-72 overflow-y-auto">
-                            <!-- Notification items go here -->
-                            <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150">
-                                <p class="text-sm text-gray-800 font-medium">Maintenance task due</p>
-                                <p class="text-xs text-gray-500 mt-1">Equipment #123 requires scheduled maintenance</p>
-                                <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
-                            </div>
-                            <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150">
-                                <p class="text-sm text-gray-800 font-medium">New corrective task assigned</p>
-                                <p class="text-xs text-gray-500 mt-1">You've been assigned to a new urgent task</p>
-                                <p class="text-xs text-gray-400 mt-1">Yesterday</p>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-50 transition duration-150">
-                                <p class="text-sm text-gray-800 font-medium">System update complete</p>
-                                <p class="text-xs text-gray-500 mt-1">The system has been updated to version 2.3.0</p>
-                                <p class="text-xs text-gray-400 mt-1">3 days ago</p>
-                            </div>
-                        </div>
-
-                        <div class="py-2 px-3 bg-gray-50 border-t border-gray-200 text-center">
-                            <a href="#" class="text-xs text-indigo-600 hover:text-indigo-800">View all notifications</a>
+        <div class="header sticky top-0 z-10 shadow-sm bg-white">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-xl font-semibold text-gray-800 truncate">{{ $title ?? 'Maintenance Dashboard' }}</h1>
+                    
+                    <!-- Search -->
+                    <div class="relative ml-4">
+                        <input type="text" placeholder="Search equipment, tasks..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 hover:bg-white transition duration-200">
+                        <div class="absolute left-3 top-2.5 text-gray-400">
+                            <i class="fas fa-search"></i>
                         </div>
                     </div>
                 </div>
 
-                <!-- User Menu -->
-                <div class="relative flex items-center" x-data="{ open: false }">
-                    <!-- User info visible in header -->
-                    <div class="flex items-center mr-2">
-                        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shadow-sm">
-                            {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
-                        </div>
-                        <div class="ml-2 hidden md:block">
-                            <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
-                            <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'No role' }}</div>
+                <div class="flex items-center space-x-4">
+                    <!-- Update checker -->
+                    @livewire('components.update-checker')
+
+                    <!-- Notification -->
+                    <div class="relative" x-data="{ showNotifications: false }">
+                        <button @click="showNotifications = !showNotifications" class="relative p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition duration-200 focus:outline-none">
+                            <i class="far fa-bell text-lg"></i>
+                            @if(true) <!-- Replace with actual notification count condition -->
+                            <span class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">3</span>
+                            @endif
+                        </button>
+
+                        <!-- Notifications dropdown -->
+                        <div x-show="showNotifications" @click.away="showNotifications = false" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                            <div class="py-2 px-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                                <h3 class="text-sm font-semibold text-gray-700">Notifications</h3>
+                                <span class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">Mark all as read</span>
+                            </div>
+
+                            <div class="max-h-72 overflow-y-auto">
+                                <!-- Notification items go here -->
+                                <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150">
+                                    <p class="text-sm text-gray-800 font-medium">Maintenance task due</p>
+                                    <p class="text-xs text-gray-500 mt-1">Equipment #123 requires scheduled maintenance</p>
+                                    <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                                </div>
+                                <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150">
+                                    <p class="text-sm text-gray-800 font-medium">New corrective task assigned</p>
+                                    <p class="text-xs text-gray-500 mt-1">You've been assigned to a new urgent task</p>
+                                    <p class="text-xs text-gray-400 mt-1">Yesterday</p>
+                                </div>
+                                <div class="px-4 py-3 hover:bg-gray-50 transition duration-150">
+                                    <p class="text-sm text-gray-800 font-medium">System update complete</p>
+                                    <p class="text-xs text-gray-500 mt-1">The system has been updated to version 2.3.0</p>
+                                    <p class="text-xs text-gray-400 mt-1">3 days ago</p>
+                                </div>
+                            </div>
+
+                            <div class="py-2 px-3 bg-gray-50 border-t border-gray-200 text-center">
+                                <a href="#" class="text-xs text-indigo-600 hover:text-indigo-800">View all notifications</a>
+                            </div>
                         </div>
                     </div>
 
-                    <button @click="open = !open" class="text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition duration-200">
-                        <i class="fas fa-chevron-down text-xs"></i>
-                    </button>
-
-                    <!-- User Dropdown -->
-                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-40 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
-                        <div class="py-3 border-b border-gray-100 md:hidden">
-                            <div class="px-4">
+                    <!-- User Menu -->
+                    <div class="relative flex items-center" x-data="{ open: false }">
+                        <!-- User info visible in header -->
+                        <div class="flex items-center mr-2">
+                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shadow-sm">
+                                {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
+                            </div>
+                            <div class="ml-2 hidden md:block">
                                 <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
-                                <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'Not defined' }}</div>
+                                <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'No role' }}</div>
                             </div>
                         </div>
-                        <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
-                            <i class="fas fa-user-circle mr-3 text-gray-500"></i> My Profile
-                        </a>
-                        <a href="{{ route('settings.system') }}" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
-                            <i class="fas fa-cog mr-3 text-gray-500"></i> Settings
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100">
-                            @csrf
-                            <button type="submit" class="flex items-center w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors duration-150">
-                                <i class="fas fa-sign-out-alt mr-3 text-red-500"></i> Log Out
-                            </button>
-                        </form>
+
+                        <button @click="open = !open" class="text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition duration-200">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+
+                        <!-- User Dropdown -->
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-40 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                            <div class="py-3 border-b border-gray-100 md:hidden">
+                                <div class="px-4">
+                                    <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
+                                    <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'Not defined' }}</div>
+                                </div>
+                            </div>
+                            <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
+                                <i class="fas fa-user-circle mr-3 text-gray-500"></i> My Profile
+                            </a>
+                            <a href="{{ route('settings.system') }}" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
+                                <i class="fas fa-cog mr-3 text-gray-500"></i> Settings
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100">
+                                @csrf
+                                <button type="submit" class="flex items-center w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors duration-150">
+                                    <i class="fas fa-sign-out-alt mr-3 text-red-500"></i> Log Out
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -814,15 +748,58 @@
             
             console.log('Verificando menus para:', currentPath, currentRouteName);
             
-            // 1. Sempre manter o menu de manutenção aberto
-            const maintenanceSubmenu = document.getElementById('maintenanceSubmenu');
-            const maintenanceIndicator = document.querySelector('#maintenanceMenu .dropdown-indicator');
-            if (maintenanceSubmenu && maintenanceIndicator) {
-                maintenanceSubmenu.classList.add('open');
-                maintenanceIndicator.classList.add('open');
-            }
+            // Fechar todos os submenus primeiro
+            const allSubmenus = document.querySelectorAll('.sidebar-submenu');
+            const allIndicators = document.querySelectorAll('.dropdown-indicator');
             
-            // 2. Verificar se estamos na página de Equipment Parts
+            allSubmenus.forEach(function(submenu) {
+                submenu.classList.remove('active');
+            });
+            
+            allIndicators.forEach(function(indicator) {
+                indicator.classList.remove('active');
+            });
+            
+            // Verificar qual é a seção atual e abrir apenas o menu correspondente
+            const isHrPage = currentPath.includes('/hr') || 
+                            (currentRouteName && currentRouteName.startsWith('hr.'));
+                            
+            const isMaintenancePage = currentPath.includes('/maintenance') || 
+                                     (currentRouteName && currentRouteName.startsWith('maintenance.'));
+                                     
+            const isSupplyChainPage = currentPath.includes('/supply-chain') || 
+                                     (currentRouteName && currentRouteName.startsWith('supply.'));
+            
+            // Abrir o menu específico da seção atual
+            if (isHrPage) {
+                const hrSubmenu = document.getElementById('hrSubmenu');
+                const hrIndicator = document.querySelector('#hrMenu .dropdown-indicator');
+                if (hrSubmenu && hrIndicator) {
+                    hrSubmenu.classList.add('active');
+                    hrIndicator.classList.add('active');
+                }
+            } else if (isMaintenancePage) {
+                const maintenanceSubmenu = document.getElementById('maintenanceSubmenu');
+                const maintenanceIndicator = document.querySelector('#maintenanceMenu .dropdown-indicator');
+                if (maintenanceSubmenu && maintenanceIndicator) {
+                    maintenanceSubmenu.classList.add('active');
+                    maintenanceIndicator.classList.add('active');
+                }
+                
+                // Verificar submenus específicos de manutenção
+                checkMaintenanceSubmenus(currentPath, currentRouteName);
+            } else if (isSupplyChainPage) {
+                const supplyChainSubmenu = document.getElementById('supplyChainSubmenu');
+                const supplyChainIndicator = document.querySelector('#supplyChainMenu .dropdown-indicator');
+                if (supplyChainSubmenu && supplyChainIndicator) {
+                    supplyChainSubmenu.classList.add('active');
+                    supplyChainIndicator.classList.add('active');
+                }
+            }
+        }
+        
+        function checkMaintenanceSubmenus(currentPath, currentRouteName) {
+            // Verificar se estamos na página de Equipment Parts
             const isEquipmentPartsPage = 
                 ['/equipment/parts', '/stocks/stockout'].some(path => currentPath.includes(path)) ||
                 ['equipment.parts', 'stocks.stockout'].includes(currentRouteName);
@@ -832,12 +809,12 @@
                 const partsSubmenu = document.getElementById('partsSubmenu');
                 const partsIndicator = document.querySelector('#partsMenu .dropdown-indicator');
                 if (partsSubmenu && partsIndicator) {
-                    partsSubmenu.classList.add('open');
-                    partsIndicator.classList.add('open');
+                    partsSubmenu.classList.add('active');
+                    partsIndicator.classList.add('active');
                 }
             }
             
-            // 3. Verificar se estamos na página de configurações de manutenção
+            // Verificar se estamos na página de configurações de manutenção
             const isMaintenanceSettingsPage =
                 [
                     '/maintenance/failure-modes',
@@ -858,12 +835,12 @@
                 const settingsSubmenu = document.getElementById('maintenanceSettingsSubmenu');
                 const settingsIndicator = document.querySelector('#maintenanceSettingsMenu .dropdown-indicator');
                 if (settingsSubmenu && settingsIndicator) {
-                    settingsSubmenu.classList.add('open');
-                    settingsIndicator.classList.add('open');
+                    settingsSubmenu.classList.add('active');
+                    settingsIndicator.classList.add('active');
                 }
             }
             
-            // 4. Verificar se estamos na página de relatórios ou histórico
+            // Verificar se estamos na página de relatórios ou histórico
             const isReportsHistoryPage = currentRouteName && (
                 currentRouteName.startsWith('reports.') ||
                 currentRouteName.startsWith('history.')
@@ -874,8 +851,8 @@
                 const reportsHistorySubmenu = document.getElementById('reportsHistorySubmenu');
                 const reportsHistoryIndicator = document.querySelector('#reportsHistoryMenu .dropdown-indicator');
                 if (reportsHistorySubmenu && reportsHistoryIndicator) {
-                    reportsHistorySubmenu.classList.add('open');
-                    reportsHistoryIndicator.classList.add('open');
+                    reportsHistorySubmenu.classList.add('active');
+                    reportsHistoryIndicator.classList.add('active');
                 }
             }
         }
@@ -886,18 +863,34 @@
                 const menuElement = document.getElementById(menuId);
                 if (!menuElement) return;
                 
-                menuElement.addEventListener('click', function(e) {
-                    e.stopPropagation();
+                menuElement.addEventListener('click', function() {
                     const submenu = document.getElementById(submenuId);
+                    
+                    // Close all other submenus first
+                    const allSubmenus = document.querySelectorAll('.sidebar-submenu');
+                    allSubmenus.forEach(function(sm) {
+                        if (sm.id !== submenuId) {
+                            sm.classList.remove('active');
+                            
+                            // Also reset all dropdown indicators
+                            const parentMenuItem = document.getElementById(sm.id.replace('Submenu', 'Menu'));
+                            if (parentMenuItem) {
+                                const indicator = parentMenuItem.querySelector('.dropdown-indicator');
+                                if (indicator) {
+                                    indicator.classList.remove('active');
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Toggle current submenu
+                    submenu.classList.toggle('active');
+                    
+                    // Toggle dropdown indicator
                     const indicator = this.querySelector('.dropdown-indicator');
-                    
-                    if (submenu && indicator) {
-                        submenu.classList.toggle('open');
-                        indicator.classList.toggle('open');
+                    if (indicator) {
+                        indicator.classList.toggle('active', submenu.classList.contains('active'));
                     }
-                    
-                    // Verificar e reabrir menus relacionados à página atual
-                    setTimeout(checkAndOpenMenus, 100);
                 });
             };
             
@@ -908,6 +901,7 @@
             setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
             setupMenuToggle('stocksMenu', 'stocksSubmenu');
             setupMenuToggle('partsMenu', 'partsSubmenu');
+            setupMenuToggle('hrMenu', 'hrSubmenu');
             
             // Executar a verificação inicial
             checkAndOpenMenus();
@@ -918,12 +912,7 @@
             console.log('Navegação Livewire detectada, reabrindo menus');
             setTimeout(checkAndOpenMenus, 200);
         });
-    </script>
-
-    @livewireScripts
-    @stack('scripts')
-
-    <script>
+        
         // Check for flash messages when page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Check for error message in session
@@ -1051,5 +1040,45 @@
             });
         });
     </script>
+
+    <!-- Sidebar toggle script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const toggleIcon = sidebarToggle.querySelector('i');
+            
+            // Check if sidebar state is stored in localStorage
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            // Apply initial state
+            if (sidebarCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                toggleIcon.classList.remove('fa-chevron-left');
+                toggleIcon.classList.add('fa-chevron-right');
+            }
+            
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                
+                // Toggle icon direction
+                if (sidebar.classList.contains('collapsed')) {
+                    toggleIcon.classList.remove('fa-chevron-left');
+                    toggleIcon.classList.add('fa-chevron-right');
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                } else {
+                    toggleIcon.classList.remove('fa-chevron-right');
+                    toggleIcon.classList.add('fa-chevron-left');
+                    localStorage.setItem('sidebarCollapsed', 'false');
+                }
+            });
+        });
+    </script>
+
+    @livewireScripts
+    @stack('scripts')
 </body>
 </html>
