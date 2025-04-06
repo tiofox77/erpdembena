@@ -52,7 +52,11 @@ class Payroll extends Component
     public $showApproveModal = false;
     public $showPayModal = false;
     public $showGenerateModal = false;
+    public $showViewModal = false;
     public $isEditing = false;
+    
+    // Current payroll for view modal
+    public $currentPayroll = null;
 
     // Listeners
     protected $listeners = ['refreshPayrolls' => '$refresh'];
@@ -104,8 +108,40 @@ class Payroll extends Component
         if ($this->employee_id) {
             $employee = Employee::find($this->employee_id);
             if ($employee) {
-                $this->basic_salary = $employee->position ? $employee->position->salary_range_min : 0;
+                // Check if this employee already has a payroll with a custom salary
+                $lastPayroll = PayrollModel::where('employee_id', $this->employee_id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if ($lastPayroll) {
+                    // Use the last payroll's basic salary for continuity
+                    $this->basic_salary = $lastPayroll->basic_salary;
+                } else {
+                    // If position exists, get the default salary from position
+                    if ($employee->position) {
+                        // Use the middle of the salary range as default instead of minimum
+                        $minSalary = $employee->position->salary_range_min;
+                        $maxSalary = $employee->position->salary_range_max;
+                        
+                        // If max salary is defined, use middle of range, otherwise use min
+                        if ($maxSalary > $minSalary) {
+                            $this->basic_salary = ($minSalary + $maxSalary) / 2;
+                        } else {
+                            $this->basic_salary = $minSalary;
+                        }
+                    } else {
+                        $this->basic_salary = 0;
+                    }
+                }
+                
                 $this->bank_account = $employee->bank_account;
+                
+                // Initialize other fields with zero
+                $this->allowances = 0;
+                $this->overtime = 0;
+                $this->bonuses = 0;
+                $this->deductions = 0;
+                
                 $this->calculatePayroll();
             }
         }
@@ -138,47 +174,48 @@ class Payroll extends Component
 
     private function calculatePayroll()
     {
+        // Calculate gross salary (base + allowances + overtime + bonuses)
+        $grossSalary = $this->basic_salary + $this->allowances + $this->overtime + $this->bonuses;
+        
+        // Calculate social security (INSS) - 3% of basic salary and allowances
+        // Based on Angolan regulations 
+        $inssBase = $this->basic_salary + $this->allowances;
+        $this->social_security = $inssBase * 0.03;
+        
         // Calculate tax (IRT) - Angolan Income Tax
         $this->tax = $this->calculateIncomeTax();
         
-        // Calculate social security (INSS) - 3% employee contribution
-        $this->social_security = ($this->basic_salary + $this->allowances) * 0.03;
-        
         // Calculate net salary
-        $grossSalary = $this->basic_salary + $this->allowances + $this->overtime + $this->bonuses;
         $totalDeductions = $this->deductions + $this->tax + $this->social_security;
         $this->net_salary = $grossSalary - $totalDeductions;
     }
 
     private function calculateIncomeTax()
     {
-        $taxableIncome = $this->basic_salary + $this->allowances + $this->bonuses; // overtime is often not taxable
+        // Calculate taxable income (after INSS deduction)
+        $taxableBase = $this->basic_salary + $this->allowances;
+        $inss = $taxableBase * 0.03;
+        $taxableIncome = $taxableBase - $inss;
         
-        // Simplified Angolan IRT calculation - these rates should be adjusted to match actual rates
-        if ($taxableIncome <= 34450) {
-            return 0; // exempt
-        } elseif ($taxableIncome <= 35000) {
-            return ($taxableIncome - 34450) * 0.07;
-        } elseif ($taxableIncome <= 40000) {
-            return (($taxableIncome - 35000) * 0.08) + 38.5;
-        } elseif ($taxableIncome <= 45000) {
-            return (($taxableIncome - 40000) * 0.09) + 438.5;
-        } elseif ($taxableIncome <= 50000) {
-            return (($taxableIncome - 45000) * 0.10) + 888.5;
-        } elseif ($taxableIncome <= 70000) {
-            return (($taxableIncome - 50000) * 0.11) + 1388.5;
-        } elseif ($taxableIncome <= 90000) {
-            return (($taxableIncome - 70000) * 0.13) + 3588.5;
+        // Updated IRT calculation based on current Angolan tax brackets
+        if ($taxableIncome <= 100000) {
+            return 0; // Exempt
         } elseif ($taxableIncome <= 110000) {
-            return (($taxableIncome - 90000) * 0.16) + 6188.5;
-        } elseif ($taxableIncome <= 140000) {
-            return (($taxableIncome - 110000) * 0.18) + 9388.5;
-        } elseif ($taxableIncome <= 170000) {
-            return (($taxableIncome - 140000) * 0.19) + 14788.5;
+            return 870.87;
+        } elseif ($taxableIncome <= 120000) {
+            return 2131.87;
+        } elseif ($taxableIncome <= 150000) {
+            return 5914.87;
+        } elseif ($taxableIncome <= 175000) {
+            return 15659.84;
         } elseif ($taxableIncome <= 200000) {
-            return (($taxableIncome - 170000) * 0.20) + 20488.5;
+            return 19539.84;
+        } elseif ($taxableIncome <= 250000) {
+            return 38899.82;
+        } elseif ($taxableIncome <= 350000) {
+            return 56754.81;
         } else {
-            return (($taxableIncome - 200000) * 0.21) + 26488.5;
+            return ($taxableIncome - 350000) * 0.19 + 56754.81;
         }
     }
 
@@ -297,11 +334,55 @@ class Payroll extends Component
                 ->exists();
 
             if (!$exists) {
-                $basicSalary = $employee->position ? $employee->position->salary_range_min : 0;
+                // Get basic salary from position or use latest payroll
+                $lastPayroll = PayrollModel::where('employee_id', $employee->id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
                 
-                // Calculate tax and social security
-                $tax = $basicSalary * 0.07; // Simplified calculation
-                $socialSecurity = $basicSalary * 0.03; // 3% employee contribution
+                if ($lastPayroll) {
+                    $basicSalary = $lastPayroll->basic_salary;
+                } else {
+                    if ($employee->position) {
+                        $minSalary = $employee->position->salary_range_min;
+                        $maxSalary = $employee->position->salary_range_max;
+                        
+                        if ($maxSalary > $minSalary) {
+                            $basicSalary = ($minSalary + $maxSalary) / 2;
+                        } else {
+                            $basicSalary = $minSalary;
+                        }
+                    } else {
+                        $basicSalary = 0;
+                    }
+                }
+                
+                // Calculate INSS (3% of basic salary)
+                $inssBase = $basicSalary;
+                $socialSecurity = $inssBase * 0.03;
+                
+                // Calculate IRT (After INSS deduction)
+                $taxableIncome = $basicSalary - $socialSecurity;
+                
+                // Updated IRT calculation
+                if ($taxableIncome <= 100000) {
+                    $tax = 0; // Exempt
+                } elseif ($taxableIncome <= 110000) {
+                    $tax = 870.87;
+                } elseif ($taxableIncome <= 120000) {
+                    $tax = 2131.87;
+                } elseif ($taxableIncome <= 150000) {
+                    $tax = 5914.87;
+                } elseif ($taxableIncome <= 175000) {
+                    $tax = 15659.84;
+                } elseif ($taxableIncome <= 200000) {
+                    $tax = 19539.84;
+                } elseif ($taxableIncome <= 250000) {
+                    $tax = 38899.82;
+                } elseif ($taxableIncome <= 350000) {
+                    $tax = 56754.81;
+                } else {
+                    $tax = ($taxableIncome - 350000) * 0.19 + 56754.81;
+                }
                 
                 // Calculate net salary
                 $netSalary = $basicSalary - ($tax + $socialSecurity);
@@ -387,6 +468,88 @@ class Payroll extends Component
     public function closeDeleteModal()
     {
         $this->showDeleteModal = false;
+    }
+    
+    /**
+     * View payroll details
+     * 
+     * @param int $payrollId
+     * @return void
+     */
+    public function view($payrollId)
+    {
+        $this->payroll_id = $payrollId;
+        $this->currentPayroll = PayrollModel::with(['employee', 'payrollPeriod', 'payrollItems', 'employee.department', 'employee.position'])
+            ->findOrFail($payrollId);
+        $this->showViewModal = true;
+    }
+    
+    /**
+     * Download employee payslip
+     * 
+     * @param int $payrollId
+     * @return mixed
+     */
+    public function downloadPayslip($payrollId)
+    {
+        try {
+            $payroll = PayrollModel::with([
+                'employee', 
+                'employee.department', 
+                'employee.position', 
+                'payrollPeriod',
+                'payrollItems'
+            ])->findOrFail($payrollId);
+            
+            // Obter dados da empresa dos settings do sistema
+            $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyLogo = \App\Models\Setting::get('company_logo');
+            $logoPath = $companyLogo ? public_path('storage/' . $companyLogo) : null;
+            $hasLogo = $logoPath && file_exists($logoPath);
+            
+            // Preparar dados para o PDF
+            $data = [
+                'payroll' => $payroll,
+                'companyName' => $companyName,
+                'companyLogo' => $companyLogo,
+                'companyAddress' => \App\Models\Setting::get('company_address', ''),
+                'companyPhone' => \App\Models\Setting::get('company_phone', ''),
+                'companyEmail' => \App\Models\Setting::get('company_email', ''),
+                'hasLogo' => $hasLogo,
+                'logoPath' => $logoPath,
+                'date' => now()->format('d/m/Y H:i'),
+                'title' => 'Contracheque - ' . $payroll->employee->full_name
+            ];
+            
+            // Gerar PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('livewire.hr.payslip-pdf', $data);
+            
+            // Configura para UTF-8
+            $pdf->getDomPDF()->set_option('isHtml5ParserEnabled', true);
+            $pdf->getDomPDF()->set_option('isPhpEnabled', true);
+            
+            // Nome do arquivo para download
+            $fileName = 'contracheque_' . $payroll->employee->id . '_' . now()->format('Y-m-d') . '.pdf';
+            
+            // Retornar arquivo para download
+            return $pdf->download($fileName);
+        } catch (\Exception $e) {
+            session()->flash('error', 'Erro ao gerar PDF: ' . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Mark payroll as paid
+     * 
+     * @param int $payrollId
+     * @return void
+     */
+    public function markAsPaid($payrollId)
+    {
+        $this->payroll_id = $payrollId;
+        $this->payment_date = now()->format('Y-m-d');
+        $this->showPayModal = true;
     }
     
     public function resetFilters()

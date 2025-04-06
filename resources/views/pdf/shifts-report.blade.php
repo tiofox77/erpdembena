@@ -84,12 +84,12 @@
 </head>
 <body>
     <div class="header">
-        @if($hasLogo)
+        @if($hasLogo && $logoPath)
             <img src="{{ $logoPath }}" alt="{{ $companyName }} Logo" class="logo">
         @endif
         <h1>{{ $companyName }}</h1>
         <h2>{{ $title }}</h2>
-        <div class="date">Generated on: {{ $date }}</div>
+        <p class="date">Generated on: {{ $date }}</p>
     </div>
 
     <main>
@@ -132,7 +132,7 @@
     </main>
 
     <div class="footer">
-        <p>© {{ date('Y') }} {{ $companyName }} - All rights reserved</p>
+        <p> {{ date('Y') }} {{ $companyName }} - All rights reserved</p>
     </div>
 </body>
 </html>

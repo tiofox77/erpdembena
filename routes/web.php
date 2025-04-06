@@ -35,6 +35,9 @@ Route::middleware(['auth'])->group(function () {
     // Main dashboard route - alias to maintenance.dashboard
     Route::get('/dashboard', MaintenanceDashboard::class)->name('dashboard');
 
+    // HR Guide Pages
+    Route::get('/hr/payroll-guide', App\Livewire\HR\PayrollGuide::class)->name('hr.payroll-guide');
+    
     // Maintenance Management Routes
     Route::prefix('maintenance')->name('maintenance.')->group(function() {
         // Rotas para componentes Livewire

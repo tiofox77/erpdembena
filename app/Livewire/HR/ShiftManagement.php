@@ -327,9 +327,12 @@ class ShiftManagement extends Component
             ->orderBy($this->sortFieldShift, $this->sortDirectionShift)
             ->get();
 
-        $companyName = config('app.name', 'ERPDEMBENA');
-        $logoPath = public_path('img/logo.png');
-        $hasLogo = file_exists($logoPath);
+        $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+        
+        // Corrigindo para obter o logo dos settings do sistema
+        $companyLogo = \App\Models\Setting::get('company_logo');
+        $logoPath = $companyLogo ? public_path('storage/' . $companyLogo) : null;
+        $hasLogo = $logoPath && file_exists($logoPath);
 
         $data = [
             'shifts' => $shifts,
@@ -367,9 +370,12 @@ class ShiftManagement extends Component
             ->orderBy($this->sortFieldAssignment, $this->sortDirectionAssignment)
             ->get();
 
-        $companyName = config('app.name', 'ERPDEMBENA');
-        $logoPath = public_path('img/logo.png');
-        $hasLogo = file_exists($logoPath);
+        $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+        
+        // Corrigindo para obter o logo dos settings do sistema
+        $companyLogo = \App\Models\Setting::get('company_logo');
+        $logoPath = $companyLogo ? public_path('storage/' . $companyLogo) : null;
+        $hasLogo = $logoPath && file_exists($logoPath);
 
         $data = [
             'assignments' => $shiftAssignments,

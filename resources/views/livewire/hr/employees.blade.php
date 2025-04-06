@@ -675,10 +675,10 @@
     <!-- View Employee Modal -->
     @if($showViewModal)
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="text-lg font-medium flex items-center">
-                    <i class="fas fa-user-circle text-blue-500 mr-2 text-xl"></i>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+            <div class="flex justify-between items-center p-6 pb-3 border-b sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-semibold flex items-center text-blue-700">
+                    <i class="fas fa-user-circle text-blue-500 mr-2 text-2xl"></i>
                     Employee Details
                 </h3>
                 <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeViewModal">
@@ -686,64 +686,81 @@
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
                 <!-- Employee Photo and Basic Info -->
-                <div class="md:col-span-1 flex flex-col items-center">
-                    <div class="w-32 h-32 bg-gray-200 rounded-full overflow-hidden mb-3 border-2 border-blue-300">
+                <div class="md:col-span-1 flex flex-col items-center bg-gray-50 p-6 rounded-lg shadow-sm">
+                    <div class="w-32 h-32 bg-gray-200 rounded-full overflow-hidden mb-4 border-4 border-blue-100 shadow-md">
                         @if($photo)
                             <img src="{{ asset('storage/' . $photo) }}" alt="{{ $full_name }}" class="w-full h-full object-cover">
                         @else
-                            <div class="w-full h-full flex items-center justify-center text-gray-400">
-                                <i class="fas fa-user text-5xl"></i>
+                            <div class="w-full h-full flex items-center justify-center text-gray-400 bg-blue-50">
+                                <i class="fas fa-user text-5xl text-blue-300"></i>
                             </div>
                         @endif
                     </div>
-                    <h4 class="font-bold text-lg text-center">{{ $full_name }}</h4>
+                    <h4 class="font-bold text-xl text-center text-gray-800">{{ $full_name }}</h4>
                     @if(isset($position_id) && $positions->contains('id', $position_id))
-                        <p class="text-sm text-gray-600 text-center">{{ $positions->firstWhere('id', $position_id)->title }}</p>
+                        <p class="text-sm text-gray-600 text-center flex items-center mt-1">
+                            <i class="fas fa-briefcase text-blue-500 mr-1"></i>
+                            {{ $positions->firstWhere('id', $position_id)->title }}
+                        </p>
                     @endif
                     @if(isset($department_id) && $departments->contains('id', $department_id))
-                        <p class="text-sm text-gray-600 text-center">{{ $departments->firstWhere('id', $department_id)->name }} Department</p>
+                        <p class="text-sm text-gray-600 text-center flex items-center mt-1">
+                            <i class="fas fa-building text-blue-500 mr-1"></i>
+                            {{ $departments->firstWhere('id', $department_id)->name }} Department
+                        </p>
                     @endif
                     
-                    <div class="mt-4 w-full">
-                        <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                            <h5 class="font-medium text-sm text-blue-800 mb-2">Employment Information</h5>
-                            <div class="grid grid-cols-2 gap-2 text-sm">
-                                <div class="text-gray-600">Status:</div>
+                    <div class="mt-5 w-full">
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm">
+                            <h5 class="font-semibold text-blue-800 mb-3 flex items-center">
+                                <i class="fas fa-id-badge mr-2"></i>Employment Information
+                            </h5>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div class="text-gray-600 flex items-center">
+                                    <i class="fas fa-dot-circle text-blue-400 mr-1 text-xs"></i>Status:
+                                </div>
                                 <div class="font-medium">
                                     @switch($employment_status)
                                         @case('active')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                Active
+                                                <i class="fas fa-check-circle mr-1"></i> Active
                                             </span>
                                             @break
                                         @case('on_leave')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                On Leave
+                                                <i class="fas fa-hourglass-half mr-1"></i> On Leave
                                             </span>
                                             @break
                                         @case('terminated')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                Terminated
+                                                <i class="fas fa-times-circle mr-1"></i> Terminated
                                             </span>
                                             @break
                                         @case('suspended')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                                Suspended
+                                                <i class="fas fa-pause-circle mr-1"></i> Suspended
                                             </span>
                                             @break
                                         @case('retired')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                Retired
+                                                <i class="fas fa-user-clock mr-1"></i> Retired
                                             </span>
                                             @break
                                         @default
                                             {{ $employment_status }}
                                     @endswitch
                                 </div>
-                                <div class="text-gray-600">Hire Date:</div>
-                                <div class="font-medium">{{ $hire_date ? date('d/m/Y', strtotime($hire_date)) : 'N/A' }}</div>
+                                <div class="text-gray-600 flex items-center">
+                                    <i class="fas fa-dot-circle text-blue-400 mr-1 text-xs"></i>Hire Date:
+                                </div>
+                                <div class="font-medium">
+                                    <span class="flex items-center">
+                                        <i class="far fa-calendar-alt text-blue-500 mr-1"></i>
+                                        {{ $hire_date ? date('d/m/Y', strtotime($hire_date)) : 'N/A' }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -751,64 +768,92 @@
                 
                 <!-- Personal and Contact Information -->
                 <div class="md:col-span-2">
-                    <div class="mb-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Personal Information</h4>
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                                <p class="text-gray-600">Date of Birth:</p>
-                                <p class="font-medium">{{ $date_of_birth ? date('d/m/Y', strtotime($date_of_birth)) : 'N/A' }}</p>
+                    <div class="mb-6 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                        <h4 class="text-md font-semibold text-blue-700 mb-3 border-b pb-2 flex items-center">
+                            <i class="fas fa-user mr-2 text-blue-500"></i>Personal Information
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-birthday-cake text-blue-400 mr-2"></i>Date of Birth:
+                                </p>
+                                <p class="font-medium pl-6">{{ $date_of_birth ? date('d/m/Y', strtotime($date_of_birth)) : 'N/A' }}</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">Gender:</p>
-                                <p class="font-medium">{{ $gender ? ucfirst($gender) : 'N/A' }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-venus-mars text-blue-400 mr-2"></i>Gender:
+                                </p>
+                                <p class="font-medium pl-6">{{ $gender ? ucfirst($gender) : 'N/A' }}</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">ID Card:</p>
-                                <p class="font-medium">{{ $id_card ?: 'N/A' }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-id-card text-blue-400 mr-2"></i>ID Card:
+                                </p>
+                                <p class="font-medium pl-6">{{ $id_card ?: 'N/A' }}</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">Tax Number:</p>
-                                <p class="font-medium">{{ $tax_number ?: 'N/A' }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-receipt text-blue-400 mr-2"></i>Tax Number:
+                                </p>
+                                <p class="font-medium pl-6">{{ $tax_number ?: 'N/A' }}</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">Marital Status:</p>
-                                <p class="font-medium">{{ $marital_status ? ucfirst($marital_status) : 'N/A' }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-ring text-blue-400 mr-2"></i>Marital Status:
+                                </p>
+                                <p class="font-medium pl-6">{{ $marital_status ? ucfirst($marital_status) : 'N/A' }}</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">Dependents:</p>
-                                <p class="font-medium">{{ $dependents ?: '0' }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Contact Information</h4>
-                        <div class="grid grid-cols-1 gap-3 text-sm">
-                            <div>
-                                <p class="text-gray-600">Email:</p>
-                                <p class="font-medium">{{ $email ?: 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-gray-600">Phone:</p>
-                                <p class="font-medium">{{ $phone ?: 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-gray-600">Address:</p>
-                                <p class="font-medium">{{ $address ?: 'N/A' }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-users text-blue-400 mr-2"></i>Dependents:
+                                </p>
+                                <p class="font-medium pl-6">{{ $dependents ?: '0' }}</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="mb-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Bank Information</h4>
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                                <p class="text-gray-600">Bank Name:</p>
-                                <p class="font-medium">{{ $bank_name ?: 'N/A' }}</p>
+                    <div class="mb-6 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                        <h4 class="text-md font-semibold text-blue-700 mb-3 border-b pb-2 flex items-center">
+                            <i class="fas fa-address-card mr-2 text-blue-500"></i>Contact Information
+                        </h4>
+                        <div class="grid grid-cols-1 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-envelope text-blue-400 mr-2"></i>Email:
+                                </p>
+                                <p class="font-medium pl-6">{{ $email ?: 'N/A' }}</p>
                             </div>
-                            <div>
-                                <p class="text-gray-600">Bank Account:</p>
-                                <p class="font-medium">{{ $bank_account ?: 'N/A' }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-phone text-blue-400 mr-2"></i>Phone:
+                                </p>
+                                <p class="font-medium pl-6">{{ $phone ?: 'N/A' }}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-map-marker-alt text-blue-400 mr-2"></i>Address:
+                                </p>
+                                <p class="font-medium pl-6">{{ $address ?: 'N/A' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                        <h4 class="text-md font-semibold text-blue-700 mb-3 border-b pb-2 flex items-center">
+                            <i class="fas fa-university mr-2 text-blue-500"></i>Bank Information
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-landmark text-blue-400 mr-2"></i>Bank Name:
+                                </p>
+                                <p class="font-medium pl-6">{{ $bank_name ?: 'N/A' }}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-credit-card text-blue-400 mr-2"></i>Bank Account:
+                                </p>
+                                <p class="font-medium pl-6">{{ $bank_account ?: 'N/A' }}</p>
                             </div>
                         </div>
                     </div>
@@ -816,101 +861,112 @@
             </div>
             
             <!-- Employee Documents -->
-            <div class="mt-4 bg-white p-4 rounded-lg shadow">
-                <h4 class="text-md font-medium text-gray-700 mb-4 border-b pb-2">
-                    <i class="fas fa-file-alt text-blue-500 mr-2"></i>
-                    Documents
-                </h4>
-                
-                @if(count($employeeDocuments ?? []) > 0)
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200 text-sm">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="py-2 px-3 text-left border-b">Type</th>
-                                    <th class="py-2 px-3 text-left border-b">Title</th>
-                                    <th class="py-2 px-3 text-left border-b">Upload Date</th>
-                                    <th class="py-2 px-3 text-left border-b">Expiry Date</th>
-                                    <th class="py-2 px-3 text-left border-b">Status</th>
-                                    <th class="py-2 px-3 text-left border-b">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($employeeDocuments as $document)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-2 px-3 border-b">
-                                        @switch($document->document_type)
-                                            @case('id_card')
-                                                <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                                    <i class="fas fa-id-card mr-1"></i> ID Card
+            <div class="px-6 pb-6">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 class="text-md font-semibold text-blue-700 mb-4 border-b pb-2 flex items-center">
+                        <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                        Documents
+                    </h4>
+                    
+                    @if(count($employeeDocuments ?? []) > 0)
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200 text-sm rounded-lg overflow-hidden">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="py-3 px-4 text-left border-b font-semibold text-gray-700">Type</th>
+                                        <th class="py-3 px-4 text-left border-b font-semibold text-gray-700">Title</th>
+                                        <th class="py-3 px-4 text-left border-b font-semibold text-gray-700">Upload Date</th>
+                                        <th class="py-3 px-4 text-left border-b font-semibold text-gray-700">Expiry Date</th>
+                                        <th class="py-3 px-4 text-left border-b font-semibold text-gray-700">Status</th>
+                                        <th class="py-3 px-4 text-left border-b font-semibold text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($employeeDocuments as $document)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-3 px-4 border-b">
+                                            @switch($document->document_type)
+                                                @case('id_card')
+                                                    <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                                        <i class="fas fa-id-card mr-1"></i> ID Card
+                                                    </span>
+                                                    @break
+                                                @case('certificate')
+                                                    <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                                                        <i class="fas fa-certificate mr-1"></i> Certificate
+                                                    </span>
+                                                    @break
+                                                @case('professional_card')
+                                                    <span class="inline-flex items-center bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                                                        <i class="fas fa-id-badge mr-1"></i> Professional
+                                                    </span>
+                                                    @break
+                                                @case('contract')
+                                                    <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
+                                                        <i class="fas fa-file-contract mr-1"></i> Contract
+                                                    </span>
+                                                    @break
+                                                @default
+                                                    <span class="inline-flex items-center bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
+                                                        <i class="fas fa-file mr-1"></i> Other
+                                                    </span>
+                                            @endswitch
+                                        </td>
+                                        <td class="py-3 px-4 border-b">{{ $document->title }}</td>
+                                        <td class="py-3 px-4 border-b">
+                                            <span class="flex items-center">
+                                                <i class="far fa-calendar-plus text-blue-500 mr-1"></i>
+                                                {{ $document->created_at->format('d/m/Y') }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4 border-b">
+                                            @if($document->expiry_date)
+                                                <span class="flex items-center">
+                                                    <i class="far fa-calendar-times text-red-500 mr-1"></i>
+                                                    {{ \Carbon\Carbon::parse($document->expiry_date)->format('d/m/Y') }}
                                                 </span>
-                                                @break
-                                            @case('certificate')
+                                            @else
+                                                <span class="text-gray-400">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-3 px-4 border-b">
+                                            @if($document->is_verified)
                                                 <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                                    <i class="fas fa-certificate mr-1"></i> Certificate
+                                                    <i class="fas fa-check-circle mr-1"></i> Verified
                                                 </span>
-                                                @break
-                                            @case('professional_card')
-                                                <span class="inline-flex items-center bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
-                                                    <i class="fas fa-id-badge mr-1"></i> Professional
-                                                </span>
-                                                @break
-                                            @case('contract')
+                                            @else
                                                 <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                                                    <i class="fas fa-file-contract mr-1"></i> Contract
+                                                    <i class="fas fa-clock mr-1"></i> Pending
                                                 </span>
-                                                @break
-                                            @default
-                                                <span class="inline-flex items-center bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                                                    <i class="fas fa-file mr-1"></i> Other
-                                                </span>
-                                        @endswitch
-                                    </td>
-                                    <td class="py-2 px-3 border-b">{{ $document->title }}</td>
-                                    <td class="py-2 px-3 border-b">{{ $document->created_at->format('d/m/Y') }}</td>
-                                    <td class="py-2 px-3 border-b">
-                                        @if($document->expiry_date)
-                                            {{ \Carbon\Carbon::parse($document->expiry_date)->format('d/m/Y') }}
-                                        @else
-                                            <span class="text-gray-400">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-2 px-3 border-b">
-                                        @if($document->is_verified)
-                                            <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                                <i class="fas fa-check-circle mr-1"></i> Verified
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                                                <i class="fas fa-clock mr-1"></i> Pending
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="py-2 px-3 border-b">
-                                        <button type="button" wire:click="downloadDocument({{ $document->id }})"
-                                            class="text-blue-600 hover:text-blue-800 flex items-center">
-                                            <i class="fas fa-download mr-1"></i> Download
-                                        </button>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="bg-gray-100 p-4 rounded text-center text-gray-600">
-                        <p><i class="fas fa-file-alt text-xl mb-2"></i></p>
-                        <p>No documents available for this employee.</p>
-                    </div>
-                @endif
+                                            @endif
+                                        </td>
+                                        <td class="py-3 px-4 border-b">
+                                            <button type="button" wire:click="downloadDocument({{ $document->id }})"
+                                                class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded flex items-center transition-colors">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="bg-gray-50 p-6 rounded-lg text-center text-gray-600 border border-gray-200">
+                            <p><i class="fas fa-file-alt text-2xl mb-2 text-blue-300"></i></p>
+                            <p>No documents available for this employee.</p>
+                        </div>
+                    @endif
+                </div>
             </div>
             
-            <div class="mt-6 flex justify-end space-x-3">
-                <button type="button" wire:click="closeViewModal" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <div class="bg-gray-50 p-6 border-t flex justify-end space-x-3">
+                <button type="button" wire:click="closeViewModal" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                    <i class="fas fa-times mr-2"></i>
                     Close
                 </button>
-                <button type="button" wire:click="edit({{ $employee_id }})" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-edit mr-1"></i> Edit
+                <button type="button" wire:click="edit({{ $employee_id }})" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-edit mr-2"></i> Edit
                 </button>
             </div>
         </div>
@@ -972,8 +1028,9 @@
                         <!-- Document File -->
                         <div>
                             <label for="newDocumentFile" class="block text-sm font-medium text-gray-700">Upload File</label>
-                            <input type="file" id="newDocumentFile" wire:model="newDocumentFile" 
-                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <input type="file" id="newDocumentFile" accept="image/*"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                wire:model.live="newDocumentFile">
                             <p class="mt-1 text-xs text-gray-500">Max file size: 10MB. Accepted formats: PDF, JPG, PNG, DOCX</p>
                             @error('newDocumentFile') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>

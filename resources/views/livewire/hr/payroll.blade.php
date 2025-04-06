@@ -10,6 +10,11 @@
                             Payroll Management
                         </h2>
                         <div class="flex space-x-2">
+                            <a href="{{ route('hr.payroll-guide') }}" 
+                                class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 flex items-center">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Guia de Cálculos
+                            </a>
                             <button
                                 wire:click="create"
                                 class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -156,7 +161,13 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-gray-900">{{ $payroll->period->name ?? 'N/A' }}</div>
-                                                <div class="text-sm text-gray-500">{{ $payroll->period->start_date->format('M d') }} - {{ $payroll->period->end_date->format('M d, Y') }}</div>
+                                                <div class="text-sm text-gray-500">
+                                                    @if($payroll->period && $payroll->period->start_date && $payroll->period->end_date)
+                                                        {{ $payroll->period->start_date->format('M d') }} - {{ $payroll->period->end_date->format('M d, Y') }}
+                                                    @else
+                                                        N/A
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
@@ -225,10 +236,10 @@
                                                 @endif
                                                 <button
                                                     wire:click="downloadPayslip({{ $payroll->id }})"
-                                                    class="text-gray-600 hover:text-gray-900"
+                                                    class="text-red-600 hover:text-red-900 mr-2"
                                                     title="Download Payslip"
                                                 >
-                                                    <i class="fas fa-download"></i>
+                                                    <i class="fas fa-file-pdf"></i>
                                                 </button>
                                             </td>
                                         </tr>
@@ -306,16 +317,16 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Period -->
                                 <div>
-                                    <label for="period_id" class="block text-sm font-medium text-gray-700">Payroll Period</label>
-                                    <select id="period_id"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('period_id') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="period_id">
+                                    <label for="payroll_period_id" class="block text-sm font-medium text-gray-700">Payroll Period</label>
+                                    <select id="payroll_period_id"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('payroll_period_id') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="payroll_period_id">
                                         <option value="">Select Period</option>
                                         @foreach($payrollPeriods as $period)
                                             <option value="{{ $period->id }}">{{ $period->name }} ({{ $period->start_date->format('M d') }} - {{ $period->end_date->format('M d, Y') }})</option>
                                         @endforeach
                                     </select>
-                                    @error('period_id')
+                                    @error('payroll_period_id')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -354,31 +365,31 @@
                                 </div>
 
                                 <div>
-                                    <label for="overtime_amount" class="block text-sm font-medium text-gray-700">Overtime</label>
-                                    <input type="number" id="overtime_amount" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('overtime_amount') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="overtime_amount">
-                                    @error('overtime_amount')
+                                    <label for="overtime" class="block text-sm font-medium text-gray-700">Overtime</label>
+                                    <input type="number" id="overtime" step="0.01" min="0"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('overtime') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="overtime">
+                                    @error('overtime')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
-                                    <label for="bonus_amount" class="block text-sm font-medium text-gray-700">Bonus</label>
-                                    <input type="number" id="bonus_amount" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('bonus_amount') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="bonus_amount">
-                                    @error('bonus_amount')
+                                    <label for="bonuses" class="block text-sm font-medium text-gray-700">Bonus</label>
+                                    <input type="number" id="bonuses" step="0.01" min="0"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('bonuses') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="bonuses">
+                                    @error('bonuses')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
-                                    <label for="allowances_amount" class="block text-sm font-medium text-gray-700">Allowances</label>
-                                    <input type="number" id="allowances_amount" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('allowances_amount') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="allowances_amount">
-                                    @error('allowances_amount')
+                                    <label for="allowances" class="block text-sm font-medium text-gray-700">Allowances</label>
+                                    <input type="number" id="allowances" step="0.01" min="0"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('allowances') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="allowances">
+                                    @error('allowances')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -391,41 +402,31 @@
                             
                             <div class="space-y-3">
                                 <div>
-                                    <label for="tax_amount" class="block text-sm font-medium text-gray-700">Tax</label>
-                                    <input type="number" id="tax_amount" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('tax_amount') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="tax_amount">
-                                    @error('tax_amount')
+                                    <label for="tax" class="block text-sm font-medium text-gray-700">Tax</label>
+                                    <input type="number" id="tax" step="0.01" min="0"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('tax') border-red-300 text-red-900 @enderror"
+                                        wire:model="tax" readonly>
+                                    @error('tax')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
-                                    <label for="pension_amount" class="block text-sm font-medium text-gray-700">Pension</label>
-                                    <input type="number" id="pension_amount" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('pension_amount') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="pension_amount">
-                                    @error('pension_amount')
+                                    <label for="social_security" class="block text-sm font-medium text-gray-700">Social Security</label>
+                                    <input type="number" id="social_security" step="0.01" min="0"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('social_security') border-red-300 text-red-900 @enderror"
+                                        wire:model="social_security" readonly>
+                                    @error('social_security')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
-                                    <label for="insurance_amount" class="block text-sm font-medium text-gray-700">Insurance</label>
-                                    <input type="number" id="insurance_amount" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('insurance_amount') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="insurance_amount">
-                                    @error('insurance_amount')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="other_deductions" class="block text-sm font-medium text-gray-700">Other Deductions</label>
-                                    <input type="number" id="other_deductions" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('other_deductions') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="other_deductions">
-                                    @error('other_deductions')
+                                    <label for="deductions" class="block text-sm font-medium text-gray-700">Other Deductions</label>
+                                    <input type="number" id="deductions" step="0.01" min="0"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('deductions') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="deductions">
+                                    @error('deductions')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -439,16 +440,32 @@
                             <div class="bg-gray-50 p-4 rounded-md">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
+                                        <p class="text-sm text-gray-500">Basic Salary</p>
+                                        <p class="font-medium">{{ number_format($basic_salary ?? 0, 2) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Allowances</p>
+                                        <p class="font-medium">{{ number_format($allowances ?? 0, 2) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Overtime</p>
+                                        <p class="font-medium">{{ number_format($overtime ?? 0, 2) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Bonuses</p>
+                                        <p class="font-medium">{{ number_format($bonuses ?? 0, 2) }}</p>
+                                    </div>
+                                    <div>
                                         <p class="text-sm text-gray-500">Gross Salary</p>
-                                        <p class="font-medium">{{ number_format($gross_salary ?? 0, 2) }}</p>
+                                        <p class="font-medium text-green-600">{{ number_format(($basic_salary + $allowances + $overtime + $bonuses) ?? 0, 2) }}</p>
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-500">Total Deductions</p>
-                                        <p class="font-medium">{{ number_format($total_deductions ?? 0, 2) }}</p>
+                                        <p class="font-medium text-red-600">{{ number_format(($deductions + $tax + $social_security) ?? 0, 2) }}</p>
                                     </div>
-                                    <div class="col-span-2">
+                                    <div class="col-span-2 pt-2 border-t">
                                         <p class="text-sm text-gray-500">Net Salary</p>
-                                        <p class="font-medium text-lg">{{ number_format($net_salary ?? 0, 2) }}</p>
+                                        <p class="font-medium text-lg text-blue-700">{{ number_format($net_salary ?? 0, 2) }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -481,6 +498,205 @@
             </div>
         </div>
     @endif
+
+    <!-- Modal de Visualização do Payroll -->
+    @if($showViewModal)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 max-h-screen overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        Detalhes da Folha de Pagamento
+                    </h3>
+                    <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeViewModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                @if($currentPayroll)
+                <div class="space-y-6">
+                    <!-- Informações básicas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <h4 class="font-medium text-gray-700 mb-2">Informações do Funcionário</h4>
+                            <div class="space-y-1">
+                                <p class="text-sm"><span class="font-medium">Nome:</span> {{ $currentPayroll->employee->full_name }}</p>
+                                <p class="text-sm"><span class="font-medium">ID:</span> {{ $currentPayroll->employee->employee_id }}</p>
+                                <p class="text-sm"><span class="font-medium">Departamento:</span> {{ $currentPayroll->employee->department->name ?? 'N/A' }}</p>
+                                <p class="text-sm"><span class="font-medium">Cargo:</span> {{ $currentPayroll->employee->position->name ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-700 mb-2">Informações do Pagamento</h4>
+                            <div class="space-y-1">
+                                <p class="text-sm"><span class="font-medium">Período:</span> 
+                                    @if($currentPayroll->payrollPeriod && $currentPayroll->payrollPeriod->start_date && $currentPayroll->payrollPeriod->end_date)
+                                        {{ $currentPayroll->payrollPeriod->name }} ({{ $currentPayroll->payrollPeriod->start_date->format('d/m/Y') }} - {{ $currentPayroll->payrollPeriod->end_date->format('d/m/Y') }})
+                                    @else
+                                        N/A
+                                    @endif
+                                </p>
+                                <p class="text-sm"><span class="font-medium">Status:</span> <span class="px-2 py-1 text-xs rounded-full 
+                                    {{ $currentPayroll->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                                    ($currentPayroll->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
+                                    'bg-green-100 text-green-800') }}">{{ ucfirst($currentPayroll->status) }}</span></p>
+                                <p class="text-sm"><span class="font-medium">Data de Pagamento:</span> {{ $currentPayroll->payment_date ? date('d/m/Y', strtotime($currentPayroll->payment_date)) : 'N/A' }}</p>
+                                <p class="text-sm"><span class="font-medium">Método de Pagamento:</span> {{ ucfirst(str_replace('_', ' ', $currentPayroll->payment_method)) }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rendimentos e Deduções -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Rendimentos -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-medium text-gray-700 mb-3 border-b pb-2">Rendimentos</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Salário Base</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->basic_salary, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Subsídios</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->allowances, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Horas Extras</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->overtime, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Bônus</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->bonuses, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center border-t pt-2 mt-2">
+                                    <span class="text-sm font-medium">Total Rendimentos</span>
+                                    <span class="text-sm font-bold">{{ number_format($currentPayroll->basic_salary + $currentPayroll->allowances + $currentPayroll->overtime + $currentPayroll->bonuses, 2, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deduções -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-medium text-gray-700 mb-3 border-b pb-2">Deduções</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Imposto de Renda (IRT)</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->tax, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Segurança Social (INSS)</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->social_security, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">Outras Deduções</span>
+                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->deductions, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center border-t pt-2 mt-2">
+                                    <span class="text-sm font-medium">Total Deduções</span>
+                                    <span class="text-sm font-bold">{{ number_format($currentPayroll->tax + $currentPayroll->social_security + $currentPayroll->deductions, 2, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Salário Líquido -->
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-medium text-gray-700">Salário Líquido</h4>
+                            <span class="text-lg font-bold">{{ number_format($currentPayroll->net_salary, 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    @if($currentPayroll->remarks)
+                    <div class="border-t pt-4">
+                        <h4 class="font-medium text-gray-700 mb-2">Observações</h4>
+                        <p class="text-sm text-gray-600">{{ $currentPayroll->remarks }}</p>
+                    </div>
+                    @endif
+                </div>
+
+                <!-- Botões de Ações -->
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button"
+                        class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        wire:click="closeViewModal">
+                        Fechar
+                    </button>
+                    <button type="button"
+                        wire:click="downloadPayslip({{ $currentPayroll->id }})"
+                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i class="fas fa-file-pdf mr-1"></i>
+                        Baixar Contracheque
+                    </button>
+                </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal de Confirmação de Pagamento -->
+    @if($showPayModal)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium">
+                        <i class="fas fa-money-bill-wave mr-2"></i>
+                        Confirmar Pagamento
+                    </h3>
+                    <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="$set('showPayModal', false)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <p class="mb-4 text-gray-600">Você está confirmando que este pagamento foi realizado. Esta ação atualizará o status da folha de pagamento para "Pago".</p>
+
+                <form wire:submit.prevent="pay">
+                    <div class="mb-4">
+                        <label for="payment_date" class="block text-sm font-medium text-gray-700">Data de Pagamento</label>
+                        <input type="date" id="payment_date"
+                            class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('payment_date') border-red-300 text-red-900 @enderror"
+                            wire:model.live="payment_date">
+                        @error('payment_date')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button"
+                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            wire:click="$set('showPayModal', false)">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Confirmar Pagamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Adicionar botão de download na tabela de listagem -->
+    <script>
+        document.addEventListener('livewire:initialized', function () {
+            Livewire.hook('element.initialized', ({ component, el }) => {
+                if (component.name === 'hr.payroll') {
+                    // Adicionar botões de download após renderizar
+                    document.querySelectorAll('[data-payroll-id]').forEach(function(button) {
+                        if (!button.dataset.initialized) {
+                            button.dataset.initialized = true;
+                            button.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                Livewire.dispatch('downloadPayslip', { payrollId: button.dataset.payrollId });
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 
     <!-- Flash Message -->
     @if (session()->has('message'))
