@@ -51,8 +51,8 @@ class EquipmentParts extends Component
     {
         return [
             'part.name' => 'required|string|max:255',
-            'part.part_number' => 'nullable|string|max:255',
-            'part.bar_code' => 'nullable|string|max:255',
+            'part.part_number' => 'nullable|string|max:255|unique:equipment_parts,part_number,'.$this->part['id'],
+            'part.bar_code' => 'nullable|string|max:255|unique:equipment_parts,bar_code,'.$this->part['id'],
             'part.description' => 'nullable|string',
             'part.stock_quantity' => 'required|integer|min:0',
             'part.unit_cost' => 'nullable|numeric|min:0',
@@ -72,6 +72,8 @@ class EquipmentParts extends Component
             'part.stock_quantity.min' => 'The stock quantity cannot be negative.',
             'part.minimum_stock_level.required' => 'The minimum stock level is required.',
             'part.maintenance_equipment_id.required' => 'Please select an equipment.',
+            'part.part_number.unique' => 'A part with this part number already exists.',
+            'part.bar_code.unique' => 'A part with this barcode already exists.',
         ];
     }
 
@@ -162,6 +164,36 @@ class EquipmentParts extends Component
         $this->validate();
 
         try {
+            // Verificar duplicidade de part_number (se não estiver vazio)
+            if (!empty($this->part['part_number'])) {
+                $existingPartNumber = EquipmentPart::where('part_number', $this->part['part_number']);
+                
+                // Se estiver editando, excluir a peça atual da verificação
+                if ($this->isEditing && isset($this->part['id'])) {
+                    $existingPartNumber->where('id', '!=', $this->part['id']);
+                }
+                
+                if ($existingPartNumber->exists()) {
+                    $this->dispatch('notify', type: 'error', message: "A part with this part number already exists.");
+                    return;
+                }
+            }
+            
+            // Verificar duplicidade de barcode (se não estiver vazio)
+            if (!empty($this->part['bar_code'])) {
+                $existingBarcode = EquipmentPart::where('bar_code', $this->part['bar_code']);
+                
+                // Se estiver editando, excluir a peça atual da verificação
+                if ($this->isEditing && isset($this->part['id'])) {
+                    $existingBarcode->where('id', '!=', $this->part['id']);
+                }
+                
+                if ($existingBarcode->exists()) {
+                    $this->dispatch('notify', type: 'error', message: "A part with this barcode already exists.");
+                    return;
+                }
+            }
+
             if ($this->isEditing) {
                 $part = EquipmentPart::findOrFail($this->part['id']);
                 $part->update([

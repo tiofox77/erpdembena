@@ -35,4 +35,28 @@ class EquipmentPart extends Model
     {
         return $this->belongsTo(MaintenanceEquipment::class, 'maintenance_equipment_id');
     }
+
+    /**
+     * Get stock transactions associated with this part
+     */
+    public function stockTransactions()
+    {
+        return $this->hasMany(StockTransaction::class, 'equipment_part_id');
+    }
+
+    /**
+     * Get stock in transactions only
+     */
+    public function stockIns()
+    {
+        return $this->stockTransactions()->where('type', 'stock_in');
+    }
+
+    /**
+     * Get stock out transactions only
+     */
+    public function stockOuts()
+    {
+        return $this->stockTransactions()->where('type', 'stock_out');
+    }
 }

@@ -6,10 +6,12 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\StockOut as StockOutModel;
 use App\Models\StockOutItem;
+use App\Models\StockTransaction;
 use App\Models\EquipmentPart;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class StockOut extends Component
 {
@@ -93,7 +95,7 @@ class StockOut extends Component
         
         // Check if part exists and has stock
         if (!$part) {
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'error',
                 'message' => 'Part not found.'
             ]);
@@ -101,7 +103,7 @@ class StockOut extends Component
         }
         
         if ($part->stock_quantity < $this->newPart['quantity']) {
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'error',
                 'message' => 'Insufficient stock quantity. Only ' . $part->stock_quantity . ' available.'
             ]);
@@ -117,7 +119,7 @@ class StockOut extends Component
                 // Check if the new quantity exceeds stock
                 if ($this->selectedParts[$index]['quantity'] > $part->stock_quantity) {
                     $this->selectedParts[$index]['quantity'] = $part->stock_quantity;
-                    $this->dispatchBrowserEvent('showToast', [
+                    $this->dispatch('showToast', [
                         'type' => 'warning',
                         'message' => 'Quantity adjusted to maximum available stock.'
                     ]);
@@ -202,18 +204,29 @@ class StockOut extends Component
                 }
                 
                 $part->save();
+                
+                // Create a new stock transaction
+                StockTransaction::create([
+                    'equipment_part_id' => $selectedPart['equipment_part_id'],
+                    'quantity' => $selectedPart['quantity'],
+                    'type' => 'stock_out',
+                    'transaction_date' => Carbon::parse($this->stockOut['date']) ?? Carbon::now(),
+                    'notes' => $this->stockOut['reason'] . ($this->stockOut['notes'] ? ' - ' . $this->stockOut['notes'] : ''),
+                    'invoice_number' => $this->stockOut['reference_number'],
+                    'created_by' => Auth::id(),
+                ]);
             }
             
             DB::commit();
             
             $this->closeModal();
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'success',
                 'message' => $this->isEditing ? 'Stock out record updated successfully.' : 'Stock out record created successfully.'
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'error',
                 'message' => 'Error: ' . $e->getMessage()
             ]);
@@ -314,6 +327,12 @@ class StockOut extends Component
                 $part = $item->equipmentPart;
                 $part->stock_quantity += $item->quantity;
                 $part->save();
+                
+                // Delete the corresponding stock transaction
+                StockTransaction::where('equipment_part_id', $item->equipment_part_id)
+                    ->where('invoice_number', $stockOut->reference_number)
+                    ->where('type', 'stock_out')
+                    ->delete();
             }
             
             // Delete the stock out (cascade will delete items)
@@ -322,14 +341,14 @@ class StockOut extends Component
             DB::commit();
             
             $this->showDeleteModal = false;
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'success',
                 'message' => 'Stock out deleted successfully!'
             ]);
             
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'error',
                 'message' => 'Error: ' . $e->getMessage()
             ]);
@@ -377,7 +396,7 @@ class StockOut extends Component
                 }, 'stock-outs-report-' . date('Y-m-d') . '.pdf');
             }
         } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('showToast', [
+            $this->dispatch('showToast', [
                 'type' => 'error',
                 'message' => 'Error generating PDF: ' . $e->getMessage()
             ]);

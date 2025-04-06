@@ -106,6 +106,13 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
+    // Rotas de Gestão de Estoque - Requer permissão inventory.manage
+    Route::middleware(['permission:inventory.manage'])->prefix('stocks')->name('stocks.')->group(function() {
+        Route::get('/stock-in', App\Livewire\Stocks\StockIn::class)->name('stockin');
+        Route::get('/stock-out', App\Livewire\Stocks\StockOut::class)->name('stockout');
+        Route::get('/stock-history', App\Livewire\Stocks\StockHistory::class)->name('history');
+    });
+
     // Equipment Parts Management - Requer permissão equipment.view
     Route::middleware(['permission:equipment.view'])->group(function() {
         Route::get('/equipment/parts', EquipmentParts::class)->name('equipment.parts');
@@ -167,11 +174,6 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:settings.manage'])->get('/holidays', function() {
         return redirect()->route('maintenance.holidays');
     })->name('holidays.management');
-
-    // Stocks Management Routes
-    Route::prefix('stocks')->name('stocks.')->group(function() {
-        Route::get('/stockout', App\Livewire\Stocks\StockOut::class)->name('stockout');
-    });
 
     // Rotas de Configurações - Requer permissão settings.manage
     Route::middleware(['permission:settings.manage'])->prefix('settings')->name('settings.')->group(function () {

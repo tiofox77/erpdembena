@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Dembena ERP') }} - Maintenance System</title>
+    @php
+        $companyName = \App\Models\Setting::get('company_name', config('app.name', 'Dembena ERP'));
+    @endphp
+    <title>{{ $companyName }} - Maintenance System</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -91,6 +94,39 @@
             border-bottom: 1px solid rgba(0,0,0,0.05);
             font-weight: 600;
             color: #333;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 4px;
+            background-color: #f9fafb;
+            border-left: 3px solid #4f46e5;
+            transition: all 0.2s ease;
+            max-width: 200px;
+        }
+        
+        .logo-container:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .company-name {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+        
+        .logo-image {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 3px;
         }
 
         .sidebar-header i {
@@ -327,8 +363,19 @@
     <div class="sidebar bg-white shadow-md">
         <div class="sidebar-header">
             <div class="flex items-center">
-                <img src="{{ asset('images/logo-icon.png') }}" alt="Logo" class="w-6 h-6">
-                <span class="ml-2 font-semibold text-gray-800">{{ config('app.name', 'Dembena ERP') }}</span>
+                @php
+                    $logoPath = \App\Models\Setting::get('company_logo');
+                    $companyName = \App\Models\Setting::get('company_name', config('app.name', 'Dembena ERP'));
+                @endphp
+                
+                <div class="logo-container">
+                    @if($logoPath)
+                        <img src="{{ asset('storage/' . $logoPath) }}" alt="{{ $companyName }} Logo" class="logo-image">
+                    @else
+                        <img src="{{ asset('images/logo-icon.png') }}" alt="Logo" class="logo-image">
+                    @endif
+                    <span class="ml-3 company-name">{{ $companyName }}</span>
+                </div>
             </div>
             <button id="sidebar-toggle" class="focus:outline-none">
                 <i class="fas fa-chevron-left cursor-pointer text-gray-500 hover:text-indigo-600 transition duration-200"></i>
@@ -364,17 +411,25 @@
             <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="partsMenu">
                 <i class="fas fa-tools text-gray-500"></i>
                 <span>Equipment Parts</span>
-                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('equipment.parts') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') ? 'active' : '' }}"></i>
             </div>
 
-            <div class="sidebar-nested-submenu" id="partsSubmenu">
+            <div class="sidebar-nested-submenu {{ request()->routeIs('equipment.parts') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') ? 'active' : '' }}" id="partsSubmenu">
                 <a href="{{ route('equipment.parts') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-cogs text-gray-500"></i>
                     <span>Parts List</span>
                 </a>
+                <a href="{{ route('stocks.stockin') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.stockin') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-arrow-circle-up text-gray-500"></i>
+                    <span>Stock In</span>
+                </a>
                 <a href="{{ route('stocks.stockout') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.stockout') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-arrow-circle-down text-gray-500"></i>
                     <span>Stock Out</span>
+                </a>
+                <a href="{{ route('stocks.history') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.history') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-history text-gray-500"></i>
+                    <span>Stock History</span>
                 </a>
             </div>
             @endcan
@@ -404,10 +459,10 @@
             <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="maintenanceSettingsMenu">
                 <i class="fas fa-cogs text-gray-500"></i>
                 <span>Maintenance Corrective Settings</span>
-                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('maintenance.failure-modes') || request()->routeIs('maintenance.failure-mode-categories') || request()->routeIs('maintenance.failure-causes') || request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }}"></i>
             </div>
 
-            <div class="sidebar-nested-submenu" id="maintenanceSettingsSubmenu">
+            <div class="sidebar-nested-submenu {{ request()->routeIs('maintenance.failure-modes') || request()->routeIs('maintenance.failure-mode-categories') || request()->routeIs('maintenance.failure-causes') || request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }}" id="maintenanceSettingsSubmenu">
                 <a href="{{ route('maintenance.failure-modes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-modes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-exclamation-triangle text-gray-500"></i>
                     <span>Failure Modes</span>
@@ -454,11 +509,11 @@
             <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="reportsHistoryMenu">
                 <i class="fas fa-chart-bar text-gray-500"></i>
                 <span>Reports & History</span>
-                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('reports.equipment.*') || request()->routeIs('reports.maintenance.*') || request()->routeIs('reports.cost.*') || request()->routeIs('reports.downtime.*') || request()->routeIs('reports.failure.*') || request()->routeIs('reports.resource.*') || request()->routeIs('history.*') ? 'active' : '' }}"></i>
             </div>
 
             <!-- Reports & History Submenu -->
-            <div class="sidebar-nested-submenu" id="reportsHistorySubmenu">
+            <div class="sidebar-nested-submenu {{ request()->routeIs('reports.equipment.*') || request()->routeIs('reports.maintenance.*') || request()->routeIs('reports.cost.*') || request()->routeIs('reports.downtime.*') || request()->routeIs('reports.failure.*') || request()->routeIs('reports.resource.*') || request()->routeIs('history.*') ? 'active' : '' }}" id="reportsHistorySubmenu">
                 <!-- Equipment Performance Reports -->
                 <a href="{{ route('reports.equipment.availability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.availability') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-chart-line text-gray-500"></i>
@@ -625,20 +680,28 @@
         </div>
 
         <div class="sidebar-submenu" id="stocksSubmenu">
-            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('stocks.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+            <a href="{{ route('equipment.parts') }}" class="sidebar-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-cogs text-gray-500"></i>
                 <span>Equipment Parts</span>
+            </a>
+            <a href="{{ route('stocks.stockin') }}" class="sidebar-submenu-item {{ request()->routeIs('stocks.stockin') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-arrow-circle-up text-gray-500"></i>
+                <span>Stock In</span>
             </a>
             <a href="{{ route('stocks.stockout') }}" class="sidebar-submenu-item {{ request()->routeIs('stocks.stockout') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-arrow-circle-down text-gray-500"></i>
                 <span>Stock Out</span>
+            </a>
+            <a href="{{ route('stocks.history') }}" class="sidebar-submenu-item {{ request()->routeIs('stocks.history') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-history text-gray-500"></i>
+                <span>Stock History</span>
             </a>
         </div>
 
         <!-- Moved user info to footer of sidebar
         <div class="absolute bottom-0 w-full border-t border-gray-100">
             <div class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 transition duration-200">
-                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold shadow-sm">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
                     {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
                 </div>
                 <div class="ml-3 truncate">
@@ -659,29 +722,32 @@
     <div class="main-content">
         <!-- Header -->
         <div class="header sticky top-0 z-10 shadow-sm bg-white">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-4">
-                    <h1 class="text-xl font-semibold text-gray-800 truncate">{{ $title ?? 'Maintenance Dashboard' }}</h1>
-                    
-                    <!-- Search -->
-                    <div class="relative ml-4">
-                        <input type="text" placeholder="Search equipment, tasks..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 hover:bg-white transition duration-200">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search"></i>
-                        </div>
+            <div class="flex justify-between items-center px-4 py-2">
+                <!-- Left: Title -->
+                <h1 class="text-xl font-semibold text-gray-800 truncate">{{ $title ?? 'Maintenance Dashboard' }}</h1>
+                
+                <!-- Center: Search -->
+                <div class="relative flex-grow max-w-lg mx-4">
+                    <input type="text" placeholder="Search equipment, tasks..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 hover:bg-white transition duration-200">
+                    <div class="absolute left-3 top-2.5 text-gray-400">
+                        <i class="fas fa-search"></i>
                     </div>
                 </div>
 
+                <!-- Right: Actions -->
                 <div class="flex items-center space-x-4">
-                    <!-- Update checker -->
-                    @livewire('components.update-checker')
+                    <!-- Verificar button -->
+                    <button class="flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition duration-200 text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span>Verificar</span>
+                    </button>
 
                     <!-- Notification -->
                     <div class="relative" x-data="{ showNotifications: false }">
                         <button @click="showNotifications = !showNotifications" class="relative p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition duration-200 focus:outline-none">
                             <i class="far fa-bell text-lg"></i>
                             @if(true) <!-- Replace with actual notification count condition -->
-                            <span class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">3</span>
+                            <span class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">1</span>
                             @endif
                         </button>
 
@@ -720,22 +786,18 @@
                     <!-- User Menu -->
                     <div class="relative flex items-center" x-data="{ open: false }">
                         <!-- User info visible in header -->
-                        <div class="flex items-center mr-2">
-                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shadow-sm">
-                                {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
+                        <div class="flex items-center ml-2 cursor-pointer hover:bg-gray-100 rounded-full px-2 py-1 transition-colors duration-150" @click="open = !open">
+                            <div class="text-right mr-2">
+                                <div class="text-sm font-medium text-gray-800">{{ strtoupper(auth()->user()->first_name ?? 'User') }} {{ strtoupper(auth()->user()->last_name ?? '') }}</div>
+                                <div class="text-xs text-gray-500">{{ strtolower(auth()->user()->roles->first()->name ?? 'no role') }}</div>
                             </div>
-                            <div class="ml-2 hidden md:block">
-                                <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
-                                <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'No role' }}</div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-sm">
+                                {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
                             </div>
                         </div>
 
-                        <button @click="open = !open" class="text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition duration-200">
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </button>
-
                         <!-- User Dropdown -->
-                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-40 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 top-12 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
                             <div class="py-3 border-b border-gray-100 md:hidden">
                                 <div class="px-4">
                                     <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
