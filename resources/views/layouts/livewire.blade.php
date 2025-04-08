@@ -56,11 +56,7 @@
     <script src="{{ asset('js/tippy.min.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('css/tippy-light-border.css') }}"/>
 
-    <!-- Alpine.js - Necessário para os dropdowns customizados -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <!-- Alpine.js -->
-    <script defer src="{{ asset('js/alpine.min.js') }}"></script>
+    {{-- Alpine.js is loaded by @livewireScripts, don't include it here --}}
 
     <!-- FullCalendar Locale -->
     <script src="{{ asset('js/fullcalendar-pt-br.min.js') }}"></script>
