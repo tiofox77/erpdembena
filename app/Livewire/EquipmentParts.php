@@ -49,10 +49,12 @@ class EquipmentParts extends Component
      */
     protected function rules()
     {
+        $partId = isset($this->part['id']) ? $this->part['id'] : '';
+        
         return [
             'part.name' => 'required|string|max:255',
-            'part.part_number' => 'nullable|string|max:255|unique:equipment_parts,part_number,'.$this->part['id'],
-            'part.bar_code' => 'nullable|string|max:255|unique:equipment_parts,bar_code,'.$this->part['id'],
+            'part.part_number' => 'nullable|string|max:255|unique:equipment_parts,part_number,'.$partId,
+            'part.bar_code' => 'nullable|string|max:255|unique:equipment_parts,bar_code,'.$partId,
             'part.description' => 'nullable|string',
             'part.stock_quantity' => 'required|integer|min:0',
             'part.unit_cost' => 'nullable|numeric|min:0',

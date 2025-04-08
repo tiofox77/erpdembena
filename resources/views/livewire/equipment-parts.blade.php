@@ -590,7 +590,7 @@
                                                         wire:click="selectEquipment('{{ $equipment->id }}', '{{ $equipment->name }}')"
                                                         @click="selectedName = '{{ $equipment->name }}'; open = false"
                                                     >
-                                                        {{ $equipment->name }}
+                                                        {{ $equipment->name }} - {{ $equipment->serial_number }}
                                                     </div>
                                                 @endforeach
                                             </div>

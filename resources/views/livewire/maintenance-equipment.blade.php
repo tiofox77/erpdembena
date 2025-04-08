@@ -162,11 +162,11 @@
                                         @endif
                                     </div>
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6 cursor-pointer" wire:click="sortBy('next_maintenance')">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6 cursor-pointer" wire:click="sortBy('purchase_date')">
                                     <div class="flex items-center space-x-1">
                                         <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
-                                        <span>Next Maintenance</span>
-                                        @if ($sortField === 'next_maintenance')
+                                        <span>purchase_date</span>
+                                        @if ($sortField === 'purchase_date')
                                             <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
                                         @else
                                             <i class="fas fa-sort text-gray-300"></i>
@@ -214,7 +214,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-600">
                                         <div class="flex items-center">
                                             <i class="far fa-calendar-alt mr-2 text-gray-400"></i>
-                                            {{ $item->next_maintenance ? date('M d, Y', strtotime($item->next_maintenance)) : 'Not scheduled' }}
+                                            {{ $item->purchase_date ? date('M d, Y', strtotime($item->purchase_date)) : 'Not scheduled' }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -402,9 +402,9 @@
                                 <i class="fas fa-calendar-alt"></i>
                             </span>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase">Next Maintenance</p>
+                                <p class="text-xs text-gray-500 uppercase">Purchase Date</p>
                                 <p class="text-sm font-medium">
-                                    {{ $viewingEquipment->next_maintenance ? date('M d, Y', strtotime($viewingEquipment->next_maintenance)) : 'Not scheduled' }}
+                                    {{ $viewingEquipment->purchase_date ? date('M d, Y', strtotime($viewingEquipment->purchase_date)) : 'Not scheduled' }}
                                 </p>
                             </div>
                         </div>
