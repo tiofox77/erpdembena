@@ -94,8 +94,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/corrective', App\Livewire\Maintenance\CorrectiveMaintenance::class)->name('corrective');
         });
 
-        // API routes
-        // Route::post('/api/notification/mark-as-read', [MaintenanceController::class, 'markNotificationAsRead'])->name('api.notification.mark-as-read');
+        // Gerenciamento de Técnicos - Requer permissão technicians.view
+        Route::middleware(['permission:technicians.view'])->group(function() {
+            Route::get('/technicians', App\Livewire\Technicians::class)->name('technicians');
+        });
 
         // Configurações de Manutenção Corretiva - Requer permissão corrective.manage
         Route::middleware(['permission:corrective.manage'])->group(function() {
@@ -114,6 +116,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/stock-in', App\Livewire\Stocks\StockIn::class)->name('stockin');
         Route::get('/stock-out', App\Livewire\Stocks\StockOut::class)->name('stockout');
         Route::get('/stock-history', App\Livewire\Stocks\StockHistory::class)->name('history');
+        Route::get('/part-requests', App\Livewire\EquipmentPartRequests::class)->name('part-requests');
     });
 
     // Equipment Parts Management - Requer permissão equipment.view

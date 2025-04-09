@@ -108,57 +108,41 @@
                         <label for="equipmentId" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
                             <i class="fas fa-tools mr-1 text-gray-500"></i> Equipment
                         </label>
-                        <div class="relative" x-data="{ open: false, selectedName: '{{ $this->getSelectedEquipmentName() }}' }">
-                            <input type="hidden" wire:model.live="equipmentId" id="equipmentId">
-                            
-                            <button @click="open = !open" type="button" class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <span class="flex items-center">
-                                    <span class="block truncate" x-text="selectedName ? selectedName : 'All Equipment'"></span>
-                                </span>
-                                <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                    <i class="fas fa-chevron-down text-gray-400"></i>
-                                </span>
-                            </button>
-
-                            <div x-show="open" @click.away="open = false" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto max-h-60">
-                                <div @click="open = false; selectedName = 'All Equipment';" wire:click="selectEquipmentId(null)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50">
-                                    All Equipment
-                                </div>
+                        <div class="relative rounded-md shadow-sm">
+                            <select
+                                id="equipmentId"
+                                wire:model.live="equipmentId"
+                                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            >
+                                <option value="">All Equipment</option>
                                 @foreach($this->equipmentList as $equipment)
-                                <div @click="open = false; selectedName = '{{ $equipment->name }}';" wire:click="selectEquipmentId({{ $equipment->id }})" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50">
-                                    {{ $equipment->name }}
-                                </div>
+                                    <option value="{{ $equipment->id }}">{{ $equipment->name }} - {{ $equipment->serial_number }}</option>
                                 @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Part Dropdown (shows only if equipment is selected) -->
+                    <!-- Part Dropdown -->
                     <div>
                         <label for="partId" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-cogs mr-1 text-gray-500"></i> Part
+                            <i class="fas fa-cog mr-1 text-gray-500"></i> Part
                         </label>
-                        <div class="relative" x-data="{ open: false, selectedName: '{{ $this->getSelectedPartName() }}' }">
-                            <input type="hidden" wire:model.live="partId" id="partId">
-                            
-                            <button @click="open = !open" type="button" class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <span class="flex items-center">
-                                    <span class="block truncate" x-text="selectedName ? selectedName : 'All Parts'"></span>
-                                </span>
-                                <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                    <i class="fas fa-chevron-down text-gray-400"></i>
-                                </span>
-                            </button>
-
-                            <div x-show="open" @click.away="open = false" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto max-h-60">
-                                <div @click="open = false; selectedName = 'All Parts';" wire:click="selectPartId(null)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50">
-                                    All Parts
-                                </div>
+                        <div class="relative rounded-md shadow-sm">
+                            <select
+                                id="partId"
+                                wire:model.live="partId"
+                                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            >
+                                <option value="">All Parts</option>
                                 @foreach($this->partsList as $part)
-                                <div @click="open = false; selectedName = '{{ $part->name }}';" wire:click="selectPartId({{ $part->id }})" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50">
-                                    {{ $part->name }} ({{ $part->part_number ?: 'No P/N' }})
-                                </div>
+                                    <option value="{{ $part->id }}">{{ $part->name }} ({{ $part->part_number ?: 'No P/N' }})</option>
                                 @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                             </div>
                         </div>
                     </div>

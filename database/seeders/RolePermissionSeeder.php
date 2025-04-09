@@ -85,6 +85,14 @@ class RolePermissionSeeder extends Seeder
             'lines.delete',
         ];
 
+        // Technicians permissions
+        $technicianModulePermissions = [
+            'technicians.view',
+            'technicians.create',
+            'technicians.edit',
+            'technicians.delete',
+        ];
+
         // Merge all permissions
         $allPermissions = array_merge(
             $equipmentPermissions,
@@ -93,7 +101,8 @@ class RolePermissionSeeder extends Seeder
             $reportPermissions,
             $userPermissions,
             $settingsPermissions,
-            $areaLinePermissions
+            $areaLinePermissions,
+            $technicianModulePermissions
         );
 
         // Create permissions in database (using firstOrCreate to avoid duplicates)

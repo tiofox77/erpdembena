@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\Technician;
+use App\Models\User;
 
 class MaintenanceCorrective extends Model
 {
@@ -83,7 +85,7 @@ class MaintenanceCorrective extends Model
 
     public function resolver()
     {
-        return $this->belongsTo(User::class, 'resolved_by');
+        return $this->belongsTo(Technician::class, 'resolved_by');
     }
 
     public function tasks()

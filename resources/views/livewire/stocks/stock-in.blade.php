@@ -44,62 +44,19 @@
                             <label for="equipmentId" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
                                 <i class="fas fa-tools mr-1 text-gray-500"></i> Equipment
                             </label>
-                            <div class="relative" x-data="{ open: false, selectedName: '{{ $this->getSelectedEquipmentName() }}' }">
-                                <!-- Hidden input for Livewire binding -->
-                                <input type="hidden" wire:model.live="equipmentId" id="equipmentId">
-                                
-                                <!-- Custom dropdown trigger -->
-                                <button 
-                                    type="button"
-                                    @click="open = !open"
-                                    class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            <div class="relative rounded-md shadow-sm">
+                                <select
+                                    id="equipmentId"
+                                    wire:model.live="equipmentId"
+                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <span class="flex items-center">
-                                        <i class="fas fa-tools mr-2 text-gray-400" x-show="!selectedName"></i>
-                                        <i class="fas fa-tools mr-2 text-blue-500" x-show="selectedName"></i>
-                                        <span x-text="selectedName || 'All Equipment'"></span>
-                                    </span>
-                                    <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400"></i>
-                                    </span>
-                                </button>
-                                
-                                <!-- Dropdown menu -->
-                                <div 
-                                    x-show="open"
-                                    @click.away="open = false"
-                                    class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-                                >
-                                    <!-- Clear selection option -->
-                                    <div 
-                                        class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 text-gray-700"
-                                        wire:click="selectEquipmentId(null)"
-                                        @click="open = false; selectedName = '';"
-                                    >
-                                        <div class="flex items-center">
-                                            <i class="fas fa-times-circle mr-2 text-red-500"></i>
-                                            <span>Clear Selection</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Equipment options -->
+                                    <option value="">All Equipment</option>
                                     @foreach($this->equipmentList as $equipment)
-                                        <div 
-                                            class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 {{ $equipmentId == $equipment->id ? 'bg-blue-100 text-blue-900' : 'text-gray-900' }}"
-                                            wire:click="selectEquipmentId({{ $equipment->id }})"
-                                            @click="open = false; selectedName = '{{ $equipment->name }}';"
-                                        >
-                                            <div class="flex items-center">
-                                                <i class="fas fa-tools mr-2 {{ $equipmentId == $equipment->id ? 'text-blue-500' : 'text-gray-400' }}"></i>
-                                                <span>{{ $equipment->name }}</span>
-                                            </div>
-                                            @if($equipmentId == $equipment->id)
-                                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-blue-600">
-                                                    <i class="fas fa-check"></i>
-                                                </span>
-                                            @endif
-                                        </div>
+                                        <option value="{{ $equipment->id }}">{{ $equipment->name }} - {{ $equipment->serial_number }}</option>
                                     @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                                 </div>
                             </div>
                         </div>

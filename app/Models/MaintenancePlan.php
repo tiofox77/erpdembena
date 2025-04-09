@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\Technician;
 
 class MaintenancePlan extends Model
 {
@@ -88,11 +89,11 @@ class MaintenancePlan extends Model
     }
 
     /**
-     * Get the user assigned to this plan.
+     * Get the technician assigned to this plan.
      */
     public function assignedTo()
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(Technician::class, 'assigned_to');
     }
 
     /**

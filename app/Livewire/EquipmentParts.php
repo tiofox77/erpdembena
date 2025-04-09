@@ -384,13 +384,13 @@ class EquipmentParts extends Component
         // Para o dropdown de filtro
         if (!empty($this->equipmentId)) {
             $equipment = MaintenanceEquipment::find($this->equipmentId);
-            return $equipment ? $equipment->name : '';
+            return $equipment ? $equipment->name . ' - ' . $equipment->serial_number : '';
         }
         
         // Para o dropdown do formulário
         if (!empty($this->part['maintenance_equipment_id'])) {
             $equipment = MaintenanceEquipment::find($this->part['maintenance_equipment_id']);
-            return $equipment ? $equipment->name : '';
+            return $equipment ? $equipment->name . ' - ' . $equipment->serial_number : '';
         }
         
         return '';

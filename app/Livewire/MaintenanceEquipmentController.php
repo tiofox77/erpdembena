@@ -36,6 +36,7 @@ class MaintenanceEquipmentController extends Component
     public $statusFilter = '';
     public $sortField = 'name';
     public $sortDirection = 'asc';
+    public $perPage = 10;
 
     // Listen for events
     protected $listeners = ['delete'];
@@ -123,6 +124,7 @@ class MaintenanceEquipmentController extends Component
         $this->lineFilter = '';
         $this->areaFilter = '';
         $this->statusFilter = '';
+        $this->perPage = 10;
         $this->resetPage();
 
         $this->dispatch('filters-cleared');
@@ -248,7 +250,7 @@ class MaintenanceEquipmentController extends Component
                 return $query->where('status', $this->statusFilter);
             })
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate(10);
+            ->paginate($this->perPage);
 
         return view('livewire.maintenance-equipment', [
             'equipment' => $equipment,

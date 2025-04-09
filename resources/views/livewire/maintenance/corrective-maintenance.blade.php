@@ -96,7 +96,7 @@
                                     >
                                         <option value="">All Equipment</option>
                                         @foreach($equipment as $equipItem)
-                                            <option value="{{ $equipItem->id }}">{{ $equipItem->name }}</option>
+                                            <option value="{{ $equipItem->id }}">{{ $equipItem->name }} - {{ $equipItem->serial_number }}</option>
                                         @endforeach
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -119,6 +119,27 @@
                                         @foreach($statuses as $statusKey => $statusValue)
                                             <option value="{{ $statusKey }}">{{ $statusValue }}</option>
                                         @endforeach
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="perPage" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-list-ol mr-1 text-gray-500"></i> Items Per Page
+                                </label>
+                                <div class="relative rounded-md shadow-sm">
+                                    <select
+                                        id="perPage"
+                                        wire:model.live="perPage"
+                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    >
+                                        <option value="10">10 per page</option>
+                                        <option value="25">25 per page</option>
+                                        <option value="50">50 per page</option>
+                                        <option value="100">100 per page</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -392,7 +413,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Create/Edit Modal -->
     @if($showModal)
@@ -904,9 +924,9 @@
                                         @error('corrective.resolved_by') border-red-300 text-red-900 @enderror"
                                         {{ $corrective['status'] !== 'resolved' && $corrective['status'] !== 'closed' ? 'disabled' : '' }}
                                     >
-                                        <option value="">Select User</option>
-                                        @foreach($users as $user)
-                                            <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                        <option value="">Select Technician</option>
+                                        @foreach($technicians as $technician)
+                                            <option value="{{ $technician->id }}">{{ $technician->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('corrective.resolved_by')
@@ -929,14 +949,14 @@
                     <div class="flex justify-end space-x-3 mt-4">
                         <button
                             type="button"
-                            class="px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+                            class="px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             wire:click="closeModal"
                         >
                             <i class="fas fa-times mr-1"></i> Cancel
                         </button>
                         <button
                             type="submit"
-                            class="px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+                            class="px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                             <i class="fas {{ $isEditing ? 'fa-save' : 'fa-plus' }} mr-1"></i>
                             {{ $isEditing ? 'Update' : 'Save' }} Record

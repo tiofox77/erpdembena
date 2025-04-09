@@ -8,7 +8,7 @@ use App\Models\MaintenanceArea;
 use App\Models\MaintenanceLine;
 use App\Models\MaintenanceTask;
 use App\Models\Holiday;
-use App\Models\User;
+use App\Models\Technician;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
@@ -49,6 +49,9 @@ class MaintenancePlan extends Component
     public $search = '';
     public $statusFilter = '';
     public $frequencyFilter = '';
+    public $perPage = 10;
+    public $sortField = 'scheduled_date';
+    public $sortDirection = 'desc';
 
     // Search for technicians
     public $technicianSearch = '';
@@ -68,7 +71,7 @@ class MaintenancePlan extends Component
         'month_day' => 'required_if:frequency_type,yearly|nullable|integer|min:1|max:31',
         'priority' => 'required|in:low,medium,high,critical',
         'type' => 'required|in:preventive,predictive,conditional,other',
-        'assigned_to' => 'nullable|exists:users,id',
+        'assigned_to' => 'nullable|exists:technicians,id',
         'description' => 'nullable|string',
         'notes' => 'nullable|string',
         'status' => 'required|in:pending,in_progress,completed,cancelled,schedule',
@@ -692,13 +695,10 @@ class MaintenancePlan extends Component
             return;
         }
 
-        $this->filteredTechnicians = User::where(function($query) {
-                $query->where('name', 'like', '%' . $this->technicianSearch . '%')
-                      ->orWhere('email', 'like', '%' . $this->technicianSearch . '%');
-            })
-            ->limit(10)
-            ->get()
-            ->toArray();
+        $this->filteredTechnicians = Technician::where('name', 'like', '%' . $this->technicianSearch . '%')
+            ->orWhere('phone_number', 'like', '%' . $this->technicianSearch . '%')
+            ->limit(5)
+            ->get();
     }
 
     /**
@@ -707,7 +707,7 @@ class MaintenancePlan extends Component
     public function selectTechnician($id)
     {
         $this->assigned_to = $id;
-        $this->technicianSearch = '';
+        $this->technicianSearch = Technician::find($id)->name;
         $this->filteredTechnicians = [];
     }
 
@@ -840,6 +840,7 @@ class MaintenancePlan extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->frequencyFilter = '';
+        $this->perPage = 10;
         $this->resetPage();
 
         $notificationType = 'info';
@@ -864,8 +865,8 @@ class MaintenancePlan extends Component
             ->when($this->frequencyFilter, function ($query) {
                 return $query->where('frequency_type', $this->frequencyFilter);
             })
-            ->orderBy('scheduled_date')
-            ->paginate(10);
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
 
         return view('livewire.maintenance-plan', [
             'schedules' => $schedules,
@@ -873,7 +874,7 @@ class MaintenancePlan extends Component
             'lines' => MaintenanceLine::all(),
             'areas' => MaintenanceArea::all(),
             'tasks' => MaintenanceTask::all(),
-            'technicians' => User::all(),
+            'technicians' => Technician::orderBy('name')->get(),
             'frequencies' => [
                 'once' => 'Once',
                 'daily' => 'Daily',

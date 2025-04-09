@@ -10,6 +10,7 @@ use App\Models\MaintenanceTask;
 use App\Models\MaintenanceEquipment;
 use App\Models\MaintenanceArea;
 use App\Models\MaintenanceLine;
+use App\Models\Technician;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -97,7 +98,7 @@ class CorrectiveMaintenance extends Component
             'corrective.description' => 'nullable|string',
             'corrective.actions_taken' => 'nullable|string',
             'corrective.reported_by' => 'nullable|exists:users,id',
-            'corrective.resolved_by' => 'nullable|exists:users,id',
+            'corrective.resolved_by' => 'nullable|exists:technicians,id',
             'corrective.status' => 'required|in:open,in_progress,resolved,closed',
         ];
     }
@@ -169,22 +170,30 @@ class CorrectiveMaintenance extends Component
         $this->resetPage();
     }
 
+    // Reset pagination when perPage changes
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
     /**
      * Clear all filters and reset to default values
      */
     public function clearFilters()
     {
-        // Reset all filter values
-        $this->reset(['search', 'filterStatus', 'filterEquipment', 'filterMonth']);
-
-        // Set default year to current year
-        $this->filterYear = now()->year;
-
-        // Reset pagination
+        $this->search = '';
+        $this->filterStatus = '';
+        $this->filterEquipment = '';
+        $this->filterYear = '';
+        $this->filterMonth = '';
+        $this->perPage = 10;
         $this->resetPage();
 
-        // Dispatch an event to force UI refresh
         $this->dispatch('filters-cleared');
+
+        $notificationType = 'info';
+        $message = 'All filters have been reset.';
+        $this->dispatch('notify', type: $notificationType, message: $message);
     }
 
     // Real-time validation
@@ -439,10 +448,16 @@ class CorrectiveMaintenance extends Component
         return MaintenanceEquipment::orderBy('name')->get();
     }
 
-    // Get users for reporter/resolver dropdowns
+    // Get users for reporter dropdown
     public function getUserOptions()
     {
         return User::orderBy('name')->get();
+    }
+
+    // Get technicians for resolver dropdown
+    public function getTechnicianOptions()
+    {
+        return Technician::orderBy('name')->get();
     }
 
     // Get available years for filtering
@@ -530,6 +545,7 @@ class CorrectiveMaintenance extends Component
             'correctiveRecords' => $this->correctiveRecords,
             'equipment' => $this->getEquipmentOptions(),
             'users' => $this->getUserOptions(),
+            'technicians' => $this->getTechnicianOptions(),
             'years' => $this->getYearOptions(),
             'months' => $this->getMonthOptions(),
             'statuses' => $this->getStatusOptions(),

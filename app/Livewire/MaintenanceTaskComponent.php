@@ -102,6 +102,7 @@ class MaintenanceTaskComponent extends Component
     public function clearFilters()
     {
         $this->reset(['search']);
+        $this->perPage = 10;
         $this->resetPage();
 
         // Dispatch an event to force UI refresh
