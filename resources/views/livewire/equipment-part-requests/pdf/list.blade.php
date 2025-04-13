@@ -14,10 +14,12 @@
             padding: 0;
         }
         .header {
-            text-align: center;
+            text-align: left;
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
         }
         .logo {
             max-height: 70px;
@@ -128,10 +130,27 @@
             $logoPath = \App\Models\Setting::get('company_logo');
             $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
             $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
         @endphp
-        <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
-        <div class="document-title">PART REQUESTS REPORT</div>
-        <div>Generated on: {{ now()->format('d/m/Y H:i') }}</div>
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">PART REQUESTS REPORT</div>
+            <div>Generated on: {{ now()->format('d/m/Y H:i') }}</div>
+        </div>
     </div>
     
     <div class="filter-info">

@@ -94,17 +94,18 @@ class MaintenanceDashboard extends Component
     public function loadDashboardData()
     {
         // Carregar contagens de equipamentos
-        $this->equipmentCount = MaintenanceEquipment::count();
+        $this->equipmentCount = MaintenanceEquipment::whereNull('deleted_at')->count();
         $this->totalEquipment = $this->equipmentCount;
 
         // Verificar se a coluna 'status' existe antes de tentar usá-la
         if (Schema::hasColumn('maintenance_equipment', 'status')) {
             // Equipamento fora de serviço
-        $this->equipmentOutOfService = MaintenanceEquipment::where('status', 'out_of_service')->count();
+        $this->equipmentOutOfService = MaintenanceEquipment::where('status', 'out_of_service')->whereNull('deleted_at')->count();
 
             // Equipamentos em manutenção - buscar em maintenance_plans os equipamentos com planos ativos
-            $this->equipmentInMaintenance = MaintenancePlan::whereIn('status', ['pending', 'in_progress'])
+            $this->equipmentInMaintenance = MaintenancePlan::whereIn('status', ['pending', 'in_progress', 'schedule'])
                 ->whereNotNull('equipment_id')
+                ->whereNull('deleted_at')
                 ->distinct('equipment_id')
                 ->count('equipment_id');
         } else {
@@ -112,28 +113,30 @@ class MaintenanceDashboard extends Component
             $this->equipmentOutOfService = 0;
 
             // Mesmo sem coluna status, podemos buscar equipamentos com manutenção planejada
-            $this->equipmentInMaintenance = MaintenancePlan::whereIn('status', ['pending', 'in_progress'])
+            $this->equipmentInMaintenance = MaintenancePlan::whereIn('status', ['pending', 'in_progress', 'schedule'])
                 ->whereNotNull('equipment_id')
+                ->whereNull('deleted_at')
                 ->distinct('equipment_id')
                 ->count('equipment_id');
         }
 
         // Carregar contagens de tarefas
         // Total de planos de manutenção (todos os planos)
-        $this->scheduledTasks = MaintenancePlan::count();
+        $this->scheduledTasks = MaintenancePlan::whereNull('deleted_at')->count();
 
         // Tarefas não atualizadas/vencidas (tarefas pendentes com data programada no passado)
         // Verificar primeiro se a coluna scheduled_date existe
         if (Schema::hasColumn('maintenance_plans', 'scheduled_date')) {
-            $this->overdueTasks = MaintenancePlan::where('status', 'pending')
+            $this->overdueTasks = MaintenancePlan::whereIn('status', ['pending', 'schedule'])
                 ->where('scheduled_date', '<', now()->format('Y-m-d'))
-            ->count();
+                ->whereNull('deleted_at')
+                ->count();
         } else {
-            // Se não tiver data, simplesmente contar as tarefas pendentes
-            $this->overdueTasks = MaintenancePlan::where('status', 'pending')->count();
+            // Se não tiver data, simplesmente contar as tarefas pendentes e agendadas
+            $this->overdueTasks = MaintenancePlan::whereIn('status', ['pending', 'schedule'])->whereNull('deleted_at')->count();
         }
 
-        $this->completedTasks = MaintenancePlan::where('status', 'completed')->count();
+        $this->completedTasks = MaintenancePlan::where('status', 'completed')->whereNull('deleted_at')->count();
 
         // Carregar dados para os KPIs adicionais
         $this->loadKpiData();
@@ -146,8 +149,9 @@ class MaintenanceDashboard extends Component
         $fiveDaysFromNow = $now->copy()->addDays(5);
 
         // Buscar tarefas pendentes que estão dentro do prazo de alerta (5 dias) ou atrasadas
-        $pendingTasks = MaintenancePlan::whereIn('status', ['pending', 'in_progress'])
+        $pendingTasks = MaintenancePlan::whereIn('status', ['pending', 'in_progress', 'schedule'])
             ->whereNotNull('scheduled_date')
+            ->whereNull('deleted_at')
             ->where(function($query) use ($now, $fiveDaysFromNow) {
                 $query->where('scheduled_date', '<=', $fiveDaysFromNow->format('Y-m-d'))
                       ->orWhere('scheduled_date', '<', $now->format('Y-m-d'));
@@ -459,13 +463,13 @@ class MaintenanceDashboard extends Component
                 // First, try with area_id from MaintenancePlan directly
                 $plannedQuery = null;
                 if (Schema::hasColumn('maintenance_plans', 'area_id')) {
-                    $plannedQuery = MaintenancePlan::where('area_id', $areaId);
+                    $plannedQuery = MaintenancePlan::where('area_id', $areaId)->whereNull('deleted_at');
                 } else {
                     // Try with equipment relationship
-                    $plannedQuery = MaintenancePlan::whereHas('equipment', function ($query) use ($areaId) {
+                    $plannedQuery = MaintenancePlan::whereNull('deleted_at')->whereHas('equipment', function ($query) use ($areaId) {
                         // Check which column to use
                         if (Schema::hasColumn('maintenance_equipment', 'area_id')) {
-                            $query->where('area_id', $areaId);
+                            $query->where('area_id', $areaId)->whereNull('deleted_at');
                         }
                     });
                 }
@@ -486,10 +490,10 @@ class MaintenanceDashboard extends Component
                 $actual = $actualQuery->where('status', 'completed')->count();
 
                 // Also get corrective maintenance count
-                $correctiveQuery = MaintenanceCorrective::whereHas('equipment', function ($query) use ($areaId) {
+                $correctiveQuery = MaintenanceCorrective::whereNull('deleted_at')->whereHas('equipment', function ($query) use ($areaId) {
                     // Check which column to use
                     if (Schema::hasColumn('maintenance_equipment', 'area_id')) {
-                        $query->where('area_id', $areaId);
+                        $query->where('area_id', $areaId)->whereNull('deleted_at');
                     }
                 });
 
@@ -504,8 +508,8 @@ class MaintenanceDashboard extends Component
 
                 $corrective = $correctiveQuery->count();
 
-                // Calculate compliance percentage
-                $compliance = $planned > 0 ? round(($actual / $planned) * 100) : 0;
+                // Calculate compliance percentage (ensure it doesn't exceed 100%)
+                $compliance = $planned > 0 ? min(100, round(($actual / $planned) * 100)) : 0;
 
                 $plannedData[] = $planned;
                 $actualData[] = $actual;
@@ -721,15 +725,15 @@ class MaintenanceDashboard extends Component
 
                 // Try first with line_id from MaintenancePlan directly
                 if (Schema::hasColumn('maintenance_plans', 'line_id')) {
-                    $plannedQuery = MaintenancePlan::where('line_id', $lineId);
+                    $plannedQuery = MaintenancePlan::where('line_id', $lineId)->whereNull('deleted_at');
                 }
                 // If that doesn't work, try through equipment relationship
                 else {
-                    $plannedQuery = MaintenancePlan::whereHas('equipment', function ($query) use ($lineId, $lineName) {
+                    $plannedQuery = MaintenancePlan::whereNull('deleted_at')->whereHas('equipment', function ($query) use ($lineId, $lineName) {
                         if (Schema::hasColumn('maintenance_equipment', 'line_id')) {
-                            $query->where('line_id', $lineId);
+                            $query->where('line_id', $lineId)->whereNull('deleted_at');
                         } elseif (Schema::hasColumn('maintenance_equipment', 'line')) {
-                            $query->where('line', $lineName);
+                            $query->where('line', $lineName)->whereNull('deleted_at');
                         }
                     });
                 }
@@ -778,11 +782,11 @@ class MaintenanceDashboard extends Component
                 $actual = $actualQuery->where('status', 'completed')->count();
 
                 // Get corrective maintenance data for this line
-                $correctiveQuery = MaintenanceCorrective::whereHas('equipment', function ($query) use ($lineId, $lineName) {
+                $correctiveQuery = MaintenanceCorrective::whereNull('deleted_at')->whereHas('equipment', function ($query) use ($lineId, $lineName) {
                     if (Schema::hasColumn('maintenance_equipment', 'line_id')) {
-                        $query->where('line_id', $lineId);
+                        $query->where('line_id', $lineId)->whereNull('deleted_at');
                     } elseif (Schema::hasColumn('maintenance_equipment', 'line')) {
-                        $query->where('line', $lineName);
+                        $query->where('line', $lineName)->whereNull('deleted_at');
                     }
                 });
 
@@ -801,8 +805,8 @@ class MaintenanceDashboard extends Component
 
                 $corrective = $correctiveQuery->count();
 
-                // Calculate compliance percentage
-                $compliance = $planned > 0 ? round(($actual / $planned) * 100) : 0;
+                // Calculate compliance percentage (ensure it doesn't exceed 100%)
+                $compliance = $planned > 0 ? min(100, round(($actual / $planned) * 100)) : 0;
 
                 $plannedData[] = $planned;
                 $actualData[] = $actual;
@@ -910,6 +914,7 @@ class MaintenanceDashboard extends Component
             // Use a cleaner approach than just LEFT(description, 30)
             $descriptions = MaintenancePlan::selectRaw('description')
                 ->whereNotNull('description')
+                ->whereNull('deleted_at')
                 ->groupBy('description')
                 ->orderByRaw('COUNT(*) DESC')
             ->limit(5)
@@ -946,16 +951,20 @@ class MaintenanceDashboard extends Component
                 $displayDesc = $processedDescriptions[$index];
 
                 // Get exact matches for more accurate counts
-                $planned = MaintenancePlan::where('description', $originalDesc)->count();
+                $planned = MaintenancePlan::where('description', $originalDesc)
+                    ->whereNull('deleted_at')
+                    ->count();
 
                 // Get completed tasks with this description
                 $actual = MaintenancePlan::where('description', $originalDesc)
+                    ->whereNull('deleted_at')
                     ->where('status', 'completed')
                     ->count();
 
-                // Get pending tasks with this description
+                // Get pending tasks with this description (including scheduled status)
                 $pending = MaintenancePlan::where('description', $originalDesc)
-                    ->where('status', 'pending')
+                    ->whereNull('deleted_at')
+                    ->whereIn('status', ['pending', 'schedule'])
                     ->count();
 
                 $plannedData[] = $planned;
@@ -1029,7 +1038,10 @@ class MaintenanceDashboard extends Component
     {
         try {
             // Start with equipment that has maintenance plans
-            $equipment = MaintenanceEquipment::with('maintenancePlans')
+            $equipment = MaintenanceEquipment::with(['maintenancePlans' => function($query) {
+                $query->whereNull('deleted_at');
+            }])
+                ->whereNull('deleted_at')
                 ->select('id', 'name')
                 ->limit(10)
                 ->get();
@@ -1039,6 +1051,7 @@ class MaintenanceDashboard extends Component
             $inProgressData = [];
             $completedData = [];
             $cancelledData = [];
+            $scheduledData = []; // Novo array para status 'schedule'
 
             foreach ($equipment as $equip) {
                 // Skip equipment with no name
@@ -1063,25 +1076,35 @@ class MaintenanceDashboard extends Component
                     $inProgressData[] = 0;
                     $completedData[] = 0;
                     $cancelledData[] = 0;
+                    $scheduledData[] = 0; // Adicionando zero para scheduled
                     continue;
                 }
 
                 // Count notes with different statuses for these plans
                 $inProgressCount = MaintenanceNote::whereIn('maintenance_plan_id', $planIds)
+                    ->whereNull('deleted_at')
                     ->where('status', 'in_progress')
                     ->count();
 
                 $completedCount = MaintenanceNote::whereIn('maintenance_plan_id', $planIds)
+                    ->whereNull('deleted_at')
                     ->where('status', 'completed')
                     ->count();
 
                 $cancelledCount = MaintenanceNote::whereIn('maintenance_plan_id', $planIds)
+                    ->whereNull('deleted_at')
                     ->where('status', 'cancelled')
+                    ->count();
+                
+                $scheduledCount = MaintenanceNote::whereIn('maintenance_plan_id', $planIds)
+                    ->whereNull('deleted_at')
+                    ->where('status', 'schedule')
                     ->count();
 
                 $inProgressData[] = $inProgressCount;
                 $completedData[] = $completedCount;
                 $cancelledData[] = $cancelledCount;
+                $scheduledData[] = $scheduledCount;
             }
 
             // Prepare chart data
@@ -1117,6 +1140,14 @@ class MaintenanceDashboard extends Component
                         'data' => $cancelledData,
                         'backgroundColor' => 'rgba(255, 99, 132, 0.5)',
                         'borderColor' => 'rgba(255, 99, 132, 1)',
+                        'borderWidth' => 1,
+                        'type' => 'bar'
+                    ],
+                    [
+                        'label' => 'Scheduled',
+                        'data' => $scheduledData,
+                        'backgroundColor' => 'rgba(147, 51, 234, 0.5)',
+                        'borderColor' => 'rgba(147, 51, 234, 1)',
                         'borderWidth' => 1,
                         'type' => 'bar'
                     ]
@@ -1198,6 +1229,7 @@ class MaintenanceDashboard extends Component
             'in_progress' => (clone $query)->where('status', 'in_progress')->count(),
             'completed' => (clone $query)->where('status', 'completed')->count(),
             'cancelled' => (clone $query)->where('status', 'cancelled')->count(),
+            'schedule' => (clone $query)->where('status', 'schedule')->count(),
         ];
 
         // Garantir que existam dados, caso contrário, o Chart.js pode falhar
@@ -1209,11 +1241,12 @@ class MaintenanceDashboard extends Component
                 'in_progress' => 0,
                 'completed' => 1, // Valor mínimo para mostrar o gráfico
                 'cancelled' => 0,
+                'schedule' => 0,
             ];
         }
 
         return [
-            'labels' => ['Pending', 'In Progress', 'Completed', 'Cancelled'],
+            'labels' => ['Pending', 'In Progress', 'Completed', 'Cancelled', 'Scheduled'],
             'datasets' => [
                 [
                     'data' => array_values($statusCounts),
@@ -1222,6 +1255,7 @@ class MaintenanceDashboard extends Component
                         'rgba(59, 130, 246, 0.8)',  // in progress - blue
                         'rgba(34, 197, 94, 0.8)',   // completed - green
                         'rgba(107, 114, 128, 0.8)', // cancelled - gray
+                        'rgba(147, 51, 234, 0.8)',  // schedule - purple
                     ],
                     'borderWidth' => 1
                 ]
@@ -1285,7 +1319,8 @@ class MaintenanceDashboard extends Component
                     'pending' => 'Pending',
                     'in_progress' => 'In Progress',
                     'completed' => 'Completed',
-                    'cancelled' => 'Cancelled'
+                    'cancelled' => 'Cancelled',
+                    'schedule' => 'Scheduled'
                 ];
 
                 // Create arrays for chart

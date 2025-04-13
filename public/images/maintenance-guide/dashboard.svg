@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <!-- Background -->
+  <rect width="800" height="400" fill="#f8fafc" />
+  
+  <!-- Dashboard Container -->
+  <rect x="20" y="20" width="760" height="360" rx="8" ry="8" fill="white" stroke="#e2e8f0" stroke-width="1" />
+  
+  <!-- Header Section -->
+  <rect x="20" y="20" width="760" height="50" rx="8" ry="8" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1" />
+  <text x="40" y="50" font-family="Arial" font-size="18" font-weight="bold" fill="#334155">Dashboard de Manutenção</text>
+  
+  <!-- Filter Bar -->
+  <rect x="40" y="90" width="720" height="60" rx="6" ry="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <text x="60" y="115" font-family="Arial" font-size="14" fill="#64748b">Filtros:</text>
+  
+  <!-- Filter Elements -->
+  <rect x="120" y="100" width="100" height="40" rx="4" ry="4" fill="white" stroke="#cbd5e1" stroke-width="1" />
+  <text x="135" y="125" font-family="Arial" font-size="12" fill="#64748b">Ano: 2025</text>
+  
+  <rect x="240" y="100" width="100" height="40" rx="4" ry="4" fill="white" stroke="#cbd5e1" stroke-width="1" />
+  <text x="255" y="125" font-family="Arial" font-size="12" fill="#64748b">Mês: Todos</text>
+  
+  <rect x="360" y="100" width="100" height="40" rx="4" ry="4" fill="white" stroke="#cbd5e1" stroke-width="1" />
+  <text x="375" y="125" font-family="Arial" font-size="12" fill="#64748b">Status: Todos</text>
+  
+  <!-- KPI Cards -->
+  <rect x="40" y="170" width="220" height="90" rx="6" ry="6" fill="#ebf5ff" stroke="#bfdbfe" stroke-width="1" />
+  <text x="60" y="200" font-family="Arial" font-size="16" font-weight="bold" fill="#1e40af">86</text>
+  <text x="60" y="220" font-family="Arial" font-size="12" fill="#3b82f6">Manutenções Previstas</text>
+  <circle cx="190" cy="200" r="25" fill="#3b82f6" fill-opacity="0.2" />
+  <text x="182" y="205" font-family="Arial" font-size="20" fill="#3b82f6">🔍</text>
+  
+  <rect x="280" y="170" width="220" height="90" rx="6" ry="6" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+  <text x="300" y="200" font-family="Arial" font-size="16" font-weight="bold" fill="#047857">71</text>
+  <text x="300" y="220" font-family="Arial" font-size="12" fill="#10b981">Manutenções Concluídas</text>
+  <circle cx="430" cy="200" r="25" fill="#10b981" fill-opacity="0.2" />
+  <text x="422" y="205" font-family="Arial" font-size="20" fill="#10b981">✓</text>
+  
+  <rect x="520" y="170" width="220" height="90" rx="6" ry="6" fill="#fff1f2" stroke="#fecdd3" stroke-width="1" />
+  <text x="540" y="200" font-family="Arial" font-size="16" font-weight="bold" fill="#be123c">15</text>
+  <text x="540" y="220" font-family="Arial" font-size="12" fill="#f43f5e">Manutenções Pendentes</text>
+  <circle cx="670" cy="200" r="25" fill="#f43f5e" fill-opacity="0.2" />
+  <text x="662" y="205" font-family="Arial" font-size="20" fill="#f43f5e">⚠</text>
+  
+  <!-- Charts Area -->
+  <rect x="40" y="280" width="340" height="80" rx="6" ry="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <!-- Sample Bar Chart -->
+  <line x1="60" y1="340" x2="320" y2="340" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="80" y="310" width="20" height="30" fill="#3b82f6" />
+  <rect x="120" y="300" width="20" height="40" fill="#3b82f6" />
+  <rect x="160" y="320" width="20" height="20" fill="#3b82f6" />
+  <rect x="200" y="290" width="20" height="50" fill="#3b82f6" />
+  <rect x="240" y="305" width="20" height="35" fill="#3b82f6" />
+  <rect x="280" y="315" width="20" height="25" fill="#3b82f6" />
+  <text x="145" y="360" font-family="Arial" font-size="10" fill="#64748b">Tendência de Manutenções</text>
+  
+  <rect x="400" y="280" width="340" height="80" rx="6" ry="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <!-- Sample Pie Chart -->
+  <circle cx="460" cy="320" r="30" fill="#3b82f6" />
+  <path d="M 460 320 L 460 290 A 30 30 0 0 1 486 335 Z" fill="#10b981" />
+  <path d="M 460 320 L 486 335 A 30 30 0 0 1 430 335 Z" fill="#f43f5e" />
+  <text x="520" y="310" font-family="Arial" font-size="10" fill="#3b82f6">■ Planejadas (40%)</text>
+  <text x="520" y="325" font-family="Arial" font-size="10" fill="#10b981">■ Concluídas (45%)</text>
+  <text x="520" y="340" font-family="Arial" font-size="10" fill="#f43f5e">■ Pendentes (15%)</text>
+</svg>

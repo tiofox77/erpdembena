@@ -1,7 +1,10 @@
 <div>
-    <h2 class="text-2xl font-semibold mb-6 flex items-center">
-        <i class="fas fa-tachometer-alt text-indigo-600 mr-2"></i> Dashboard Overview
-    </h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold flex items-center">
+            <i class="fas fa-tachometer-alt text-indigo-600 mr-2"></i> {{ __('messages.dashboard_overview') }}
+        </h2>
+        <x-maintenance-guide-link />
+    </div>
 
     @if (session()->has('message'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -12,11 +15,11 @@
     <!-- Filtros -->
     <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
         <h3 class="text-lg font-semibold mb-3 flex items-center">
-            <i class="fas fa-filter text-indigo-500 mr-2"></i> Filter Options
+            <i class="fas fa-filter text-indigo-500 mr-2"></i> {{ __('messages.filter_options') }}
         </h3>
         <div class="flex flex-wrap gap-4 items-center">
             <div>
-                <label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.year') }}</label>
                 <select id="filterYear" wire:model="filterYear" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     @for ($year = date('Y') - 2; $year <= date('Y') + 1; $year++)
                         <option value="{{ $year }}">{{ $year }}</option>
@@ -25,37 +28,38 @@
             </div>
 
             <div>
-                <label for="filterMonth" class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                <label for="filterMonth" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.month') }}</label>
                 <select id="filterMonth" wire:model="filterMonth" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="all">All</option>
-                    <option value="01">January</option>
-                    <option value="02">February</option>
-                    <option value="03">March</option>
-                    <option value="04">April</option>
-                    <option value="05">May</option>
-                    <option value="06">June</option>
-                    <option value="07">July</option>
-                    <option value="08">August</option>
-                    <option value="09">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
+                    <option value="all">{{ __('messages.all') }}</option>
+                    <option value="01">{{ __('messages.january') }}</option>
+                    <option value="02">{{ __('messages.february') }}</option>
+                    <option value="03">{{ __('messages.march') }}</option>
+                    <option value="04">{{ __('messages.april') }}</option>
+                    <option value="05">{{ __('messages.may') }}</option>
+                    <option value="06">{{ __('messages.june') }}</option>
+                    <option value="07">{{ __('messages.july') }}</option>
+                    <option value="08">{{ __('messages.august') }}</option>
+                    <option value="09">{{ __('messages.september') }}</option>
+                    <option value="10">{{ __('messages.october') }}</option>
+                    <option value="11">{{ __('messages.november') }}</option>
+                    <option value="12">{{ __('messages.december') }}</option>
                 </select>
             </div>
 
             <div>
-                <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.status') }}</label>
                 <select id="filterStatus" wire:model="filterStatus" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="all">{{ __('messages.all') }}</option>
+                    <option value="pending">{{ __('messages.pending') }}</option>
+                    <option value="in_progress">{{ __('messages.in_progress') }}</option>
+                    <option value="completed">{{ __('messages.completed') }}</option>
+                    <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                    <option value="schedule">{{ __('messages.schedule') }}</option>
                 </select>
             </div>
 
             <div>
-                <label for="filterArea" class="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                <label for="filterArea" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.area') }}</label>
                 <select id="filterArea" wire:model="filterArea" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     <option value="all">All</option>
                     <!-- Area options would be generated dynamically -->
@@ -67,7 +71,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Update Filters
+                    {{ __('messages.update_filters') }}
                 </button>
             </div>
         </div>
@@ -75,7 +79,7 @@
 
     <!-- KPI Cards Overview -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6 dashboard-card">
-        <h3 class="text-xl font-semibold mb-4">KPI Overview</h3>
+        <h3 class="text-xl font-semibold mb-4">{{ __('messages.kpi_overview') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="bg-blue-50 p-4 rounded-lg text-center border border-blue-100 transition-all hover:shadow-md">
                 <div class="flex items-center justify-center mb-2 text-blue-500">

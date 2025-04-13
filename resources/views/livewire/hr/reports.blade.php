@@ -5,10 +5,13 @@
                 <div class="p-6">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">
-                            <i class="fas fa-chart-line mr-2 text-gray-600"></i>
-                            HR Reports Dashboard
-                        </h2>
+                        <div class="flex items-center space-x-4">
+                            <h2 class="text-xl font-semibold text-gray-800">
+                                <i class="fas fa-chart-line mr-2 text-gray-600"></i>
+                                HR Reports Dashboard
+                            </h2>
+                            <x-hr-guide-link />
+                        </div>
                         
                         <!-- Date Range Filter -->
                         <div class="flex space-x-4">

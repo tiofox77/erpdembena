@@ -1,7 +1,10 @@
 <div>
     <div class="p-4 bg-white rounded-lg shadow-md">
         <div class="flex flex-col md:flex-row justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold mb-2 md:mb-0">Leave Types</h2>
+            <div class="flex items-center space-x-4 mb-2 md:mb-0">
+                <h2 class="text-xl font-semibold">Leave Types</h2>
+                <x-hr-guide-link />
+            </div>
             
             <div class="flex space-x-2">
                 <div class="relative">

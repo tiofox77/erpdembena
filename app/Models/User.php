@@ -28,6 +28,7 @@ class User extends Authenticatable
         'role',
         'department',
         'is_active',
+        'locale',
     ];
 
     /**

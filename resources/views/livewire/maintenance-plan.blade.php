@@ -2,15 +2,18 @@
     <div class="py-2 sm:py-4">
         <div class="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-0 flex items-center">
-                    <i class="fas fa-calendar-alt mr-3 text-gray-700"></i> Maintenance Scheduling
-                </h1>
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-0 flex items-center">
+                        <i class="fas fa-calendar-alt mr-3 text-gray-700"></i> {{ __('messages.maintenance_scheduling') }}
+                    </h1>
+                    <x-maintenance-guide-link />
+                </div>
                 <button
                     type="button"
                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1.5 px-3 sm:py-2 sm:px-4 rounded flex items-center"
                     wire:click="openModal"
                 >
-                    <i class="fas fa-plus-circle mr-2"></i> Add Schedule
+                    <i class="fas fa-plus-circle mr-2"></i> {{ __('messages.add_schedule') }}
                 </button>
             </div>
 
@@ -20,12 +23,12 @@
                     <!-- Enhanced Filter Section -->
                     <div class="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                         <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                            <i class="fas fa-filter mr-2 text-blue-500"></i> Filters and Search
+                            <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filters_and_search') }}
                         </h4>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <label for="search" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-search mr-1 text-gray-500"></i> Search
+                                    <i class="fas fa-search mr-1 text-gray-500"></i> {{ __('messages.search') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -35,14 +38,14 @@
                                         type="text"
                                         wire:model.live.debounce.300ms="search"
                                         id="search"
-                                        placeholder="Search equipment..."
+                                        placeholder="{{ __('messages.search_equipment') }}"
                                         class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
                                 </div>
                             </div>
                             <div>
                                 <label for="statusFilter" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-tasks mr-1 text-gray-500"></i> Status
+                                    <i class="fas fa-tasks mr-1 text-gray-500"></i> {{ __('messages.status') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -50,12 +53,12 @@
                                         wire:model.live="statusFilter"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="">All Statuses</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="in_progress">In Progress</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="schedule">Schedule</option>
+                                        <option value="">{{ __('messages.all_statuses') }}</option>
+                                        <option value="pending">{{ __('messages.pending') }}</option>
+                                        <option value="in_progress">{{ __('messages.in_progress') }}</option>
+                                        <option value="completed">{{ __('messages.completed') }}</option>
+                                        <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                                        <option value="schedule">{{ __('messages.schedule') }}</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -64,7 +67,7 @@
                             </div>
                             <div>
                                 <label for="frequencyFilter" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-sync-alt mr-1 text-gray-500"></i> Frequency
+                                    <i class="fas fa-sync-alt mr-1 text-gray-500"></i> {{ __('messages.frequency') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -72,13 +75,13 @@
                                         wire:model.live="frequencyFilter"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="">All Frequencies</option>
-                                        <option value="once">Once</option>
-                                        <option value="daily">Daily</option>
-                                        <option value="custom">Custom</option>
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="yearly">Yearly</option>
+                                        <option value="">{{ __('messages.all_frequencies') }}</option>
+                                        <option value="once">{{ __('messages.once') }}</option>
+                                        <option value="daily">{{ __('messages.daily') }}</option>
+                                        <option value="custom">{{ __('messages.custom') }}</option>
+                                        <option value="weekly">{{ __('messages.weekly') }}</option>
+                                        <option value="monthly">{{ __('messages.monthly') }}</option>
+                                        <option value="yearly">{{ __('messages.annually') }}</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -87,7 +90,7 @@
                             </div>
                             <div>
                                 <label for="perPage" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-list-ol mr-1 text-gray-500"></i> Items Per Page
+                                    <i class="fas fa-list-ol mr-1 text-gray-500"></i> {{ __('messages.items_per_page') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -95,10 +98,10 @@
                                         wire:model.live="perPage"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="10">10 per page</option>
-                                        <option value="25">25 per page</option>
-                                        <option value="50">50 per page</option>
-                                        <option value="100">100 per page</option>
+                                        <option value="10">10 {{ __('messages.per_page') }}</option>
+                                        <option value="25">25 {{ __('messages.per_page') }}</option>
+                                        <option value="50">50 {{ __('messages.per_page') }}</option>
+                                        <option value="100">100 {{ __('messages.per_page') }}</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -115,8 +118,8 @@
                             >
                                 <i class="fas fa-eraser mr-2" wire:loading.class="hidden" wire:target="clearFilters"></i>
                                 <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="clearFilters"></i>
-                                <span wire:loading.remove wire:target="clearFilters">Clear Filters</span>
-                                <span wire:loading wire:target="clearFilters">Clearing...</span>
+                                <span wire:loading.remove wire:target="clearFilters">{{ __('messages.clear_filters') }}</span>
+                                <span wire:loading wire:target="clearFilters">{{ __('messages.clearing') }}</span>
                             </button>
                         </div>
                     </div>
@@ -129,43 +132,43 @@
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-clipboard-list text-gray-400 mr-1"></i>
-                                            <span>Task</span>
+                                            <span>{{ __('messages.task') }}</span>
                                         </div>
                                     </th>
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-tools text-gray-400 mr-1"></i>
-                                            <span>Equipment</span>
+                                            <span>{{ __('messages.equipment') }}</span>
                                         </div>
                                     </th>
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-sync-alt text-gray-400 mr-1"></i>
-                                            <span>Frequency</span>
+                                            <span>{{ __('messages.frequency') }}</span>
                                         </div>
                                     </th>
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-history text-gray-400 mr-1"></i>
-                                            <span>Last Maint.</span>
+                                            <span>{{ __('messages.last_maint') }}</span>
                                         </div>
                                     </th>
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-calendar-day text-gray-400 mr-1"></i>
-                                            <span>Next Maint.</span>
+                                            <span>{{ __('messages.next_maint') }}</span>
                                         </div>
                                     </th>
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-tasks text-gray-400 mr-1"></i>
-                                            <span>Status</span>
+                                            <span>{{ __('messages.status') }}</span>
                                         </div>
                                     </th>
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <div class="flex items-center justify-end space-x-1">
                                             <i class="fas fa-cog text-gray-400 mr-1"></i>
-                                            <span>Actions</span>
+                                            <span>{{ __('messages.actions') }}</span>
                                         </div>
                                     </th>
                                 </tr>
@@ -174,31 +177,31 @@
                                 @forelse($schedules as $schedule)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap">
-                                            <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $schedule->task->title ?? 'No Task' }}</div>
+                                            <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $schedule->task->title ?? __('messages.no_task') }}</div>
                                         </td>
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap">
-                                            <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $schedule->equipment->name ?? 'No Equipment' }}</div>
-                                            <div class="text-xs text-gray-500 hidden sm:block">{{ $schedule->equipment->serial_number ?? 'No S/N' }}</div>
+                                            <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $schedule->equipment->name ?? __('messages.no_equipment') }}</div>
+                                            <div class="text-xs text-gray-500 hidden sm:block">{{ $schedule->equipment->serial_number ?? __('messages.no_sn') }}</div>
                                         </td>
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden sm:table-cell">
                                             @switch($schedule->frequency_type)
                                                 @case('once')
-                                                    Once
+                                                    {{ __('messages.once') }}
                                                     @break
                                                 @case('daily')
-                                                    Daily
+                                                    {{ __('messages.daily') }}
                                                     @break
                                                 @case('custom')
-                                                    Every {{ $schedule->custom_days }} days
+                                                    {{ __('messages.every') }} {{ $schedule->custom_days }} {{ __('messages.days') }}
                                                     @break
                                                 @case('weekly')
-                                                    Weekly {{ isset($schedule->day_of_week) ? '(' . ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][$schedule->day_of_week] . ')' : '' }}
+                                                    {{ __('messages.weekly') }} {{ isset($schedule->day_of_week) ? '(' . [__('messages.sunday'), __('messages.monday'), __('messages.tuesday'), __('messages.wednesday'), __('messages.thursday'), __('messages.friday'), __('messages.saturday')][$schedule->day_of_week] . ')' : '' }}
                                                     @break
                                                 @case('monthly')
-                                                    Monthly {{ isset($schedule->day_of_month) ? '(day ' . $schedule->day_of_month . ')' : '' }}
+                                                    {{ __('messages.monthly') }} {{ isset($schedule->day_of_month) ? '('.__('messages.day').' ' . $schedule->day_of_month . ')' : '' }}
                                                     @break
                                                 @case('yearly')
-                                                    Yearly {{ isset($schedule->month) && isset($schedule->month_day) ? '(' . ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][$schedule->month] . ' ' . $schedule->month_day . ')' : '' }}
+                                                    {{ __('messages.annually') }} {{ isset($schedule->month) && isset($schedule->month_day) ? '(' . ['', __('messages.january'), __('messages.february'), __('messages.march'), __('messages.april'), __('messages.may'), __('messages.june'), __('messages.july'), __('messages.august'), __('messages.september'), __('messages.october'), __('messages.november'), __('messages.december')][$schedule->month] . ' ' . $schedule->month_day . ')' : '' }}
                                                     @break
                                                 @default
                                                     Unknown frequency
@@ -294,7 +297,7 @@
                     <span class="bg-indigo-100 text-indigo-600 p-2 rounded-full mr-3">
                         <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-calendar-plus' }} text-lg"></i>
                     </span>
-                    {{ $isEditing ? 'Edit Maintenance Plan' : 'New Maintenance Plan' }}
+                    {{ $isEditing ? __('messages.edit_maintenance_plan') : __('messages.new_maintenance_plan') }}
                 </h3>
                 <button wire:click="closeModal" class="text-gray-400 hover:text-gray-500">
                     <i class="fas fa-times"></i>
@@ -303,7 +306,7 @@
 
             <!-- Modal Body -->
             <div class="px-4 sm:px-6 py-4 sm:py-5">
-                <p class="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">Fill in the details to schedule a new maintenance task.</p>
+                <p class="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">{{ __('messages.fill_details') }}</p>
 
                 <!-- Mensagens de erro gerais -->
                 @if ($errors->any())
@@ -335,7 +338,7 @@
                             <!-- Task & Equipment -->
                             <div>
                                 <label for="task_id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-clipboard-list mr-1 text-gray-500"></i> Task <span class="text-red-500">*</span>
+                                    <i class="fas fa-clipboard-list mr-1 text-gray-500"></i> {{ __('messages.task') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -343,7 +346,7 @@
                                         wire:model="task_id"
                                         class="block w-full py-2 px-3 border @error('task_id') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                     >
-                                        <option value="">Select task</option>
+                                        <option value="">{{ __('messages.select_task') }}</option>
                                         @foreach($tasks as $task)
                                             <option value="{{ $task->id }}">{{ $task->title }}</option>
                                         @endforeach
@@ -398,7 +401,7 @@
                             <!-- Line & Area -->
                             <div>
                                 <label for="line_id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-project-diagram mr-1 text-gray-500"></i> Line
+                                    <i class="fas fa-project-diagram mr-1 text-gray-500"></i> {{ __('messages.line') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -406,7 +409,7 @@
                                         wire:model="line_id"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="">Select line</option>
+                                        <option value="">{{ __('messages.select_line') }}</option>
                                         @foreach($lines as $line)
                                             <option value="{{ $line->id }}">{{ $line->name }}</option>
                                         @endforeach
@@ -420,7 +423,7 @@
 
                             <div>
                                 <label for="area_id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-map-marker-alt mr-1 text-gray-500"></i> Area
+                                    <i class="fas fa-map-marker-alt mr-1 text-gray-500"></i> {{ __('messages.area') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -428,7 +431,7 @@
                                         wire:model="area_id"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="">Select area</option>
+                                        <option value="">{{ __('messages.select_area') }}</option>
                                         @foreach($areas as $area)
                                             <option value="{{ $area->id }}">{{ $area->name }}</option>
                                         @endforeach
@@ -450,7 +453,7 @@
                             <!-- Scheduled Date & Frequency -->
                             <div>
                                 <label for="scheduled_date" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-calendar-day mr-1 text-gray-500"></i> Start Date <span class="text-red-500">*</span>
+                                    <i class="fas fa-calendar-day mr-1 text-gray-500"></i> {{ __('messages.start_date') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <input
@@ -476,7 +479,7 @@
 
                             <div>
                                 <label for="frequency_type" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-sync-alt mr-1 text-gray-500"></i> Frequency <span class="text-red-500">*</span>
+                                    <i class="fas fa-sync-alt mr-1 text-gray-500"></i> {{ __('messages.frequency') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="flex gap-2">
                                     <div class="relative rounded-md shadow-sm">
@@ -485,12 +488,12 @@
                                             wire:model.live="frequency_type"
                                             class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('frequency_type') border-red-300 text-red-900 @enderror"
                                         >
-                                            <option value="once">Once</option>
-                                            <option value="daily">Daily</option>
-                                            <option value="custom">Custom</option>
-                                            <option value="weekly">Weekly</option>
-                                            <option value="monthly">Monthly</option>
-                                            <option value="yearly">Yearly</option>
+                                            <option value="once">{{ __('messages.once') }}</option>
+                                            <option value="daily">{{ __('messages.daily') }}</option>
+                                            <option value="custom">{{ __('messages.custom') }}</option>
+                                            <option value="weekly">{{ __('messages.weekly') }}</option>
+                                            <option value="monthly">{{ __('messages.monthly') }}</option>
+                                            <option value="yearly">{{ __('messages.yearly') }}</option>
                                         </select>
                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                             @error('frequency_type')
@@ -1136,14 +1139,14 @@
                         wire:click="closeViewModal"
                         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
                     >
-                        <i class="fas fa-times mr-2"></i> Close
+                        <i class="fas fa-times mr-2"></i> {{ __('messages.close') }}
                     </button>
                     <button
                         type="button"
                         wire:click="edit({{ $scheduleId }})"
                         class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 flex items-center"
                     >
-                        <i class="fas fa-edit mr-2"></i> Edit
+                        <i class="fas fa-edit mr-2"></i> {{ __('messages.edit') }}
                     </button>
                 </div>
             </div>

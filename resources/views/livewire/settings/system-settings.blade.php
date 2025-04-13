@@ -29,12 +29,12 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                        <i class="fas fa-cog mr-2 text-gray-600"></i> System Settings
+                        <i class="fas fa-cog mr-2 text-gray-600"></i> {{ __('messages.system_settings') }}
                     </h2>
 
                     <div class="mb-4">
-                        <h2 class="text-lg font-medium text-gray-900">System Settings</h2>
-                        <p class="mt-1 text-sm text-gray-600">Manage your system configuration and settings.</p>
+                        <h2 class="text-lg font-medium text-gray-900">{{ __('messages.system_settings') }}</h2>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('messages.manage_system_settings') }}</p>
                     </div>
 
                     <!-- Tabs -->
@@ -43,25 +43,25 @@
                             <li class="mr-2" role="presentation">
                                 <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'general' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
                                     wire:click="setActiveTab('general')" type="button" role="tab">
-                                    General
+                                    {{ __('messages.general') }}
                                 </button>
                             </li>
                             <li class="mr-2" role="presentation">
                                 <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'updates' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
                                     wire:click="setActiveTab('updates')" type="button" role="tab">
-                                    Updates
+                                    {{ __('messages.updates') }}
                                 </button>
                             </li>
                             <li class="mr-2" role="presentation">
                                 <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'maintenance' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
                                     wire:click="setActiveTab('maintenance')" type="button" role="tab">
-                                    Maintenance
+                                    {{ __('messages.maintenance') }}
                                 </button>
                             </li>
                             <li class="mr-2" role="presentation">
                                 <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'requirements' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
                                     wire:click="setActiveTab('requirements')" type="button" role="tab">
-                                    System Requirements
+                                    {{ __('messages.system_requirements') }}
                                 </button>
                             </li>
                         </ul>
@@ -88,7 +88,7 @@
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label for="company_name" class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                        <label for="company_name" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.company_name') }}</label>
                                         <div class="mt-1 relative rounded-md shadow-sm">
                                             <input type="text"
                                                 wire:model.live="company_name"
@@ -108,7 +108,7 @@
                                     </div>
 
                                     <div>
-                                        <label for="company_logo" class="block text-sm font-medium text-gray-700 mb-1">Company Logo</label>
+                                        <label for="company_logo" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.company_logo') }}</label>
                                         <div class="mt-1 relative rounded-md shadow-sm">
                                             <input type="file"
                                                 wire:model.live="company_logo"
@@ -129,6 +129,75 @@
                                             @if ($company_logo)
                                                 <img src="{{ $company_logo->temporaryUrl() }}" alt="Preview" class="h-20 w-auto">
                                             @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="col-span-1 md:col-span-2 mt-6">
+                                        <h3 class="text-lg font-medium text-gray-900">{{ __('messages.company_details') }}</h3>
+                                        <p class="mt-1 text-sm text-gray-600">Informações que aparecerão nos relatórios e documentos.</p>
+                                    </div>
+
+                                    <div>
+                                        <label for="company_address" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                                        <div class="mt-1 relative rounded-md shadow-sm">
+                                            <input type="text"
+                                                wire:model.live="company_address"
+                                                id="company_address"
+                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                placeholder="Ex: Rua Principal, 123 - Centro">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label for="company_phone" class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                                        <div class="mt-1 relative rounded-md shadow-sm">
+                                            <input type="text"
+                                                wire:model.live="company_phone"
+                                                id="company_phone"
+                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                placeholder="Ex: +55 11 1234-5678">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label for="company_email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                        <div class="mt-1 relative rounded-md shadow-sm">
+                                            <input type="email"
+                                                wire:model.live="company_email"
+                                                id="company_email"
+                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
+                                                @error('company_email') border-red-300 text-red-900 @enderror"
+                                                placeholder="Ex: contato@empresa.com">
+                                            @error('company_email')
+                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        @error('company_email')
+                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label for="company_website" class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                        <div class="mt-1 relative rounded-md shadow-sm">
+                                            <input type="text"
+                                                wire:model.live="company_website"
+                                                id="company_website"
+                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                placeholder="Ex: www.empresa.com">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label for="company_tax_id" class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+                                        <div class="mt-1 relative rounded-md shadow-sm">
+                                            <input type="text"
+                                                wire:model.live="company_tax_id"
+                                                id="company_tax_id"
+                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                placeholder="Ex: 12.345.678/0001-90">
                                         </div>
                                     </div>
 

@@ -3,7 +3,7 @@
         <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-semibold text-gray-900 flex items-center">
-                    <i class="fas fa-cogs mr-3 text-gray-700"></i> Equipment Parts Management
+                    <i class="fas fa-cogs mr-3 text-gray-700"></i> {{ __('messages.equipment_parts_management') }}
                 </h1>
                 <button
                     wire:click="openCreateModal"
@@ -11,7 +11,7 @@
                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded flex items-center transition-colors duration-150"
                 >
                     <i class="fas fa-plus-circle mr-2"></i>
-                    Add Part
+                    {{ __('messages.add_part') }}
                 </button>
             </div>
 
@@ -19,12 +19,12 @@
                 <!-- Filter Section -->
                 <div class="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                     <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                        <i class="fas fa-filter mr-2 text-blue-500"></i> Filters and Search
+                        <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filters_and_search') }}
                     </h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label for="search" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                <i class="fas fa-search mr-1 text-gray-500"></i> Search
+                                <i class="fas fa-search mr-1 text-gray-500"></i> {{ __('messages.search') }}
                             </label>
                             <div class="relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -50,7 +50,7 @@
                                     wire:model.live="equipmentId"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Equipment</option>
+                                    <option value="">{{ __('messages.all_equipment') }}</option>
                                     @foreach($this->equipmentList as $equipment)
                                         <option value="{{ $equipment->id }}">{{ $equipment->name }} - {{ $equipment->serial_number }}</option>
                                     @endforeach
@@ -63,7 +63,7 @@
 
                         <div>
                             <label for="perPage" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                <i class="fas fa-list-ol mr-1 text-gray-500"></i> Items Per Page
+                                <i class="fas fa-list-ol mr-1 text-gray-500"></i> {{ __('messages.items_per_page') }}
                             </label>
                             <div class="relative rounded-md shadow-sm">
                                 <select
@@ -87,7 +87,7 @@
                             wire:click="clearFilters"
                             class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                            <i class="fas fa-times-circle mr-1"></i> Clear Filters
+                            <i class="fas fa-times-circle mr-1"></i> {{ __('messages.clear_filters') }}
                         </button>
                     </div>
                 </div>
@@ -647,14 +647,14 @@
                                 wire:click="closeModal"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
-                                <i class="fas fa-times mr-2"></i> Cancel
+                                <i class="fas fa-times mr-2"></i> {{ __('messages.cancel') }}
                             </button>
                             <button
                                 type="submit"
                                 class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
                                 <i class="fas {{ $isEditing ? 'fa-save' : 'fa-plus' }} mr-2"></i>
-                                <span>{{ $isEditing ? 'Update' : 'Save' }}</span>
+                                <span>{{ $isEditing ? __('messages.update') : __('messages.save') }}</span>
                             </button>
                         </div>
                     </form>
@@ -672,20 +672,20 @@
                         <div class="flex-shrink-0 bg-red-100 rounded-full p-3">
                             <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
                         </div>
-                        <h3 class="ml-3 text-lg font-medium text-gray-900">Confirm Deletion</h3>
+                        <h3 class="ml-3 text-lg font-medium text-gray-900">{{ __('messages.confirm_deletion') }}</h3>
                     </div>
                 </div>
 
                 <div class="bg-white px-6 py-4">
                     <p class="text-sm text-gray-500">
-                        Are you sure you want to delete this part? This action cannot be undone and may affect maintenance records.
+                        {{ __('messages.delete_part_confirmation') }}
                     </p>
 
                     <div class="mt-4 bg-gray-50 p-3 rounded-md border border-gray-200">
                         <div class="flex items-center text-sm">
                             <i class="fas fa-exclamation-circle text-amber-500 mr-2"></i>
-                            <span class="font-medium">Warning:</span>
-                            <span class="ml-1">Deleting this part will remove all associated stock history.</span>
+                            <span class="font-medium">{{ __('messages.warning') }}:</span>
+                            <span class="ml-1">{{ __('messages.delete_part_warning') }}</span>
                         </div>
                     </div>
                 </div>
@@ -703,7 +703,7 @@
                         wire:click="deletePart"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                        <i class="fas fa-trash-alt mr-2"></i> Delete
+                        <i class="fas fa-trash-alt mr-2"></i> {{ __('messages.delete') }}
                     </button>
                 </div>
             </div>

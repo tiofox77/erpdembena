@@ -11,7 +11,7 @@
                     <div class="sm:flex sm:items-start">
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                {{ $isEditing ? 'Edit Part Request' : 'Create New Part Request' }}
+                                {{ $isEditing ? __('messages.edit_part_request') : __('messages.create_new_part_request') }}
                             </h3>
                             <div class="mt-2">
                                 <form wire:submit.prevent="save">
@@ -24,7 +24,7 @@
                                                 </div>
                                                 <div class="ml-3">
                                                     <h3 class="text-sm font-medium text-red-800">
-                                                        There were {{ $errors->count() }} error(s) with your submission
+                                                        {!! __('messages.error_with_submission', ['count' => $errors->count()]) !!}
                                                     </h3>
                                                     <div class="mt-2 text-sm text-red-700">
                                                         <ul class="list-disc pl-5 space-y-1">
@@ -41,7 +41,7 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <!-- Reference Number -->
                                         <div>
-                                            <label for="reference_number" class="block text-sm font-medium text-gray-700">Dembena Reference</label>
+                                            <label for="reference_number" class="block text-sm font-medium text-gray-700">{{ __('messages.dembena_reference') }}</label>
                                             <input 
                                                 type="text" 
                                                 id="reference_number" 
@@ -54,13 +54,13 @@
                                         <!-- Items Section Header -->
                                         <div class="col-span-2 mt-4 mb-2">
                                             <h3 class="text-md font-semibold text-gray-700 flex justify-between items-center">
-                                                <span>Request Items</span>
+                                                <span>{{ __('messages.items') }}</span>
                                                 <button 
                                                     type="button" 
                                                     wire:click="addItem"
                                                     class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                                 >
-                                                    <i class="fas fa-plus mr-1"></i> Add Item
+                                                    <i class="fas fa-plus mr-1"></i> {{ __('messages.add_item') }}
                                                 </button>
                                             </h3>
                                         </div>
@@ -86,14 +86,14 @@
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <!-- Equipment Part Selection -->
                                                         <div class="relative">
-                                                            <label class="block text-sm font-medium text-gray-700">Part</label>
+                                                            <label class="block text-sm font-medium text-gray-700">{{ __('messages.part') }}</label>
                                                             <div class="relative">
                                                                 <button 
                                                                     type="button" 
                                                                     wire:click="searchForItem({{ $index }})"
                                                                     class="mt-1 w-full inline-flex justify-between items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                                                 >
-                                                                    {{ isset($item['part_details']) ? $item['part_details']['name'] : 'Select a part...' }}
+                                                                    {{ isset($item['part_details']) ? $item['part_details']['name'] : __('messages.select_part') . '...' }}
                                                                     <i class="fas fa-search"></i>
                                                                 </button>
                                                                 
@@ -362,14 +362,14 @@
                         wire:click="save"
                         class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                     >
-                        {{ $isEditing ? 'Update' : 'Create' }}
+                        {{ $isEditing ? __('messages.update') : __('messages.create') }}
                     </button>
                     <button 
                         type="button" 
                         wire:click="closeModal" 
                         class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                     >
-                        Cancel
+                        {{ __('messages.cancel') }}
                     </button>
                 </div>
             </div>
@@ -391,11 +391,11 @@
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                Delete Part Request
+                                {{ __('messages.delete_part_request') }}
                             </h3>
                             <div class="mt-2">
                                 <p class="text-sm text-gray-500">
-                                    Are you sure you want to delete this part request? This action cannot be undone and any associated images will be permanently removed.
+                                    {{ __('messages.delete_confirm_message') }}
                                 </p>
                             </div>
                         </div>
@@ -414,7 +414,7 @@
                         wire:click="closeModal"
                         class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                     >
-                        Cancel
+                        {{ __('messages.cancel') }}
                     </button>
                 </div>
             </div>

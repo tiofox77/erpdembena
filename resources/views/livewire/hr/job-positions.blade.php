@@ -5,16 +5,19 @@
                 <div class="p-6">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">
-                            <i class="fas fa-briefcase mr-2 text-gray-600"></i>
-                            Job Positions
-                        </h2>
+                        <div class="flex items-center space-x-4">
+                            <h2 class="text-xl font-semibold text-gray-800">
+                                <i class="fas fa-briefcase mr-2 text-gray-600"></i>
+                                {{ __('messages.job_positions') }}
+                            </h2>
+                            <x-hr-guide-link />
+                        </div>
                         <button
                             wire:click="create"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                             <i class="fas fa-plus mr-1"></i>
-                            Add Position
+                            {{ __('messages.add_position') }}
                         </button>
                     </div>
 
@@ -22,7 +25,7 @@
                     <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div class="md:col-span-2">
-                                <label for="search" class="sr-only">Search</label>
+                                <label for="search" class="sr-only">{{ __('messages.search') }}</label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-search text-gray-400"></i>
@@ -31,20 +34,20 @@
                                         type="text"
                                         id="search"
                                         wire:model.live.debounce.300ms="search"
-                                        placeholder="Search job positions..."
+                                        placeholder="{{ __('messages.search_job_positions') }}"
                                         class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                                     >
                                 </div>
                             </div>
 
                             <div>
-                                <label for="filterDepartment" class="sr-only">Department</label>
+                                <label for="filterDepartment" class="sr-only">{{ __('messages.department') }}</label>
                                 <select
                                     id="filterDepartment"
                                     wire:model.live="filters.department_id"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Departments</option>
+                                    <option value="">{{ __('messages.all_departments') }}</option>
                                     @foreach($departments as $department)
                                         <option value="{{ $department->id }}">{{ $department->name }}</option>
                                     @endforeach
@@ -52,13 +55,13 @@
                             </div>
 
                             <div>
-                                <label for="filterCategory" class="sr-only">Category</label>
+                                <label for="filterCategory" class="sr-only">{{ __('messages.category') }}</label>
                                 <select
                                     id="filterCategory"
                                     wire:model.live="filters.category_id"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Categories</option>
+                                    <option value="">{{ __('messages.all_categories') }}</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
@@ -66,15 +69,15 @@
                             </div>
 
                             <div>
-                                <label for="filterActive" class="sr-only">Status</label>
+                                <label for="filterActive" class="sr-only">{{ __('messages.status') }}</label>
                                 <select
                                     id="filterActive"
                                     wire:model.live="filters.is_active"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Status</option>
-                                    <option value="1">Active</option>
-                                    <option value="0">Inactive</option>
+                                    <option value="">{{ __('messages.all_status') }}</option>
+                                    <option value="1">{{ __('messages.active') }}</option>
+                                    <option value="0">{{ __('messages.inactive') }}</option>
                                 </select>
                             </div>
                         </div>
@@ -88,7 +91,7 @@
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('title')">
-                                                <span>Title</span>
+                                                <span>{{ __('messages.position') }}</span>
                                                 @if($sortField === 'title')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -98,7 +101,7 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('department_id')">
-                                                <span>Department</span>
+                                                <span>{{ __('messages.department') }}</span>
                                                 @if($sortField === 'department_id')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -108,17 +111,17 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span>Category</span>
+                                                <span>{{ __('messages.category') }}</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span>Salary Range</span>
+                                                <span>{{ __('messages.salary_range') }}</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('is_active')">
-                                                <span>Status</span>
+                                                <span>{{ __('messages.status') }}</span>
                                                 @if($sortField === 'is_active')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -127,7 +130,7 @@
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
+                                            {{ __('messages.actions') }}
                                         </th>
                                     </tr>
                                 </thead>
@@ -138,22 +141,22 @@
                                                 <div class="text-sm font-medium text-gray-900">{{ $position->title }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-500">{{ $position->department->name ?? 'N/A' }}</div>
+                                                <div class="text-sm text-gray-500">{{ $position->department->name ?? __('messages.not_available') }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-500">{{ $position->category->name ?? 'N/A' }}</div>
+                                                <div class="text-sm text-gray-500">{{ $position->category->name ?? __('messages.not_available') }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 @if($position->salary_range_min && $position->salary_range_max)
                                                     {{ number_format($position->salary_range_min, 2) }} - {{ number_format($position->salary_range_max, 2) }}
                                                 @else
-                                                    Not specified
+                                                    {{ __('messages.not_available') }}
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                                     {{ isset($position->is_active) && $position->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                    {{ isset($position->is_active) && $position->is_active ? 'Active' : 'Inactive' }}
+                                                    {{ isset($position->is_active) && $position->is_active ? __('messages.active') : __('messages.inactive') }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -176,18 +179,18 @@
                                             <td colspan="6" class="px-6 py-12 text-center">
                                                 <div class="flex flex-col items-center justify-center text-gray-500">
                                                     <i class="fas fa-briefcase text-gray-400 text-4xl mb-4"></i>
-                                                    <span class="text-lg font-medium">No job positions found</span>
+                                                    <span class="text-lg font-medium">{{ __('messages.no_job_positions_found') }}</span>
                                                     <p class="text-sm mt-2">
                                                         @if($search || !empty($filters['department_id']) || !empty($filters['category_id']) || $filters['is_active'] !== '')
-                                                            No positions match your search criteria. Try adjusting your filters.
+                                                            {{ __('messages.no_positions_match') }}
                                                             <button
                                                                 wire:click="resetFilters"
                                                                 class="text-blue-500 hover:text-blue-700 underline ml-1"
                                                             >
-                                                                Clear all filters
+                                                                {{ __('messages.clear_all_filters') }}
                                                             </button>
                                                         @else
-                                                            There are no job positions in the system yet. Click "Add Position" to create one.
+                                                            {{ __('messages.no_job_positions_yet') }}
                                                         @endif
                                                     </p>
                                                 </div>
@@ -228,7 +231,7 @@
                     <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
                         <p class="font-bold flex items-center">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Please correct the following errors:
+                            {{ __('messages.please_correct_errors') }}:
                         </p>
                         <ul class="mt-2 list-disc list-inside text-sm">
                             @foreach($errors->all() as $error)
@@ -242,7 +245,7 @@
                     <div class="grid grid-cols-1 gap-4">
                         <!-- Title -->
                         <div>
-                            <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                            <label for="title" class="block text-sm font-medium text-gray-700">{{ __('messages.position') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <input type="text" id="title"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('title') border-red-300 text-red-900 @enderror"
@@ -255,12 +258,12 @@
 
                         <!-- Department -->
                         <div>
-                            <label for="department_id" class="block text-sm font-medium text-gray-700">Department</label>
+                            <label for="department_id" class="block text-sm font-medium text-gray-700">{{ __('messages.department') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <select id="department_id"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('department_id') border-red-300 text-red-900 @enderror"
                                     wire:model.live="department_id">
-                                    <option value="">Select Department</option>
+                                    <option value="">{{ __('messages.select_department') }}</option>
                                     @foreach($departments as $department)
                                         <option value="{{ $department->id }}">{{ $department->name }}</option>
                                     @endforeach
@@ -273,12 +276,12 @@
 
                         <!-- Category -->
                         <div>
-                            <label for="category_id" class="block text-sm font-medium text-gray-700">Category</label>
+                            <label for="category_id" class="block text-sm font-medium text-gray-700">{{ __('messages.category') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <select id="category_id"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('category_id') border-red-300 text-red-900 @enderror"
                                     wire:model.live="category_id">
-                                    <option value="">Select Category</option>
+                                    <option value="">{{ __('messages.select_category') }}</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
@@ -291,7 +294,7 @@
 
                         <!-- Salary Range Min -->
                         <div>
-                            <label for="salary_range_min" class="block text-sm font-medium text-gray-700">Minimum Salary</label>
+                            <label for="salary_range_min" class="block text-sm font-medium text-gray-700">{{ __('messages.minimum_salary') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <input type="number" id="salary_range_min" step="0.01" min="0"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('salary_range_min') border-red-300 text-red-900 @enderror"
@@ -304,7 +307,7 @@
 
                         <!-- Salary Range Max -->
                         <div>
-                            <label for="salary_range_max" class="block text-sm font-medium text-gray-700">Maximum Salary</label>
+                            <label for="salary_range_max" class="block text-sm font-medium text-gray-700">{{ __('messages.maximum_salary') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <input type="number" id="salary_range_max" step="0.01" min="0"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('salary_range_max') border-red-300 text-red-900 @enderror"
@@ -317,7 +320,7 @@
 
                         <!-- Description -->
                         <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                            <label for="description" class="block text-sm font-medium text-gray-700">{{ __('messages.description') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <textarea id="description" rows="3"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('description') border-red-300 text-red-900 @enderror"
@@ -330,7 +333,7 @@
 
                         <!-- Responsibilities -->
                         <div>
-                            <label for="responsibilities" class="block text-sm font-medium text-gray-700">Responsibilities</label>
+                            <label for="responsibilities" class="block text-sm font-medium text-gray-700">{{ __('messages.responsibilities') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <textarea id="responsibilities" rows="3"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('responsibilities') border-red-300 text-red-900 @enderror"
@@ -343,7 +346,7 @@
 
                         <!-- Requirements -->
                         <div>
-                            <label for="requirements" class="block text-sm font-medium text-gray-700">Requirements</label>
+                            <label for="requirements" class="block text-sm font-medium text-gray-700">{{ __('messages.requirements') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <textarea id="requirements" rows="3"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('requirements') border-red-300 text-red-900 @enderror"
@@ -363,8 +366,8 @@
                                         wire:model.live="is_active">
                                 </div>
                                 <div class="ml-3 text-sm">
-                                    <label for="is_active" class="font-medium text-gray-700">Active</label>
-                                    <p class="text-gray-500">Set this position as active</p>
+                                    <label for="is_active" class="font-medium text-gray-700">{{ __('messages.active') }}</label>
+                                    <p class="text-gray-500">{{ __('messages.set_position_active') }}</p>
                                 </div>
                             </div>
                             @error('is_active')
@@ -377,11 +380,11 @@
                         <button type="button"
                             class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             wire:click="closeModal">
-                            Cancel
+                            {{ __('messages.cancel') }}
                         </button>
                         <button type="submit"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {{ $isEditing ? 'Update' : 'Save' }}
+                            {{ $isEditing ? __('messages.update') : __('messages.save') }}
                         </button>
                     </div>
                 </form>
@@ -396,7 +399,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-red-600">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Delete Job Position
+                        {{ __('messages.delete_position') }}
                     </h3>
                     <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeDeleteModal">
                         <i class="fas fa-times"></i>
@@ -404,19 +407,19 @@
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-gray-700">Are you sure you want to delete this job position? This action cannot be undone.</p>
+                    <p class="text-gray-700">{{ __('messages.delete_position_confirmation') }}</p>
                 </div>
 
                 <div class="flex justify-end space-x-3">
                     <button type="button"
                         class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         wire:click="closeDeleteModal">
-                        Cancel
+                        {{ __('messages.cancel') }}
                     </button>
                     <button type="button"
                         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         wire:click="delete">
-                        Delete
+                        {{ __('messages.delete') }}
                     </button>
                 </div>
             </div>

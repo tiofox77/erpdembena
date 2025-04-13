@@ -5,16 +5,19 @@
                 <div class="p-6">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">
-                            <i class="fas fa-users mr-2 text-gray-600"></i>
-                            Employees Management
-                        </h2>
+                        <div class="flex items-center space-x-4">
+                            <h2 class="text-xl font-semibold text-gray-800">
+                                <i class="fas fa-users mr-2 text-gray-600"></i>
+                                {{ __('messages.employees_management') }}
+                            </h2>
+                            <x-hr-guide-link />
+                        </div>
                         <button
                             wire:click="create"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                             <i class="fas fa-plus mr-1"></i>
-                            New Employee
+                            {{ __('messages.new_employee') }}
                         </button>
                     </div>
 
@@ -22,7 +25,7 @@
                     <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div class="md:col-span-2">
-                                <label for="search" class="sr-only">Search</label>
+                                <label for="search" class="sr-only">{{ __('messages.search') }}</label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-search text-gray-400"></i>
@@ -31,20 +34,20 @@
                                         type="text"
                                         id="search"
                                         wire:model.live.debounce.300ms="search"
-                                        placeholder="Search employees by name, email or ID..."
+                                        placeholder="{{ __('messages.search_employees') }}"
                                         class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                                     >
                                 </div>
                             </div>
 
                             <div>
-                                <label for="filterDepartment" class="sr-only">Department</label>
+                                <label for="filterDepartment" class="sr-only">{{ __('messages.department') }}</label>
                                 <select
                                     id="filterDepartment"
                                     wire:model.live="filters.department_id"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Departments</option>
+                                    <option value="">{{ __('messages.all_departments') }}</option>
                                     @foreach($departments as $department)
                                         <option value="{{ $department->id }}">{{ $department->name }}</option>
                                     @endforeach
@@ -52,13 +55,13 @@
                             </div>
 
                             <div>
-                                <label for="filterPosition" class="sr-only">Position</label>
+                                <label for="filterPosition" class="sr-only">{{ __('messages.position') }}</label>
                                 <select
                                     id="filterPosition"
                                     wire:model.live="filters.position_id"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Positions</option>
+                                    <option value="">{{ __('messages.all_positions') }}</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}">{{ $position->title }}</option>
                                     @endforeach
@@ -75,7 +78,7 @@
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('name')">
-                                                <span>Name</span>
+                                                <span>{{ __('messages.name') }}</span>
                                                 @if($sortField === 'name')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -85,12 +88,12 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span>Email</span>
+                                                <span>{{ __('messages.email') }}</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('department_id')">
-                                                <span>Department</span>
+                                                <span>{{ __('messages.department') }}</span>
                                                 @if($sortField === 'department_id')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -100,11 +103,11 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span>Position</span>
+                                                <span>{{ __('messages.position') }}</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
+                                            {{ __('messages.actions') }}
                                         </th>
                                     </tr>
                                 </thead>
@@ -118,10 +121,10 @@
                                                 {{ $employee->email }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $employee->department->name ?? 'Not Assigned' }}
+                                                {{ $employee->department->name ?? __('messages.not_assigned') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $employee->position->title ?? 'Not Assigned' }}
+                                                {{ $employee->position->title ?? __('messages.not_assigned') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
@@ -149,18 +152,18 @@
                                             <td colspan="6" class="px-6 py-12 text-center">
                                                 <div class="flex flex-col items-center justify-center text-gray-500">
                                                     <i class="fas fa-briefcase text-gray-400 text-4xl mb-4"></i>
-                                                    <span class="text-lg font-medium">No employees found</span>
+                                                    <span class="text-lg font-medium">{{ __('messages.no_employees_found') }}</span>
                                                     <p class="text-sm mt-2">
                                                         @if($search || !empty($filters['department_id']) || !empty($filters['position_id']))
-                                                            No employees match your search criteria. Try adjusting your filters.
+                                                            {{ __('messages.no_employees_match') }}
                                                             <button
                                                                 wire:click="resetFilters"
                                                                 class="text-blue-500 hover:text-blue-700 underline ml-1"
                                                             >
-                                                                Clear all filters
+                                                                {{ __('messages.clear_all_filters') }}
                                                             </button>
                                                         @else
-                                                            There are no employees in the system yet. Click "New Employee" to add one.
+                                                            {{ __('messages.no_employees_yet') }}
                                                         @endif
                                                     </p>
                                                 </div>
@@ -190,7 +193,7 @@
                 <div class="flex justify-between items-center mb-4 p-6 pb-3 border-b sticky top-0 bg-white z-10">
                     <h3 class="text-lg font-medium">
                         <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-plus-circle' }} mr-2"></i>
-                        {{ $isEditing ? 'Edit' : 'Create' }} Employee
+                        {{ $isEditing ? __('messages.edit') : __('messages.create') }} {{ __('messages.employee') }}
                     </h3>
                     <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeModal">
                         <i class="fas fa-times"></i>
@@ -201,7 +204,7 @@
                     <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
                         <p class="font-bold flex items-center">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Please correct the following errors:
+                            {{ __('messages.please_correct_errors') }}
                         </p>
                         <ul class="mt-2 list-disc list-inside text-sm">
                             @foreach($errors->all() as $error)
@@ -213,11 +216,11 @@
 
                 <form wire:submit.prevent="save">
                     <div class="px-6 py-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Personal Information</h4>
+                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">{{ __('messages.personal_information') }}</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Full Name -->
                             <div>
-                                <label for="full_name" class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
+                                <label for="full_name" class="block text-sm font-medium text-gray-700">{{ __('messages.full_name') }} <span class="text-red-500">*</span></label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="text" id="full_name"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('full_name') border-red-300 text-red-900 @enderror"
@@ -230,7 +233,7 @@
 
                             <!-- Date of Birth -->
                             <div>
-                                <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                                <label for="date_of_birth" class="block text-sm font-medium text-gray-700">{{ __('messages.date_of_birth') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="date" id="date_of_birth"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('date_of_birth') border-red-300 text-red-900 @enderror"
@@ -243,15 +246,15 @@
 
                             <!-- Gender -->
                             <div>
-                                <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                                <label for="gender" class="block text-sm font-medium text-gray-700">{{ __('messages.gender') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <select id="gender"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('gender') border-red-300 text-red-900 @enderror"
                                         wire:model.live="gender">
-                                        <option value="">Select Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
+                                        <option value="">{{ __('messages.select_gender') }}</option>
+                                        <option value="male">{{ __('messages.male') }}</option>
+                                        <option value="female">{{ __('messages.female') }}</option>
+                                        <option value="other">{{ __('messages.other') }}</option>
                                     </select>
                                     @error('gender')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -261,11 +264,11 @@
 
                             <!-- ID Card -->
                             <div>
-                                <label for="id_card" class="block text-sm font-medium text-gray-700">ID Card</label>
+                                <label for="id_card" class="block text-sm font-medium text-gray-700">{{ __('messages.id_card') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="text" id="id_card"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('id_card') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="id_card" placeholder="ID Card number">
+                                        wire:model.live="id_card" placeholder="{{ __('messages.id_card_number') }}">
                                     @error('id_card')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -274,11 +277,11 @@
 
                             <!-- Tax Number -->
                             <div>
-                                <label for="tax_number" class="block text-sm font-medium text-gray-700">Tax Number</label>
+                                <label for="tax_number" class="block text-sm font-medium text-gray-700">{{ __('messages.tax_number') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="text" id="tax_number"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('tax_number') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="tax_number" placeholder="Tax identification number">
+                                        wire:model.live="tax_number" placeholder="{{ __('messages.tax_identification_number') }}">
                                     @error('tax_number')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -287,16 +290,16 @@
 
                             <!-- Marital Status -->
                             <div>
-                                <label for="marital_status" class="block text-sm font-medium text-gray-700">Marital Status</label>
+                                <label for="marital_status" class="block text-sm font-medium text-gray-700">{{ __('messages.marital_status') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <select id="marital_status"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('marital_status') border-red-300 text-red-900 @enderror"
                                         wire:model.live="marital_status">
-                                        <option value="">Select Status</option>
-                                        <option value="single">Single</option>
-                                        <option value="married">Married</option>
-                                        <option value="divorced">Divorced</option>
-                                        <option value="widowed">Widowed</option>
+                                        <option value="">{{ __('messages.select_status') }}</option>
+                                        <option value="single">{{ __('messages.single') }}</option>
+                                        <option value="married">{{ __('messages.married') }}</option>
+                                        <option value="divorced">{{ __('messages.divorced') }}</option>
+                                        <option value="widowed">{{ __('messages.widowed') }}</option>
                                     </select>
                                     @error('marital_status')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -306,11 +309,11 @@
 
                             <!-- Dependents -->
                             <div>
-                                <label for="dependents" class="block text-sm font-medium text-gray-700">Dependents</label>
+                                <label for="dependents" class="block text-sm font-medium text-gray-700">{{ __('messages.dependents') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="number" min="0" id="dependents"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('dependents') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="dependents" placeholder="Number of dependents">
+                                        wire:model.live="dependents" placeholder="{{ __('messages.number_of_dependents') }}">
                                     @error('dependents')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -319,7 +322,7 @@
 
                             <!-- Photo (File Upload) -->
                             <div class="md:col-span-3">
-                                <label for="photo" class="block text-sm font-medium text-gray-700">Photo</label>
+                                <label for="photo" class="block text-sm font-medium text-gray-700">{{ __('messages.photo') }}</label>
                                 <div class="mt-1 flex items-center">
                                     @if($photo && !is_string($photo))
                                         <div class="mr-3">
@@ -342,15 +345,15 @@
                     </div>
 
                     <div class="px-6 py-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Contact Information</h4>
+                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">{{ __('messages.contact_information') }}</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Email -->
                             <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                                <label for="email" class="block text-sm font-medium text-gray-700">{{ __('messages.email') }} <span class="text-red-500">*</span></label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="email" id="email"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('email') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="email" placeholder="Email address">
+                                        wire:model.live="email" placeholder="{{ __('messages.email_address') }}">
                                     @error('email')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -359,11 +362,11 @@
 
                             <!-- Phone -->
                             <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">{{ __('messages.phone') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="text" id="phone"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('phone') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="phone" placeholder="Phone number">
+                                        wire:model.live="phone" placeholder="{{ __('messages.phone_number') }}">
                                     @error('phone')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -372,11 +375,11 @@
 
                             <!-- Address -->
                             <div class="md:col-span-3">
-                                <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                                <label for="address" class="block text-sm font-medium text-gray-700">{{ __('messages.address') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <textarea id="address" rows="2"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('address') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="address" placeholder="Full address"></textarea>
+                                        wire:model.live="address" placeholder="{{ __('messages.full_address') }}"></textarea>
                                     @error('address')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -386,16 +389,16 @@
                     </div>
 
                     <div class="px-6 py-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Bank Information</h4>
+                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">{{ __('messages.bank_information') }}</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Bank Name -->
                             <div>
-                                <label for="bank_name" class="block text-sm font-medium text-gray-700">Bank Name</label>
+                                <label for="bank_name" class="block text-sm font-medium text-gray-700">{{ __('messages.bank_name') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <select id="bank_name"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('bank_name') border-red-300 text-red-900 @enderror"
                                         wire:model.live="bank_name">
-                                        <option value="">Select Bank</option>
+                                        <option value="">{{ __('messages.select_bank') }}</option>
                                         <option value="Banco Nacional de Angola (BNA)">Banco Nacional de Angola (BNA)</option>
                                         <option value="Banco Angolano de Investimentos (BAI)">Banco Angolano de Investimentos (BAI)</option>
                                         <option value="Banco de Fomento Angola (BFA)">Banco de Fomento Angola (BFA)</option>
@@ -421,11 +424,11 @@
 
                             <!-- Bank Account -->
                             <div>
-                                <label for="bank_account" class="block text-sm font-medium text-gray-700">Bank Account</label>
+                                <label for="bank_account" class="block text-sm font-medium text-gray-700">{{ __('messages.bank_account') }}</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="text" id="bank_account"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('bank_account') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="bank_account" placeholder="Account number">
+                                        wire:model.live="bank_account" placeholder="{{ __('messages.account_number') }}">
                                     @error('bank_account')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -435,16 +438,16 @@
                     </div>
 
                     <div class="px-6 py-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Employment Information</h4>
+                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">{{ __('messages.employment_information') }}</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Department -->
                             <div>
-                                <label for="department_id" class="block text-sm font-medium text-gray-700">Department <span class="text-red-500">*</span></label>
+                                <label for="department_id" class="block text-sm font-medium text-gray-700">{{ __('messages.department') }} <span class="text-red-500">*</span></label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <select id="department_id"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('department_id') border-red-300 text-red-900 @enderror"
                                         wire:model.live="department_id">
-                                        <option value="">Select Department</option>
+                                        <option value="">{{ __('messages.select_department') }}</option>
                                         @foreach($departments as $department)
                                             <option value="{{ $department->id }}">{{ $department->name }}</option>
                                         @endforeach
@@ -457,12 +460,12 @@
 
                             <!-- Position -->
                             <div>
-                                <label for="position_id" class="block text-sm font-medium text-gray-700">Position <span class="text-red-500">*</span></label>
+                                <label for="position_id" class="block text-sm font-medium text-gray-700">{{ __('messages.position') }} <span class="text-red-500">*</span></label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <select id="position_id"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('position_id') border-red-300 text-red-900 @enderror"
                                         wire:model.live="position_id">
-                                        <option value="">Select Position</option>
+                                        <option value="">{{ __('messages.select_position') }}</option>
                                         @foreach($positions as $position)
                                             <option value="{{ $position->id }}">{{ $position->title }}</option>
                                         @endforeach
@@ -475,7 +478,7 @@
 
                             <!-- Hire Date -->
                             <div>
-                                <label for="hire_date" class="block text-sm font-medium text-gray-700">Hire Date <span class="text-red-500">*</span></label>
+                                <label for="hire_date" class="block text-sm font-medium text-gray-700">{{ __('messages.hire_date') }} <span class="text-red-500">*</span></label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input type="date" id="hire_date"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('hire_date') border-red-300 text-red-900 @enderror"
@@ -488,17 +491,17 @@
 
                             <!-- Employment Status -->
                             <div>
-                                <label for="employment_status" class="block text-sm font-medium text-gray-700">Employment Status <span class="text-red-500">*</span></label>
+                                <label for="employment_status" class="block text-sm font-medium text-gray-700">{{ __('messages.employment_status') }} <span class="text-red-500">*</span></label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <select id="employment_status"
                                         class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('employment_status') border-red-300 text-red-900 @enderror"
                                         wire:model.live="employment_status">
-                                        <option value="">Select Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="on_leave">On Leave</option>
-                                        <option value="terminated">Terminated</option>
-                                        <option value="suspended">Suspended</option>
-                                        <option value="retired">Retired</option>
+                                        <option value="">{{ __('messages.select_status_employment') }}</option>
+                                        <option value="active">{{ __('messages.active') }}</option>
+                                        <option value="on_leave">{{ __('messages.on_leave') }}</option>
+                                        <option value="terminated">{{ __('messages.terminated') }}</option>
+                                        <option value="suspended">{{ __('messages.suspended') }}</option>
+                                        <option value="retired">{{ __('messages.retired') }}</option>
                                     </select>
                                     @error('employment_status')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -510,14 +513,14 @@
 
                     @if($isEditing)
                     <div class="px-6 py-4">
-                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">Documents</h4>
+                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">{{ __('messages.documents') }}</h4>
                         <div class="mt-2 bg-gray-50 p-3 rounded">
                             <div class="flex flex-col">
                                 <div class="flex justify-between items-center mb-3">
-                                    <h5 class="text-sm font-medium text-gray-700">Employee Documents</h5>
+                                    <h5 class="text-sm font-medium text-gray-700">{{ __('messages.employee_documents') }}</h5>
                                     <button type="button" wire:click="showDocumentUploadModal"
                                         class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition">
-                                        <i class="fas fa-plus mr-1"></i> Add Document
+                                        <i class="fas fa-plus mr-1"></i> {{ __('messages.add_document') }}
                                     </button>
                                 </div>
                                 
@@ -526,11 +529,11 @@
                                         <table class="min-w-full bg-white border border-gray-200 text-sm">
                                             <thead>
                                                 <tr class="bg-gray-100">
-                                                    <th class="py-2 px-3 text-left border-b">Type</th>
-                                                    <th class="py-2 px-3 text-left border-b">Title</th>
-                                                    <th class="py-2 px-3 text-left border-b">Expiry Date</th>
-                                                    <th class="py-2 px-3 text-left border-b">Status</th>
-                                                    <th class="py-2 px-3 text-left border-b">Actions</th>
+                                                    <th class="py-2 px-3 text-left border-b">{{ __('messages.type') }}</th>
+                                                    <th class="py-2 px-3 text-left border-b">{{ __('messages.title') }}</th>
+                                                    <th class="py-2 px-3 text-left border-b">{{ __('messages.expiry_date') }}</th>
+                                                    <th class="py-2 px-3 text-left border-b">{{ __('messages.status') }}</th>
+                                                    <th class="py-2 px-3 text-left border-b">{{ __('messages.actions') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -540,27 +543,27 @@
                                                         @switch($document->document_type)
                                                             @case('id_card')
                                                                 <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                                                    <i class="fas fa-id-card mr-1"></i> ID Card
+                                                                    <i class="fas fa-id-card mr-1"></i> {{ __('messages.id_card_doc') }}
                                                                 </span>
                                                                 @break
                                                             @case('certificate')
                                                                 <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                                                    <i class="fas fa-certificate mr-1"></i> Certificate
+                                                                    <i class="fas fa-certificate mr-1"></i> {{ __('messages.certificate') }}
                                                                 </span>
                                                                 @break
                                                             @case('professional_card')
                                                                 <span class="inline-flex items-center bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
-                                                                    <i class="fas fa-id-badge mr-1"></i> Professional Card
+                                                                    <i class="fas fa-id-badge mr-1"></i> {{ __('messages.professional_card') }}
                                                                 </span>
                                                                 @break
                                                             @case('contract')
                                                                 <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                                                                    <i class="fas fa-file-contract mr-1"></i> Contract
+                                                                    <i class="fas fa-file-contract mr-1"></i> {{ __('messages.contract') }}
                                                                 </span>
                                                                 @break
                                                             @default
                                                                 <span class="inline-flex items-center bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                                                                    <i class="fas fa-file mr-1"></i> Other
+                                                                    <i class="fas fa-file mr-1"></i> {{ __('messages.other_doc') }}
                                                                 </span>
                                                         @endswitch
                                                     </td>
@@ -575,14 +578,14 @@
                                                     <td class="py-2 px-3 border-b">
                                                         @if($document->is_verified)
                                                             <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                                                <i class="fas fa-check-circle mr-1"></i> Verified
+                                                                <i class="fas fa-check-circle mr-1"></i> {{ __('messages.verified') }}
                                                                 @if($document->verification_date)
                                                                     <span class="mx-1 text-xs text-gray-500">{{ \Carbon\Carbon::parse($document->verification_date)->format('d/m/Y') }}</span>
                                                                 @endif
                                                             </span>
                                                         @else
                                                             <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                                                                <i class="fas fa-clock mr-1"></i> Pending
+                                                                <i class="fas fa-clock mr-1"></i> {{ __('messages.pending') }}
                                                             </span>
                                                         @endif
                                                     </td>
@@ -1018,7 +1021,7 @@
 
                         <!-- Document Title -->
                         <div>
-                            <label for="newDocumentTitle" class="block text-sm font-medium text-gray-700">Document Title</label>
+                            <label for="newDocumentTitle" class="block text-sm font-medium text-gray-700">{{ __('messages.document_title') }}</label>
                             <input type="text" id="newDocumentTitle" wire:model="newDocumentTitle" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 placeholder="E.g., National ID Card, Bachelor Degree, etc.">
@@ -1027,17 +1030,17 @@
 
                         <!-- Document File -->
                         <div>
-                            <label for="newDocumentFile" class="block text-sm font-medium text-gray-700">Upload File</label>
+                            <label for="newDocumentFile" class="block text-sm font-medium text-gray-700">{{ __('messages.upload_file') }}</label>
                             <input type="file" id="newDocumentFile" accept="image/*"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                 wire:model.live="newDocumentFile">
-                            <p class="mt-1 text-xs text-gray-500">Max file size: 10MB. Accepted formats: PDF, JPG, PNG, DOCX</p>
+                            <p class="mt-1 text-xs text-gray-500">{{ __('messages.file_size_restrictions') }}</p>
                             @error('newDocumentFile') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <!-- Expiry Date -->
                         <div>
-                            <label for="newDocumentExpiryDate" class="block text-sm font-medium text-gray-700">Expiry Date (Optional)</label>
+                            <label for="newDocumentExpiryDate" class="block text-sm font-medium text-gray-700">{{ __('messages.expiry_date_optional') }}</label>
                             <input type="date" id="newDocumentExpiryDate" wire:model="newDocumentExpiryDate" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             @error('newDocumentExpiryDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -1045,7 +1048,7 @@
 
                         <!-- Remarks -->
                         <div>
-                            <label for="newDocumentRemarks" class="block text-sm font-medium text-gray-700">Remarks (Optional)</label>
+                            <label for="newDocumentRemarks" class="block text-sm font-medium text-gray-700">{{ __('messages.remarks_optional') }}</label>
                             <textarea id="newDocumentRemarks" wire:model="newDocumentRemarks" rows="3" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 placeholder="Any additional information about this document"></textarea>
@@ -1060,7 +1063,7 @@
                         </button>
                         <button type="submit"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <i class="fas fa-upload mr-1"></i> Upload
+                            <i class="fas fa-upload mr-1"></i> {{ __('messages.upload') }}
                         </button>
                     </div>
                 </form>

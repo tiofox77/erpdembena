@@ -24,6 +24,13 @@ class SystemSettings extends Component
     public $date_format;
     public $currency;
     public $language;
+    
+    // Company Details
+    public $company_address;
+    public $company_phone;
+    public $company_email;
+    public $company_website;
+    public $company_tax_id;
 
     // Update Settings
     public $github_repository = 'your-username/your-repository';
@@ -75,6 +82,11 @@ class SystemSettings extends Component
             'company_logo' => $this->company_logo instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
                 ? 'image|max:1024'
                 : 'nullable',
+            'company_address' => 'nullable|string|max:255',
+            'company_phone' => 'nullable|string|max:30',
+            'company_email' => 'nullable|email|max:100',
+            'company_website' => 'nullable|string|max:100',
+            'company_tax_id' => 'nullable|string|max:30',
         ];
     }
 
@@ -95,6 +107,7 @@ class SystemSettings extends Component
             'github_repository.regex' => 'Invalid repository format. Use username/repository',
             'company_logo.image' => 'The logo must be an image',
             'company_logo.max' => 'The logo may not be larger than 1MB',
+            'company_email.email' => 'Please enter a valid email address',
         ];
     }
 
@@ -132,6 +145,14 @@ class SystemSettings extends Component
         $this->date_format = Setting::get('date_format', 'm/d/Y');
         $this->currency = Setting::get('currency', 'USD');
         $this->language = Setting::get('language', 'en');
+        
+        // Carregar detalhes da empresa
+        $this->company_address = Setting::get('company_address', '');
+        $this->company_phone = Setting::get('company_phone', '');
+        $this->company_email = Setting::get('company_email', '');
+        $this->company_website = Setting::get('company_website', '');
+        $this->company_tax_id = Setting::get('company_tax_id', '');
+        
         $this->github_repository = Setting::get('github_repository', $this->github_repository);
         $this->maintenance_mode = (bool) Setting::get('maintenance_mode', false);
         $this->debug_mode = (bool) Setting::get('debug_mode', false);
@@ -172,6 +193,11 @@ class SystemSettings extends Component
             'company_logo' => $this->company_logo instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
                 ? 'image|max:1024'
                 : 'nullable',
+            'company_address' => 'nullable|string|max:255',
+            'company_phone' => 'nullable|string|max:30',
+            'company_email' => 'nullable|email|max:100',
+            'company_website' => 'nullable|string|max:100',
+            'company_tax_id' => 'nullable|string|max:30',
         ]);
 
         try {
@@ -181,6 +207,11 @@ class SystemSettings extends Component
                 'date_format' => $this->date_format,
                 'currency' => $this->currency,
                 'language' => $this->language,
+                'company_address' => $this->company_address,
+                'company_phone' => $this->company_phone,
+                'company_email' => $this->company_email,
+                'company_website' => $this->company_website,
+                'company_tax_id' => $this->company_tax_id,
             ]);
 
             // Save company logo if uploaded
@@ -196,6 +227,13 @@ class SystemSettings extends Component
             Setting::set('date_format', $this->date_format, 'general', 'string', 'Date format', true);
             Setting::set('currency', $this->currency, 'general', 'string', 'Currency', true);
             Setting::set('language', $this->language, 'general', 'string', 'Language', true);
+            
+            // Save company details
+            Setting::set('company_address', $this->company_address, 'company', 'string', 'Endereço completo da empresa', true);
+            Setting::set('company_phone', $this->company_phone, 'company', 'string', 'Telefone de contato da empresa', true);
+            Setting::set('company_email', $this->company_email, 'company', 'string', 'Email de contato da empresa', true);
+            Setting::set('company_website', $this->company_website, 'company', 'string', 'Site da empresa', true);
+            Setting::set('company_tax_id', $this->company_tax_id, 'company', 'string', 'CNPJ da empresa', true);
 
             // Clear cache to apply new settings
             $this->clearSettingsCache();

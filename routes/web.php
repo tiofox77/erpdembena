@@ -23,6 +23,9 @@ use App\Livewire\EquipmentParts;
 // Rotas de autenticação
 Auth::routes();
 
+// Rota para alterar o idioma
+Route::get('/language/{locale}', [\App\Http\Controllers\LanguageController::class, 'changeLocale'])->name('change.locale');
+
 // Rota principal - redireciona para o dashboard se estiver logado ou para login se não estiver
 Route::get('/', function () {
     return auth()->check()

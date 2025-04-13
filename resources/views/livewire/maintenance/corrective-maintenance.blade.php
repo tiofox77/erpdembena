@@ -7,26 +7,29 @@
                 <div class="p-6">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                            <i class="fas fa-wrench mr-2 text-gray-600"></i> Equipment/Machine Downtime Reporting
-                        </h2>
+                        <div class="flex items-center space-x-4">
+                            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                                <i class="fas fa-wrench mr-2 text-gray-600"></i> {{ __('messages.equipment_downtime_reporting') }}
+                            </h2>
+                            <x-maintenance-guide-link />
+                        </div>
                         <button
                             wire:click="openModal"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
-                            <i class="fas fa-plus-circle mr-1"></i> Report Downtime
+                            <i class="fas fa-plus-circle mr-1"></i> {{ __('messages.report_downtime') }}
                         </button>
                     </div>
 
                     <!-- Filters and Search -->
                     <div class="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                         <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                            <i class="fas fa-filter mr-2 text-blue-500"></i> Filters and Search
+                            <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filters_and_search') }}
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                             <div class="md:col-span-2">
                                 <label for="search" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-search mr-1 text-gray-500"></i> Search
+                                    <i class="fas fa-search mr-1 text-gray-500"></i> {{ __('messages.search') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -36,7 +39,7 @@
                                         type="text"
                                         id="search"
                                         wire:model.live.debounce.300ms="search"
-                                        placeholder="Search for equipment, failure modes..."
+                                        placeholder="{{ __('messages.search_for_equipment') }}"
                                         class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                                     >
                                 </div>
@@ -44,7 +47,7 @@
 
                             <div>
                                 <label for="filterYear" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="far fa-calendar-alt mr-1 text-gray-500"></i> Year
+                                    <i class="far fa-calendar-alt mr-1 text-gray-500"></i> {{ __('messages.year') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -52,7 +55,7 @@
                                         wire:model.live="filterYear"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="">All Years</option>
+                                        <option value="">{{ __('messages.all_years') }}</option>
                                         @foreach($years as $yearKey => $yearValue)
                                             <option value="{{ $yearKey }}">{{ $yearValue }}</option>
                                         @endforeach
@@ -73,7 +76,7 @@
                                         wire:model.live="filterMonth"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="">All Months</option>
+                                        <option value="">{{ __('messages.all_months') }}</option>
                                         @foreach($months as $monthKey => $monthValue)
                                             <option value="{{ $monthKey }}">{{ $monthValue }}</option>
                                         @endforeach
@@ -1210,14 +1213,14 @@
                         class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 flex items-center"
                         wire:click="closeViewModal"
                     >
-                        <i class="fas fa-times mr-2"></i> Close
+                        <i class="fas fa-times mr-2"></i> {{ __('messages.close') }}
                     </button>
                     <button
                         type="button"
                         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
                         wire:click="edit({{ $viewingCorrective->id }})"
                     >
-                        <i class="fas fa-edit mr-2"></i> Edit Record
+                        <i class="fas fa-edit mr-2"></i> {{ __('messages.edit_record') }}
                     </button>
                 </div>
             </div>
@@ -1231,7 +1234,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-red-600 flex items-center">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Delete Downtime Record
+                        {{ __('messages.delete_downtime_record') }}
                     </h3>
                     <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeModal">
                         <i class="fas fa-times"></i>
@@ -1240,7 +1243,7 @@
 
                 <div class="bg-red-50 p-4 rounded-md mb-4">
                     <p class="text-sm text-red-700">
-                        Are you sure you want to delete this downtime record? This action cannot be undone, and all associated data will be permanently removed.
+                        {{ __('messages.delete_downtime_confirm') }}
                     </p>
                 </div>
 
@@ -1250,14 +1253,14 @@
                         class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         wire:click="closeModal"
                     >
-                        <i class="fas fa-times mr-1"></i> Cancel
+                        <i class="fas fa-times mr-1"></i> {{ __('messages.cancel') }}
                     </button>
                     <button
                         type="button"
                         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         wire:click="delete"
                     >
-                        <i class="fas fa-trash-alt mr-1"></i> Delete
+                        <i class="fas fa-trash-alt mr-1"></i> {{ __('messages.delete') }}
                     </button>
                 </div>
             </div>

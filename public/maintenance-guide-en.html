@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Module Guide - ERP Dembena</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f7f9fc;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #1a56db;
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .step {
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 3px solid #e5e7eb;
+        }
+        .illustration {
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .illustration img {
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .illustration-caption {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        .language-toggle {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+        .language-toggle a {
+            margin-left: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: #1a56db;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .language-toggle a:hover {
+            background-color: #f3f4f6;
+        }
+        .language-toggle a.active {
+            background-color: #1a56db;
+            color: white;
+        }
+        .toc {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .toc li {
+            margin-bottom: 0.5rem;
+        }
+        .toc a {
+            color: #1a56db;
+            text-decoration: none;
+            display: block;
+            padding: 0.375rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .toc a:hover {
+            color: #1e40af;
+        }
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        .my-4 {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        table th {
+            background-color: #f3f4f6;
+            text-align: left;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+        table td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+        table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-blue {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-green {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .badge-red {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .badge-yellow {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .badge-purple {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-toggle">
+            <a href="maintenance-guide.html">Português</a>
+            <a href="maintenance-guide-en.html" class="active">English</a>
+        </div>
+        
+        <div class="header">
+            <h1><i class="fas fa-wrench mr-2"></i> Maintenance Module Guide</h1>
+            <p>This guide provides detailed instructions on how to use all the features of the maintenance module in the ERP Dembena system.</p>
+        </div>
+
+        <div class="toc">
+            <h2><i class="fas fa-list mr-2"></i> Table of Contents</h2>
+            <ul>
+                <li><a href="#overview"><i class="fas fa-tachometer-alt mr-2"></i> 1. Module Overview</a></li>
+                <li><a href="#dashboard"><i class="fas fa-chart-line mr-2"></i> 2. Maintenance Dashboard</a></li>
+                <li><a href="#corrective-maintenance"><i class="fas fa-tools mr-2"></i> 3. Corrective Maintenance</a></li>
+                <li><a href="#equipment"><i class="fas fa-cogs mr-2"></i> 4. Equipment Registry</a></li>
+                <li><a href="#planning"><i class="fas fa-calendar-alt mr-2"></i> 5. Maintenance Planning</a></li>
+                <li><a href="#categories"><i class="fas fa-tags mr-2"></i> 6. Maintenance Categories</a></li>
+                <li><a href="#failure-modes"><i class="fas fa-exclamation-triangle mr-2"></i> 7. Failure Modes</a></li>
+                <li><a href="#failure-mode-categories"><i class="fas fa-sitemap mr-2"></i> 8. Failure Mode Categories</a></li>
+                <li><a href="#failure-causes"><i class="fas fa-search mr-2"></i> 9. Failure Causes</a></li>
+                <li><a href="#failure-cause-categories"><i class="fas fa-folder-open mr-2"></i> 10. Failure Cause Categories</a></li>
+                <li><a href="#maintenance-reports"><i class="fas fa-chart-bar mr-2"></i> 11. Maintenance Reports</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="section">
+            <h2>1. Module Overview</h2>
+            <p>The Maintenance Module of ERP Dembena is a complete solution for managing all aspects of equipment and facility maintenance. The system allows you to:</p>
+            
+            <ul class="list-disc ml-8 my-4">
+                <li>Monitor equipment status in real-time</li>
+                <li>Record and track corrective maintenance</li>
+                <li>Plan preventive maintenance</li>
+                <li>Manage failure modes and causes</li>
+                <li>Categorize maintenance types</li>
+                <li>Generate performance and compliance reports</li>
+            </ul>
+            
+            <p>The module is designed to optimize maintenance processes, reduce equipment downtime, and extend asset lifespan through efficient and systematic monitoring.</p>
+            
+            <p>In the following sections, you will find detailed instructions on how to use each component of the maintenance module.</p>
+        </div>
+
+        <div id="dashboard" class="section">
+            <h2>2. Maintenance Dashboard</h2>
+            <p>The Maintenance Dashboard provides an overview of equipment health and maintenance process status in a visual and intuitive format.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/dashboard.svg" alt="System Maintenance Dashboard">
+                <div class="illustration-caption">Fig. 1: Overview of the Maintenance Dashboard</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-filter mr-2 text-blue-600"></i> 2.1 Using Filters</h3>
+            <div class="step">
+                <p>The dashboard allows you to filter information for specific analysis:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Select the <strong>Year</strong> to filter data by annual period</li>
+                    <li>Choose the <strong>Month</strong> to analyze specific monthly data</li>
+                    <li>Filter by <strong>Status</strong> to view only equipment in a certain state (Operational, In Maintenance, Pending)</li>
+                    <li>Area/Department allows filtering by installation location</li>
+                    <li>Click <strong>Update</strong> to apply the selected filters</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-chart-pie mr-2 text-blue-600"></i> 2.2 Key Performance Indicators (KPIs)</h3>
+            <div class="step">
+                <p>The dashboard displays the main maintenance KPIs:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Scheduled Maintenance</strong>: Total programmed maintenance in the period</li>
+                    <li><strong>Completed Maintenance</strong>: Number of completed maintenance activities</li>
+                    <li><strong>Pending Maintenance</strong>: Number of delayed or not-started maintenance activities</li>
+                    <li><strong>Compliance Rate</strong>: Percentage of maintenance performed on time</li>
+                    <li><strong>Mean Time To Repair (MTTR)</strong>: Average time to complete a maintenance activity</li>
+                    <li><strong>Mean Time Between Failures (MTBF)</strong>: Average interval between failures of the same equipment</li>
+                </ul>
+            </div>
+
+            <h3><i class="fas fa-chart-bar mr-2 text-blue-600"></i> 2.3 Charts and Visualizations</h3>
+            <div class="step">
+                <p>The dashboard presents different charts to assist in analysis:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Bar Chart</strong>: Shows maintenance trends over time</li>
+                    <li><strong>Pie Chart</strong>: Percentage distribution by maintenance type</li>
+                    <li><strong>Line Chart</strong>: Failure trend over time</li>
+                </ul>
+                <p>Hover over the charts to see specific details for each point or segment.</p>
+            </div>
+
+            <h3><i class="fas fa-list-alt mr-2 text-blue-600"></i> 2.4 Alerts and Notifications</h3>
+            <div class="step">
+                <p>The dashboard displays important alerts:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Urgent Alerts</strong>: Highlighted in red, requiring immediate attention</li>
+                    <li><strong>Upcoming Maintenance</strong>: List of scheduled maintenance for the coming days</li>
+                    <li><strong>Approaching Deadlines</strong>: Maintenance with deadlines close to expiration</li>
+                </ul>
+                <p>Click the <strong>Mark as Seen</strong> button to acknowledge an alert.</p>
+            </div>
+        </div>
+
+        <div id="corrective-maintenance" class="section">
+            <h2>3. Corrective Maintenance</h2>
+            <p>The Corrective Maintenance module allows you to record, track, and manage unscheduled repairs performed after detecting failures or defects in equipment.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/corrective-maintenance.svg" alt="Corrective Maintenance Management Screen">
+                <div class="illustration-caption">Fig. 2: Corrective maintenance management interface</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 3.1 Recording a New Corrective Maintenance</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Click the <strong>Record Stoppage</strong> button in the upper right corner of the screen</li>
+                    <li>In the form that appears, fill in:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Equipment</strong>: Select the affected equipment</li>
+                            <li><strong>Problem Description</strong>: Describe the problem in detail</li>
+                            <li><strong>Start Date and Time</strong>: When the failure was detected</li>
+                            <li><strong>Priority</strong>: Define the urgency of repair (Low, Medium, High, Critical)</li>
+                            <li><strong>Failure Mode</strong>: Select the corresponding failure mode</li>
+                            <li><strong>Probable Cause</strong>: Indicate the possible cause of the failure</li>
+                        </ul>
+                    </li>
+                    <li>If necessary, add photos or documents by clicking <strong>Attach Files</strong></li>
+                    <li>Click <strong>Save</strong> to record the corrective maintenance</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-search mr-2 text-blue-600"></i> 3.2 Filtering and Searching Maintenance Records</h3>
+            <div class="step">
+                <p>To find specific records:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Use the search bar to search by ID, equipment, or description</li>
+                    <li>Use the available filters:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Equipment</strong>: Filter by specific equipment</li>
+                            <li><strong>Status</strong>: Filter by Pending, In Progress, Resolved, etc.</li>
+                            <li><strong>Period</strong>: Select a date range</li>
+                            <li><strong>Technician in Charge</strong>: Filter by assigned person</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Apply Filters</strong> to update the list</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-clipboard-check mr-2 text-blue-600"></i> 3.3 Updating Status and Information</h3>
+            <div class="step">
+                <p>To update an ongoing maintenance:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Click the <strong>Edit</strong> button next to the record</li>
+                    <li>Update the <strong>Status</strong> according to progress: In Progress, Awaiting Parts, Completed, etc.</li>
+                    <li>Add <strong>Notes</strong> about the actions taken</li>
+                    <li>If completed, fill in:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Completion Date and Time</strong></li>
+                            <li><strong>Applied Solution</strong>: Describe in detail how the problem was resolved</li>
+                            <li><strong>Parts Used</strong>: List all replaced parts</li>
+                            <li><strong>Technician Responsible</strong>: Who performed the repair</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Save</strong> to update the record</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-chart-line mr-2 text-blue-600"></i> 3.4 Analyzing Maintenance History</h3>
+            <div class="step">
+                <p>To review the complete maintenance history of equipment:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access the equipment details page</li>
+                    <li>In the <strong>Maintenance History</strong> section, you'll see all previous records</li>
+                    <li>Use date filters to refine the search</li>
+                    <li>Click <strong>Export History</strong> to generate a report in PDF or Excel</li>
+                </ol>
+                <p>Use this feature to identify failure patterns and plan preventive maintenance.</p>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                <p class="text-blue-800"><i class="fas fa-info-circle mr-2"></i> <strong>Tip:</strong> Keep corrective maintenance records always updated, including as much detail as possible. Complete information helps identify root causes and optimize maintenance processes.</p>
+            </div>
+        </div>
+
+        <div id="equipment" class="section">
+            <h2>4. Equipment Registry</h2>
+            <p>The Equipment Registry module allows you to manage the registration and information of all assets that require maintenance, facilitating control and monitoring.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/equipment.svg" alt="Equipment Management Screen">
+                <div class="illustration-caption">Fig. 3: Equipment registration and management interface</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 4.1 Registering a New Equipment</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access the <strong>Equipment</strong> page in the side menu</li>
+                    <li>Click the <strong>New Equipment</strong> button</li>
+                    <li>Fill in the required fields:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Equipment Code</strong>: Unique identifier</li>
+                            <li><strong>Name</strong>: Description/name of the equipment</li>
+                            <li><strong>Model</strong>: Model or type</li>
+                            <li><strong>Manufacturer</strong>: Manufacturing company</li>
+                            <li><strong>Serial Number</strong>: Equipment serial number</li>
+                            <li><strong>Department/Area</strong>: Where it is installed</li>
+                            <li><strong>Acquisition Date</strong>: When it was acquired</li>
+                            <li><strong>Current Status</strong>: Operational, In Maintenance, Inactive, etc.</li>
+                        </ul>
+                    </li>
+                    <li>Fill in additional fields when applicable:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Technical Specifications</strong>: Technical details</li>
+                            <li><strong>Warranty</strong>: Warranty period and details</li>
+                            <li><strong>Documents</strong>: Manuals and certificates</li>
+                            <li><strong>Supplier</strong>: Supplying company</li>
+                            <li><strong>Acquisition Value</strong>: Equipment cost</li>
+                            <li><strong>Estimated Useful Life</strong>: Expected operation time</li>
+                        </ul>
+                    </li>
+                    <li>Add a photo or image of the equipment by clicking <strong>Add Image</strong></li>
+                    <li>Click <strong>Save</strong> to create the record</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-cog mr-2 text-blue-600"></i> 4.2 Managing Components and Parts</h3>
+            <div class="step">
+                <p>To register the components of equipment:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access the equipment details page</li>
+                    <li>Go to the <strong>Components</strong> tab</li>
+                    <li>Click <strong>Add Component</strong></li>
+                    <li>Fill in the component details:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Component Name</strong></li>
+                            <li><strong>Type</strong></li>
+                            <li><strong>Quantity</strong></li>
+                            <li><strong>Description</strong></li>
+                            <li><strong>Part Number</strong> (if applicable)</li>
+                        </ul>
+                    </li>
+                    <li>Define if the component is <strong>Critical</strong> (directly affects operation)</li>
+                    <li>Click <strong>Save Component</strong></li>
+                </ol>
+                <p>This facilitates the management of replacement parts and specific maintenance for each component.</p>
+            </div>
+
+            <h3><i class="fas fa-file-alt mr-2 text-blue-600"></i> 4.3 Managing Technical Documents</h3>
+            <div class="step">
+                <p>To attach technical documentation to the equipment:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>On the equipment details page, access the <strong>Documents</strong> tab</li>
+                    <li>Click <strong>Attach Document</strong></li>
+                    <li>Select the <strong>Document Type</strong>: Manual, Certificate, Electrical Diagram, etc.</li>
+                    <li>Add a <strong>Description</strong> to identify it</li>
+                    <li>Click <strong>Choose File</strong> and select the document to be uploaded</li>
+                    <li>Click <strong>Submit</strong> to complete</li>
+                </ol>
+                <p>The documents will be available for consultation during maintenance activities.</p>
+            </div>
+
+            <h3><i class="fas fa-history mr-2 text-blue-600"></i> 4.4 Viewing Equipment History</h3>
+            <div class="step">
+                <p>To consult the complete history of equipment:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>On the equipment details page, access the <strong>History</strong> tab</li>
+                    <li>View all previous maintenance activities, categorized by type:</li>
+                    <ul class="list-disc ml-8 my-2">
+                        <li><strong>Corrective Maintenance</strong></li>
+                        <li><strong>Preventive Maintenance</strong></li>
+                        <li><strong>Calibrations</strong></li>
+                        <li><strong>Inspections</strong></li>
+                    </ul>
+                    <li>Use date and type filters to refine the search</li>
+                    <li>Click on any record to see the complete details</li>
+                </ol>
+                <p>The history allows reliability analysis and identification of recurring failure patterns.</p>
+            </div>
+
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4">
+                <p class="text-yellow-800"><i class="fas fa-exclamation-triangle mr-2"></i> <strong>Attention:</strong> Keep equipment information always up-to-date, especially supplier contact information and warranty details. This is crucial for expediting repairs and activating warranties when necessary.</p>
+            </div>
+        </div>
+
+        <div id="planning" class="section">
+            <h2>5. Maintenance Planning</h2>
+            <p>The Maintenance Planning module allows you to create and manage preventive maintenance plans, establishing systematic routines for inspection, lubrication, adjustments, and part replacement before failures occur.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/maintenance-plan.svg" alt="Maintenance Planning Screen">
+                <div class="illustration-caption">Fig. 4: Preventive maintenance planning interface</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-calendar-plus mr-2 text-blue-600"></i> 5.1 Creating a New Maintenance Plan</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the side menu, access <strong>Maintenance Planning</strong></li>
+                    <li>Click the <strong>New Plan</strong> button</li>
+                    <li>Fill in the main information:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Plan Title</strong>: Descriptive name</li>
+                            <li><strong>Description</strong>: Details about the plan's objective</li>
+                            <li><strong>Equipment(s)</strong>: Select the equipment to be included</li>
+                            <li><strong>Responsible</strong>: Technician or team responsible</li>
+                        </ul>
+                    </li>
+                    <li>Define the <strong>Periodicity</strong> of the plan:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Daily</strong>: For quick inspections or lubrications</li>
+                            <li><strong>Weekly</strong>: For routine checks</li>
+                            <li><strong>Monthly</strong>: For medium complexity maintenance</li>
+                            <li><strong>Quarterly/Biannual/Annual</strong>: For more complete maintenance</li>
+                            <li><strong>Custom</strong>: Based on operation hours or cycles</li>
+                        </ul>
+                    </li>
+                    <li>Configure <strong>Notifications</strong> to alert in advance about scheduled maintenance</li>
+                    <li>Click <strong>Next</strong> to continue</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-list-check mr-2 text-blue-600"></i> 5.2 Adding Activities to the Plan</h3>
+            <div class="step">
+                <p>After creating the plan, add the activities to be performed:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the <strong>Activities</strong> section, click <strong>Add Activity</strong></li>
+                    <li>For each activity, fill in:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Activity Description</strong>: What needs to be done</li>
+                            <li><strong>Estimated Time</strong>: Expected duration</li>
+                            <li><strong>Skill Level</strong>: Required technical skill</li>
+                            <li><strong>Required Tools</strong>: Equipment for execution</li>
+                            <li><strong>Safety Procedures</strong>: Specific precautions</li>
+                            <li><strong>Detailed Procedure</strong>: Step-by-step execution</li>
+                        </ul>
+                    </li>
+                    <li>Add <strong>Images or Diagrams</strong> to illustrate the procedure, if necessary</li>
+                    <li>Click <strong>Save Activity</strong> and repeat to add more activities</li>
+                    <li>When finished, click <strong>Complete Plan</strong></li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-calendar-alt mr-2 text-blue-600"></i> 5.3 Viewing the Maintenance Calendar</h3>
+            <div class="step">
+                <p>To view all scheduled maintenance on a calendar:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>On the Planning page, click the <strong>Calendar</strong> tab</li>
+                    <li>Select the desired <strong>View</strong>: Monthly, Weekly, or Daily</li>
+                    <li>Use filters to show only:
+                        <ul class="list-disc ml-8 my-2">
+                            <li>Maintenance for specific equipment</li>
+                            <li>Maintenance assigned to a technician</li>
+                            <li>Specific type of maintenance</li>
+                        </ul>
+                    </li>
+                    <li>Hover over an event to see quick details</li>
+                    <li>Click on an event to see complete details or edit</li>
+                </ol>
+                <p>The calendar provides a clear visualization of task distribution over time.</p>
+            </div>
+
+            <h3><i class="fas fa-clipboard-list mr-2 text-blue-600"></i> 5.4 Executing a Planned Maintenance</h3>
+            <div class="step">
+                <p>When the time comes to execute a scheduled maintenance:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access the <strong>Work Orders</strong> page</li>
+                    <li>Locate the WO automatically generated by the maintenance plan</li>
+                    <li>Click <strong>Start Maintenance</strong></li>
+                    <li>Follow the checklist for each activity:</li>
+                    <ul class="list-disc ml-8 my-2">
+                        <li>Mark each item as <strong>Completed</strong> after execution</li>
+                        <li>Record <strong>Observations</strong> about anomalies found</li>
+                        <li>Record <strong>Measurements</strong> taken, when applicable</li>
+                    </ul>
+                    <li>Record the <strong>Parts Used</strong>, if components were replaced</li>
+                    <li>Add <strong>Photos</strong> of before and after, if relevant</li>
+                    <li>When finished, click <strong>Complete Maintenance</strong></li>
+                </ol>
+                <p>The system will automatically update the equipment history and schedule the next maintenance according to the configured periodicity.</p>
+            </div>
+
+            <div class="bg-green-50 p-4 rounded-lg border border-green-200 mt-4">
+                <p class="text-green-800"><i class="fas fa-lightbulb mr-2"></i> <strong>Tip:</strong> Well-planned preventive maintenance significantly reduces the occurrence of unexpected failures and extends the equipment's useful life. It also reduces operational costs and unscheduled downtime.</p>
+            </div>
+        </div>
+
+        <div id="categories" class="section">
+            <h2>6. Maintenance Categories</h2>
+            <p>The Maintenance Categories module allows you to classify and organize the different types of maintenance performed on equipment, facilitating planning, resource allocation, and performance analysis.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/categories.svg" alt="Maintenance Categories Management Screen">
+                <div class="illustration-caption">Fig. 5: Maintenance categories management interface</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-tag mr-2 text-blue-600"></i> 6.1 Predefined Category Types</h3>
+            <div class="step">
+                <p>The system offers some predefined categories that cover the main types of maintenance:</p>
+                <table class="my-4">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Visual Identification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Preventive</td>
+                            <td>Maintenance performed at predefined intervals to prevent failures</td>
+                            <td><span class="badge badge-green">Preventive</span></td>
+                        </tr>
+                        <tr>
+                            <td>Corrective</td>
+                            <td>Maintenance performed after failures occur to restore functionality</td>
+                            <td><span class="badge badge-red">Corrective</span></td>
+                        </tr>
+                        <tr>
+                            <td>Predictive</td>
+                            <td>Maintenance based on analysis and monitoring of equipment conditions</td>
+                            <td><span class="badge badge-blue">Predictive</span></td>
+                        </tr>
+                        <tr>
+                            <td>Detection</td>
+                            <td>Inspections and tests to identify potential problems</td>
+                            <td><span class="badge badge-yellow">Detection</span></td>
+                        </tr>
+                        <tr>
+                            <td>Lubrication</td>
+                            <td>Application of lubricants to mechanical components</td>
+                            <td><span class="badge badge-purple">Lubrication</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 6.2 Creating New Categories</h3>
+            <div class="step">
+                <p>To create a new custom maintenance category:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the side menu, access <strong>Settings</strong> and then <strong>Maintenance Categories</strong></li>
+                    <li>Click the <strong>New Category</strong> button</li>
+                    <li>Fill in the required fields:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Category Name</strong>: Clear and concise identification</li>
+                            <li><strong>Description</strong>: Detailed explanation of the maintenance type</li>
+                            <li><strong>Color</strong>: Choose a color to visually identify the category</li>
+                            <li><strong>Default Priority</strong>: Typical urgency level (Low, Medium, High, Critical)</li>
+                            <li><strong>Average Estimated Time</strong>: Typical duration of this type of maintenance</li>
+                        </ul>
+                    </li>
+                    <li>Define <strong>Permissions</strong> for access by different user profiles</li>
+                    <li>Click <strong>Save</strong> to create the new category</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-archive mr-2 text-blue-600"></i> 6.3 Managing Existing Categories</h3>
+            <div class="step">
+                <p>To manage existing categories:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Edit</strong>: Click the edit icon next to the desired category</li>
+                    <li><strong>Deactivate</strong>: To discontinue a category without completely deleting it</li>
+                    <li><strong>Delete</strong>: Only possible if the category is not being used in any record</li>
+                    <li><strong>Merge</strong>: Combine two similar categories, transferring all records from one to another</li>
+                </ul>
+                <p><strong>Note:</strong> Modifying categories does not affect historical records already classified.</p>
+            </div>
+
+            <h3><i class="fas fa-chart-pie mr-2 text-blue-600"></i> 6.4 Analyzing Data by Category</h3>
+            <div class="step">
+                <p>Use category classification for data analysis:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li>Access <strong>Reports</strong> > <strong>Analysis by Category</strong></li>
+                    <li>View comparative charts and statistics between different maintenance types</li>
+                    <li>Identify which categories consume more resources</li>
+                    <li>Compare average execution times between similar categories</li>
+                    <li>Analyze the evolution of the volume of each category over time</li>
+                </ul>
+                <p>This analysis helps identify trends and opportunities for improvement in maintenance processes.</p>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                <p class="text-blue-800"><i class="fas fa-info-circle mr-2"></i> <strong>Recommendation:</strong> Maintain a limited number of categories to facilitate classification and analysis. Too many categories can make the system confusing. Prioritize categories that actually provide valuable insights for maintenance management.</p>
+            </div>
+        </div>
+
+        <div id="failure-modes" class="section">
+            <h2>7. Failure Modes</h2>
+            <p>The Failure Modes module allows you to document and manage the different ways equipment can present problems or failures, facilitating efficient diagnosis and problem resolution.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/failure-modes.svg" alt="Failure Modes Management Screen">
+                <div class="illustration-caption">Fig. 6: Failure modes management interface</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-exclamation-circle mr-2 text-blue-600"></i> 7.1 Understanding Failure Modes</h3>
+            <div class="step">
+                <p>A failure mode is the specific way in which equipment or a component fails or ceases to fulfill its intended function. Common examples include:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li>Leakage</li>
+                    <li>Breakage</li>
+                    <li>Clogging</li>
+                    <li>Misalignment</li>
+                    <li>Wear</li>
+                    <li>Short-circuit</li>
+                    <li>Excessive vibration</li>
+                    <li>Overheating</li>
+                </ul>
+                <p>Documenting failure modes helps standardize diagnosis and facilitates the identification of recurring failure patterns.</p>
+            </div>
+
+            <h3><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 7.2 Registering a New Failure Mode</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the side menu, access <strong>Settings</strong> and then <strong>Failure Modes</strong></li>
+                    <li>Click the <strong>New Failure Mode</strong> button</li>
+                    <li>Fill in the form fields:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Failure Mode Name</strong>: Concise description</li>
+                            <li><strong>Detailed Description</strong>: Complete explanation</li>
+                            <li><strong>Category</strong>: Select the failure mode category</li>
+                            <li><strong>Severity</strong>: Impact level (Low, Medium, High, Critical)</li>
+                            <li><strong>Common Symptoms</strong>: Observable signs that indicate this failure mode</li>
+                            <li><strong>Probable Causes</strong>: Select the frequently associated causes</li>
+                        </ul>
+                    </li>
+                    <li>Add illustrative <strong>Images</strong> if necessary</li>
+                    <li>Define <strong>Recommended Actions</strong> for diagnosis and repair</li>
+                    <li>Click <strong>Save</strong> to register the new failure mode</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-link mr-2 text-blue-600"></i> 7.3 Associating Failure Modes with Equipment</h3>
+            <div class="step">
+                <p>To associate specific failure modes with certain equipment:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access the equipment details page</li>
+                    <li>Go to the <strong>Failure Modes</strong> tab</li>
+                    <li>Click <strong>Associate Failure Mode</strong></li>
+                    <li>Select the failure modes applicable to this equipment</li>
+                    <li>For each failure mode, define:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Probability</strong>: Chance of occurrence in this equipment</li>
+                            <li><strong>Detectability</strong>: Ease of detection before complete failure</li>
+                            <li><strong>Average Repair Time</strong>: Estimate to resolve this type of failure</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Save Associations</strong></li>
+                </ol>
+                <p>This association allows faster and more accurate selection during failure recording.</p>
+            </div>
+
+            <h3><i class="fas fa-book mr-2 text-blue-600"></i> 7.4 Consulting the Failure Modes Library</h3>
+            <div class="step">
+                <p>To consult the complete failure modes library:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access <strong>Library</strong> > <strong>Failure Modes</strong></li>
+                    <li>Use filters to refine the search:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Category</strong>: Filter by failure mode type</li>
+                            <li><strong>Severity</strong>: Filter by impact level</li>
+                            <li><strong>Equipment</strong>: See failure modes associated with specific equipment</li>
+                        </ul>
+                    </li>
+                    <li>Use the <strong>Search</strong> to find failure modes by keyword</li>
+                    <li>Click on any failure mode to see its complete description, probable causes, and recommended solutions</li>
+                </ol>
+                <p>This library serves as a knowledge base for training and quick reference during problem diagnosis.</p>
+            </div>
+
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4">
+                <p class="text-yellow-800"><i class="fas fa-lightbulb mr-2"></i> <strong>Best Practices:</strong> Establish a process for periodic review of registered failure modes, updating them based on recent experiences and adding new ones as needed. A well-documented failure modes library is a valuable asset for the organization's technical knowledge management.</p>
+            </div>
+        </div>
+
+        <div id="failure-mode-categories" class="section">
+            <h2>8. Failure Mode Categories</h2>
+            <p>The Failure Mode Categories module allows you to group and classify different failure modes into logical categories, facilitating organization, access, and analysis of information.</p>
+
+            <h3 class="mt-6"><i class="fas fa-boxes mr-2 text-blue-600"></i> 8.1 Predefined Categories</h3>
+            <div class="step">
+                <p>The system offers some standard categories for classifying failure modes:</p>
+                <table class="my-4">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Failure Mode Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mechanical</td>
+                            <td>Failures related to moving mechanical components</td>
+                            <td>Wear, fracture, deformation, misalignment</td>
+                        </tr>
+                        <tr>
+                            <td>Electrical</td>
+                            <td>Failures in electrical or electronic systems</td>
+                            <td>Short-circuit, overload, poor contact</td>
+                        </tr>
+                        <tr>
+                            <td>Hydraulic</td>
+                            <td>Failures in systems that transport fluids</td>
+                            <td>Leakage, clogging, cavitation</td>
+                        </tr>
+                        <tr>
+                            <td>Pneumatic</td>
+                            <td>Failures in systems that use compressed air</td>
+                            <td>Pressure loss, air leakage, contamination</td>
+                        </tr>
+                        <tr>
+                            <td>Structural</td>
+                            <td>Failures in the structure or base of the equipment</td>
+                            <td>Crack, corrosion, structural fatigue</td>
+                        </tr>
+                        <tr>
+                            <td>Instrumentation</td>
+                            <td>Failures in measurement and control instruments</td>
+                            <td>Miscalibration, incorrect reading, sensor failure</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 8.2 Creating a New Failure Mode Category</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the side menu, access <strong>Settings</strong> and then <strong>Failure Mode Categories</strong></li>
+                    <li>Click the <strong>New Category</strong> button</li>
+                    <li>Fill in the required fields:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Category Name</strong>: Clear and concise identification</li>
+                            <li><strong>Description</strong>: Detailed explanation of the failure type</li>
+                            <li><strong>Color</strong>: Choose a color for visual identification of the category</li>
+                        </ul>
+                    </li>
+                    <li>Add <strong>Subcategories</strong>, if necessary</li>
+                    <li>Click <strong>Save</strong> to create the new category</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-filter mr-2 text-blue-600"></i> 8.3 Filtering and Analyzing by Category</h3>
+            <div class="step">
+                <p>To use categories in analyses and reports:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li>In the <strong>Reports</strong> module, select <strong>Failure Mode Analysis</strong></li>
+                    <li>Use the <strong>Category</strong> filter to restrict the analysis to a specific type</li>
+                    <li>Compare the frequency of occurrence between different categories</li>
+                    <li>Identify which failure categories cause the greatest impact on equipment availability</li>
+                    <li>Analyze trends of increase or decrease in specific categories over time</li>
+                </ul>
+                <p>Categories allow for more targeted analyses and identification of critical areas that require priority actions.</p>
+            </div>
+
+            <h3><i class="fas fa-sitemap mr-2 text-blue-600"></i> 8.4 Category Hierarchy</h3>
+            <div class="step">
+                <p>The system allows you to create a hierarchical structure of categories and subcategories:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>To add a subcategory, access the main category's details page</li>
+                    <li>Click <strong>Add Subcategory</strong></li>
+                    <li>Fill in the subcategory information</li>
+                    <li>Click <strong>Save</strong></li>
+                </ol>
+                <p>Example of hierarchy:</p>
+                <ul class="ml-8 my-4">
+                    <li><strong>Mechanical</strong> (Main category)
+                        <ul class="ml-8">
+                            <li>Bearings (Subcategory)</li>
+                            <li>Gears (Subcategory)</li>
+                            <li>Belts (Subcategory)</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>This structure allows for more precise and granular classification of failure modes.</p>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                <p class="text-blue-800"><i class="fas fa-info-circle mr-2"></i> <strong>Recommendation:</strong> Develop a category system that meets the specific needs of your organization and the types of equipment you manage. A well-structured classification facilitates the identification of patterns and the implementation of improvements in maintenance processes.</p>
+            </div>
+        </div>
+
+        <div id="failure-causes" class="section">
+            <h2>9. Failure Causes</h2>
+            <p>The Failure Causes module allows you to identify and document the origins or fundamental reasons that lead to failure modes, facilitating the implementation of effective corrective and preventive actions.</p>
+
+            <h3 class="mt-6"><i class="fas fa-search-plus mr-2 text-blue-600"></i> 9.1 Differentiating Failure Modes and Causes</h3>
+            <div class="step">
+                <p>It's important to understand the difference between failure modes and failure causes:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Failure Mode</strong>: Is how the failure manifests, that is, the way the equipment presents the problem (e.g., leakage, breakage, overheating)</li>
+                    <li><strong>Failure Cause</strong>: Is the factor that originated the failure mode, that is, the underlying reason that led to the problem (e.g., corrosion, material fatigue, operational error)</li>
+                </ul>
+                <p>For example, a <strong>failure mode</strong> might be "Rupture of a hydraulic hose," while the <strong>failure cause</strong> might be "Wear by abrasion due to friction with a metal surface."</p>
+            </div>
+
+            <h3><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 9.2 Registering a New Failure Cause</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the side menu, access <strong>Settings</strong> and then <strong>Failure Causes</strong></li>
+                    <li>Click the <strong>New Failure Cause</strong> button</li>
+                    <li>Fill in the form fields:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Cause Name</strong>: Concise identification</li>
+                            <li><strong>Detailed Description</strong>: Complete explanation of the failure mechanism</li>
+                            <li><strong>Category</strong>: Select the failure cause category</li>
+                            <li><strong>Detectability</strong>: Ease of identification (Easy, Medium, Difficult)</li>
+                            <li><strong>Associated Failure Modes</strong>: Which failure modes can be caused by this cause</li>
+                        </ul>
+                    </li>
+                    <li>Add <strong>Recommended Preventive Actions</strong> to avoid this failure cause</li>
+                    <li>Click <strong>Save</strong> to register the new failure cause</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-project-diagram mr-2 text-blue-600"></i> 9.3 Root Cause Analysis</h3>
+            <div class="step">
+                <p>The system allows you to perform an in-depth analysis to identify the root cause of recurring problems:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>On the <strong>Corrective Maintenance</strong> page, select a record and click <strong>Root Cause Analysis</strong></li>
+                    <li>Use the <strong>5 Whys</strong> tool:
+                        <ul class="list-disc ml-8 my-2">
+                            <li>Why did the problem occur? (1st level)</li>
+                            <li>Why did this cause occur? (2nd level)</li>
+                            <li>Why was this condition present? (3rd level)</li>
+                            <li>Why wasn't it detected earlier? (4th level)</li>
+                            <li>Why are there no controls? (5th level)</li>
+                        </ul>
+                    </li>
+                    <li>For each answer, record the corresponding cause and classify it</li>
+                    <li>Create an <strong>Action Plan</strong> to eliminate the identified root cause</li>
+                    <li>Establish <strong>Monitoring Indicators</strong> to verify the effectiveness of the actions</li>
+                </ol>
+                <p>This structured methodology allows systematic identification of fundamental causes and their permanent elimination.</p>
+            </div>
+
+            <h3><i class="fas fa-random mr-2 text-blue-600"></i> 9.4 Cause-Effect Relationship Matrix</h3>
+            <div class="step">
+                <p>The system automatically generates a matrix that relates causes and failure modes:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access <strong>Reports</strong> > <strong>Cause-Effect Matrix</strong></li>
+                    <li>Select the <strong>Period</strong> and <strong>Equipment</strong> to be analyzed</li>
+                    <li>The matrix will show which causes are most frequently associated with certain failure modes</li>
+                    <li>Identify critical causes that trigger multiple failure modes</li>
+                    <li>Prioritize preventive actions for the most impactful causes</li>
+                </ol>
+                <p>This analysis allows directing efforts to eliminate the causes that provoke the greatest number of problems.</p>
+            </div>
+
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4">
+                <p class="text-yellow-800"><i class="fas fa-lightbulb mr-2"></i> <strong>Best Practices:</strong> When identifying failure causes, always seek the most fundamental one possible. For example, instead of just recording "lubrication failure," investigate why there was a lubrication failure: was it due to forgetfulness, a procedure error, lack of training, or another more specific reason? The deeper the investigation, the more effective the corrective action will be.</p>
+            </div>
+        </div>
+
+        <div id="failure-cause-categories" class="section">
+            <h2>10. Failure Cause Categories</h2>
+            <p>The Failure Cause Categories module allows you to classify the different origins of failures into logical groups, facilitating the identification of patterns and implementation of systematic improvement actions.</p>
+
+            <h3 class="mt-6"><i class="fas fa-folder-open mr-2 text-blue-600"></i> 10.1 Standard Failure Cause Categories</h3>
+            <div class="step">
+                <p>The system offers some predefined categories for classifying failure causes:</p>
+                <table class="my-4">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Cause Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Natural Wear</td>
+                            <td>Normal deterioration due to use over time</td>
+                            <td>Material fatigue, aging, end of useful life</td>
+                        </tr>
+                        <tr>
+                            <td>Operational Error</td>
+                            <td>Failures caused by incorrect equipment operation</td>
+                            <td>Overload, operation outside parameters, handling error</td>
+                        </tr>
+                        <tr>
+                            <td>Maintenance Failure</td>
+                            <td>Problems arising from inadequate maintenance</td>
+                            <td>Insufficient lubrication, incorrect adjustment, poorly executed repair</td>
+                        </tr>
+                        <tr>
+                            <td>Environmental Factors</td>
+                            <td>Causes related to the operating environment</td>
+                            <td>Extreme temperature, humidity, dirt, external vibration</td>
+                        </tr>
+                        <tr>
+                            <td>Design Failure</td>
+                            <td>Problems originating from errors in equipment design</td>
+                            <td>Undersizing, inadequate material selection, improper design</td>
+                        </tr>
+                        <tr>
+                            <td>Material Quality</td>
+                            <td>Failures related to component quality</td>
+                            <td>Manufacturing defect, out-of-spec material, counterfeit</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3><i class="fas fa-plus-circle mr-2 text-blue-600"></i> 10.2 Creating a New Failure Cause Category</h3>
+            <div class="step">
+                <ol class="list-decimal ml-8 my-4">
+                    <li>In the side menu, access <strong>Settings</strong> and then <strong>Failure Cause Categories</strong></li>
+                    <li>Click the <strong>New Category</strong> button</li>
+                    <li>Fill in the required fields:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Category Name</strong>: Clear and concise identification</li>
+                            <li><strong>Description</strong>: Detailed explanation of the cause type</li>
+                            <li><strong>Color</strong>: Choose a color for visual identification of the category</li>
+                            <li><strong>Responsible Area</strong>: Department normally responsible for actions related to this category</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Save</strong> to create the new category</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-chart-pie mr-2 text-blue-600"></i> 10.3 Analyzing Data by Cause Category</h3>
+            <div class="step">
+                <p>To gain insights about the most frequent failure cause categories:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access <strong>Reports</strong> > <strong>Cause Analysis</strong></li>
+                    <li>Select the desired period and the equipment (or group of equipment)</li>
+                    <li>View the cause distribution chart by category</li>
+                    <li>Identify the most recurring categories</li>
+                    <li>For each critical category, deepen the analysis by exploring the specific causes</li>
+                    <li>Establish targeted action plans for the most impactful categories</li>
+                </ol>
+                <p>This analysis allows implementing systematic actions that address entire groups of related causes.</p>
+            </div>
+
+            <h3><i class="fas fa-cogs mr-2 text-blue-600"></i> 10.4 Improvement Strategies by Category</h3>
+            <div class="step">
+                <p>Each failure cause category requires different approaches to mitigate problems:</p>
+                <table class="my-4">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Improvement Strategies</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Natural Wear</td>
+                            <td>Preventive replacement plans, condition monitoring, specification of more durable materials</td>
+                        </tr>
+                        <tr>
+                            <td>Operational Error</td>
+                            <td>Training, creation of standard operating procedures, mistake-proofing systems (poka-yoke)</td>
+                        </tr>
+                        <tr>
+                            <td>Maintenance Failure</td>
+                            <td>Procedure revision, technical team training, verification checklist</td>
+                        </tr>
+                        <tr>
+                            <td>Environmental Factors</td>
+                            <td>Environment adaptation, additional protections, selection of components resistant to local conditions</td>
+                        </tr>
+                        <tr>
+                            <td>Design Failure</td>
+                            <td>Reengineering, design modifications, manufacturer involvement</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>By properly categorizing causes, it's possible to implement comprehensive improvement programs that address entire groups of similar problems.</p>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                <p class="text-blue-800"><i class="fas fa-info-circle mr-2"></i> <strong>Recommendation:</strong> Periodically perform a Pareto analysis of failure cause categories to identify which ones are responsible for most of the problems (typically following the 80/20 principle, where 20% of cause categories are responsible for 80% of failures). Focus your improvement efforts on these critical categories to maximize return on investment.</p>
+            </div>
+        </div>
+
+        <div id="maintenance-reports" class="section">
+            <h2>11. Maintenance Reports</h2>
+            <p>The Maintenance Reports module provides tools for data analysis, performance monitoring, and decision-making based on consolidated information about all maintenance activities.</p>
+
+            <div class="illustration">
+                <img src="/images/maintenance-guide/reports.svg" alt="Maintenance Reports Screen">
+                <div class="illustration-caption">Fig. 7: Maintenance reports module interface</div>
+            </div>
+
+            <h3 class="mt-6"><i class="fas fa-chart-bar mr-2 text-blue-600"></i> 11.1 Available Reports</h3>
+            <div class="step">
+                <p>The system offers various pre-configured reports for data analysis:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Maintenance Summary</strong>: Overview of all maintenance performed in a period</li>
+                    <li><strong>Equipment Performance</strong>: Analysis of availability, reliability, and costs per equipment</li>
+                    <li><strong>Maintenance Indicators</strong>: MTBF, MTTR, availability, and other KPIs</li>
+                    <li><strong>Failure Analysis</strong>: Distribution of failures by mode, cause, and category</li>
+                    <li><strong>Maintenance Costs</strong>: Breakdown of costs by type, equipment, and period</li>
+                    <li><strong>Equipment History</strong>: Complete record of interventions by equipment</li>
+                    <li><strong>Schedule and Compliance</strong>: Tracking of preventive maintenance plans</li>
+                    <li><strong>Parts Inventory</strong>: Consumption and availability of replacement parts</li>
+                </ul>
+            </div>
+
+            <h3><i class="fas fa-filter mr-2 text-blue-600"></i> 11.2 Filtering and Customizing Reports</h3>
+            <div class="step">
+                <p>To obtain more specific information:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access the <strong>Reports</strong> module</li>
+                    <li>Select the desired report type</li>
+                    <li>Use the available filters to refine the data:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Period</strong>: Select the date range to be analyzed</li>
+                            <li><strong>Equipment/Group</strong>: Filter by specific equipment or group</li>
+                            <li><strong>Department/Area</strong>: Restrict to equipment location</li>
+                            <li><strong>Maintenance Type</strong>: Filter by category (preventive, corrective, etc.)</li>
+                            <li><strong>Responsible</strong>: Filter by technician or team</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Generate Report</strong> to apply the filters</li>
+                    <li>Use the <strong>Customization</strong> options to adjust the visualization:</li>
+                    <ul class="list-disc ml-8 my-2">
+                        <li>Choose the chart type (bar, pie, line, etc.)</li>
+                        <li>Select the columns to be displayed in tables</li>
+                        <li>Define the data grouping (by month, by category, etc.)</li>
+                        <li>Adjust the scale and colors of charts</li>
+                    </ul>
+                </ol>
+                <p>Custom reports can be saved for future use.</p>
+            </div>
+
+            <h3><i class="fas fa-download mr-2 text-blue-600"></i> 11.3 Exporting and Sharing Reports</h3>
+            <div class="step">
+                <p>After generating a report, you can export it in different formats:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>PDF</strong>: For presentations and formal documents</li>
+                    <li><strong>Excel</strong>: For additional data analysis</li>
+                    <li><strong>CSV</strong>: For import into other systems</li>
+                    <li><strong>Image (PNG/JPG)</strong>: For inclusion in presentations</li>
+                </ul>
+                <p>To share reports with the team:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Click the <strong>Share</strong> button</li>
+                    <li>Select the sharing method:
+                        <ul class="list-disc ml-8 my-2">
+                            <li><strong>Email</strong>: Send the report directly by email</li>
+                            <li><strong>Link</strong>: Generate a link for report access</li>
+                            <li><strong>Schedule</strong>: Configure periodic automatic sending</li>
+                        </ul>
+                    </li>
+                    <li>Define recipients and access permissions</li>
+                    <li>Add comments or observations, if necessary</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-cog mr-2 text-blue-600"></i> 11.4 Configuring KPIs and Dashboards</h3>
+            <div class="step">
+                <p>Create custom dashboards with the most relevant indicators for your operation:</p>
+                <ol class="list-decimal ml-8 my-4">
+                    <li>Access <strong>Settings</strong> > <strong>Custom Dashboards</strong></li>
+                    <li>Click <strong>New Dashboard</strong></li>
+                    <li>Select the <strong>KPIs</strong> you want to monitor, such as:
+                        <ul class="list-disc ml-8 my-2">
+                            <li>Mean Time Between Failures (MTBF)</li>
+                            <li>Mean Time To Repair (MTTR)</li>
+                            <li>Equipment Availability</li>
+                            <li>Preventive Compliance Rate</li>
+                            <li>Maintenance Cost to Replacement Value (%)</li>
+                            <li>Maintenance Backlog (hours)</li>
+                        </ul>
+                    </li>
+                    <li>Configure <strong>Alerts</strong> for notification when indicators exceed predefined limits</li>
+                    <li>Set the <strong>Periodicity</strong> of data updates</li>
+                    <li>Organize the elements in the dashboard layout using the drag-and-drop interface</li>
+                    <li>Save the dashboard and set as home page, if desired</li>
+                </ol>
+            </div>
+
+            <h3><i class="fas fa-chart-line mr-2 text-blue-600"></i> 11.5 Trend Analysis and Predictions</h3>
+            <div class="step">
+                <p>Use advanced analysis tools to identify trends and make predictions:</p>
+                <ul class="list-disc ml-8 my-4">
+                    <li><strong>Trend Analysis</strong>: Visualize the evolution of indicators over time</li>
+                    <li><strong>Correlation</strong>: Identify relationships between different variables (e.g., ambient temperature vs. failures)</li>
+                    <li><strong>Failure Prediction</strong>: Based on history, estimate when the next failures will occur</li>
+                    <li><strong>Simulation</strong>: Test different maintenance scenarios and their impacts</li>
+                    <li><strong>Reliability Analysis</strong>: Assess equipment reliability over time</li>
+                </ul>
+                <p>These tools help anticipate problems and optimize maintenance strategies.</p>
+            </div>
+
+            <div class="bg-green-50 p-4 rounded-lg border border-green-200 mt-4">
+                <p class="text-green-800"><i class="fas fa-lightbulb mr-2"></i> <strong>Tip:</strong> Regular analysis of maintenance reports is essential for continuous improvement. Establish periodic meetings to review indicators, identify improvement opportunities, and define corrective actions. Remember that quality data is essential for reliable analyses, so encourage accurate and complete recording of all maintenance activities.</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-book-reader mr-2"></i> Conclusion</h2>
+            <p>This guide has covered all the main aspects of the Maintenance Module of ERP Dembena. By following the instructions and best practices described here, your team will be able to implement an efficient maintenance management system, increasing equipment availability, reducing operating costs, and extending asset life.</p>
+            
+            <p>The Maintenance Module is integrated with other modules of ERP Dembena, such as Inventory, Purchasing, and Finance, allowing holistic management of company resources.</p>
+            
+            <p>Remember that the successful implementation of a maintenance management system depends not only on technology but also on team engagement, the quality of recorded data, and commitment to continuous process improvement.</p>
+            
+            <p class="mt-4">For additional support or clarification of doubts, contact our support team:</p>
+            <p class="ml-8"><i class="fas fa-envelope mr-2"></i> support@erpdembena.com</p>
+            <p class="ml-8"><i class="fas fa-phone mr-2"></i> (XX) XXXX-XXXX</p>
+        </div>
+    </div>
+</body>
+</html>
