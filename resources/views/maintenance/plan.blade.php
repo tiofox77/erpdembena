@@ -1,6 +1,6 @@
 @extends('layouts.livewire')
 
-@section('title', 'Plano de Manutenção')
+@section('title', __('messages.maintenance_plan'))
 
 @section('content')
     <livewire:maintenance-plan />

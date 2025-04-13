@@ -18,8 +18,7 @@
     <!-- Tailwind CSS -->
     <script src="{{ asset('js/tailwind.min.js') }}"></script>
     
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js é carregado automaticamente pelo Livewire, não precisamos carregá-lo manualmente -->
     
     <!-- Flag Icons CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/css/flag-icons.min.css" integrity="sha512-uvXdJud8WaOlQFjlz9B15Yy2Au/bMNgI1pWHkhPd1WU4HJjiP5QppLrHdEjHZZX3U1S8Q5HpN5LlwnI+d5srDQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -610,7 +609,45 @@
         </div>
 
         <div class="sidebar-submenu" id="supplyChainSubmenu">
-            <!-- Supply Chain submenu items will go here -->
+            <a href="{{ route('supply-chain.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tachometer-alt text-gray-500"></i>
+                <span>{{ trans('messages.dashboard') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.suppliers') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.suppliers') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-handshake text-gray-500"></i>
+                <span>{{ trans('messages.suppliers') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.product-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.product-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tags text-gray-500"></i>
+                <span>{{ trans('messages.product_categories') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.products') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.products') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-box text-gray-500"></i>
+                <span>{{ trans('messages.products') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.inventory-locations') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.inventory-locations') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-warehouse text-gray-500"></i>
+                <span>{{ trans('messages.inventory_locations') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.inventory') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.inventory') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-cubes text-gray-500"></i>
+                <span>{{ trans('messages.inventory') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.purchase-orders') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.purchase-orders') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-file-invoice text-gray-500"></i>
+                <span>{{ trans('messages.purchase_orders') }}</span>
+            </a>
+
+            <a href="{{ route('supply-chain.goods-receipts') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.goods-receipts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-dolly-flatbed text-gray-500"></i>
+                <span>{{ trans('messages.goods_receipts') }}</span>
+            </a>
         </div>
 
 

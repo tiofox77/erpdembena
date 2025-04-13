@@ -1,0 +1,152 @@
+<?php
+
+return [
+    // Page Headers
+    'preventive_maintenance_management' => 'Preventive Maintenance Management',
+    'create_preventive_maintenance' => 'Create Preventive Maintenance',
+    
+    // Form Fields and Labels
+    'search' => 'Search',
+    'search_maintenance' => 'Search maintenance...',
+    'show' => 'Show',
+    'id' => 'ID',
+    'title' => 'Title',
+    'equipment' => 'Equipment',
+    'scheduled_date' => 'Scheduled Date',
+    'completion_date' => 'Completion Date',
+    'status' => 'Status',
+    'priority' => 'Priority',
+    'assigned_to' => 'Assigned To',
+    'description' => 'Description',
+    'actions' => 'Actions',
+    'created_at' => 'Created At',
+    'updated_at' => 'Updated At',
+    'frequency' => 'Frequency',
+    'duration' => 'Duration',
+    'notes' => 'Notes',
+    'attachments' => 'Attachments',
+    'checklist' => 'Checklist',
+    'parts_required' => 'Parts Required',
+    'filter_status' => 'Filter by Status',
+    'filter_priority' => 'Filter by Priority',
+    'filter_equipment' => 'Filter by Equipment',
+    'filter_assigned' => 'Filter by Assigned Technician',
+    'filter_date_range' => 'Filter by Date Range',
+    
+    // Status Options
+    'scheduled' => 'Scheduled',
+    'in_progress' => 'In Progress',
+    'completed' => 'Completed',
+    'postponed' => 'Postponed',
+    'cancelled' => 'Cancelled',
+    'overdue' => 'Overdue',
+    
+    // Priority Options
+    'low' => 'Low',
+    'medium' => 'Medium',
+    'high' => 'High',
+    'critical' => 'Critical',
+    
+    // Frequency Options
+    'daily' => 'Daily',
+    'weekly' => 'Weekly',
+    'bi_weekly' => 'Bi-Weekly',
+    'monthly' => 'Monthly',
+    'quarterly' => 'Quarterly',
+    'semi_annually' => 'Semi-Annually',
+    'annually' => 'Annually',
+    'custom' => 'Custom',
+    
+    // Modal Titles
+    'add_preventive_maintenance' => 'Add Preventive Maintenance',
+    'edit_preventive_maintenance' => 'Edit Preventive Maintenance',
+    'view_preventive_maintenance' => 'View Preventive Maintenance Details',
+    'confirm_deletion' => 'Confirm Deletion',
+    'complete_maintenance' => 'Complete Maintenance',
+    'postpone_maintenance' => 'Postpone Maintenance',
+    'add_checklist_item' => 'Add Checklist Item',
+    'add_part' => 'Add Part',
+    'assign_technician' => 'Assign Technician',
+    
+    // Form Fields
+    'maintenance_title' => 'Maintenance Title',
+    'select_equipment' => 'Select Equipment',
+    'schedule_date' => 'Schedule Date',
+    'select_frequency' => 'Select Frequency',
+    'select_priority' => 'Select Priority',
+    'select_technician' => 'Select Technician',
+    'maintenance_description' => 'Maintenance Description',
+    'estimated_duration' => 'Estimated Duration (hours)',
+    'maintenance_notes' => 'Maintenance Notes',
+    'upload_attachments' => 'Upload Attachments',
+    'checklist_item' => 'Checklist Item',
+    'select_part' => 'Select Part',
+    'quantity' => 'Quantity',
+    'completion_notes' => 'Completion Notes',
+    'actual_duration' => 'Actual Duration (hours)',
+    'issues_encountered' => 'Issues Encountered',
+    'next_scheduled_date' => 'Next Scheduled Date',
+    'postpone_reason' => 'Reason for Postponement',
+    'postpone_until' => 'Postpone Until',
+    
+    // Form Validation Messages
+    'title_required' => 'Maintenance title is required',
+    'equipment_required' => 'Equipment is required',
+    'scheduled_date_required' => 'Scheduled date is required',
+    'frequency_required' => 'Frequency is required',
+    'assigned_to_required' => 'Assigned technician is required',
+    'duration_numeric' => 'Duration must be a number',
+    'quantity_required' => 'Quantity is required',
+    'quantity_numeric' => 'Quantity must be a number',
+    'quantity_min' => 'Quantity must be at least 1',
+    
+    // Button Labels
+    'save' => 'Save',
+    'create' => 'Create',
+    'update' => 'Update',
+    'cancel' => 'Cancel',
+    'delete' => 'Delete',
+    'close' => 'Close',
+    'edit' => 'Edit',
+    'view' => 'View',
+    'complete' => 'Complete',
+    'postpone' => 'Postpone',
+    'add_item' => 'Add Item',
+    'add_part' => 'Add Part',
+    'assign' => 'Assign',
+    'upload' => 'Upload',
+    'generate_report' => 'Generate Report',
+    'print' => 'Print',
+    'export' => 'Export',
+    
+    // Confirmation Messages
+    'delete_maintenance_confirmation' => 'Are you sure you want to delete this preventive maintenance? This action cannot be undone.',
+    'complete_maintenance_confirmation' => 'Are you sure you want to mark this maintenance as completed?',
+    'postpone_maintenance_confirmation' => 'Are you sure you want to postpone this maintenance?',
+    
+    // Notifications
+    'maintenance_created' => 'Preventive maintenance created successfully',
+    'maintenance_updated' => 'Preventive maintenance updated successfully',
+    'maintenance_deleted' => 'Preventive maintenance deleted successfully',
+    'maintenance_completed' => 'Preventive maintenance completed successfully',
+    'maintenance_postponed' => 'Preventive maintenance postponed successfully',
+    'technician_assigned' => 'Technician assigned successfully',
+    'checklist_added' => 'Checklist item added successfully',
+    'part_added' => 'Part added successfully',
+    'error_occurred' => 'An error occurred',
+    
+    // Empty States
+    'no_maintenance_found' => 'No preventive maintenance found',
+    'create_first_maintenance' => 'Create your first preventive maintenance',
+    'no_checklist_items' => 'No checklist items added',
+    'no_parts_required' => 'No parts required',
+    
+    // Reports
+    'maintenance_report' => 'Preventive Maintenance Report',
+    'report_period' => 'Report Period',
+    'total_scheduled' => 'Total Scheduled',
+    'total_completed' => 'Total Completed',
+    'completion_rate' => 'Completion Rate',
+    'average_duration' => 'Average Duration',
+    'most_maintained_equipment' => 'Most Maintained Equipment',
+];

@@ -234,4 +234,31 @@ Route::middleware(['auth'])->group(function () {
         // Reports
         Route::get('/reports', App\Livewire\HR\Reports::class)->name('reports');
     });
+    
+    // Supply Chain Module Routes
+    Route::prefix('supply-chain')->name('supply-chain.')->group(function() {
+        // Dashboard
+        Route::get('/dashboard', App\Livewire\SupplyChain\Dashboard::class)->name('dashboard');
+        
+        // Suppliers Management
+        Route::get('/suppliers', App\Livewire\SupplyChain\Suppliers::class)->name('suppliers');
+        
+        // Product Categories Management
+        Route::get('/product-categories', App\Livewire\SupplyChain\ProductCategories::class)->name('product-categories');
+        
+        // Products Management
+        Route::get('/products', App\Livewire\SupplyChain\Products::class)->name('products');
+        
+        // Inventory Locations Management
+        Route::get('/inventory-locations', App\Livewire\SupplyChain\InventoryLocations::class)->name('inventory-locations');
+        
+        // Inventory Management
+        Route::get('/inventory', App\Livewire\SupplyChain\Inventory::class)->name('inventory');
+        
+        // Purchase Orders Management
+        Route::get('/purchase-orders', App\Livewire\SupplyChain\PurchaseOrders::class)->name('purchase-orders');
+        
+        // Goods Receipts Management
+        Route::get('/goods-receipts', App\Livewire\SupplyChain\GoodsReceipts::class)->name('goods-receipts');
+    });
 });

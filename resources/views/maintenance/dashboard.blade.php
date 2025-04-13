@@ -1,6 +1,6 @@
 @extends('layouts.maintenance')
 
-@section('title', 'Dashboard')
+@section('title', __('messages.dashboard_title'))
 
 @section('content')
     <livewire:maintenance-dashboard />

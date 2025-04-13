@@ -1,6 +1,6 @@
 @extends('layouts.maintenance')
 
-@section('title', 'Gerenciamento de Equipamentos')
+@section('title', __('messages.equipment_management'))
 
 @section('content')
     <livewire:maintenance-equipment />
