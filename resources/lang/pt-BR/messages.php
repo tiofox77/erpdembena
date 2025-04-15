@@ -19,7 +19,9 @@ return [
     'error' => 'Erro',
     'warning' => 'Aviso',
     'info' => 'Informação',
-    
+    'delivery_date' => 'Data de Entrega',   
+    'quantity_required' => 'Quantidade é obrigatória',
+    'unit_price_required' => 'Preço unitário é obrigatório',
     // Navegação
     'dashboard' => 'Painel de Controle',
     'home' => 'Início',
@@ -121,7 +123,7 @@ return [
     'supply_chain_dashboard' => 'Painel da Cadeia de Suprimentos',
     'low_stock_alerts' => 'Alertas de Estoque Baixo',
     'pending_purchase_orders' => 'Pedidos de Compra Pendentes',
-    'recent_inventory_transactions' => 'Transações de Inventário Recentes',
+    'recent_inventory_transactions' => 'Transações Recentes de Estoque',
     'total_inventory_value' => 'Valor Total do Inventário',
     'avg_lead_time' => 'Tempo Médio de Entrega',
     'pending_orders_value' => 'Valor de Pedidos Pendentes',
@@ -987,6 +989,10 @@ return [
     'shift_management' => 'Gerenciamento de Turnos',
     'work_equipment' => 'Equipamentos de Trabalho',
     'reports_and_dashboards' => 'Relatórios e Painéis',
+    'cannot_edit_completed_cancelled_order' => 'Não é possível editar um pedido de compra concluído ou cancelado',
+    'cannot_delete_order_in_status' => 'Não é possível excluir um pedido de compra em status :status',
+    'purchase_order_deleted' => 'Pedido de compra excluído com sucesso',
+
 
     // Supply Chain - Chaves Específicas
     // Fornecedores (Global flat format)
@@ -1203,13 +1209,10 @@ return [
     'low_stock_alerts' => 'Alertas de Estoque Baixo',
     'pending_purchase_orders' => 'Pedidos de Compra Pendentes',
     'recent_inventory_transactions' => 'Transações Recentes de Estoque',
-    'no_low_stock_items_found' => 'Nenhum item com estoque baixo encontrado.',
-    'no_pending_orders_found' => 'Nenhum pedido de compra pendente encontrado.',
-    'no_recent_transactions_found' => 'Nenhuma transação recente encontrada.',
-    'view_all_inventory' => 'Ver Todo o Estoque',
-    'view_all_purchase_orders' => 'Ver Todos os Pedidos de Compra',
-    'view_all_transactions' => 'Ver Todas as Transações',
-    'warning' => 'Aviso',
+    'total_inventory_value' => 'Valor Total do Inventário',
+    'avg_lead_time' => 'Tempo Médio de Entrega',
+    'pending_orders_value' => 'Valor de Pedidos Pendentes',
+    'stock_items' => 'Itens em Estoque',
     'product' => 'Produto',
     'sku' => 'SKU',
     'current_stock' => 'Estoque Atual',
@@ -1218,5 +1221,11 @@ return [
     'total' => 'Total',
     'transaction_type' => 'Tipo de Transação',
     'source' => 'Origem',
-    'destination' => 'Destino'
+    'destination' => 'Destino',
+    'no_low_stock_items_found' => 'Nenhum item com estoque baixo encontrado.',
+    'no_pending_orders_found' => 'Nenhum pedido de compra pendente encontrado.',
+    'no_recent_transactions_found' => 'Nenhuma transação recente encontrada.',
+    'view_all_inventory' => 'Ver Todo o Estoque',
+    'view_all_purchase_orders' => 'Ver Todos os Pedidos de Compra',
+    'view_all_transactions' => 'Ver Todas as Transações',
 ];

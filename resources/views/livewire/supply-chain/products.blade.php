@@ -168,8 +168,19 @@
                                 <div class="text-sm text-gray-900">{{ $product->category->name ?? '-' }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ __('livewire/products.in_stock') }}: {{ $product->current_stock }}</div>
+                                <div class="text-sm text-gray-900">{{ __('livewire/products.in_stock') }}: <span class="font-semibold {{ $product->total_stock <= $product->reorder_point ? 'text-red-600' : 'text-green-600' }}">{{ $product->total_stock }}</span></div>
                                 <div class="text-sm text-gray-500">{{ __('livewire/products.reorder_point') }}: {{ $product->reorder_point }}</div>
+                                @if($product->total_stock <= $product->reorder_point && $product->total_stock > 0)
+                                    <div class="mt-1 text-xs text-amber-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1 animate-pulse"></i>
+                                        {{ __('livewire/products.low_stock') }}
+                                    </div>
+                                @elseif($product->total_stock <= 0)
+                                    <div class="mt-1 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1 animate-pulse"></i>
+                                        {{ __('livewire/products.out_of_stock') }}
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ __('livewire/products.cost_price') }}: {{ number_format($product->cost_price, 2) }}</div>

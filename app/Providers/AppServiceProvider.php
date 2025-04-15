@@ -25,8 +25,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Set default locale to English
-        app()->setLocale('en');
+        // Check if user has set a language preference in session
+        if (session()->has('locale')) {
+            app()->setLocale(session('locale'));
+        } else {
+            // Set default locale to English
+            app()->setLocale('en');
+        }
 
         // Set timezone to UTC as default
         date_default_timezone_set('UTC');

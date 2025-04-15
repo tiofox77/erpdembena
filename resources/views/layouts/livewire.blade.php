@@ -1068,7 +1068,7 @@
                 // Check if toastr is defined
                 if (typeof toastr === 'undefined') {
                     console.error('Toastr is not defined!');
-                    alert(params.message || 'An notification occurred');
+                    alert(params.message || '{{ __('messages.error_occurred') }}');
                     return;
                 }
 
@@ -1088,16 +1088,16 @@
 
                 // Display toast notification based on type
                 if (params.type === 'success') {
-                    toastr.success(params.message, params.title || 'Success');
+                    toastr.success(params.message, params.title || '{{ __('messages.success') }}');
                 } else if (params.type === 'error') {
-                    toastr.error(params.message, params.title || 'Error');
+                    toastr.error(params.message, params.title || '{{ __('messages.error') }}');
                 } else if (params.type === 'warning') {
-                    toastr.warning(params.message, params.title || 'Warning');
+                    toastr.warning(params.message, params.title || '{{ __('messages.warning') }}');
                 } else if (params.type === 'info') {
-                    toastr.info(params.message, params.title || 'Information');
+                    toastr.info(params.message, params.title || '{{ __('messages.information') }}');
                 } else {
                     // Default to info if type is not recognized
-                    toastr.info(params.message, params.title || 'Information');
+                    toastr.info(params.message, params.title || '{{ __('messages.information') }}');
                 }
             });
 
@@ -1108,21 +1108,34 @@
                 // Check if toastr is defined
                 if (typeof toastr === 'undefined') {
                     console.error('Toastr is not defined!');
-                    alert(params.message || 'An error occurred'); // Add fallback message
+                    alert(params.message || '{{ __('messages.error_occurred') }}');
                     return;
                 }
 
                 // Make sure we have a message
                 if (!params.message) {
-                    // Default messages based on type
+                    // Default messages based on type (using Laravel translations)
                     if (params.type === 'error') {
-                        params.message = 'You do not have permission to perform this action.';
+                        params.message = '{{ __('messages.no_permission') }}';
                     } else if (params.type === 'success') {
-                        params.message = 'Operation completed successfully.';
+                        params.message = '{{ __('messages.operation_successful') }}';
                     } else if (params.type === 'warning') {
-                        params.message = 'Warning: Please check your input.';
+                        params.message = '{{ __('messages.warning_check_input') }}';
                     } else {
-                        params.message = 'Information notice';
+                        params.message = '{{ __('messages.information_notice') }}';
+                    }
+                }
+
+                // Ensure we have a title (also translated)
+                if (!params.title) {
+                    if (params.type === 'error') {
+                        params.title = '{{ __('messages.error') }}';
+                    } else if (params.type === 'success') {
+                        params.title = '{{ __('messages.success') }}';
+                    } else if (params.type === 'warning') {
+                        params.title = '{{ __('messages.warning') }}';
+                    } else {
+                        params.title = '{{ __('messages.information') }}';
                     }
                 }
 
@@ -1131,7 +1144,7 @@
                     closeButton: true,
                     progressBar: true,
                     positionClass: 'toast-top-right',
-                    timeOut: params.type === 'error' ? 8000 : 5000, // Longer display for errors
+                    timeOut: params.type === 'error' ? 8000 : 5000,
                     preventDuplicates: true,
                     newestOnTop: true,
                     showEasing: 'swing',
@@ -1142,17 +1155,17 @@
 
                 // Display notification
                 if (params.type === 'success') {
-                    toastr.success(params.message, params.title || 'Success');
+                    toastr.success(params.message, params.title || '{{ __('messages.success') }}');
                 } else if (params.type === 'error') {
-                    toastr.error(params.message, params.title || 'Error');
+                    toastr.error(params.message, params.title || '{{ __('messages.error') }}');
                 } else if (params.type === 'warning') {
-                    toastr.warning(params.message, params.title || 'Warning');
+                    toastr.warning(params.message, params.title || '{{ __('messages.warning') }}');
                 } else {
                     // If no type is specified, default to error for permission issues
                     if (params.message.toLowerCase().includes('permission')) {
-                        toastr.error(params.message, params.title || 'Permission Denied');
+                        toastr.error(params.message, params.title || '{{ __('messages.permission_denied') }}');
                     } else {
-                        toastr.info(params.message, params.title || 'Information');
+                        toastr.info(params.message, params.title || '{{ __('messages.information') }}');
                     }
                 }
             });

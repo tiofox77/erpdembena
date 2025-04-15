@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\SupplyChain\Supplier;
 use App\Models\SupplyChain\PurchaseOrderItem;
 use App\Models\SupplyChain\GoodsReceipt;
+use App\Models\SupplyChain\ShippingNote;
 use App\Models\User;
 
 class PurchaseOrder extends Model
@@ -32,9 +33,8 @@ class PurchaseOrder extends Model
         'subtotal',
         'tax_amount',
         'shipping_amount',
-        'discount_amount',
+        'discount_amount', 
         'total_amount',
-        'shipping_address_id',
         'notes',
         'internal_notes',
         'reference_number'
@@ -62,17 +62,17 @@ class PurchaseOrder extends Model
     /**
      * Get the user who created the purchase order
      */
-    public function creator()
+    public function createdBy()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**
      * Get the user who approved the purchase order
      */
-    public function approver()
+    public function approvedBy()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(\App\Models\User::class, 'approved_by');
     }
 
     /**
@@ -89,6 +89,49 @@ class PurchaseOrder extends Model
     public function goodsReceipts()
     {
         return $this->hasMany(GoodsReceipt::class);
+    }
+    
+    /**
+     * Get the shipping notes for this purchase order
+     */
+    public function shippingNotes()
+    {
+        return $this->hasMany(ShippingNote::class);
+    }
+    
+    /**
+     * Get the latest shipping note for this purchase order
+     */
+    public function latestShippingNote()
+    {
+        return $this->hasMany(ShippingNote::class)->latest();
+    }
+    
+    /**
+     * Get the current shipping status from the latest shipping note
+     */
+    public function getCurrentShippingStatusAttribute()
+    {
+        $latestNote = $this->latestShippingNote()->first();
+        return $latestNote ? $latestNote->status : null;
+    }
+    
+    /**
+     * Get the current shipping status text from the latest shipping note
+     */
+    public function getCurrentShippingStatusTextAttribute()
+    {
+        $latestNote = $this->latestShippingNote()->first();
+        return $latestNote ? $latestNote->status_text : null;
+    }
+    
+    /**
+     * Get the shipping progress percentage based on the latest status
+     */
+    public function getShippingProgressPercentageAttribute()
+    {
+        $latestNote = $this->latestShippingNote()->first();
+        return $latestNote ? $latestNote->progress_percentage : 0;
     }
 
     /**

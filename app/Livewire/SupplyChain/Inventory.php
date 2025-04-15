@@ -10,6 +10,8 @@ use App\Models\SupplyChain\InventoryLocation;
 use App\Models\SupplyChain\InventoryTransaction;
 use App\Models\SupplyChain\ProductCategory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class Inventory extends Component
 {
@@ -24,16 +26,12 @@ class Inventory extends Component
     // For adjustment modal
     public $showAdjustmentModal = false;
     public $adjustmentItem = null;
-    public $adjustmentQuantity = '';
+    public $selectedProducts = [];
+    public $selectedLocationId = '';
+    public $adjustmentType = '';
+    public $adjustmentQuantities = [];
     public $adjustmentReason = '';
     public $adjustmentNotes = '';
-    public $selectedProductId = '';
-    public $selectedLocationId = '';
-    public $adjustmentType = 'add'; // Default to add stock
-    
-    // Lista de produtos para o select do modal de ajuste de estoque
-    public $availableProducts = [];
-    public $availableLocations = [];
     
     // For transfer modal
     public $showTransferModal = false;
@@ -42,6 +40,13 @@ class Inventory extends Component
     public $transferDestinationId = '';
     public $transferReason = '';
     public $transferNotes = '';
+    public $selectedTransferProducts = [];
+    public $transferQuantities = [];
+    public $availableLocations = [];
+    public $transferSourceId = '';
+    
+    // Lista de produtos para o select do modal de ajuste de estoque
+    public $availableProducts = [];
     
     // For history modal
     public $showHistoryModal = false;
@@ -51,6 +56,18 @@ class Inventory extends Component
     protected $listeners = [
         'refreshInventory' => '$refresh'
     ];
+    
+    protected function rules()
+    {
+        return [
+            'selectedProducts' => 'required|array|min:1',
+            'selectedLocationId' => 'required|exists:sc_inventory_locations,id',
+            'adjustmentType' => 'required|in:add,remove,set',
+            'adjustmentQuantities.*' => 'required|numeric|min:0',
+            'adjustmentReason' => 'required|string|max:255',
+            'adjustmentNotes' => 'nullable|string|max:1000',
+        ];
+    }
     
     public function mount()
     {
@@ -94,12 +111,12 @@ class Inventory extends Component
         
         if ($this->stockFilter) {
             if ($this->stockFilter === 'low') {
-                $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity <= sc_products.reorder_point')
-                                   ->whereRaw('sc_inventory_items.quantity > 0');
+                $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand <= sc_products.reorder_point')
+                                   ->whereRaw('sc_inventory_items.quantity_on_hand > 0');
             } elseif ($this->stockFilter === 'out') {
-                $inventoryItemsQuery->where('quantity', 0);
+                $inventoryItemsQuery->where('quantity_on_hand', 0);
             } elseif ($this->stockFilter === 'in') {
-                $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity > sc_products.reorder_point');
+                $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand > sc_products.reorder_point');
             }
         }
         
@@ -107,13 +124,13 @@ class Inventory extends Component
         
         // Add stock status flags to each item
         foreach ($inventoryItems as $item) {
-            $item->is_low_stock = $item->quantity <= $item->product->reorder_point && $item->quantity > 0;
-            $item->is_out_of_stock = $item->quantity == 0;
-            $item->total_value = $item->quantity * $item->unit_cost;
+            $item->is_low_stock = $item->quantity_on_hand <= $item->product->reorder_point && $item->quantity_on_hand > 0;
+            $item->is_out_of_stock = $item->quantity_on_hand == 0;
+            $item->total_value = $item->quantity_on_hand * $item->unit_cost;
         }
         
         // Recent transactions
-        $recentTransactions = InventoryTransaction::with(['product', 'sourceLocation', 'destinationLocation', 'user'])
+        $recentTransactions = InventoryTransaction::with(['product', 'sourceLocation', 'destinationLocation', 'creator'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -136,18 +153,12 @@ class Inventory extends Component
     
     public function openAdjustmentModal($inventoryItemId = null)
     {
-        // Carregar lista de produtos disponíveis para o modal de ajuste
-        $this->availableProducts = Product::with(['inventoryItems' => function($query) {
-            $query->with('location');
-        }])->orderBy('name')->get();
+        $this->resetAdjustmentFields();
         
-        // Resetar as propriedades do modal
-        $this->adjustmentQuantity = '';
-        $this->adjustmentReason = '';
-        $this->adjustmentNotes = '';
-        $this->selectedProductId = '';
-        $this->selectedLocationId = '';
-        $this->adjustmentType = 'add';
+        // Carregar produtos disponíveis
+        $this->availableProducts = Product::where('is_active', true)
+            ->orderBy('name')
+            ->get();
         
         // Carregar localizações disponíveis
         $this->availableLocations = InventoryLocation::where('is_active', true)
@@ -156,260 +167,312 @@ class Inventory extends Component
         
         if ($inventoryItemId) {
             $this->adjustmentItem = InventoryItem::with('product', 'location')->find($inventoryItemId);
-            if (!$this->adjustmentItem) {
-                $this->dispatch('notify', [
-                    'type' => 'error',
-                    'title' => __('messages.error'),
-                    'message' => __('messages.inventory_item_not_found')
-                ]);
-                return;
+            if ($this->adjustmentItem) {
+                $this->selectedProducts = [$this->adjustmentItem->product_id];
+                $this->selectedLocationId = $this->adjustmentItem->location_id;
             }
-        } else {
-            $this->adjustmentItem = null;
         }
         
         $this->showAdjustmentModal = true;
+    }
+
+    public function resetAdjustmentFields()
+    {
+        $this->adjustmentItem = null;
+        $this->selectedProducts = [];
+        $this->selectedLocationId = '';
+        $this->adjustmentType = '';
+        $this->adjustmentQuantities = [];
+        $this->adjustmentReason = '';
+        $this->adjustmentNotes = '';
+    }
+
+    public function openTransferModal($inventoryItemId = null)
+    {
+        $this->resetTransferFields();
+        
+        // Carregar produtos disponíveis
+        $this->availableProducts = Product::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
+        // Carregar localizações disponíveis
+        $this->availableLocations = InventoryLocation::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
+        if ($inventoryItemId) {
+            $this->transferItem = InventoryItem::with('product', 'location')->find($inventoryItemId);
+            if ($this->transferItem) {
+                $this->selectedTransferProducts = [$this->transferItem->product_id];
+                $this->transferSourceId = $this->transferItem->location_id;
+            }
+        }
+        
+        $this->showTransferModal = true;
+    }
+
+    public function resetTransferFields()
+    {
+        $this->transferItem = null;
+        $this->transferQuantity = '';
+        $this->transferDestinationId = '';
+        $this->transferReason = '';
+        $this->transferNotes = '';
+        $this->selectedTransferProducts = [];
+        $this->transferQuantities = [];
+        $this->transferSourceId = '';
+    }
+
+    public function updatedSelectedProducts($value)
+    {
+        // Limpa as quantidades quando os produtos são alterados
+        $this->adjustmentQuantities = [];
+    }
+
+    public function updatedSelectedLocationId()
+    {
+        // Limpa as quantidades quando a localização é alterada
+        $this->adjustmentQuantities = [];
+    }
+
+    public function updatedAdjustmentType()
+    {
+        // Limpa as quantidades quando o tipo de ajuste é alterado
+        $this->adjustmentQuantities = [];
+    }
+
+    public function saveAdjustment()
+    {
+        $this->validate([
+            'selectedProducts' => 'required|array|min:1',
+            'selectedLocationId' => 'required|exists:sc_inventory_locations,id',
+            'adjustmentType' => 'required|in:add,remove,set',
+            'adjustmentQuantities.*' => 'required|numeric|min:0',
+            'adjustmentReason' => 'required|string|max:255',
+            'adjustmentNotes' => 'nullable|string|max:1000',
+        ], [], [
+            'selectedProducts' => __('messages.products'),
+            'selectedLocationId' => __('messages.location'),
+            'adjustmentType' => __('messages.adjustment_type'),
+            'adjustmentQuantities.*' => __('messages.quantity'),
+            'adjustmentReason' => __('messages.reason'),
+            'adjustmentNotes' => __('messages.notes'),
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($this->selectedProducts as $productId) {
+                $quantity = $this->adjustmentQuantities[$productId] ?? 0;
+                if ($quantity <= 0) {
+                    $this->dispatch('notify', [
+                        'type' => 'error',
+                        'message' => __('messages.invalid_quantity')
+                    ]);
+                    return;
+                }
+
+                $product = Product::findOrFail($productId);
+                $inventoryItem = InventoryItem::firstOrNew([
+                    'product_id' => $productId,
+                    'location_id' => $this->selectedLocationId,
+                ]);
+
+                if (!$inventoryItem->exists) {
+                    $inventoryItem->quantity_on_hand = 0;
+                    $inventoryItem->quantity_allocated = 0;
+                    $inventoryItem->unit_cost = $product->cost ?? 0;
+                    $inventoryItem->save();
+                }
+
+                $currentQuantity = $inventoryItem->quantity_on_hand;
+                $newQuantity = match ($this->adjustmentType) {
+                    'add' => $currentQuantity + $quantity,
+                    'remove' => $currentQuantity - $quantity,
+                    'set' => $quantity,
+                };
+
+                if ($this->adjustmentType === 'remove' && $currentQuantity < $quantity) {
+                    $this->dispatch('notify', [
+                        'type' => 'error',
+                        'message' => __('messages.insufficient_stock')
+                    ]);
+                    continue;
+                }
+
+                // Create transaction record
+                $transaction = new InventoryTransaction();
+                $transaction->transaction_number = InventoryTransaction::generateTransactionNumber('ADJ');
+                $transaction->transaction_type = 'adjustment';
+                $transaction->product_id = $productId;
+                $transaction->source_location_id = $this->selectedLocationId;
+                $transaction->destination_location_id = $this->selectedLocationId;
+                $transaction->quantity = $this->adjustmentType === 'remove' ? -$quantity : $quantity;
+                $transaction->unit_cost = $inventoryItem->unit_cost ?? 0;
+                $transaction->total_cost = $quantity * ($inventoryItem->unit_cost ?? 0);
+                $transaction->reference_type = $this->adjustmentType;
+                $transaction->reference_id = null;
+                $transaction->notes = $this->adjustmentNotes . "\nReason: " . $this->adjustmentReason;
+                $transaction->created_by = Auth::id();
+                $transaction->save();
+
+                // Update inventory
+                $inventoryItem->quantity_on_hand = $newQuantity;
+                $inventoryItem->quantity_available = $newQuantity - ($inventoryItem->quantity_allocated ?? 0);
+                $inventoryItem->save();
+            }
+
+            DB::commit();
+
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => __('messages.stock_adjusted_successfully')
+            ]);
+
+            $this->closeAdjustmentModal();
+            $this->resetAdjustment();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erro ao ajustar estoque', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => __('messages.error_adjusting_stock')
+            ]);
+        }
+    }
+
+    private function resetAdjustment()
+    {
+        $this->selectedProducts = [];
+        $this->selectedLocationId = '';
+        $this->adjustmentType = '';
+        $this->adjustmentQuantities = [];
+        $this->adjustmentReason = '';
+        $this->adjustmentNotes = '';
+    }
+
+    public function saveTransfer()
+    {
+        $this->validate([
+            'selectedTransferProducts' => 'required|array|min:1',
+            'transferSourceId' => 'required|exists:sc_inventory_locations,id',
+            'transferDestinationId' => 'required|exists:sc_inventory_locations,id|different:transferSourceId',
+            'transferReason' => 'required|string|min:3',
+            'transferNotes' => 'nullable|string',
+            'transferQuantities.*' => 'required|numeric|min:1',
+        ], [], [
+            'selectedTransferProducts' => __('messages.products'),
+            'transferSourceId' => __('messages.source_location'),
+            'transferDestinationId' => __('messages.destination_location'),
+            'transferReason' => __('messages.transfer_reason'),
+            'transferNotes' => __('messages.notes'),
+            'transferQuantities.*' => __('messages.quantity'),
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($this->selectedTransferProducts as $productId) {
+                $quantity = $this->transferQuantities[$productId] ?? 0;
+                if ($quantity <= 0) {
+                    $this->dispatch('notify', [
+                        'type' => 'error',
+                        'message' => __('messages.invalid_quantity')
+                    ]);
+                    return;
+                }
+
+                // Check source inventory
+                $sourceItem = InventoryItem::where('product_id', $productId)
+                    ->where('location_id', $this->transferSourceId)
+                    ->first();
+
+                if (!$sourceItem || $sourceItem->quantity_on_hand < $quantity) {
+                    $this->dispatch('notify', [
+                        'type' => 'error',
+                        'message' => __('messages.insufficient_stock')
+                    ]);
+                    return;
+                }
+
+                // Create transaction record
+                $transaction = new InventoryTransaction();
+                $transaction->transaction_number = InventoryTransaction::generateTransactionNumber('TRF');
+                $transaction->transaction_type = 'transfer';
+                $transaction->product_id = $productId;
+                $transaction->source_location_id = $this->transferSourceId;
+                $transaction->destination_location_id = $this->transferDestinationId;
+                $transaction->quantity = $quantity;
+                $transaction->unit_cost = $sourceItem->unit_cost ?? 0;
+                $transaction->total_cost = $quantity * ($sourceItem->unit_cost ?? 0);
+                $transaction->reference_type = 'transfer';
+                $transaction->reference_id = null;
+                $transaction->notes = $this->transferNotes . "\nReason: " . $this->transferReason;
+                $transaction->created_by = Auth::id();
+                $transaction->save();
+
+                // Update source inventory
+                $sourceItem->quantity_on_hand -= $quantity;
+                $sourceItem->quantity_available = $sourceItem->quantity_on_hand - ($sourceItem->quantity_allocated ?? 0);
+                $sourceItem->save();
+
+                // Update or create destination inventory
+                $destinationItem = InventoryItem::firstOrNew([
+                    'product_id' => $productId,
+                    'location_id' => $this->transferDestinationId,
+                ]);
+
+                if (!$destinationItem->exists) {
+                    $destinationItem->quantity_on_hand = 0;
+                    $destinationItem->quantity_allocated = 0;
+                    $destinationItem->unit_cost = $sourceItem->unit_cost;
+                }
+
+                $destinationItem->quantity_on_hand += $quantity;
+                $destinationItem->quantity_available = $destinationItem->quantity_on_hand - ($destinationItem->quantity_allocated ?? 0);
+                $destinationItem->save();
+            }
+
+            DB::commit();
+
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => __('messages.stock_transferred_successfully')
+            ]);
+
+            $this->closeTransferModal();
+            $this->resetTransfer();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erro ao transferir estoque', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => __('messages.error_transferring_stock')
+            ]);
+        }
     }
     
     public function closeAdjustmentModal()
     {
         $this->showAdjustmentModal = false;
         $this->adjustmentItem = null;
-        $this->adjustmentQuantity = '';
+        $this->selectedProducts = [];
+        $this->selectedLocationId = '';
+        $this->adjustmentType = '';
+        $this->adjustmentQuantities = [];
         $this->adjustmentReason = '';
         $this->adjustmentNotes = '';
-        $this->selectedProductId = '';
-        $this->selectedLocationId = '';
-        $this->adjustmentType = 'add';
-    }
-    
-    public function updatedSelectedProductId($productId)
-    {
-        $this->selectedLocationId = '';
-        if (!empty($productId)) {
-            $this->availableLocations = InventoryLocation::where('is_active', true)
-                ->orderBy('name')
-                ->get();
-        }
-    }
-    
-    public function updatedSelectedLocationId($locationId)
-    {
-        if (!empty($this->selectedProductId) && !empty($locationId)) {
-            // Buscar o item de inventário com o produto e localização selecionados
-            $this->adjustmentItem = InventoryItem::where('product_id', $this->selectedProductId)
-                ->where('location_id', $locationId)
-                ->with('product', 'location')
-                ->first();
-                
-            // Se não existir, criar um novo item de inventário
-            if (!$this->adjustmentItem) {
-                $product = Product::find($this->selectedProductId);
-                $location = InventoryLocation::find($locationId);
-                
-                if ($product && $location) {
-                    $this->adjustmentItem = new InventoryItem();
-                    $this->adjustmentItem->product_id = $product->id;
-                    $this->adjustmentItem->location_id = $location->id;
-                    $this->adjustmentItem->quantity = 0;
-                    $this->adjustmentItem->unit_cost = $product->cost_price ?: 0;
-                    $this->adjustmentItem->product = $product;
-                    $this->adjustmentItem->location = $location;
-                }
-            }
-        }
-    }
-    
-    public function saveAdjustment()
-    {
-        $this->validate([
-            'adjustmentQuantity' => 'required|numeric',
-            'adjustmentReason' => 'required|string|max:255',
-            'selectedProductId' => 'required_without:adjustmentItem',
-            'selectedLocationId' => 'required_without:adjustmentItem',
-        ]);
-        
-        if (!$this->adjustmentItem) {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.inventory_item_not_found')
-            ]);
-            return;
-        }
-        
-        // Determine the actual quantity based on adjustment type
-        $finalQuantity = $this->adjustmentQuantity;
-        if ($this->adjustmentType === 'remove') {
-            $finalQuantity = -1 * abs($this->adjustmentQuantity);  // Ensure it's negative
-            
-            // Check if we're trying to remove more than exists
-            if (abs($finalQuantity) > $this->adjustmentItem->quantity) {
-                $this->dispatch('notify', [
-                    'type' => 'error',
-                    'title' => __('messages.error'),
-                    'message' => __('messages.insufficient_stock')
-                ]);
-                return;
-            }
-        } elseif ($this->adjustmentType === 'set') {
-            $finalQuantity = $this->adjustmentQuantity - $this->adjustmentItem->quantity;
-            // If final quantity is 0, no transaction needed
-            if ($finalQuantity == 0) {
-                $this->closeAdjustmentModal();
-                $this->dispatch('notify', [
-                    'type' => 'info',
-                    'title' => __('messages.info'),
-                    'message' => __('messages.no_adjustment_needed')
-                ]);
-                return;
-            }
-        }
-        
-        // Create transaction record
-        $transaction = new InventoryTransaction();
-        $transaction->transaction_number = 'ADJ' . now()->format('YmdHis') . rand(100, 999);
-        $transaction->transaction_type = 'adjustment';
-        $transaction->product_id = $this->adjustmentItem->product_id;
-        $transaction->quantity = $finalQuantity;
-        $transaction->destination_location_id = $this->adjustmentItem->location_id;
-        $transaction->unit_cost = $this->adjustmentItem->unit_cost;
-        $transaction->total_cost = $finalQuantity * $this->adjustmentItem->unit_cost;
-        $transaction->reference = $this->adjustmentReason;
-        $transaction->notes = $this->adjustmentNotes;
-        $transaction->created_by = Auth::id();
-        $transaction->save();
-        
-        // Update inventory item quantity
-        if ($this->adjustmentType === 'set') {
-            $this->adjustmentItem->quantity = $this->adjustmentQuantity;
-        } else {
-            $this->adjustmentItem->quantity += $finalQuantity;
-        }
-        
-        $this->adjustmentItem->save();
-        
-        $this->closeAdjustmentModal();
-        
-        $this->dispatch('notify', [
-            'type' => 'success',
-            'title' => __('messages.success'),
-            'message' => __('messages.inventory_adjustment_successful')
-        ]);
-    }
-    
-    public function openTransferModal($inventoryItemId = null)
-    {
-        $this->showTransferModal = true;
-        $this->transferQuantity = '';
-        $this->transferDestinationId = '';
-        $this->transferReason = '';
-        $this->transferNotes = '';
-
-        if ($inventoryItemId) {
-            $this->transferItem = InventoryItem::with(['product', 'location'])->find($inventoryItemId);
-            if (!$this->transferItem) {
-                $this->dispatch('toast', [
-                    'type' => 'error',
-                    'title' => __('messages.error'),
-                    'message' => __('messages.inventory_item_not_found')
-                ]);
-                $this->showTransferModal = false;
-                return;
-            }
-        } else {
-            $this->transferItem = null;
-        }
-
-        // Load available locations for transfer
-        $this->availableLocations = InventoryLocation::where('is_active', true)
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function saveTransfer()
-    {
-        // Validate product selection first
-        if (!$this->transferItem) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.no_product_selected')
-            ]);
-            return;
-        }
-
-        $this->validate([
-            'transferQuantity' => 'required|numeric|min:1',
-            'transferDestinationId' => 'required|exists:sc_inventory_locations,id',
-            'transferReason' => 'required|string',
-            'transferNotes' => 'nullable|string',
-        ]);
-
-        // Verify if transfer quantity exceeds available stock
-        if ($this->transferQuantity > $this->transferItem->quantity) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.insufficient_stock')
-            ]);
-            return;
-        }
-
-        // Verify if source and destination are different
-        if ($this->transferItem->location_id == $this->transferDestinationId) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.same_location_transfer')
-            ]);
-            return;
-        }
-
-        // Create transaction record
-        $transaction = new InventoryTransaction();
-        $transaction->transaction_number = 'TRF' . now()->format('YmdHis') . rand(100, 999);
-        $transaction->product_id = $this->transferItem->product_id;
-        $transaction->transaction_type = 'transfer';
-        $transaction->source_location_id = $this->transferItem->location_id;
-        $transaction->destination_location_id = $this->transferDestinationId;
-        $transaction->quantity = $this->transferQuantity;
-        $transaction->unit_cost = $this->transferItem->unit_cost;
-        $transaction->reference = $this->transferReason;
-        $transaction->notes = $this->transferNotes;
-        $transaction->created_by = Auth::id();
-        $transaction->save();
-
-        // Update source location stock (reduce)
-        $this->transferItem->quantity -= $this->transferQuantity;
-        $this->transferItem->save();
-
-        // Check if item exists in destination location
-        $destinationItem = InventoryItem::where('product_id', $this->transferItem->product_id)
-            ->where('location_id', $this->transferDestinationId)
-            ->first();
-            
-        if ($destinationItem) {
-            // Update existing stock (increase)
-            $destinationItem->quantity += $this->transferQuantity;
-            $destinationItem->save();
-        } else {
-            // Create new inventory item in destination
-            $newItem = new InventoryItem();
-            $newItem->product_id = $this->transferItem->product_id;
-            $newItem->location_id = $this->transferDestinationId;
-            $newItem->quantity = $this->transferQuantity;
-            $newItem->unit_cost = $this->transferItem->unit_cost;
-            $newItem->save();
-        }
-
-        $this->closeTransferModal();
-        
-        $this->dispatch('toast', [
-            'type' => 'success',
-            'title' => __('messages.success'),
-            'message' => __('messages.inventory_transfer_successful')
-        ]);
     }
     
     public function closeTransferModal()
@@ -420,6 +483,9 @@ class Inventory extends Component
         $this->transferDestinationId = '';
         $this->transferReason = '';
         $this->transferNotes = '';
+        $this->selectedTransferProducts = [];
+        $this->transferQuantities = [];
+        $this->transferSourceId = '';
     }
     
     public function openHistoryModal($inventoryItemId)
@@ -441,7 +507,7 @@ class Inventory extends Component
                 $query->where('source_location_id', $this->historyItem->location_id)
                       ->orWhere('destination_location_id', $this->historyItem->location_id);
             })
-            ->with(['product', 'sourceLocation', 'destinationLocation', 'user'])
+            ->with(['product', 'sourceLocation', 'destinationLocation', 'creator'])
             ->orderBy('created_at', 'desc')
             ->limit(20)
             ->get();
