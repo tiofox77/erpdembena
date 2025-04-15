@@ -16,6 +16,8 @@ use App\Models\SupplyChain\InventoryTransaction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class GoodsReceipts extends Component
 {
@@ -726,5 +728,114 @@ class GoodsReceipts extends Component
     public function changeTab($tab)
     {
         $this->activeTab = $tab;
+    }
+    
+    public function generatePdf($id)
+    {
+        try {
+            $receipt = GoodsReceipt::with(['supplier', 'purchaseOrder', 'location', 'receiver', 'items.product'])->findOrFail($id);
+            
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.goods-receipt', [
+                'receipt' => $receipt,
+            ]);
+            
+            $filename = 'goods_receipt_' . $receipt->receipt_number . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
+    }
+    
+    public function generateListPdf()
+    {
+        try {
+            // Aplicar os mesmos filtros da listagem atual
+            $query = GoodsReceipt::query()
+                ->with(['supplier', 'purchaseOrder', 'location', 'receiver']);
+            
+            // Filtros
+            if ($this->statusFilter) {
+                $query->where('status', $this->statusFilter);
+            }
+            
+            if ($this->supplierFilter) {
+                $query->where('supplier_id', $this->supplierFilter);
+            }
+            
+            if ($this->locationFilter) {
+                $query->where('location_id', $this->locationFilter);
+            }
+            
+            if ($this->search) {
+                $query->where(function ($q) {
+                    $q->where('receipt_number', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('supplier', function ($sq) {
+                          $sq->where('name', 'like', '%' . $this->search . '%');
+                      })
+                      ->orWhereHas('purchaseOrder', function ($sq) {
+                          $sq->where('order_number', 'like', '%' . $this->search . '%');
+                      });
+                });
+            }
+            
+            // Ordenação
+            if ($this->sortField) {
+                $query->orderBy($this->sortField, $this->sortDirection);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+            
+            // Limitar a 100 registros para o PDF não ficar muito grande
+            $receipts = $query->limit(100)->get();
+            
+            // Carregar a view do PDF com os dados
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.goods-receipts-list', [
+                'receipts' => $receipts,
+                'filters' => [
+                    'status' => $this->statusFilter,
+                    'supplier' => $this->supplierFilter ? Supplier::find($this->supplierFilter)->name : null,
+                    'location' => $this->locationFilter ? InventoryLocation::find($this->locationFilter)->name : null,
+                    'search' => $this->search,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ]);
+            
+            $filename = 'goods_receipts_list_' . now()->format('Y-m-d') . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_list_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating list PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
     }
 }

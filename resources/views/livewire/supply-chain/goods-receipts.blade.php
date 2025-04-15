@@ -108,10 +108,16 @@
                         </div>
                     </div>
                     
-                    <!-- Botão de reset -->
-                    <div class="flex justify-end">
+                    <!-- Botão de geração de PDF e reset -->
+                    <div class="flex justify-end space-x-3">
+                        <button wire:click="generateListPdf" 
+                            class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                            <i class="fas fa-file-pdf mr-2"></i>
+                            {{ __('messages.generate_list_pdf') }}
+                        </button>
+                        
                         <button wire:click="resetFilters" 
-                            class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                            class="inline-flex justify-center items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                             <i class="fas fa-redo-alt mr-2"></i>
                             {{ __('messages.reset_filters') }}
                         </button>
@@ -258,6 +264,11 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     @endif
+                                    
+                                    <button wire:click="generatePdf({{ $receipt->id }})" 
+                                        class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.generate_pdf') }}">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>

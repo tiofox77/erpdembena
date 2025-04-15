@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PurchaseOrders extends Component
 {
@@ -636,6 +637,107 @@ class PurchaseOrders extends Component
                 'trace' => $e->getTraceAsString()
             ]);
             throw $e;
+        }
+    }
+    
+    public function generatePdf($orderId)
+    {
+        try {
+            $order = PurchaseOrder::with(['supplier', 'items.product', 'createdBy'])->findOrFail($orderId);
+            
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.purchase-order', [
+                'order' => $order,
+            ]);
+            
+            $filename = 'purchase_order_' . $order->order_number . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
+    }
+    
+    public function generateListPdf()
+    {
+        try {
+            // Aplicar os mesmos filtros da listagem atual
+            $query = PurchaseOrder::query()
+                ->with(['supplier', 'createdBy']);
+            
+            // Filtros
+            if ($this->statusFilter) {
+                $query->where('status', $this->statusFilter);
+            }
+            
+            if ($this->supplierFilter) {
+                $query->where('supplier_id', $this->supplierFilter);
+            }
+            
+            if ($this->search) {
+                $query->where(function ($q) {
+                    $q->where('order_number', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('supplier', function ($sq) {
+                          $sq->where('name', 'like', '%' . $this->search . '%');
+                      });
+                });
+            }
+            
+            // Ordenação
+            if ($this->sortField) {
+                $query->orderBy($this->sortField, $this->sortDirection);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+            
+            // Limitar a 100 registros para o PDF não ficar muito grande
+            $orders = $query->limit(100)->get();
+            
+            // Carregar a view do PDF com os dados
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.purchase-orders-list', [
+                'orders' => $orders,
+                'filters' => [
+                    'status' => $this->statusFilter,
+                    'supplier' => $this->supplierFilter ? Supplier::find($this->supplierFilter)->name : null,
+                    'search' => $this->search,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ]);
+            
+            $filename = 'purchase_orders_list_' . now()->format('Y-m-d') . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_list_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating list PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
         }
     }
     

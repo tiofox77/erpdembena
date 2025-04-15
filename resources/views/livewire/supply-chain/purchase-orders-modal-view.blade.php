@@ -87,10 +87,21 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-medium text-gray-500">{{ __('messages.expected_delivery') }}</p>
-                                    <p class="text-sm font-medium {{ $viewingOrder->is_overdue ? 'text-red-600' : 'text-gray-800' }}">
+                                    <p class="text-sm font-medium 
+                                        {{ $viewingOrder->is_overdue ? 'text-red-600' : 
+                                          (strtotime($viewingOrder->expected_delivery_date) <= strtotime('+15 days') && 
+                                           strtotime($viewingOrder->expected_delivery_date) >= strtotime('now') ? 
+                                           'text-amber-600' : 'text-gray-800') }}">
                                         {{ $viewingOrder->expected_delivery_date ? date('d/m/Y', strtotime($viewingOrder->expected_delivery_date)) : '-' }}
                                         @if($viewingOrder->is_overdue)
-                                            <i class="fas fa-exclamation-circle ml-1 text-red-500 animate-pulse"></i>
+                                            <i class="fas fa-exclamation-circle ml-1 text-red-500 animate-pulse" 
+                                               title="{{ __('messages.overdue_order') }}"></i>
+                                        @elseif(strtotime($viewingOrder->expected_delivery_date) <= strtotime('+15 days') && 
+                                               strtotime($viewingOrder->expected_delivery_date) >= strtotime('now'))
+                                            <i class="fas fa-exclamation-triangle ml-1 text-amber-500" 
+                                               title="{{ __('messages.delivery_approaching') }}" 
+                                               x-data="{}" 
+                                               x-tooltip.raw="{{ __('messages.delivery_within_15_days') }}"></i>
                                         @endif
                                     </p>
                                 </div>
@@ -404,6 +415,13 @@
                         {{ __('messages.edit') }}
                     </button>
                 @endif
+                
+                <button type="button" wire:click="generatePdf({{ $viewingOrder ? $viewingOrder->id : null }})" 
+                    class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    {{ __('messages.generate_pdf') }}
+                </button>
+                
                 <button type="button" wire:click="closeViewModal" 
                     class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                     <i class="fas fa-times mr-2"></i>

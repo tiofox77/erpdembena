@@ -93,9 +93,15 @@
                     </div>
                     
                     <!-- Botões de ação -->
-                    <div class="flex justify-end">
+                    <div class="flex justify-end space-x-3">
+                        <button wire:click="generateListPdf" 
+                            class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                            <i class="fas fa-file-pdf mr-2"></i>
+                            {{ __('messages.generate_list_pdf') }}
+                        </button>
+                        
                         <button wire:click="resetFilters" 
-                            class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                            class="inline-flex justify-center items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                             <i class="fas fa-redo-alt mr-2"></i>
                             {{ __('messages.reset_filters') }}
                         </button>
@@ -252,10 +258,21 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="block text-sm font-medium {{ $order->is_overdue ? 'text-red-600' : 'text-gray-900' }}">
+                                    <span class="block text-sm font-medium 
+                                        {{ $order->is_overdue ? 'text-red-600' : 
+                                          (strtotime($order->expected_delivery_date) <= strtotime('+15 days') && 
+                                           strtotime($order->expected_delivery_date) >= strtotime('now') ? 
+                                           'text-amber-600' : 'text-gray-900') }}">
                                         {{ $order->expected_delivery_date ? date('d/m/Y', strtotime($order->expected_delivery_date)) : '-' }}
                                         @if($order->is_overdue)
-                                            <i class="fas fa-exclamation-circle text-red-500 ml-1 animate-pulse"></i>
+                                            <i class="fas fa-exclamation-circle text-red-500 ml-1 animate-pulse" 
+                                               title="{{ __('messages.overdue_order') }}"></i>
+                                        @elseif(strtotime($order->expected_delivery_date) <= strtotime('+15 days') && 
+                                               strtotime($order->expected_delivery_date) >= strtotime('now'))
+                                            <i class="fas fa-exclamation-triangle text-amber-500 ml-1" 
+                                               title="{{ __('messages.delivery_approaching') }}" 
+                                               x-data="{}" 
+                                               x-tooltip.raw="{{ __('messages.delivery_within_15_days') }}"></i>
                                         @endif
                                     </span>
                                 </td>
@@ -282,6 +299,12 @@
                                             class="text-amber-600 hover:text-amber-800 transition-colors duration-150 transform hover:scale-110"
                                             title="{{ __('messages.shipping_notes') }}">
                                             <i class="fas fa-shipping-fast"></i>
+                                        </button>
+                                        
+                                        <button wire:click="generatePdf({{ $order->id }})" 
+                                            class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.generate_pdf') }}">
+                                            <i class="fas fa-file-pdf"></i>
                                         </button>
                                         
                                         <button wire:click="confirmDeleteOrder({{ $order->id }})" 
