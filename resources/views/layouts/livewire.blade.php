@@ -602,6 +602,9 @@
             @endcan
         </div>
 
+        <!-- Supply Chain Menu - Add permission check -->
+        @canany(['supplychain.dashboard', 'supplychain.purchase_orders.view', 'supplychain.goods_receipts.view', 
+                'supplychain.products.view', 'supplychain.suppliers.view', 'supplychain.inventory.view'])
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="supplyChainMenu">
             <i class="fas fa-truck text-indigo-500"></i>
             <span>{{ trans('messages.supply_chain') }}</span>
@@ -609,16 +612,21 @@
         </div>
 
         <div class="sidebar-submenu" id="supplyChainSubmenu">
+            @can('supplychain.dashboard')
             <a href="{{ route('supply-chain.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-tachometer-alt text-gray-500"></i>
                 <span>{{ trans('messages.dashboard') }}</span>
             </a>
+            @endcan
 
+            @can('supplychain.suppliers.view')
             <a href="{{ route('supply-chain.suppliers') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.suppliers') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-handshake text-gray-500"></i>
                 <span>{{ trans('messages.suppliers') }}</span>
             </a>
+            @endcan
 
+            @can('supplychain.products.view')
             <a href="{{ route('supply-chain.product-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.product-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-tags text-gray-500"></i>
                 <span>{{ trans('messages.product_categories') }}</span>
@@ -628,7 +636,9 @@
                 <i class="fas fa-box text-gray-500"></i>
                 <span>{{ trans('messages.products') }}</span>
             </a>
+            @endcan
 
+            @can('supplychain.inventory.view')
             <a href="{{ route('supply-chain.inventory-locations') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.inventory-locations') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-warehouse text-gray-500"></i>
                 <span>{{ trans('messages.inventory_locations') }}</span>
@@ -638,20 +648,28 @@
                 <i class="fas fa-cubes text-gray-500"></i>
                 <span>{{ trans('messages.inventory') }}</span>
             </a>
+            @endcan
 
+            @can('supplychain.purchase_orders.view')
             <a href="{{ route('supply-chain.purchase-orders') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.purchase-orders') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-file-invoice text-gray-500"></i>
                 <span>{{ trans('messages.purchase_orders') }}</span>
             </a>
+            @endcan
 
+            @can('supplychain.goods_receipts.view')
             <a href="{{ route('supply-chain.goods-receipts') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.goods-receipts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-dolly-flatbed text-gray-500"></i>
                 <span>{{ trans('messages.goods_receipts') }}</span>
             </a>
+            @endcan
         </div>
+        @endcanany
 
 
-        <!-- Human Resources -->
+        <!-- Human Resources - Add permission check -->
+        @canany(['hr.dashboard', 'hr.employees.view', 'hr.departments.view', 'hr.positions.view',
+                'hr.attendance.view', 'hr.leave.view', 'hr.performance.view'])
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="hrMenu">
             <i class="fas fa-users text-indigo-500"></i>
             <span>{{ trans('messages.human_resources') }}</span>
@@ -659,21 +677,28 @@
         </div>
 
         <div class="sidebar-submenu" id="hrSubmenu">
+            @can('hr.dashboard')
             <a href="{{ route('hr.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-tachometer-alt text-gray-500"></i>
                 <span>{{ trans('messages.dashboard') }}</span>
             </a>
+            @endcan
 
+            @can('hr.employees.view')
             <a href="{{ route('hr.employees') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.employees') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-id-card text-gray-500"></i>
                 <span>{{ trans('messages.employee_management') }}</span>
             </a>
+            @endcan
             
+            @can('hr.departments.view')
             <a href="{{ route('hr.departments') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.departments') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-building text-gray-500"></i>
                 <span>{{ trans('messages.departments') }}</span>
             </a>
+            @endcan
             
+            @can('hr.positions.view')
             <a href="{{ route('hr.job-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.job-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-tags text-gray-500"></i>
                 <span>{{ trans('messages.job_categories') }}</span>
@@ -683,12 +708,16 @@
                 <i class="fas fa-briefcase text-gray-500"></i>
                 <span>{{ trans('messages.job_positions') }}</span>
             </a>
+            @endcan
             
+            @can('hr.attendance.view')
             <a href="{{ route('hr.attendance') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.attendance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-user-clock text-gray-500"></i>
                 <span>{{ trans('messages.attendance_absence') }}</span>
             </a>
+            @endcan
             
+            @can('hr.leave.view')
             <a href="{{ route('hr.leave') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.leave') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-calendar-alt text-gray-500"></i>
                 <span>{{ trans('messages.leave_management') }}</span>
@@ -698,7 +727,9 @@
                 <i class="fas fa-tags text-gray-500"></i>
                 <span>{{ trans('messages.leave_types') }}</span>
             </a>
+            @endcan
             
+            @can('hr.leave.view')
             <a href="{{ route('hr.payroll') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-money-check-alt text-gray-500"></i>
                 <span>{{ trans('messages.payroll_processing') }}</span>
@@ -713,23 +744,31 @@
                 <i class="fas fa-list-alt text-gray-500"></i>
                 <span>{{ trans('messages.payroll_items') }}</span>
             </a>
+            @endcan
             
+            @can('hr.attendance.view')
             <a href="{{ route('hr.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-business-time text-gray-500"></i>
                 <span>{{ trans('messages.shift_management') }}</span>
             </a>
+            @endcan
             
+            @can('hr.employees.view')
             <a href="{{ route('hr.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-laptop text-gray-500"></i>
                 <span>{{ trans('messages.work_equipment_control') }}</span>
             </a>
+            @endcan
             
+            @can('hr.dashboard')
             <a href="{{ route('hr.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-chart-bar text-gray-500"></i>
                 <span>{{ trans('messages.reports_and_dashboard') }}</span>
             </a>
+            @endcan
         </div>
-
+        @endcanany
+      
       
 
         <!-- Moved user info to footer of sidebar
@@ -807,7 +846,7 @@
                         </button>
 
                         <!-- Notifications dropdown -->
-                        <div x-show="showNotifications" @click.away="showNotifications = false" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                        <div x-show="showNotifications" @click.away="showNotifications = false" class="absolute right-0 top-12 w-80 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
                             <div class="py-2 px-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                                 <h3 class="text-sm font-semibold text-gray-700">{{ trans('messages.notifications') }}</h3>
                                 <span class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">{{ trans('messages.mark_all_as_read') }}</span>

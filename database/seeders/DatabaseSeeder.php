@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             EquipmentSeeder::class,
+            SupplyChainHrRolesPermissionsSeeder::class,
+            EnsureModuleUsersSeeder::class,
         ]);
     }
 }

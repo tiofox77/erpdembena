@@ -1102,8 +1102,11 @@ return [
     'shipping_status_container_loaded' => 'Container Loaded',
     'shipping_status_on_board' => 'On Board / In Transit',
     'shipping_status_arrived_at_port' => 'Arrived at Port',
-    'shipping_status_customs_clearance' => 'Customs Clearance',
+    'shipping_status_customs' => 'In Customs',
+    'shipping_status_delivery' => 'Out for Delivery',
     'shipping_status_delivered' => 'Delivered',
+    'shipping_status_returned' => 'Returned',
+    'shipping_status_issue' => 'Issue Reported',
     
     // Purchase Orders List Messages
     'purchase_orders_list' => 'Purchase Orders List',
@@ -1186,7 +1189,8 @@ return [
     'shipping_status_container_loaded' => 'Container Loaded',
     'shipping_status_on_board' => 'On Board / In Transit',
     'shipping_status_arrived_at_port' => 'Arrived at Port',
-    'shipping_status_customs_clearance' => 'Customs Clearance',
+    'shipping_status_customs' => 'In Customs',
+    'shipping_status_delivery' => 'Out for Delivery',
     'shipping_status_delivered' => 'Delivered',
     
     // Purchase Orders List Messages
@@ -1289,4 +1293,15 @@ return [
     'category' => 'Category',
     'overdue_orders_legend' => 'Overdue orders',
     'approaching_delivery_legend' => 'Approaching delivery (less than 15 days)',
+    
+    // Dashboard Restricted Access
+    'access_restricted' => 'Access Restricted',
+    'no_module_permissions' => 'You do not have permission to access any modules in this system.',
+    'contact_administrator' => 'Please contact your system administrator if you believe you should have access.',
+    'your_details' => 'Your Details',
+    'username' => 'Username',
+    'email' => 'Email',
+    'roles' => 'Roles',
+    'no_roles_assigned' => 'No roles assigned',
+    'logout' => 'Logout',
 ];

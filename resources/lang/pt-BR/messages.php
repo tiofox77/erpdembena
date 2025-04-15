@@ -1207,4 +1207,15 @@ return [
     'view' => 'Visualizar',
     'receive' => 'Receber',
     'order' => 'Pedir',
+    
+    // Dashboard Restricted Access
+    'access_restricted' => 'Acesso Restrito',
+    'no_module_permissions' => 'Você não tem permissão para acessar nenhum módulo neste sistema.',
+    'contact_administrator' => 'Entre em contato com o administrador do sistema se acredita que deveria ter acesso.',
+    'your_details' => 'Seus Detalhes',
+    'username' => 'Nome de Usuário',
+    'email' => 'E-mail',
+    'roles' => 'Funções',
+    'no_roles_assigned' => 'Nenhuma função atribuída',
+    'logout' => 'Sair',
 ];
