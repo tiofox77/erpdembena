@@ -256,7 +256,7 @@
 
                         <div>
                             <label for="technician-phone" class="block text-sm font-medium text-gray-700 mb-1">
-                                Phone <span class="text-red-500">*</span>
+                                Phone
                             </label>
                             <input
                                 type="text"
@@ -314,6 +314,20 @@
                                 placeholder="Full address"
                             ></textarea>
                             @error('technician.address')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div>
+                            <label for="technician-function" class="block text-sm font-medium text-gray-700 mb-1">
+                                Function
+                            </label>
+                            <input
+                                type="text"
+                                id="technician-function"
+                                wire:model.live="technician.function"
+                                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md @error('technician.function') border-red-300 text-red-900 @enderror"
+                                placeholder="Technician function or role"
+                            >
+                            @error('technician.function')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
                         <div>

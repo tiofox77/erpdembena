@@ -18,7 +18,8 @@ class Technician extends Model
         'gender',
         'age',
         'line_id',
-        'area_id'
+        'area_id',
+        'function'
     ];
 
     protected $casts = [

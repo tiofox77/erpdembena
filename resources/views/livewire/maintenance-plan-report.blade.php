@@ -10,12 +10,15 @@
                 <!-- Filter Card -->
                 <div class="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200">
                     <h3 class="text-lg font-medium text-gray-700 mb-4 flex items-center">
-                        <i class="fas fa-filter mr-2 text-blue-500"></i> Filter Options
+                        <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filter_options') }}
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <!-- Date Range Filters -->
                         <div>
-                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
+                                {{ __('messages.start_date') }}
+                            </label>
                             <input 
                                 type="date" 
                                 id="startDate" 
@@ -25,7 +28,10 @@
                         </div>
                         
                         <div>
-                            <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
+                                {{ __('messages.end_date') }}
+                            </label>
                             <input 
                                 type="date" 
                                 id="endDate" 
@@ -36,13 +42,16 @@
                         
                         <!-- Status Filter -->
                         <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-tasks text-gray-500 mr-1"></i>
+                                {{ __('messages.status') }}
+                            </label>
                             <select 
                                 id="status" 
                                 wire:model.live="status" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
-                                <option value="">All Statuses</option>
+                                <option value="">{{ __('messages.all_statuses') }}</option>
                                 @foreach($statusOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
@@ -51,49 +60,70 @@
                         
                         <!-- Type Filter -->
                         <div>
-                            <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                            <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-tag text-gray-500 mr-1"></i>
+                                {{ __('messages.type') }}
+                            </label>
                             <select 
                                 id="type" 
                                 wire:model.live="type" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
-                                <option value="">All Types</option>
+                                <option value="">{{ __('messages.all_types') }}</option>
                                 @foreach($typeOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
+                    </div>
                     
-                        <!-- Equipment Filter -->
-                        <div>
-                            <label for="equipment_id" class="block text-sm font-medium text-gray-700 mb-1">Equipment</label>
-                            <select 
-                                id="equipment_id" 
-                                wire:model.live="equipment_id" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >
-                                <option value="">All Equipment</option>
-                                @foreach($equipments as $equipment)
-                                    <option value="{{ $equipment->id }}">{{ $equipment->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <!-- Equipment and Task Filters (Highlighted Section) -->
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
+                        <h4 class="text-sm font-medium text-blue-800 mb-3 flex items-center">
+                            <i class="fas fa-search-plus mr-1"></i>
+                            {{ __('messages.advanced_filters') }}
+                        </h4>
                         
-                        <!-- Task Filter -->
-                        <div>
-                            <label for="task_id" class="block text-sm font-medium text-gray-700 mb-1">Task</label>
-                            <select 
-                                id="task_id" 
-                                wire:model.live="task_id" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >
-                                <option value="">All Tasks</option>
-                                @foreach($tasks as $task)
-                                    <option value="{{ $task->id }}">{{ $task->title }}</option>
-                                @endforeach
-                            </select>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Equipment Filter -->
+                            <div>
+                                <label for="equipment_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-wrench text-gray-500 mr-1"></i>
+                                    {{ __('messages.equipment') }}
+                                </label>
+                                <select 
+                                    id="equipment_id" 
+                                    wire:model.live="equipment_id" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white"
+                                >
+                                    <option value="">{{ __('messages.all_equipment') }}</option>
+                                    @foreach($equipments as $equipment)
+                                        <option value="{{ $equipment->id }}">{{ $equipment->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            
+                            <!-- Task Filter -->
+                            <div>
+                                <label for="task_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-clipboard-list text-gray-500 mr-1"></i>
+                                    {{ __('messages.task') }}
+                                </label>
+                                <select 
+                                    id="task_id" 
+                                    wire:model.live="task_id" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white"
+                                >
+                                    <option value="">{{ __('messages.all_tasks') }}</option>
+                                    @foreach($tasks as $task)
+                                        <option value="{{ $task->id }}">{{ $task->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
-                        
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <!-- Line Filter -->
                         <div>
                             <label for="line_id" class="block text-sm font-medium text-gray-700 mb-1">Line</label>

@@ -33,22 +33,22 @@ class Technicians extends Component
         'gender' => '',
         'age' => null,
         'line_id' => '',
-        'area_id' => ''
+        'area_id' => '',
+        'function' => ''
     ];
     
     // Validation rules
     protected function rules()
     {
-        $technicianId = isset($this->technician['id']) ? $this->technician['id'] : '';
-        
         return [
             'technician.name' => 'required|string|max:255',
-            'technician.phone_number' => 'required|string|max:20',
+            'technician.phone_number' => 'nullable|string|max:20',
             'technician.address' => 'nullable|string|max:255',
             'technician.gender' => 'nullable|string|in:male,female,other',
-            'technician.age' => 'nullable|integer|min:18|max:100',
+            'technician.age' => 'nullable|integer',
             'technician.line_id' => 'nullable|exists:maintenance_lines,id',
             'technician.area_id' => 'nullable|exists:maintenance_areas,id',
+            'technician.function' => 'nullable|string|max:255',
         ];
     }
     
@@ -57,11 +57,6 @@ class Technicians extends Component
     {
         return [
             'technician.name.required' => 'The technician name is required.',
-            'technician.phone_number.required' => 'The phone number is required.',
-            'technician.age.min' => 'The minimum age is 18 years.',
-            'technician.age.max' => 'The maximum age is 100 years.',
-            'technician.line_id.exists' => 'The selected line does not exist.',
-            'technician.area_id.exists' => 'The selected area does not exist.',
         ];
     }
     
@@ -122,13 +117,28 @@ class Technicians extends Component
         $this->validate();
         
         try {
+            // Tratar campos vazios convertendo-os para NULL
+            $technicianData = $this->technician;
+            
+            // Converter strings vazias em NULL para campos específicos
+            foreach(['gender', 'line_id', 'area_id', 'phone_number', 'address', 'function'] as $field) {
+                if (isset($technicianData[$field]) && $technicianData[$field] === '') {
+                    $technicianData[$field] = null;
+                }
+            }
+            
+            // Age deve ser um número ou null
+            if (isset($technicianData['age']) && ($technicianData['age'] === '' || $technicianData['age'] === 0)) {
+                $technicianData['age'] = null;
+            }
+            
             if ($this->isEditing) {
-                $technician = Technician::findOrFail($this->technician['id']);
-                $technician->update($this->technician);
-                $message = 'Technician updated successfully!';
+                $technician = Technician::findOrFail($technicianData['id']);
+                $technician->update($technicianData);
+                $message = __('messages.technician_updated');
             } else {
-                Technician::create($this->technician);
-                $message = 'Technician created successfully!';
+                Technician::create($technicianData);
+                $message = __('messages.technician_created');
             }
             
             $this->reset('technician');
@@ -136,7 +146,7 @@ class Technicians extends Component
             $this->dispatch('notify', type: 'success', message: $message);
         } catch (\Exception $e) {
             Log::error('Error saving technician: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error saving technician.');
+            $this->dispatch('notify', type: 'error', message: __('messages.error_saving_technician'));
         }
     }
     

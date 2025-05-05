@@ -49,6 +49,8 @@ class MaintenancePlan extends Component
     public $search = '';
     public $statusFilter = '';
     public $frequencyFilter = '';
+    public $equipment_filter = '';
+    public $task_filter = '';
     public $perPage = 10;
     public $sortField = 'scheduled_date';
     public $sortDirection = 'desc';
@@ -840,14 +842,32 @@ class MaintenancePlan extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->frequencyFilter = '';
+        $this->equipment_filter = '';
+        $this->task_filter = '';
         $this->perPage = 10;
         $this->resetPage();
 
         $notificationType = 'info';
-        $message = 'All filters have been cleared.';
+        $message = __('messages.filters_cleared');
         $this->dispatch('notify', type: $notificationType, message: $message);
 
         $this->updateCalendarEvents();
+    }
+    
+    /**
+     * Update equipment filter
+     */
+    public function updatedEquipmentFilter()
+    {
+        $this->resetPage();
+    }
+    
+    /**
+     * Update task filter
+     */
+    public function updatedTaskFilter()
+    {
+        $this->resetPage();
     }
 
     public function render()
@@ -864,6 +884,12 @@ class MaintenancePlan extends Component
             })
             ->when($this->frequencyFilter, function ($query) {
                 return $query->where('frequency_type', $this->frequencyFilter);
+            })
+            ->when($this->equipment_filter, function ($query) {
+                return $query->where('equipment_id', $this->equipment_filter);
+            })
+            ->when($this->task_filter, function ($query) {
+                return $query->where('task_id', $this->task_filter);
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);

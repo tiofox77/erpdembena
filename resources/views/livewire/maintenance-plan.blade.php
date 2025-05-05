@@ -109,6 +109,63 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Equipment and Task Filters - Highlighted Section -->
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mt-4">
+                            <h4 class="text-sm font-medium text-blue-800 mb-3 flex items-center">
+                                <i class="fas fa-search-plus mr-1"></i>
+                                {{ __('messages.advanced_filters') }}
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Equipment Filter -->
+                                <div>
+                                    <label for="equipment_id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                        <i class="fas fa-wrench mr-1 text-gray-500"></i>
+                                        {{ __('messages.equipment') }}
+                                    </label>
+                                    <div class="relative rounded-md shadow-sm">
+                                        <select 
+                                            id="equipment_id" 
+                                            wire:model.live="equipment_filter" 
+                                            class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            <option value="">{{ __('messages.all_equipment') }}</option>
+                                            @foreach($equipment as $equip)
+                                                <option value="{{ $equip->id }}">{{ $equip->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Task Filter -->
+                                <div>
+                                    <label for="task_id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                        <i class="fas fa-clipboard-list mr-1 text-gray-500"></i>
+                                        {{ __('messages.task') }}
+                                    </label>
+                                    <div class="relative rounded-md shadow-sm">
+                                        <select 
+                                            id="task_id" 
+                                            wire:model.live="task_filter" 
+                                            class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            <option value="">{{ __('messages.all_tasks') }}</option>
+                                            @foreach($tasks as $task)
+                                                <option value="{{ $task->id }}">{{ $task->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mt-4 flex justify-end">
                             <button
                                 wire:click="clearFilters"

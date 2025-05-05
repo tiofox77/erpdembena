@@ -9,6 +9,7 @@ return [
     'create' => 'Criar',
     'search' => 'Pesquisar',
     'filter' => 'Filtrar',
+    'filter_options' => 'Opções de Filtro',
     'back' => 'Voltar',
     'actions' => 'Ações',
     'confirm' => 'Confirmar',
@@ -19,6 +20,7 @@ return [
     'error' => 'Erro',
     'warning' => 'Aviso',
     'info' => 'Informação',
+    'filters_cleared' => 'Todos os filtros foram limpos.',
     'delivery_date' => 'Data de Entrega',   
     'quantity_required' => 'Quantidade é obrigatória',
     'unit_price_required' => 'Preço unitário é obrigatório',
@@ -171,6 +173,7 @@ return [
     
     // Status
     'status' => 'Status',
+    'all_statuses' => 'Todos os Status',
     'pending' => 'Pendente',
     'in_progress' => 'Em Andamento',
     'completed' => 'Concluído',
@@ -382,6 +385,7 @@ return [
     'employee_documents' => 'Documentos do Funcionário',
     'add_document' => 'Adicionar Documento',
     'type' => 'Tipo',
+    'all_types' => 'Todos os Tipos',
     'title' => 'Título',
     'expiry_date' => 'Data de Validade',
     'status' => 'Status',
@@ -1208,6 +1212,13 @@ return [
     'receive' => 'Receber',
     'order' => 'Pedir',
     
+    // Advanced Filters
+    'advanced_filters' => 'Filtros Avançados',
+    'all_equipment' => 'Todos os Equipamentos',
+    'all_tasks' => 'Todas as Tarefas',
+    'equipment' => 'Equipamento',
+    'task' => 'Tarefa',
+
     // Dashboard Restricted Access
     'access_restricted' => 'Acesso Restrito',
     'no_module_permissions' => 'Você não tem permissão para acessar nenhum módulo neste sistema.',
