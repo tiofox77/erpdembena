@@ -1266,4 +1266,21 @@
             </div>
         </div>
     @endif
+    
+    <!-- Calendar Section -->
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg w-full mt-8">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <i class="far fa-calendar-alt mr-2 text-gray-600"></i> {{ __('messages.corrective_maintenance_calendar') }}
+                </h2>
+                <div class="text-sm text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i> {{ __('messages.calendar_shows_corrective_events') }}
+                </div>
+            </div>
+            
+            <!-- Corrective Maintenance Calendar Component -->
+            <livewire:maintenance.corrective-calendar />
+        </div>
+    </div>
 </div>

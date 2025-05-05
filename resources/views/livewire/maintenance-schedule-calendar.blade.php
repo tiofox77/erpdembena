@@ -82,7 +82,7 @@
         @foreach($calendarDays as $day)
             <div
                 wire:click="selectDate('{{ $day['date'] }}')"
-                class="h-24 p-1 border rounded-md
+                class="h-44 p-1 border rounded-md
                       {{ $day['isCurrentMonth'] ? 'bg-white' : 'bg-gray-50 text-gray-500' }}
                       {{ $day['isToday'] ? 'ring-2 ring-blue-500' : '' }}
                       {{ $day['isWeekend'] ? 'bg-gray-200 text-red-600' : '' }}
@@ -106,7 +106,7 @@
                 </div>
 
                 <!-- Day Events -->
-                <div class="space-y-1 overflow-y-auto max-h-16">
+                <div class="space-y-1 overflow-y-auto" style="max-height: calc(100% - 30px);">
                     @if(isset($events[$day['date']]))
                         @foreach($events[$day['date']] as $event)
                             <div
