@@ -19,6 +19,37 @@
         </div>
     </div>
 
+    <!-- Filtros -->
+    <div class="flex flex-wrap justify-between items-center mb-4 p-2 bg-gray-50 rounded-lg">
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
+            <!-- Filtro de Status do Plano -->
+            <div class="w-full sm:w-1/2">
+                <label for="planStatusFilter" class="block text-sm font-medium text-gray-700 mb-1">{{ trans('calendar_filters.plan_status') }}</label>
+                <select id="planStatusFilter" wire:model="planStatusFilter" wire:change="updatePlanStatusFilter($event.target.value)" 
+                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="all">{{ trans('calendar_filters.all_statuses') }}</option>
+                    <option value="pending">{{ trans('calendar_filters.pending') }}</option>
+                    <option value="in-progress">{{ trans('calendar_filters.in_progress') }}</option>
+                    <option value="completed">{{ trans('calendar_filters.completed') }}</option>
+                    <option value="cancelled">{{ trans('calendar_filters.cancelled') }}</option>
+                </select>
+            </div>
+            
+            <!-- Filtro de Status das Notas -->
+            <div class="w-full sm:w-1/2">
+                <label for="noteStatusFilter" class="block text-sm font-medium text-gray-700 mb-1">{{ trans('calendar_filters.note_status') }}</label>
+                <select id="noteStatusFilter" wire:model="noteStatusFilter" wire:change="updateNoteStatusFilter($event.target.value)" 
+                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="all">{{ trans('calendar_filters.all_statuses') }}</option>
+                    <option value="pending">{{ trans('calendar_filters.pending') }}</option>
+                    <option value="in-progress">{{ trans('calendar_filters.in_progress') }}</option>
+                    <option value="completed">{{ trans('calendar_filters.completed') }}</option>
+                    <option value="cancelled">{{ trans('calendar_filters.cancelled') }}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <!-- Legend -->
     <div class="flex flex-wrap justify-start gap-4 mb-4 text-xs">
         <div class="flex items-center">

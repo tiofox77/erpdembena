@@ -204,18 +204,7 @@
                                             <span>{{ __('messages.frequency') }}</span>
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                                        <div class="flex items-center space-x-1">
-                                            <i class="fas fa-history text-gray-400 mr-1"></i>
-                                            <span>{{ __('messages.last_maint') }}</span>
-                                        </div>
-                                    </th>
-                                    <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                                        <div class="flex items-center space-x-1">
-                                            <i class="fas fa-calendar-day text-gray-400 mr-1"></i>
-                                            <span>{{ __('messages.next_maint') }}</span>
-                                        </div>
-                                    </th>
+
                                     <th scope="col" class="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <div class="flex items-center space-x-1">
                                             <i class="fas fa-tasks text-gray-400 mr-1"></i>
@@ -264,12 +253,7 @@
                                                     Unknown frequency
                                             @endswitch
                                         </td>
-                                        <td class="px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden md:table-cell">
-                                            {{ $schedule->last_maintenance_date ? $schedule->last_maintenance_date->format('M d, Y') : 'Not set' }}
-                                        </td>
-                                        <td class="px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden md:table-cell">
-                                            {{ $schedule->next_maintenance_date ? $schedule->next_maintenance_date->format('M d, Y') : 'Not scheduled' }}
-                                        </td>
+
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap">
                                             @if($schedule->status === 'pending')
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
