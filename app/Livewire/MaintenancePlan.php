@@ -210,30 +210,79 @@ class MaintenancePlan extends Component
 
     /**
      * Check if the scheduled date is a holiday or Sunday and suggest a new date
-     * Also checks for duplicates on the suggested date
+     * Also checks for existing maintenance on the suggested date
+     *
+     * @return bool
+     */
+    /**
+     * Check if the scheduled date is a holiday or Sunday and suggest a new date
+     * Verifica rigorosamente duplicações e interrompe o reagendamento se o mesmo ID já existe
      *
      * @return bool
      */
     public function checkScheduledDate()
     {
-        if (!$this->scheduled_date) {
+        if (!$this->scheduled_date || empty($this->equipment_id)) {
+            return false;
+        }
+
+        // Obter o ID se estiver editando
+        $maintenanceId = $this->isEditing ? $this->scheduleId : null;
+        
+        // VERIFICAÇÃO 1: Se já existe manutenção com mesmo ID, NÃO reagendamos
+        // Pois isso causaria duplicação no calendário
+        if ($maintenanceId) {
+            $existingWithSameId = MaintenancePlanModel::where('id', $maintenanceId)->exists();
+            if ($existingWithSameId) {
+                // Já existe uma manutenção com este ID, não vamos reagendar
+                $message = "AVISO: Não é possível reagendar manutenção que já existe no sistema. ";
+                $message .= "Para evitar duplicações, edite diretamente o registro original.";
+                
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: $message
+                );
+                
+                // Bloquear completamente o processo de reagendamento
+                return false;
+            }
+        }
+
+        // VERIFICAÇÃO 2: Se já existe manutenção semelhante, alertamos
+        $existingMaintenance = $this->checkForDuplicateMaintenanceGlobal();
+        if ($existingMaintenance) {
+            // Já existe manutenção para este equipamento, avise o usuário e não tente reagendar
             return false;
         }
 
         $date = Carbon::parse($this->scheduled_date);
-        $maintenanceId = $this->isEditing ? $this->scheduleId : null;
 
         // Check if the date is a Sunday
         if ($this->isSunday($date)) {
+            // VERIFICAÇÃO ADICIONAL: Verificar se qualquer reagendamento causaria duplicação
+            if ($this->wouldCauseDuplication($date, $maintenanceId)) {
+                return false; // Interromper reagendamento para evitar duplicação
+            }
+            
             $this->originalScheduledDate = $this->scheduled_date;
-            $this->suggestedDate = $this->getNextValidWorkingDate($date, $maintenanceId)->format('Y-m-d');
+            $suggestionDate = $this->getNextValidWorkingDate($date);
+            $this->suggestedDate = $suggestionDate->format('Y-m-d');
             $this->holidayTitle = "Sunday (Rest Day)";
+            
+            // Verificar se já existe manutenção na data sugerida
+            $this->checkForExistingMaintenanceOnDate($suggestionDate, $maintenanceId);
+            
             $this->showHolidayWarning = true;
             return true;
         }
 
         // Check if the date is a holiday
         if ($this->isHoliday($date)) {
+            // VERIFICAÇÃO ADICIONAL: Verificar se qualquer reagendamento causaria duplicação
+            if ($this->wouldCauseDuplication($date, $maintenanceId)) {
+                return false; // Interromper reagendamento para evitar duplicação
+            }
+            
             // Find the holiday title to display to the user
             $holiday = Holiday::where(function ($query) use ($date) {
                 $query->where('date', $date->format('Y-m-d'))
@@ -247,12 +296,211 @@ class MaintenancePlan extends Component
                 ->first();
 
             $this->originalScheduledDate = $this->scheduled_date;
-            $this->suggestedDate = $this->getNextValidWorkingDate($date, $maintenanceId)->format('Y-m-d');
+            $suggestionDate = $this->getNextValidWorkingDate($date);
+            $this->suggestedDate = $suggestionDate->format('Y-m-d');
             $this->holidayTitle = $holiday ? $holiday->title : "Holiday";
+            
+            // Verificar se já existe manutenção na data sugerida
+            $this->checkForExistingMaintenanceOnDate($suggestionDate, $maintenanceId);
+            
             $this->showHolidayWarning = true;
             return true;
         }
 
+        return false;
+    }
+    
+    /**
+     * Verifica se qualquer reagendamento causaria duplicação (mesmo ID ou mesmo equipamento)
+     * 
+     * @param Carbon $date A data original (domingo ou feriado)
+     * @param int|null $maintenanceId ID da manutenção atual, se estiver editando
+     * @return bool True se causaria duplicação, False caso contrário
+     */
+    protected function wouldCauseDuplication($date, $maintenanceId = null)
+    {
+        // Se já existe uma manutenção com o mesmo ID, não podemos reagendar
+        if ($maintenanceId) {
+            $existingWithSameId = MaintenancePlanModel::where('id', $maintenanceId)->exists();
+            if ($existingWithSameId) {
+                $message = "ERRO: Não é possível reagendar pois já existe uma manutenção com o mesmo ID no sistema.";
+                $this->dispatch('notify', type: 'error', message: $message);
+                return true; // Sim, causaria duplicação
+            }
+        }
+        
+        // Verificar se já existe manutenção para o mesmo equipamento em outras datas
+        // que não sejam a data original
+        if ($this->equipment_id) {
+            $query = MaintenancePlanModel::where('equipment_id', $this->equipment_id);
+            
+            // Se estiver editando, excluir o ID atual da busca
+            if ($maintenanceId) {
+                $query->where('id', '!=', $maintenanceId);
+            }
+            
+            // Excluir a data original (domingo/feriado) da busca
+            $query->whereDate('scheduled_date', '!=', $date->format('Y-m-d'));
+            
+            $existingMaintenance = $query->first();
+            if ($existingMaintenance) {
+                $equipment = MaintenanceEquipment::find($this->equipment_id);
+                $equipmentName = $equipment ? $equipment->name : 'this equipment';
+                
+                $message = "AVISO: Não é possível reagendar pois já existe uma manutenção para {$equipmentName} ";
+                $message .= "agendada para " . Carbon::parse($existingMaintenance->scheduled_date)->format('d/m/Y') . ".";
+                
+                $this->dispatch('notify', type: 'error', message: $message);
+                return true; // Sim, causaria duplicação
+            }
+        }
+        
+        return false; // Não causaria duplicação
+    }
+    
+    /**
+     * Verifica se já existe manutenção para o mesmo equipamento em qualquer data
+     * Para evitar duplicações no sistema
+     * 
+     * @return bool|object Retorna false se não existir ou o objeto da manutenção se existir
+     */
+    /**
+     * Verificação rigorosa para identificar qualquer tipo de duplicação de manutenção no sistema
+     * Considera equipamento, frequência e verificação especial para datas próximas
+     *
+     * @return bool|object False se não encontrar duplicação, ou o objeto MaintenancePlan se encontrar
+     */
+    protected function checkForExactDuplicate()
+    {
+        // Verificar se temos dados suficientes para verificar duplicações
+        if (empty($this->equipment_id) || empty($this->frequency_type) || empty($this->scheduled_date)) {
+            return false;
+        }
+        
+        // Se estamos editando, não precisamos verificar duplicação exata (será feita de outra forma)
+        if ($this->isEditing) {
+            return false;
+        }
+        
+        // 1. Verificar planos de manutenção com mesmo equipamento e frequência
+        $query = MaintenancePlanModel::where('equipment_id', $this->equipment_id);
+        
+        // 2. Aplicar verificação de frequência
+        $query->where('frequency_type', $this->frequency_type);
+        
+        // 3. Verificação adicional baseada no tipo de frequência
+        switch ($this->frequency_type) {
+            case 'custom':
+                if (!empty($this->custom_days)) {
+                    $query->where('custom_days', $this->custom_days);
+                }
+                break;
+                
+            case 'weekly':
+                if (!empty($this->day_of_week)) {
+                    $query->where('day_of_week', $this->day_of_week);
+                }
+                break;
+                
+            case 'monthly':
+                if (!empty($this->day_of_month)) {
+                    $query->where('day_of_month', $this->day_of_month);
+                }
+                break;
+                
+            case 'yearly':
+                if (!empty($this->month) && !empty($this->month_day)) {
+                    $query->where('month', $this->month)
+                          ->where('month_day', $this->month_day);
+                }
+                break;
+        }
+        
+        // Encontrar qualquer manutenção que corresponda aos critérios
+        $existingMaintenance = $query->first();
+        
+        if ($existingMaintenance) {
+            $equipment = MaintenanceEquipment::find($this->equipment_id);
+            $equipmentName = $equipment ? $equipment->name : 'this equipment';
+            
+            // Mensagem detalhada sobre a duplicação encontrada
+            $message = "DUPLICAÇÃO DETECTADA: Já existe um plano de manutenção para {$equipmentName} ";
+            $message .= "com a mesma frequência " . $this->getFrequencyText($existingMaintenance) . ". ";
+            $message .= "Agendado para " . Carbon::parse($existingMaintenance->scheduled_date)->format('d/m/Y') . ".";
+            
+            // Notificar o usuário com detalhes sobre a duplicação
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: $message
+            );
+            
+            return $existingMaintenance;
+        }
+        
+        // Verificação adicional: Agendamentos na mesma data para o mesmo equipamento
+        $scheduledDate = Carbon::parse($this->scheduled_date)->format('Y-m-d');
+        $duplicateOnDate = MaintenancePlanModel::where('equipment_id', $this->equipment_id)
+            ->whereDate('scheduled_date', $scheduledDate)
+            ->first();
+            
+        if ($duplicateOnDate) {
+            $equipment = MaintenanceEquipment::find($this->equipment_id);
+            $equipmentName = $equipment ? $equipment->name : 'this equipment';
+            
+            $message = "DUPLICAÇÃO NA MESMA DATA: Já existe um plano de manutenção para {$equipmentName} ";
+            $message .= "agendado para " . Carbon::parse($scheduledDate)->format('d/m/Y') . ".";
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: $message
+            );
+            
+            return $duplicateOnDate;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Função antiga mantida por compatibilidade
+     */
+    protected function checkForDuplicateMaintenanceGlobal()
+    {
+        return $this->checkForExactDuplicate();
+    }
+    
+    /**
+     * Verifica se já existe manutenção para o mesmo equipamento na data sugerida
+     * e adiciona aviso à mensagem do holiday title se existir
+     *
+     * @param Carbon $date
+     * @param int|null $maintenanceId
+     * @return bool
+     */
+    protected function checkForExistingMaintenanceOnDate(Carbon $date, $maintenanceId = null)
+    {
+        // Se ainda não há equipment_id selecionado, não podemos verificar duplicações
+        if (empty($this->equipment_id)) {
+            return false;
+        }
+        
+        // Verificar se já existe uma manutenção na data sugerida para o mesmo equipamento
+        $existingOnDate = MaintenancePlanModel::when($maintenanceId, function($query) use ($maintenanceId) {
+                return $query->where('id', '!=', $maintenanceId);
+            })
+            ->where('equipment_id', $this->equipment_id)
+            ->whereDate('scheduled_date', $date->format('Y-m-d'))
+            ->first();
+            
+        // Se existir, adicionar aviso ao título do feriado/domingo
+        if ($existingOnDate) {
+            $equipment = MaintenanceEquipment::find($this->equipment_id);
+            $equipmentName = $equipment ? $equipment->name : 'this equipment';
+            
+            $this->holidayTitle .= " - ATENÇÃO: Já existe manutenção para {$equipmentName} na data sugerida";
+            return true;
+        }
+        
         return false;
     }
 
@@ -301,8 +549,8 @@ class MaintenancePlan extends Component
      * @return Carbon
      */
     /**
-     * Get next valid working date (not a holiday or Sunday) and also check for duplicates
-     *
+     * Get next valid working date (not a holiday or Sunday)
+     * 
      * @param Carbon $date
      * @param int|null $maintenanceId ID of the current maintenance being scheduled
      * @return Carbon
@@ -311,33 +559,14 @@ class MaintenancePlan extends Component
     {
         $nextDate = $date->copy();
 
-        // Continue advancing until finding a valid date
-        while (true) {
-            // Verify if current date is holiday or Sunday
-            if ($this->isHoliday($nextDate) || $this->isSunday($nextDate)) {
-                $nextDate->addDay();
-                continue;
-            }
-            
-            // If no maintenance ID is provided (new creation), then this date is valid
-            if ($maintenanceId === null) {
-                break;
-            }
-            
-            // Check if there's already a maintenance with the same ID on this date
-            $existingOnDate = MaintenancePlanModel::where('id', '!=', $maintenanceId)
-                ->where('equipment_id', $this->equipment_id)
-                ->whereDate('scheduled_date', $nextDate->format('Y-m-d'))
-                ->exists();
-                
-            // If there is no duplicate on this date, we can use it
-            if (!$existingOnDate) {
-                break;
-            }
-            
-            // Otherwise, keep looking for a valid date
+        // Continue advancing until finding a valid working date (not holiday or Sunday)
+        while ($this->isHoliday($nextDate) || $this->isSunday($nextDate)) {
             $nextDate->addDay();
         }
+        
+        // Apenas chegamos ao próximo dia útil (não domingo ou feriado)
+        // Se já existir agendamento nessa data, não tentamos o próximo dia
+        // conforme solicitado
 
         return $nextDate;
     }
@@ -370,15 +599,65 @@ class MaintenancePlan extends Component
         $this->checkScheduledDate();
     }
 
+    /**
+     * Método para salvar o plano de manutenção com verificações rigorosas de duplicação
+     * 
+     * @return void
+     */
     public function save()
     {
         $this->validate();
-
+        
         try {
+            // Verificar se estamos editando ou criando um novo agendamento
             if ($this->isEditing) {
                 $schedule = MaintenancePlanModel::findOrFail($this->scheduleId);
             } else {
+                // VERIFICAÇÃO RÍGIDA 1: Verificar se já existe uma manutenção idêntica no sistema
+                // Usamos escopo de transação para garantir integridade
+                $duplicate = $this->checkForExactDuplicate();
+                if ($duplicate) {
+                    // Notificar usuário e interromper o salvamento
+                    return;
+                }
+                
                 $schedule = new MaintenancePlanModel();
+            }
+            
+            // VERIFICAÇÃO RÍGIDA 2: Garantir que a data não cai em domingo ou feriado sem confirmação
+            if (!$this->isEditing && !$this->showHolidayWarning) {
+                $date = Carbon::parse($this->scheduled_date);
+                if ($this->isSunday($date) || $this->isHoliday($date)) {
+                    $this->checkScheduledDate();
+                    return; // Aguardar confirmação do usuário antes de prosseguir
+                }
+            }
+            
+            // VERIFICAÇÃO RÍGIDA 3: Verificar duplicação exata na mesma data para o mesmo equipamento
+            $scheduledDate = Carbon::parse($this->scheduled_date)->format('Y-m-d');
+            $duplicateOnDate = MaintenancePlanModel::where('equipment_id', $this->equipment_id)
+                ->whereDate('scheduled_date', $scheduledDate);
+            
+            // Se estiver editando, excluir o agendamento atual da consulta
+            if ($this->isEditing) {
+                $duplicateOnDate->where('id', '!=', $this->scheduleId);
+            }
+            
+            // Verificar se existe duplicação
+            $duplicateExists = $duplicateOnDate->exists();
+            if ($duplicateExists) {
+                $equipment = MaintenanceEquipment::find($this->equipment_id);
+                $equipmentName = $equipment ? $equipment->name : 'this equipment';
+                
+                $message = "ERRO DE DUPLICAÇÃO: Já existe um plano de manutenção agendado para {$equipmentName} em " . 
+                          Carbon::parse($scheduledDate)->format('d/m/Y') . ". Selecione outra data ou equipamento.";
+                
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: $message
+                );
+                
+                return; // Interromper o salvamento
             }
 
             $schedule->task_id = $this->task_id;
@@ -403,17 +682,18 @@ class MaintenancePlan extends Component
             $this->dispatch('refreshCalendar');
             
             $actionType = $this->isEditing ? 'updated' : 'created';
-            $message = "Maintenance schedule {$actionType} successfully!";
+            $message = __('messages.maintenance_plan_' . $actionType);
             
-            session()->flash('message', $message);
-            $this->dispatch('notify', type: 'success', message: $message);
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: $message
+            );
             
             // Reset form and refresh data without redirecting
             $this->closeModal();
             $this->dispatch('refresh');
         } catch (\Exception $e) {
-            $errorMessage = "Error saving schedule: {$e->getMessage()}";
-            session()->flash('error', $errorMessage);
+            $errorMessage = __('messages.error_saving_schedule', ['error' => $e->getMessage()]);
             $this->dispatch('notify', type: 'error', message: $errorMessage);
         }
     }

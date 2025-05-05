@@ -251,6 +251,7 @@ class MaintenanceScheduleCalendar extends Component
                     'id' => $event['id'],
                     'title' => $event['title'],
                     'equipment' => $event['extendedProps']['equipment'] ?? 'Equipment',
+                    'equipment_id' => $event['extendedProps']['equipment_id'] ?? null, // Adicionado equipment_id
                     'status' => $event['extendedProps']['status'] ?? 'pending',
                     'type' => $event['extendedProps']['type'] ?? 'default',
                     'priority' => $event['extendedProps']['priority'] ?? 'medium',
@@ -300,6 +301,7 @@ class MaintenanceScheduleCalendar extends Component
                         'id' => $plan->id,
                         'title' => $plan->task ? $plan->task->title : 'Maintenance',
                         'equipment' => $plan->equipment ? $plan->equipment->name : 'Equipment',
+                        'equipment_id' => $plan->equipment_id, // Adicionado equipment_id para identificação única
                         'status' => $plan->status,
                         'type' => $plan->type,
                         'priority' => $plan->priority,
@@ -332,6 +334,7 @@ class MaintenanceScheduleCalendar extends Component
     {
         $occurrences = [];
         $scheduledDate = Carbon::parse($plan->scheduled_date);
+        $processedDates = []; // Rastreador para evitar duplicações do mesmo equipamento no mesmo dia
 
         // If the scheduled date is outside the period and after the end of the period,
         // we won't have occurrences of this plan this month
@@ -347,11 +350,16 @@ class MaintenanceScheduleCalendar extends Component
                 $isRestDay = $scheduledDate->isSunday() || isset($this->holidays[$scheduledDate->format('Y-m-d')]);
                 if (!$isRestDay) {
                     $occurrences[] = $scheduledDate;
+                    $processedDates[$scheduledDate->format('Y-m-d')] = true;
                 } else {
                     // If it's a rest day, find the next valid working day
                     $nextValidDay = $this->findNextValidWorkingDay($scheduledDate);
-                    if ($nextValidDay->lessThanOrEqualTo($endDate)) {
+                    $nextValidDayStr = $nextValidDay->format('Y-m-d');
+                    
+                    // Verificar se já existe alguma ocorrência no mesmo dia para o mesmo equipamento
+                    if ($nextValidDay->lessThanOrEqualTo($endDate) && !$this->hasExistingMaintenanceForDate($nextValidDayStr, $plan->equipment_id, $plan->id)) {
                         $occurrences[] = $nextValidDay;
+                        $processedDates[$nextValidDayStr] = true;
                     }
                 }
             }
@@ -369,21 +377,67 @@ class MaintenanceScheduleCalendar extends Component
 
         // Now add all occurrences within the period
         while ($currentDate->lessThanOrEqualTo($endDate)) {
+            $currentDateStr = $currentDate->format('Y-m-d');
+            
+            // Evitar duplicações: verificar se já processamos esta data
+            if (isset($processedDates[$currentDateStr])) {
+                $currentDate = $this->getNextOccurrence($currentDate, $plan);
+                continue;
+            }
+            
             // Check if it's not a rest day
-            $isRestDay = $currentDate->isSunday() || isset($this->holidays[$currentDate->format('Y-m-d')]);
+            $isRestDay = $currentDate->isSunday() || isset($this->holidays[$currentDateStr]);
             if (!$isRestDay) {
-                $occurrences[] = $currentDate->copy();
+                // Verificar se já existe alguma ocorrência no mesmo dia para o mesmo equipamento
+                if (!$this->hasExistingMaintenanceForDate($currentDateStr, $plan->equipment_id, $plan->id)) {
+                    $occurrences[] = $currentDate->copy();
+                    $processedDates[$currentDateStr] = true;
+                }
             } else {
                 // If it's a rest day, find the next valid working day
                 $nextValidDay = $this->findNextValidWorkingDay($currentDate);
-                if ($nextValidDay->lessThanOrEqualTo($endDate)) {
+                $nextValidDayStr = $nextValidDay->format('Y-m-d');
+                
+                // Verificar se já existe alguma ocorrência no próximo dia válido para o mesmo equipamento
+                if ($nextValidDay->lessThanOrEqualTo($endDate) && 
+                    !isset($processedDates[$nextValidDayStr]) && 
+                    !$this->hasExistingMaintenanceForDate($nextValidDayStr, $plan->equipment_id, $plan->id)) {
                     $occurrences[] = $nextValidDay->copy();
+                    $processedDates[$nextValidDayStr] = true;
                 }
             }
+            
             $currentDate = $this->getNextOccurrence($currentDate, $plan);
         }
 
         return $occurrences;
+    }
+    
+    /**
+     * Verifica se já existe uma manutenção para o mesmo equipamento na data especificada
+     * Usado para evitar duplicações no calendário
+     * 
+     * @param string $dateStr Data em formato Y-m-d
+     * @param int $equipmentId ID do equipamento
+     * @param int $currentPlanId ID do plano atual (para evitar contar o próprio plano)
+     * @return bool Retorna true se já existe manutenção, false caso contrário
+     */
+    private function hasExistingMaintenanceForDate($dateStr, $equipmentId, $currentPlanId)
+    {
+        // Se não há eventos nesta data, retorna false
+        if (!isset($this->events[$dateStr])) {
+            return false;
+        }
+        
+        // Verificar todos os eventos nesta data
+        foreach ($this->events[$dateStr] as $event) {
+            // Verificar se é o mesmo equipamento e não é o plano atual
+            if (isset($event['equipment_id']) && $event['equipment_id'] == $equipmentId && $event['id'] != $currentPlanId) {
+                return true; // Já existe uma manutenção para este equipamento nesta data
+            }
+        }
+        
+        return false;
     }
 
     /**

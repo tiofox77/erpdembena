@@ -174,11 +174,22 @@ class RolePermissions extends Component
     // Save role (create or update)
     public function saveRole()
     {
-        $this->validate([
-            'role.name' => 'required|string|max:255',
-        ]);
-
         try {
+            // Validar o nome da role com validação adicional de unicidade
+            if ($this->isEditing) {
+                $this->validate([
+                    'role.name' => 'required|string|max:255',
+                ]);
+            } else {
+                $this->validate([
+                    'role.name' => 'required|string|max:255|unique:roles,name',
+                ]);
+            }
+            
+            // Formatar o nome da role para evitar problemas
+            // Remover espaços duplos, caracteres especiais e padronizar
+            $formattedRoleName = $this->formatRoleName($this->role['name']);
+            
             // Check if selectedPermissions contains valid IDs
             if (!empty($this->selectedPermissions)) {
                 // Filter only valid numeric IDs
@@ -193,17 +204,32 @@ class RolePermissions extends Component
 
             if ($this->isEditing) {
                 $role = Role::findOrFail($this->role['id']);
-                $role->name = $this->role['name'];
+                
+                // Verificar se o nome será alterado e se já existe outro com esse nome
+                if ($role->name !== $formattedRoleName) {
+                    $existingRole = Role::where('name', $formattedRoleName)->where('id', '!=', $role->id)->first();
+                    if ($existingRole) {
+                        throw new \Exception("Uma função com o nome '{$formattedRoleName}' já existe.");
+                    }
+                }
+                
+                $role->name = $formattedRoleName;
                 $role->save();
 
                 // Sync permissions with valid IDs
                 $role->syncPermissions($this->selectedPermissions);
 
-                $message = 'Role updated successfully.';
+                $message = "Função '{$formattedRoleName}' atualizada com sucesso.";
                 $notificationType = 'info';
             } else {
+                // Verificar novamente se já existe uma role com este nome
+                $existingRole = Role::where('name', $formattedRoleName)->first();
+                if ($existingRole) {
+                    throw new \Exception("Uma função com o nome '{$formattedRoleName}' já existe.");
+                }
+                
                 $role = Role::create([
-                    'name' => $this->role['name'],
+                    'name' => $formattedRoleName,
                     'guard_name' => 'web',
                 ]);
 
@@ -212,7 +238,7 @@ class RolePermissions extends Component
                     $role->syncPermissions($this->selectedPermissions);
                 }
 
-                $message = 'Role created successfully.';
+                $message = "Função '{$formattedRoleName}' criada com sucesso.";
                 $notificationType = 'success';
             }
 
@@ -222,8 +248,36 @@ class RolePermissions extends Component
         } catch (\Exception $e) {
             Log::error('Error saving role: ' . $e->getMessage());
             Log::error('selectedPermissions: ' . json_encode($this->selectedPermissions));
-            $this->dispatch('notify', type: 'error', message: 'Error saving role: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Erro ao salvar função: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Formata o nome da role para evitar problemas
+     * - Remove espaços em excesso
+     * - Converte para minúsculas
+     * - Substitui espaços por hífens
+     * - Remove caracteres especiais
+     * 
+     * @param string $name Nome da role
+     * @return string Nome formatado
+     */
+    private function formatRoleName($name)
+    {
+        // Remover espaços em excesso e converter para minúsculas
+        $name = trim(strtolower($name));
+        
+        // Se for uma role de manutenção, garantir que comece com 'maintenance-'
+        if (stripos($name, 'maintenance') === 0 && stripos($name, 'maintenance-') !== 0) {
+            $name = 'maintenance-' . substr($name, strlen('maintenance'));
+        }
+        
+        // Se for uma string vazia após a limpeza, usar um valor padrão
+        if (empty($name)) {
+            return 'role-' . time();
+        }
+        
+        return $name;
     }
 
     // Open modal to create permission
