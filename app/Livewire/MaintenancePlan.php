@@ -210,6 +210,7 @@ class MaintenancePlan extends Component
 
     /**
      * Check if the scheduled date is a holiday or Sunday and suggest a new date
+     * Also checks for duplicates on the suggested date
      *
      * @return bool
      */
@@ -220,11 +221,12 @@ class MaintenancePlan extends Component
         }
 
         $date = Carbon::parse($this->scheduled_date);
+        $maintenanceId = $this->isEditing ? $this->scheduleId : null;
 
         // Check if the date is a Sunday
         if ($this->isSunday($date)) {
             $this->originalScheduledDate = $this->scheduled_date;
-            $this->suggestedDate = $this->getNextValidWorkingDate($date)->format('Y-m-d');
+            $this->suggestedDate = $this->getNextValidWorkingDate($date, $maintenanceId)->format('Y-m-d');
             $this->holidayTitle = "Sunday (Rest Day)";
             $this->showHolidayWarning = true;
             return true;
@@ -245,7 +247,7 @@ class MaintenancePlan extends Component
                 ->first();
 
             $this->originalScheduledDate = $this->scheduled_date;
-            $this->suggestedDate = $this->getNextValidWorkingDate($date)->format('Y-m-d');
+            $this->suggestedDate = $this->getNextValidWorkingDate($date, $maintenanceId)->format('Y-m-d');
             $this->holidayTitle = $holiday ? $holiday->title : "Holiday";
             $this->showHolidayWarning = true;
             return true;
@@ -298,12 +300,42 @@ class MaintenancePlan extends Component
      * @param Carbon $date
      * @return Carbon
      */
-    protected function getNextValidWorkingDate(Carbon $date)
+    /**
+     * Get next valid working date (not a holiday or Sunday) and also check for duplicates
+     *
+     * @param Carbon $date
+     * @param int|null $maintenanceId ID of the current maintenance being scheduled
+     * @return Carbon
+     */
+    protected function getNextValidWorkingDate(Carbon $date, $maintenanceId = null)
     {
         $nextDate = $date->copy();
 
         // Continue advancing until finding a valid date
-        while ($this->isHoliday($nextDate) || $this->isSunday($nextDate)) {
+        while (true) {
+            // Verify if current date is holiday or Sunday
+            if ($this->isHoliday($nextDate) || $this->isSunday($nextDate)) {
+                $nextDate->addDay();
+                continue;
+            }
+            
+            // If no maintenance ID is provided (new creation), then this date is valid
+            if ($maintenanceId === null) {
+                break;
+            }
+            
+            // Check if there's already a maintenance with the same ID on this date
+            $existingOnDate = MaintenancePlanModel::where('id', '!=', $maintenanceId)
+                ->where('equipment_id', $this->equipment_id)
+                ->whereDate('scheduled_date', $nextDate->format('Y-m-d'))
+                ->exists();
+                
+            // If there is no duplicate on this date, we can use it
+            if (!$existingOnDate) {
+                break;
+            }
+            
+            // Otherwise, keep looking for a valid date
             $nextDate->addDay();
         }
 
