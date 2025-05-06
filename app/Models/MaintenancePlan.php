@@ -259,4 +259,28 @@ class MaintenancePlan extends Model
             return "{$minutes}m";
         }
     }
+    
+    /**
+     * Get maintenance task logs associated with this plan
+     */
+    public function taskLogs()
+    {
+        return $this->hasMany(MaintenanceTaskLog::class, 'maintenance_plan_id');
+    }
+    
+    /**
+     * Get maintenance task logs that are completed
+     */
+    public function completedTaskLogs()
+    {
+        return $this->taskLogs()->where('status', 'completed');
+    }
+    
+    /**
+     * Get maintenance task logs that are pending or in progress
+     */
+    public function pendingTaskLogs()
+    {
+        return $this->taskLogs()->whereIn('status', ['pending', 'in_progress']);
+    }
 }

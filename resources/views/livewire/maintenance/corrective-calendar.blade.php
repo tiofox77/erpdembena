@@ -2,7 +2,12 @@
     <!-- Calendar Header -->
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-gray-900">{{ $calendarTitle }}</h2>
-        <div class="flex space-x-2">
+        <div class="flex items-center space-x-2">
+            <!-- PDF Generation Button -->
+            <button wire:click="generatePdf" class="p-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors flex items-center">
+                <i class="fas fa-file-pdf mr-1"></i>
+                {{ __('messages.export_to_pdf') }}
+            </button>
             <button wire:click="previousMonth" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -76,7 +81,7 @@
                         {{ $day['day'] }}
                     </span>
                     @if($day['isHoliday'])
-                        <span class="text-xs text-red-600 bg-red-50 px-1 rounded" title="Holiday">
+                        <span class="text-xs text-red-600 bg-red-50 px-1 rounded" title="{{ __('messages.holiday') }}">
                             <i class="fas fa-star"></i>
                         </span>
                     @endif
@@ -104,7 +109,7 @@
     <div class="mt-4 pt-3 border-t">
         <div class="flex justify-between items-center mb-2">
             <h3 class="text-md font-medium text-gray-900">
-                {{ __('messages.events_for') }} {{ Carbon\Carbon::parse($selectedDate)->format('m/d/Y') }}
+                {{ __('messages.events_for') }} {{ Carbon\Carbon::parse($selectedDate)->format(__('messages.date_format', ['default' => 'm/d/Y'])) }}
                 @if(Carbon\Carbon::parse($selectedDate)->isSunday())
                     <span class="text-xs text-red-600">({{ __('messages.sunday') }})</span>
                 @endif

@@ -101,6 +101,28 @@ class MaintenanceEquipment extends Model
     {
         return $this->hasMany(EquipmentPart::class, 'maintenance_equipment_id');
     }
-
-
+    
+    /**
+     * Get the task logs associated with the equipment.
+     */
+    public function taskLogs()
+    {
+        return $this->hasMany(MaintenanceTaskLog::class, 'equipment_id');
+    }
+    
+    /**
+     * Get the completed task logs associated with the equipment.
+     */
+    public function completedTaskLogs()
+    {
+        return $this->taskLogs()->where('status', 'completed');
+    }
+    
+    /**
+     * Get the pending task logs associated with the equipment.
+     */
+    public function pendingTaskLogs()
+    {
+        return $this->taskLogs()->whereIn('status', ['pending', 'in_progress']);
+    }
 }

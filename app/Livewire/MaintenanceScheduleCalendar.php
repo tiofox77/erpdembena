@@ -704,4 +704,50 @@ class MaintenanceScheduleCalendar extends Component
     {
         return view('livewire.maintenance-schedule-calendar');
     }
+    
+    /**
+     * Generate PDF of the maintenance plan calendar
+     */
+    public function generatePdf()
+    {
+        try {
+            // Prepare the data for the PDF
+            $data = [
+                'title' => __('messages.maintenance_plan_calendar'),
+                'month' => $this->calendarTitle,
+                'calendarDays' => $this->calendarDays,
+                'events' => $this->events,
+                'holidays' => $this->holidays,
+                'filters' => [
+                    'planStatus' => $this->planStatusFilter,
+                    'noteStatus' => $this->noteStatusFilter,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.maintenance-calendar', $data);
+            
+            $filename = 'maintenance_calendar_' . $this->currentYear . '_' . $this->currentMonth . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error generating maintenance calendar PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
+    }
 }

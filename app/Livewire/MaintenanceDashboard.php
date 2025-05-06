@@ -23,12 +23,20 @@ class MaintenanceDashboard extends Component
     public $overdueTasks;
     public $completedTasks;
     public $maintenanceAlerts = [];
+    
+    // Novos dados para widgets
+    public $pendingCorrectiveCount;
+    public $partRequestsCount;
+    public $upcomingMaintenance = [];
+    public $recentTasks = [];
+    public $availableTechnicians = [];
 
     // Dados para gráficos
     public $planningChartData = [];
     public $correctiveChartData = [];
     public $monthlyTasksData = [];
     public $statusDistributionData = [];
+    public $maintenanceTypeData = [];
 
     // Dados adicionais para KPIs gerais
     public $plannedTasksCount = 0;

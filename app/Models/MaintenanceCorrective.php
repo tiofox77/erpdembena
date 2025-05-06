@@ -51,14 +51,18 @@ class MaintenanceCorrective extends Model
     const STATUS_RESOLVED = 'resolved';
     const STATUS_CLOSED = 'closed';
 
-    // Get all available statuses
+    /**
+     * Get list of possible statuses with translations
+     * 
+     * @return array
+     */
     public static function getStatuses()
     {
         return [
-            self::STATUS_OPEN => 'Open',
-            self::STATUS_IN_PROGRESS => 'In Progress',
-            self::STATUS_RESOLVED => 'Resolved',
-            self::STATUS_CLOSED => 'Closed',
+            self::STATUS_OPEN => __('messages.open'),
+            self::STATUS_IN_PROGRESS => __('messages.in_progress'),
+            self::STATUS_RESOLVED => __('messages.resolved'),
+            self::STATUS_CLOSED => __('messages.closed'),
         ];
     }
 

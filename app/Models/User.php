@@ -122,4 +122,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(MaintenancePlan::class, 'updated_by');
     }
+    
+    public function assignedMaintenancePlans()
+    {
+        return $this->plansAssigned();
+    }
+    
+    public function maintenanceTaskLogs()
+    {
+        return $this->hasMany(MaintenanceTaskLog::class, 'user_id');
+    }
 }

@@ -1169,7 +1169,7 @@ class MaintenancePlan extends Component
     /**
      * Update equipment filter
      */
-    public function updatedEquipmentFilter()
+    public function updatedEquipment_filter()
     {
         $this->resetPage();
     }
@@ -1177,50 +1177,88 @@ class MaintenancePlan extends Component
     /**
      * Update task filter
      */
-    public function updatedTaskFilter()
+    public function updatedTask_filter()
     {
         $this->resetPage();
+    }
+    
+    /**
+     * Load filter options for the maintenance plan list
+     */
+    public function loadFilters()
+    {
+        // This method can be used to initialize filter values or preset filters
+        // based on certain conditions (like user permissions, roles, etc.)
+        $this->equipment_filter = $this->equipment_filter ?? '';
+        $this->statusFilter = $this->statusFilter ?? '';
+        $this->frequencyFilter = $this->frequencyFilter ?? '';
+        $this->task_filter = $this->task_filter ?? '';
+    }
+    
+    /**
+     * Get filtered maintenance plans based on current filters
+     * 
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
+    public function getFilteredPlans()
+    {
+        $query = MaintenancePlanModel::query()
+            ->with(['equipment', 'equipment.area', 'equipment.line', 'task', 'assignedTo']);
+            
+        // Apply search filter if provided
+        if (!empty($this->search)) {
+            $search = '%' . $this->search . '%';
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', $search)
+                  ->orWhere('description', 'like', $search)
+                  ->orWhereHas('equipment', function($eq) use ($search) {
+                      $eq->where('name', 'like', $search);
+                  })
+                  ->orWhereHas('task', function($tq) use ($search) {
+                      $tq->where('title', 'like', $search);
+                  });
+            });
+        }
+        
+        // Apply equipment filter if provided
+        if (!empty($this->equipment_filter)) {
+            $query->where('equipment_id', $this->equipment_filter);
+        }
+        
+        // Apply status filter if provided
+        if (!empty($this->statusFilter)) {
+            $query->where('status', $this->statusFilter);
+        }
+        
+        // Apply frequency filter if provided
+        if (!empty($this->frequencyFilter)) {
+            $query->where('frequency_type', $this->frequencyFilter);
+        }
+        
+        // Apply task filter if provided
+        if (!empty($this->task_filter)) {
+            $query->where('task_id', $this->task_filter);
+        }
+        
+        // Apply sorting
+        $query->orderBy($this->sortField, $this->sortDirection);
+        
+        // Paginate results
+        return $query->paginate($this->perPage);
     }
 
     public function render()
     {
-        $schedules = MaintenancePlanModel::with(['equipment', 'line', 'area', 'task', 'assignedTo'])
-            ->when($this->search, function ($query) {
-                return $query->whereHas('equipment', function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('serial_number', 'like', '%' . $this->search . '%');
-                });
-            })
-            ->when($this->statusFilter, function ($query) {
-                return $query->where('status', $this->statusFilter);
-            })
-            ->when($this->frequencyFilter, function ($query) {
-                return $query->where('frequency_type', $this->frequencyFilter);
-            })
-            ->when($this->equipment_filter, function ($query) {
-                return $query->where('equipment_id', $this->equipment_filter);
-            })
-            ->when($this->task_filter, function ($query) {
-                return $query->where('task_id', $this->task_filter);
-            })
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
-
+        $this->loadFilters();
+        $plans = $this->getFilteredPlans();
+        
         return view('livewire.maintenance-plan', [
-            'schedules' => $schedules,
-            'equipment' => MaintenanceEquipment::all(),
-            'lines' => MaintenanceLine::all(),
-            'areas' => MaintenanceArea::all(),
-            'tasks' => MaintenanceTask::all(),
+            'plans' => $plans,
+            'tasks' => MaintenanceTask::orderBy('title')->get(),
+            'equipments' => MaintenanceEquipment::with('area', 'line')->orderBy('name')->get(),
+            'areas' => MaintenanceArea::orderBy('name')->get(),
+            'lines' => MaintenanceLine::orderBy('name')->get(),
             'technicians' => Technician::orderBy('name')->get(),
-            'frequencies' => [
-                'once' => 'Once',
-                'daily' => 'Daily',
-                'custom' => 'Custom (days)',
-                'weekly' => 'Weekly',
-                'monthly' => 'Monthly',
-                'yearly' => 'Yearly'
-            ],
             'priorities' => [
                 'low' => 'Low',
                 'medium' => 'Medium',
@@ -1241,5 +1279,155 @@ class MaintenancePlan extends Component
                 'schedule' => 'Schedule'
             ]
         ]);
+    }
+    
+    /**
+     * Generate PDF for an individual maintenance plan
+     * 
+     * @param int $id The maintenance plan ID
+     * @return mixed Response with PDF download or null on error
+     */
+    public function generatePdf($id)
+    {
+        try {
+            $plan = MaintenancePlanModel::with([
+                'equipment', 
+                'equipment.area',
+                'equipment.line',
+                'task',
+                'assignedTo',
+                'notes' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])->findOrFail($id);
+            
+            // Prepare the data for the PDF
+            $data = [
+                'plan' => $plan,
+                'title' => __('messages.maintenance_plan_details'),
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.maintenance-plan', $data);
+            
+            $filename = 'maintenance_plan_' . $id . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error generating maintenance plan PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
+    }
+    
+    /**
+     * Generate PDF for a filtered list of maintenance plans
+     * 
+     * @return mixed Response with PDF download or null on error
+     */
+    public function generateListPdf()
+    {
+        try {
+            // Get the filtered plans using the current filters
+            $this->loadFilters();
+            
+            // Criar uma query com os mesmos filtros de getFilteredPlans()
+            $query = MaintenancePlanModel::query();
+            
+            // Apply search filter if provided
+            if (!empty($this->search)) {
+                $search = '%' . $this->search . '%';
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', $search)
+                      ->orWhere('description', 'like', $search)
+                      ->orWhereHas('equipment', function($eq) use ($search) {
+                          $eq->where('name', 'like', $search);
+                      })
+                      ->orWhereHas('task', function($tq) use ($search) {
+                          $tq->where('title', 'like', $search);
+                      });
+                });
+            }
+            
+            // Apply equipment filter if provided
+            if (!empty($this->equipment_filter)) {
+                $query->where('equipment_id', $this->equipment_filter);
+            }
+            
+            // Apply status filter if provided
+            if (!empty($this->statusFilter)) {
+                $query->where('status', $this->statusFilter);
+            }
+            
+            // Apply frequency filter if provided
+            if (!empty($this->frequencyFilter)) {
+                $query->where('frequency_type', $this->frequencyFilter);
+            }
+            
+            // Apply task filter if provided
+            if (!empty($this->task_filter)) {
+                $query->where('task_id', $this->task_filter);
+            }
+            
+            // Apply sorting
+            $query->orderBy($this->sortField, $this->sortDirection);
+            
+            // Limit to 100 records for performance
+            $plans = $query->with(['equipment', 'equipment.area', 'equipment.line', 'task', 'assignedTo'])
+                            ->limit(100)
+                            ->get();
+            
+            // Prepare the data for the PDF
+            $data = [
+                'plans' => $plans,
+                'title' => __('messages.maintenance_plans_list'),
+                'filters' => [
+                    'status' => $this->statusFilter,
+                    'equipment' => $this->equipment_filter ? MaintenanceEquipment::find($this->equipment_filter)?->name : null,
+                    'task' => $this->task_filter ? MaintenanceTask::find($this->task_filter)?->title : null,
+                    'frequency' => $this->frequencyFilter,
+                    'search' => $this->search,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.maintenance-plans-list', $data);
+            
+            $filename = 'maintenance_plans_list_' . now()->format('Y-m-d') . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_list_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error generating maintenance plans list PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
     }
 }

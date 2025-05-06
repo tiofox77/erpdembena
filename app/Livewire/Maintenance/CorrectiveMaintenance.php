@@ -566,4 +566,156 @@ class CorrectiveMaintenance extends Component
     {
         // Completely removed - no action needed
     }
+    
+    /**
+     * Get list of months for filtering
+     * 
+     * @return array
+     */
+    protected function getMonths()
+    {
+        return [
+            1 => __('messages.january'),
+            2 => __('messages.february'),
+            3 => __('messages.march'),
+            4 => __('messages.april'),
+            5 => __('messages.may'),
+            6 => __('messages.june'),
+            7 => __('messages.july'),
+            8 => __('messages.august'),
+            9 => __('messages.september'),
+            10 => __('messages.october'),
+            11 => __('messages.november'),
+            12 => __('messages.december'),
+        ];
+    }
+    
+    /**
+     * Generate PDF for a filtered list of corrective maintenance plans
+     * 
+     * @return mixed Response with PDF download or null on error
+     */
+    public function generateListPdf()
+    {
+        try {
+            // Apply the same filters as in the current view
+            $query = MaintenanceCorrective::query();
+            
+            // Apply search filter if provided
+            if (!empty($this->search)) {
+                $search = '%' . $this->search . '%';
+                $query->where(function($q) use ($search) {
+                    $q->where('description', 'like', $search)
+                      ->orWhereHas('equipment', function($eq) use ($search) {
+                          $eq->where('name', 'like', $search);
+                      })
+                      ->orWhereHas('failureMode', function($fmq) use ($search) {
+                          $fmq->where('name', 'like', $search);
+                      })
+                      ->orWhereHas('failureCause', function($fcq) use ($search) {
+                          $fcq->where('name', 'like', $search);
+                      });
+                });
+            }
+            
+            // Apply equipment filter if provided
+            if (!empty($this->filterEquipment)) {
+                $query->where('equipment_id', $this->filterEquipment);
+            }
+            
+            // Apply status filter if provided
+            if (!empty($this->filterStatus)) {
+                $query->where('status', $this->filterStatus);
+            }
+            
+            // Apply year filter if provided
+            if (!empty($this->filterYear)) {
+                $query->whereYear('start_time', $this->filterYear);
+            }
+            
+            // Apply month filter if provided
+            if (!empty($this->filterMonth)) {
+                $query->whereMonth('start_time', $this->filterMonth);
+            }
+            
+            // Apply sorting
+            $query->orderBy($this->sortField, $this->sortDirection);
+            
+            // Eager load all relationships
+            $corrective_plans = $query->with([
+                'equipment', 
+                'equipment.area', 
+                'equipment.line', 
+                'failureMode', 
+                'failureCause', 
+                'reporter',
+                'resolver'
+            ])
+            ->limit(100)
+            ->get();
+            
+            // Calcular duração para cada plano se não estiver definida
+            foreach ($corrective_plans as $plan) {
+                if (!$plan->duration && $plan->start_time && $plan->end_time) {
+                    $plan->duration = $plan->end_time->diffForHumans($plan->start_time, true);
+                }
+            }
+            
+            // Get month and year names for filters display
+            $monthName = !empty($this->filterMonth) ? $this->getMonths()[$this->filterMonth] : null;
+            $yearValue = !empty($this->filterYear) ? $this->filterYear : null;
+            
+            // Obter nome do status traduzido
+            $statusName = null;
+            if (!empty($this->filterStatus)) {
+                $statuses = MaintenanceCorrective::getStatuses();
+                $statusName = $statuses[$this->filterStatus] ?? $this->filterStatus;
+            }
+            
+            // Obter nome do equipamento se existir
+            $equipmentName = null;
+            if (!empty($this->filterEquipment)) {
+                $equipment = MaintenanceEquipment::find($this->filterEquipment);
+                $equipmentName = $equipment ? $equipment->name : 'Unknown';
+            }
+            
+            // Prepare the data for the PDF
+            $data = [
+                'corrective_plans' => $corrective_plans,
+                'title' => __('messages.corrective_maintenance_list'),
+                'filters' => [
+                    'status' => $statusName,
+                    'equipment_name' => $equipmentName,
+                    'year' => $yearValue,
+                    'month' => $monthName,
+                    'search' => $this->search,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.corrective-maintenance-list', $data);
+            
+            $filename = 'corrective_maintenance_list_' . now()->format('Y-m-d') . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_list_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating corrective maintenance list PDF: ' . $e->getMessage() . ' ' . $e->getTraceAsString());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed') . ' - ' . $e->getMessage()
+            );
+            return null;
+        }
+    }
 }

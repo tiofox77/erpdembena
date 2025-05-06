@@ -20,14 +20,14 @@ class CreateMaintenanceRole extends Command
      *
      * @var string
      */
-    protected $description = 'Cria uma nova função (role) para gerenciamento de manutenção';
+    protected $description = 'Create a new maintenance management role';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Criando role para gerenciamento de manutenção...');
+        $this->info(trans('console.creating_maintenance_role'));
 
         try {
             // Buscar todas as permissões relacionadas à manutenção
@@ -39,7 +39,7 @@ class CreateMaintenanceRole extends Command
                 ->get();
             
             if ($maintenancePermissions->count() === 0) {
-                $this->info('Nenhuma permissão de manutenção encontrada. Criando permissões básicas...');
+                $this->info(trans('console.no_permissions_found'));
                 
                 // Se não existirem permissões específicas de manutenção, vamos criar algumas
                 $baseMaintPermissions = [
@@ -55,7 +55,7 @@ class CreateMaintenanceRole extends Command
                 
                 foreach ($baseMaintPermissions as $permName) {
                     Permission::firstOrCreate(['name' => $permName, 'guard_name' => 'web']);
-                    $this->line("- Permissão criada: $permName");
+                    $this->line(trans('console.permission_created', ['name' => $permName]));
                 }
                 
                 // Buscar novamente após criar
@@ -70,11 +70,11 @@ class CreateMaintenanceRole extends Command
             // Verificar se a role já existe
             $existingRole = Role::where('name', 'maintenance-manager')->first();
             if ($existingRole) {
-                $this->info("A função 'maintenance-manager' já existe. Atualizando permissões...");
+                $this->info(trans('console.role_exists'));
                 $role = $existingRole;
             } else {
                 // Criar a nova role
-                $this->info("Criando nova função 'maintenance-manager'...");
+                $this->info(trans('console.creating_new_role'));
                 $role = Role::create([
                     'name' => 'maintenance-manager',
                     'guard_name' => 'web'
@@ -85,18 +85,18 @@ class CreateMaintenanceRole extends Command
             $permissionsIds = $maintenancePermissions->pluck('id')->toArray();
             $role->syncPermissions($permissionsIds);
             
-            $this->info("Função 'maintenance-manager' configurada com sucesso!");
-            $this->info("Total de permissões atribuídas: " . count($permissionsIds));
+            $this->info(trans('console.role_configured'));
+            $this->info(trans('console.total_permissions', ['count' => count($permissionsIds)]));
             
             // Exibir todas as permissões atribuídas
-            $this->info("Permissões atribuídas:");
+            $this->info(trans('console.assigned_permissions'));
             foreach ($maintenancePermissions as $perm) {
                 $this->line("- " . $perm->name);
             }
             
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->error("Erro: " . $e->getMessage());
+            $this->error(trans('console.error', ['message' => $e->getMessage()]));
             return Command::FAILURE;
         }
     }

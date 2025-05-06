@@ -27,6 +27,9 @@
     <link rel="stylesheet" href="{{ asset('css/toastr.min.css') }}">
     <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script src="{{ asset('js/toastr.min.js') }}"></script>
+    
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
     <!-- Custom Toastr Styling -->
     <style>
@@ -1102,7 +1105,7 @@
         document.addEventListener('livewire:initialized', () => {
             // Listen for toast events
             Livewire.on('toast', (params) => {
-                console.log('Toast event received:', params);
+                console.log('{{ trans("messages.toast_event_received") }}:', params);
 
                 // Check if toastr is defined
                 if (typeof toastr === 'undefined') {
@@ -1142,7 +1145,7 @@
 
             // Debug: log when notification event is received (legacy support)
             Livewire.on('notify', (params) => {
-                console.log('Notification event received:', params);
+                console.log('{{ trans("messages.notification_event_received") }}:', params);
 
                 // Check if toastr is defined
                 if (typeof toastr === 'undefined') {

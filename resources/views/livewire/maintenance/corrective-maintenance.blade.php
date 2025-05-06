@@ -13,12 +13,23 @@
                             </h2>
                             <x-maintenance-guide-link />
                         </div>
-                        <button
-                            wire:click="openModal"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        >
-                            <i class="fas fa-plus-circle mr-1"></i> {{ __('messages.report_downtime') }}
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <!-- PDF Export Button -->
+                            <button
+                                wire:click="generateListPdf"
+                                class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded flex items-center transition-colors"
+                                wire:loading.attr="disabled"
+                            >
+                                <i class="fas fa-file-pdf mr-2"></i> {{ __('messages.export_to_pdf') }}
+                            </button>
+                            
+                            <button
+                                wire:click="openModal"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            >
+                                <i class="fas fa-plus-circle mr-1"></i> {{ __('messages.report_downtime') }}
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Filters and Search -->

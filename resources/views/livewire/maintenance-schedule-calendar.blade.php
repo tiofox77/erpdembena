@@ -2,14 +2,19 @@
     <!-- Calendar Header -->
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-gray-900">{{ $calendarTitle }}</h2>
-        <div class="flex space-x-2">
+        <div class="flex items-center space-x-2">
+            <!-- PDF Generation Button -->
+            <button wire:click="generatePdf" class="p-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors flex items-center">
+                <i class="fas fa-file-pdf mr-1"></i>
+                {{ __('messages.export_to_pdf') }}
+            </button>
             <button wire:click="previousMonth" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </button>
             <button wire:click="resetToday" class="p-2 bg-blue-100 text-blue-800 font-medium rounded-md hover:bg-blue-200">
-                Today
+                {{ trans('calendar_filters.today_button') }}
             </button>
             <button wire:click="nextMonth" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -54,27 +59,27 @@
     <div class="flex flex-wrap justify-start gap-4 mb-4 text-xs">
         <div class="flex items-center">
             <div class="w-3 h-3 bg-red-100 rounded-full mr-1"></div>
-            <span>Holiday</span>
+            <span>{{ trans('calendar_filters.holiday_legend') }}</span>
         </div>
         <div class="flex items-center">
             <div class="w-3 h-3 bg-gray-200 rounded-full mr-1"></div>
-            <span>Sunday (Rest Day)</span>
+            <span>{{ trans('calendar_filters.sunday_rest_day') }}</span>
         </div>
         <div class="flex items-center">
             <div class="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
-            <span>Today</span>
+            <span>{{ trans('calendar_filters.today_legend') }}</span>
         </div>
     </div>
 
     <!-- Days of Week -->
     <div class="grid grid-cols-7 gap-1 mb-2">
-        <div class="text-center text-sm font-medium text-red-600">Sun</div>
-        <div class="text-center text-sm font-medium text-gray-600">Mon</div>
-        <div class="text-center text-sm font-medium text-gray-600">Tue</div>
-        <div class="text-center text-sm font-medium text-gray-600">Wed</div>
-        <div class="text-center text-sm font-medium text-gray-600">Thu</div>
-        <div class="text-center text-sm font-medium text-gray-600">Fri</div>
-        <div class="text-center text-sm font-medium text-gray-600">Sat</div>
+        <div class="text-center text-sm font-medium text-red-600">{{ trans('calendar_filters.sun') }}</div>
+        <div class="text-center text-sm font-medium text-gray-600">{{ trans('calendar_filters.mon') }}</div>
+        <div class="text-center text-sm font-medium text-gray-600">{{ trans('calendar_filters.tue') }}</div>
+        <div class="text-center text-sm font-medium text-gray-600">{{ trans('calendar_filters.wed') }}</div>
+        <div class="text-center text-sm font-medium text-gray-600">{{ trans('calendar_filters.thu') }}</div>
+        <div class="text-center text-sm font-medium text-gray-600">{{ trans('calendar_filters.fri') }}</div>
+        <div class="text-center text-sm font-medium text-gray-600">{{ trans('calendar_filters.sat') }}</div>
     </div>
 
     <!-- Calendar Days -->
@@ -94,7 +99,7 @@
                     <span class="text-sm font-medium">{{ $day['day'] }}</span>
                     <div class="flex gap-1">
                         @if($day['isToday'])
-                            <span class="text-xs px-1 rounded-full bg-blue-500 text-white">today</span>
+                            <span class="text-xs px-1 rounded-full bg-blue-500 text-white">{{ trans('calendar_filters.today_tag') }}</span>
                         @endif
                         @if($day['isHoliday'])
                             <span class="text-xs px-1 py-0.5 rounded-full bg-red-500 text-white" title="{{ $day['holidayTitle'] }}">🎉</span>
@@ -131,13 +136,13 @@
     <div class="mt-4 pt-3 border-t">
         <div class="flex justify-between items-center mb-2">
             <h3 class="text-md font-medium text-gray-900">
-                Tasks for {{ Carbon\Carbon::parse($selectedDate)->format('m/d/Y') }}
+                {{ trans('calendar_filters.tasks_for_date') }} {{ Carbon\Carbon::parse($selectedDate)->format('m/d/Y') }}
                 @if(Carbon\Carbon::parse($selectedDate)->isSunday())
-                    <span class="text-xs px-2 py-1 ml-2 rounded-full bg-gray-200 text-gray-700">Sunday (Rest Day)</span>
+                    <span class="text-xs px-2 py-1 ml-2 rounded-full bg-gray-200 text-gray-700">{{ trans('calendar_filters.sunday_rest_day_tag') }}</span>
                 @endif
                 @foreach($calendarDays as $day)
                     @if($day['date'] === $selectedDate && $day['isHoliday'])
-                        <span class="text-xs px-2 py-1 ml-2 rounded-full bg-red-100 text-red-700">Holiday: {{ $day['holidayTitle'] }}</span>
+                        <span class="text-xs px-2 py-1 ml-2 rounded-full bg-red-100 text-red-700">{{ trans('calendar_filters.holiday_prefix') }} {{ $day['holidayTitle'] }}</span>
                     @endif
                 @endforeach
             </h3>
@@ -149,12 +154,12 @@
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                Add Task
+                {{ trans('calendar_filters.add_task') }}
             </button>
         </div>
 
         @if(empty($selectedDateEvents))
-            <p class="text-sm text-gray-500 italic">No tasks scheduled for this date</p>
+            <p class="text-sm text-gray-500 italic">{{ trans('calendar_filters.no_tasks_scheduled') }}</p>
         @else
             <div class="space-y-2">
                 @foreach($selectedDateEvents as $event)

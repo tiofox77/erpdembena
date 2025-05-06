@@ -8,13 +8,24 @@
                     </h1>
                     <x-maintenance-guide-link />
                 </div>
-                <button
-                    type="button"
-                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1.5 px-3 sm:py-2 sm:px-4 rounded flex items-center"
-                    wire:click="openModal"
-                >
-                    <i class="fas fa-plus-circle mr-2"></i> {{ __('messages.add_schedule') }}
-                </button>
+                <div class="flex items-center space-x-2">
+                    <!-- Generate List PDF Button -->
+                    <button
+                        type="button"
+                        class="bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium py-1.5 px-3 sm:py-2 sm:px-4 rounded flex items-center transition-colors"
+                        wire:click="generateListPdf"
+                    >
+                        <i class="fas fa-file-pdf mr-2"></i> {{ __('messages.export_to_pdf') }}
+                    </button>
+                    <!-- Add Schedule Button -->
+                    <button
+                        type="button"
+                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1.5 px-3 sm:py-2 sm:px-4 rounded flex items-center"
+                        wire:click="openModal"
+                    >
+                        <i class="fas fa-plus-circle mr-2"></i> {{ __('messages.add_schedule') }}
+                    </button>
+                </div>
             </div>
 
             <!-- Filters and Table Section -->
@@ -131,7 +142,7 @@
                                             class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         >
                                             <option value="">{{ __('messages.all_equipment') }}</option>
-                                            @foreach($equipment as $equip)
+                                            @foreach($equipments as $equip)
                                                 <option value="{{ $equip->id }}">{{ $equip->name }}</option>
                                             @endforeach
                                         </select>
@@ -220,7 +231,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($schedules as $schedule)
+                                @forelse($plans as $schedule)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap">
                                             <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $schedule->task->title ?? __('messages.no_task') }}</div>
@@ -250,52 +261,58 @@
                                                     {{ __('messages.annually') }} {{ isset($schedule->month) && isset($schedule->month_day) ? '(' . ['', __('messages.january'), __('messages.february'), __('messages.march'), __('messages.april'), __('messages.may'), __('messages.june'), __('messages.july'), __('messages.august'), __('messages.september'), __('messages.october'), __('messages.november'), __('messages.december')][$schedule->month] . ' ' . $schedule->month_day . ')' : '' }}
                                                     @break
                                                 @default
-                                                    Unknown frequency
+                                                    {{ __('messages.unknown_frequency') }}
                                             @endswitch
                                         </td>
 
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap">
                                             @if($schedule->status === 'pending')
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                    Pending
+                                                    {{ __('messages.pending') }}
                                                 </span>
                                             @elseif($schedule->status === 'in_progress')
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    <i class="fas fa-spinner fa-spin mr-1"></i> In Progress
+                                                    <i class="fas fa-spinner fa-spin mr-1"></i> {{ __('messages.in_progress') }}
                                                 </span>
                                             @elseif($schedule->status === 'completed')
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Completed
+                                                    {{ __('messages.completed') }}
                                                 </span>
                                             @elseif($schedule->status === 'schedule')
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                                    Schedule
+                                                    {{ __('messages.schedule') }}
                                                 </span>
                                             @else
                                                 <span class="px-2 py-0.5 sm:px-3 sm:py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                    Cancelled
+                                                    {{ __('messages.cancelled') }}
                                                 </span>
                                             @endif
                                         </td>
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap text-right text-xs sm:text-sm">
                                             <div class="flex justify-end space-x-1 sm:space-x-2">
-                                                <button wire:click="viewSchedule({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900" title="View Details" wire:loading.attr="disabled">
+                                                <!-- PDF Button -->
+                                                <button wire:click="generatePdf({{ $schedule->id }})" class="text-red-600 hover:text-red-900 transform hover:scale-110 transition-transform" title="{{ __('messages.export_to_pdf') }}" wire:loading.attr="disabled">
+                                                    <i class="fas fa-file-pdf w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="generatePdf({{ $schedule->id }})"></i>
+                                                    <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="generatePdf({{ $schedule->id }})"></i>
+                                                </button>
+                                                <!-- View Button -->
+                                                <button wire:click="viewSchedule({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900 transform hover:scale-110 transition-transform" title="{{ __('messages.view_details') }}" wire:loading.attr="disabled">
                                                     <i class="fas fa-eye w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="viewSchedule({{ $schedule->id }})"></i>
                                                     <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="viewSchedule({{ $schedule->id }})"></i>
                                                 </button>
-                                                <button wire:click="edit({{ $schedule->id }})" class="text-indigo-600 hover:text-indigo-900" title="Edit" wire:loading.attr="disabled">
+                                                <button wire:click="edit({{ $schedule->id }})" class="text-indigo-600 hover:text-indigo-900" title="{{ __('messages.edit') }}" wire:loading.attr="disabled">
                                                     <svg class="w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="edit({{ $schedule->id }})" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                     </svg>
                                                     <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="edit({{ $schedule->id }})"></i>
                                                 </button>
-                                                <button wire:click="openHistory({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900" title="View History" wire:loading.attr="disabled">
+                                                <button wire:click="openHistory({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900" title="{{ __('messages.view_history') }}" wire:loading.attr="disabled">
                                                     <svg class="w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="openHistory({{ $schedule->id }})" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                     </svg>
                                                     <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="openHistory({{ $schedule->id }})"></i>
                                                 </button>
-                                                <button wire:click="delete({{ $schedule->id }})" wire:confirm="Are you sure you want to delete this schedule?" class="text-red-600 hover:text-red-900" title="Delete" wire:loading.attr="disabled">
+                                                <button wire:click="delete({{ $schedule->id }})" wire:confirm="{{ __('messages.confirm_delete_schedule') }}" class="text-red-600 hover:text-red-900" title="{{ __('messages.delete') }}" wire:loading.attr="disabled">
                                                     <svg class="w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="delete({{ $schedule->id }})" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                     </svg>
@@ -307,7 +324,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="7" class="px-2 sm:px-4 py-2 whitespace-nowrap text-center text-gray-500">
-                                            No maintenance schedules found.
+                                            {{ __('messages.no_maintenance_schedules_found') }}
                                         </td>
                                     </tr>
                                 @endforelse
@@ -316,7 +333,7 @@
                     </div>
 
                     <div class="mt-4">
-                        {{ $schedules->links() }}
+                        {{ $plans->links() }}
                     </div>
                 </div>
             </div>
@@ -357,7 +374,7 @@
                             <i class="fas fa-exclamation-circle text-red-500"></i>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">Há {{ $errors->count() }} erros no formulário</h3>
+                            <h3 class="text-sm font-medium text-red-800">{{ __('messages.form_errors_count', ['count' => $errors->count()]) }}</h3>
                             <div class="mt-2 text-sm text-red-700">
                                 <ul class="list-disc pl-5 space-y-1">
                                     @foreach ($errors->all() as $error)
@@ -410,7 +427,7 @@
 
                             <div>
                                 <label for="equipment_id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-tools mr-1 text-gray-500"></i> Equipment <span class="text-red-500">*</span>
+                                    <i class="fas fa-tools mr-1 text-gray-500"></i> {{ __('messages.equipment') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -418,9 +435,9 @@
                                         wire:model="equipment_id"
                                         class="block w-full py-2 px-3 border @error('equipment_id') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                     >
-                                        <option value="">Select equipment</option>
-                                        @foreach($equipment as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }} - {{ $item->serial_number }}</option>
+                                        <option value="">{{ __('messages.select_equipment') }}</option>
+                                        @foreach($equipments as $item)
+                                            <option value="{{ $item->id }}">{{ $item->name }} - {{ $item->serial_number ?? 'N/A' }}</option>
                                         @endforeach
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -552,7 +569,7 @@
                                             type="number"
                                             wire:model="custom_days"
                                             min="1"
-                                            placeholder="Dias entre"
+                                            placeholder="{{ __('messages.days_between') }}"
                                             class="block w-full py-2 px-3 border @error('custom_days') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                         >
                                         @error('custom_days')
@@ -570,14 +587,14 @@
                                             wire:model="day_of_week"
                                             class="block w-full py-2 px-3 border @error('day_of_week') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                         >
-                                            <option value="">Dia da semana</option>
-                                            <option value="0">Domingo</option>
-                                            <option value="1">Segunda</option>
-                                            <option value="2">Terça</option>
-                                            <option value="3">Quarta</option>
-                                            <option value="4">Quinta</option>
-                                            <option value="5">Sexta</option>
-                                            <option value="6">Sábado</option>
+                                            <option value="">{{ __('messages.day_of_week') }}</option>
+                                            <option value="0">{{ __('messages.sunday') }}</option>
+                                            <option value="1">{{ __('messages.monday') }}</option>
+                                            <option value="2">{{ __('messages.tuesday') }}</option>
+                                            <option value="3">{{ __('messages.wednesday') }}</option>
+                                            <option value="4">{{ __('messages.thursday') }}</option>
+                                            <option value="5">{{ __('messages.friday') }}</option>
+                                            <option value="6">{{ __('messages.saturday') }}</option>
                                         </select>
                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                             @error('day_of_week')
@@ -596,7 +613,7 @@
                                             wire:model="day_of_month"
                                             class="block w-full py-2 px-3 border @error('day_of_month') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                         >
-                                            <option value="">Dia do mês</option>
+                                            <option value="">{{ __('messages.day_of_month') }}</option>
                                             @for($i = 1; $i <= 31; $i++)
                                                 <option value="{{ $i }}">{{ $i }}</option>
                                             @endfor
@@ -619,19 +636,19 @@
                                                 wire:model="month"
                                                 class="block w-full py-2 px-3 border @error('month') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                             >
-                                                <option value="">Mês</option>
-                                                <option value="1">Janeiro</option>
-                                                <option value="2">Fevereiro</option>
-                                                <option value="3">Março</option>
-                                                <option value="4">Abril</option>
-                                                <option value="5">Maio</option>
-                                                <option value="6">Junho</option>
-                                                <option value="7">Julho</option>
-                                                <option value="8">Agosto</option>
-                                                <option value="9">Setembro</option>
-                                                <option value="10">Outubro</option>
-                                                <option value="11">Novembro</option>
-                                                <option value="12">Dezembro</option>
+                                                <option value="">{{ __('messages.month') }}</option>
+                                                <option value="1">{{ __('messages.january') }}</option>
+                                                <option value="2">{{ __('messages.february') }}</option>
+                                                <option value="3">{{ __('messages.march') }}</option>
+                                                <option value="4">{{ __('messages.april') }}</option>
+                                                <option value="5">{{ __('messages.may') }}</option>
+                                                <option value="6">{{ __('messages.june') }}</option>
+                                                <option value="7">{{ __('messages.july') }}</option>
+                                                <option value="8">{{ __('messages.august') }}</option>
+                                                <option value="9">{{ __('messages.september') }}</option>
+                                                <option value="10">{{ __('messages.october') }}</option>
+                                                <option value="11">{{ __('messages.november') }}</option>
+                                                <option value="12">{{ __('messages.december') }}</option>
                                             </select>
                                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 @error('month')
@@ -647,7 +664,7 @@
                                                 wire:model="month_day"
                                                 class="block w-full py-2 px-3 border @error('month_day') border-red-300 focus:ring-red-500 focus:border-red-500 @else border-gray-300 focus:ring-blue-500 focus:border-blue-500 @enderror bg-white rounded-md shadow-sm sm:text-sm"
                                             >
-                                                <option value="">Dia</option>
+                                                <option value="">{{ __('messages.day') }}</option>
                                                 @for($i = 1; $i <= 31; $i++)
                                                     <option value="{{ $i }}">{{ $i }}</option>
                                                 @endfor
@@ -705,7 +722,7 @@
                             <!-- Status & Priority -->
                             <div>
                                 <label for="status" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-tasks mr-1 text-gray-500"></i> Status
+                                    <i class="fas fa-tasks mr-1 text-gray-500"></i> {{ __('messages.status') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -713,11 +730,11 @@
                                         wire:model="status"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     >
-                                        <option value="pending">Pending</option>
-                                        <option value="in_progress">In Progress</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="schedule">Schedule</option>
+                                        <option value="pending">{{ __('messages.pending') }}</option>
+                                        <option value="in_progress">{{ __('messages.in_progress') }}</option>
+                                        <option value="completed">{{ __('messages.completed') }}</option>
+                                        <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                                        <option value="schedule">{{ __('messages.schedule') }}</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -728,7 +745,7 @@
 
                             <div>
                                 <label for="priority" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-flag mr-1 text-gray-500"></i> Priority
+                                    <i class="fas fa-flag mr-1 text-gray-500"></i> {{ __('messages.priority') }}
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -756,7 +773,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label for="type" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-tags mr-1 text-gray-500"></i> Type <span class="text-red-500">*</span>
+                                    <i class="fas fa-tags mr-1 text-gray-500"></i> {{ __('messages.type') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <select
@@ -764,10 +781,10 @@
                                         wire:model="type"
                                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('type') border-red-300 text-red-900 @enderror"
                                     >
-                                        <option value="preventive">Preventive</option>
-                                        <option value="predictive">Predictive</option>
-                                        <option value="conditional">Conditional</option>
-                                        <option value="other">Other</option>
+                                        <option value="preventive">{{ __('messages.preventive') }}</option>
+                                        <option value="predictive">{{ __('messages.predictive') }}</option>
+                                        <option value="conditional">{{ __('messages.conditional') }}</option>
+                                        <option value="other">{{ __('messages.other') }}</option>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -1003,7 +1020,7 @@
                             </div>
                             <div>
                                 <p class="text-xs font-medium text-gray-500">Equipment</p>
-                                <p class="text-sm text-gray-900">{{ $equipment->where('id', $equipment_id)->first()->name ?? 'N/A' }}</p>
+                                <p class="text-sm text-gray-900">{{ $equipments->where('id', $equipment_id)->first()->name ?? 'N/A' }}</p>
                             </div>
                             <div>
                                 <p class="text-xs font-medium text-gray-500">Line</p>

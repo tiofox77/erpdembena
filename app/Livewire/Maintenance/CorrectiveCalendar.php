@@ -252,4 +252,46 @@ class CorrectiveCalendar extends Component
     {
         return view('livewire.maintenance.corrective-calendar');
     }
+    
+    /**
+     * Generate PDF of the corrective maintenance calendar
+     */
+    public function generatePdf()
+    {
+        try {
+            // Prepare the data for the PDF
+            $data = [
+                'title' => __('messages.corrective_maintenance_calendar'),
+                'month' => $this->calendarTitle,
+                'calendarDays' => $this->calendarDays,
+                'events' => $this->events,
+                'holidays' => $this->holidays,
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.corrective-calendar', $data);
+            
+            $filename = 'corrective_maintenance_calendar_' . $this->currentYear . '_' . $this->currentMonth . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error generating corrective maintenance calendar PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
+    }
 }
