@@ -13,29 +13,16 @@
                         <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filter_options') }}
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <!-- Date Range Filters -->
+                        <!-- Month Filter -->
                         <div>
-                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label for="selectedMonth" class="block text-sm font-medium text-gray-700 mb-1">
                                 <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
-                                {{ __('messages.start_date') }}
+                                {{ __('messages.select_month') }}
                             </label>
                             <input 
-                                type="date" 
-                                id="startDate" 
-                                wire:model.live="startDate" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >
-                        </div>
-                        
-                        <div>
-                            <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">
-                                <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
-                                {{ __('messages.end_date') }}
-                            </label>
-                            <input 
-                                type="date" 
-                                id="endDate" 
-                                wire:model.live="endDate" 
+                                type="month" 
+                                id="selectedMonth" 
+                                wire:model.live="selectedMonth" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
                         </div>
@@ -224,7 +211,7 @@
                                 @forelse($plans as $plan)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $plan->scheduled_date->format('Y-m-d') }}
+                                            {{ $plan->scheduled_date->format(\App\Models\Setting::getSystemDateFormat()) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $plan->task ? $plan->task->title : 'No Task' }}

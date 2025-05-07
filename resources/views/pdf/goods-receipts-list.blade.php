@@ -188,10 +188,27 @@
         </tbody>
     </table>
 
-    <div class="footer">
-        <p>{{ __('messages.goods_receipts_list_generated') }} {{ date('d/m/Y H:i:s') }}</p>
-        <p>{{ __('messages.document_for_internal_use') }}</p>
-        <p>{{ __('messages.total_items') }}: {{ $receipts->count() }}</p>
+    <table class="items-table">
+        <tfoot>
+            <tr>
+                <td colspan="7" style="text-align: right;"><strong>{{ __('messages.total_receipts') }}:</strong></td>
+                <td><strong>{{ $receipts->count() }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.document_for_internal_use') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.goods_receipts_list_generated') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format('d/m/Y H:i') }}</p>
     </div>
 </body>
 </html>

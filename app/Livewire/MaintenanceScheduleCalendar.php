@@ -55,7 +55,15 @@ class MaintenanceScheduleCalendar extends Component
     // Function to convert date to calendar format
     public function formatDate($date)
     {
+        // Para uso interno do calendário, mantemos Y-m-d como formato padrão
+        // Este formato é necessário para compatibilidade com JavaScript e SQL
         return Carbon::parse($date)->format('Y-m-d');
+    }
+    
+    // Function to format date for display
+    public function formatDateForDisplay($date)
+    {
+        return Carbon::parse($date)->format(\App\Models\Setting::getSystemDateFormat());
     }
 
     // Component initialization

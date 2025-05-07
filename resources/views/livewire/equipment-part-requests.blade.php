@@ -225,7 +225,7 @@
                                     {{ $request->suggested_vendor ?? 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $request->delivery_date ? $request->delivery_date->format('d/m/Y') : 'N/A' }}
+                                    {{ $request->delivery_date ? $request->delivery_date->format(\App\Models\Setting::getSystemDateFormat()) : 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     @if($request->remarks)

@@ -9,6 +9,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class MaintenanceEquipment extends Model
 {
     use HasFactory, SoftDeletes;
+    
+    /**
+     * The "booted" method of the model.
+     * Garante que todos os relacionamentos também filtrem registros excluídos
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('not_deleted', function($builder) {
+            $builder->whereNull('deleted_at');
+        });
+    }
 
     /**
      * The table associated with the model.

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             EquipmentSeeder::class,
             SupplyChainHrRolesPermissionsSeeder::class,
             EnsureModuleUsersSeeder::class,
+            FailureAnalysisDataSeeder::class,
         ]);
     }
 }

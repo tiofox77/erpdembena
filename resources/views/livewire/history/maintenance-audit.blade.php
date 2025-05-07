@@ -158,7 +158,7 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($auditLogs as $log)
+                    @forelse($this->auditLogs as $log)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ $log->created_at->format('M d, Y H:i:s') }}
@@ -213,7 +213,7 @@
         </div>
 
         <div class="px-4 py-3 border-t">
-            {{ $auditLogs->links() }}
+            {{ $this->auditLogs->links() }}
         </div>
     </div>
 </div>

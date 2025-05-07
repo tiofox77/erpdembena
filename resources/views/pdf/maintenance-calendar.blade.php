@@ -143,18 +143,27 @@
             $logoPath = \App\Models\Setting::get('company_logo');
             $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
             $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
         @endphp
-        <table style="width: 100%">
-            <tr>
-                <td style="width: 20%; text-align: left; vertical-align: middle;">
-                    <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
-                </td>
-                <td style="width: 80%; text-align: center; vertical-align: middle;">
-                    <h1>{{ $title }}</h1>
-                    <h2>{{ $month }}</h2>
-                </td>
-            </tr>
-        </table>
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">{{ $title }}</div>
+            <div>{{ __('messages.month') }}: {{ $month }} | {{ __('messages.generated_at') }}: {{ \Carbon\Carbon::parse($generatedAt)->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</div>
+        </div>
     </div>
 
     <div class="filters-section">
@@ -168,7 +177,7 @@
         </div>
         <div class="filter">
             <span class="filter-label">Generated:</span>
-            <span class="filter-value">{{ $generatedAt }}</span>
+            <span class="filter-value">{{ \Carbon\Carbon::parse($generatedAt)->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</span>
         </div>
     </div>
 
@@ -218,9 +227,18 @@
         </tbody>
     </table>
 
-    <div class="footer">
-        <p>{{ $companyName }} &copy; {{ date('Y') }} - All Rights Reserved</p>
-        <p>This document was generated automatically by the ERP DEMBENA system.</p>
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.maintenance_calendar_notes') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</p>
     </div>
 </body>
 </html>

@@ -1,36 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ App::getLocale() }}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 10pt;
-            line-height: 1.4;
+            font-size: 12px;
+            line-height: 1.5;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
         .container {
             width: 100%;
             margin: 0 auto;
         }
         .header {
-            text-align: center;
+            text-align: left;
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
         }
         .logo {
-            max-width: 150px;
-            max-height: 60px;
-            margin-bottom: 10px;
+            max-height: 70px;
+            max-width: 220px;
         }
-        h1 {
-            font-size: 16pt;
-            margin: 5px 0;
-            color: #333;
+        .document-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #EF4444;
+        }
+        .document-info {
+            margin-bottom: 20px;
+        }
+        .document-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .document-info th {
+            text-align: left;
+            padding: 5px;
+            width: 30%;
+            background-color: #f5f5f5;
+        }
+        .document-info td {
+            padding: 5px;
         }
         h2 {
             font-size: 14pt;
@@ -65,6 +85,31 @@
         }
         .filter-value {
             display: inline-block;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .items-table thead th {
+            background-color: #f3f4f6;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #d1d5db;
+            font-size: 11px;
+        }
+        .items-table tbody td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .items-table tfoot td {
+            border-top: 2px solid #d1d5db;
+            padding: 8px;
+            font-weight: bold;
+            background-color: #f9fafb;
         }
         .data-table {
             width: 100%;
@@ -141,54 +186,73 @@
             $logoPath = \App\Models\Setting::get('company_logo');
             $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
             $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
         @endphp
-        <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
-        <h1>{{ __('messages.corrective_maintenance_list') }}</h1>
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">{{ __('messages.corrective_maintenance_list') }}</div>
+        </div>
     </div>
 
-    <div class="filters">
-        <div class="filter-item">
-            <span class="filter-label">{{ __('messages.generated_at') }}:</span>
-            <span class="filter-value">{{ $generatedAt }}</span>
-        </div>
-        
-        @if(!empty($filters['equipment_name']))
-        <div class="filter-item">
-            <span class="filter-label">{{ __('messages.equipment') }}:</span>
-            <span class="filter-value">{{ $filters['equipment_name'] }}</span>
-        </div>
-        @endif
-        
-        @if(!empty($filters['status']))
-        <div class="filter-item">
-            <span class="filter-label">{{ __('messages.status') }}:</span>
-            <span class="filter-value">{{ $filters['status'] }}</span>
-        </div>
-        @endif
-        
-        @if(!empty($filters['year']))
-        <div class="filter-item">
-            <span class="filter-label">{{ __('messages.year') }}:</span>
-            <span class="filter-value">{{ $filters['year'] }}</span>
-        </div>
-        @endif
-        
-        @if(!empty($filters['month']))
-        <div class="filter-item">
-            <span class="filter-label">{{ __('messages.month') }}:</span>
-            <span class="filter-value">{{ $filters['month'] }}</span>
-        </div>
-        @endif
-        
-        @if(!empty($filters['search']))
+    <div class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.report_date') }}:</th>
+                <td>{{ \Carbon\Carbon::parse($generatedAt)->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</td>
+            </tr>
+            <tr>
+                <th>{{ __('messages.generated_by') }}:</th>
+                <td>{{ auth()->user()->name ?? __('messages.system') }}</td>
+            </tr>
+            @if(!empty($filters['equipment_name']))
+            <tr>
+                <th>{{ __('messages.equipment') }}:</th>
+                <td>{{ $filters['equipment_name'] }}</td>
+            </tr>
+            @endif
+            @if(!empty($filters['status']))
+            <tr>
+                <th>{{ __('messages.status') }}:</th>
+                <td>{{ $filters['status'] }}</td>
+            </tr>
+            @endif
+            @if(!empty($filters['year']))
+            <tr>
+                <th>{{ __('messages.year') }}:</th>
+                <td>{{ $filters['year'] }}</td>
+            </tr>
+            @endif
+            @if(!empty($filters['month']))
+            <tr>
+                <th>{{ __('messages.month') }}:</th>
+                <td>{{ $filters['month'] }}</td>
+            </tr>
+            @endif
+        </table>
+    </div>
+    @if(!empty($filters['search']))
         <div class="filter-item">
             <span class="filter-label">{{ __('messages.search') }}:</span>
             <span class="filter-value">{{ $filters['search'] }}</span>
         </div>
-        @endif
+    @endif
     </div>
 
-    <table class="data-table">
+    <table class="items-table">
         <thead>
             <tr>
                 <th>{{ __('messages.id') }}</th>
@@ -230,8 +294,8 @@
                 </td>
                 <td>{{ ($plan->failure_mode && is_object($plan->failure_mode)) ? $plan->failure_mode->name : __('messages.not_specified') }}</td>
                 <td>{{ ($plan->failure_cause && is_object($plan->failure_cause)) ? $plan->failure_cause->name : __('messages.not_specified') }}</td>
-                <td>{{ ($plan->start_time && is_object($plan->start_time)) ? $plan->start_time->format('Y-m-d H:i') : __('messages.not_set') }}</td>
-                <td>{{ ($plan->end_time && is_object($plan->end_time)) ? $plan->end_time->format('Y-m-d H:i') : __('messages.not_set') }}</td>
+                <td>{{ ($plan->start_time && is_object($plan->start_time)) ? $plan->start_time->format(\App\Models\Setting::getSystemDateTimeFormat()) : __('messages.not_set') }}</td>
+                <td>{{ ($plan->end_time && is_object($plan->end_time)) ? $plan->end_time->format(\App\Models\Setting::getSystemDateTimeFormat()) : __('messages.not_set') }}</td>
                 <td>{{ $plan->duration ?? __('messages.not_calculated') }}</td>
                 <td><span class="status-badge status-{{ strtolower($plan->status) }}">{{ $plan->status }}</span></td>
             </tr>
@@ -243,13 +307,27 @@
         </tbody>
     </table>
 
-    <div class="summary">
-        <p>{{ __('messages.total_records') }}: {{ count($corrective_plans) }}</p>
+    <table class="items-table">
+        <tfoot>
+            <tr>
+                <td colspan="9" style="text-align: right;"><strong>{{ __('messages.total_corrective_plans') }}:</strong></td>
+                <td><strong>{{ count($corrective_plans) }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.corrective_maintenance_notes') }}</td>
+            </tr>
+        </table>
     </div>
 
-    <div class="footer">
-        <p>{{ $companyName }} &copy; {{ date('Y') }} - All Rights Reserved</p>
-        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA</p>
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</p>
     </div>
     </div>
 </body>

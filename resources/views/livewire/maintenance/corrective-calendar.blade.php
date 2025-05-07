@@ -109,7 +109,7 @@
     <div class="mt-4 pt-3 border-t">
         <div class="flex justify-between items-center mb-2">
             <h3 class="text-md font-medium text-gray-900">
-                {{ __('messages.events_for') }} {{ Carbon\Carbon::parse($selectedDate)->format(__('messages.date_format', ['default' => 'm/d/Y'])) }}
+                {{ __('messages.events_for') }} {{ Carbon\Carbon::parse($selectedDate)->format(\App\Models\Setting::getSystemDateFormat()) }}
                 @if(Carbon\Carbon::parse($selectedDate)->isSunday())
                     <span class="text-xs text-red-600">({{ __('messages.sunday') }})</span>
                 @endif

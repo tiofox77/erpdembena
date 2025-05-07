@@ -102,7 +102,7 @@ class MaintenanceNoteModal extends Component
                     'file_name' => $note->file_name,
                     'file_path' => $note->file_path,
                     'user' => $note->user ? $note->user->name : 'System',
-                    'created_at' => $note->created_at->format('m/d/Y H:i'),
+                    'created_at' => $note->created_at->format(\App\Models\Setting::getSystemDateTimeFormat()),
                 ];
             })
             ->toArray();

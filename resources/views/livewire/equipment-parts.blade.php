@@ -209,7 +209,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-600">
                                         <div class="flex items-center">
                                             <i class="far fa-calendar-alt mr-2 text-gray-400"></i>
-                                            {{ $part->last_restock_date ? date('M d, Y', strtotime($part->last_restock_date)) : 'Never' }}
+                                            {{ $part->last_restock_date ? Carbon\Carbon::parse($part->last_restock_date)->format(App\Models\Setting::getSystemDateFormat()) : 'Never' }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">

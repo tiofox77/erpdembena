@@ -281,8 +281,8 @@
                                 <tr class="hover:bg-gray-50 transition-colors duration-150">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <div class="flex flex-col">
-                                            <span>{{ $transaction->transaction_date->format('d M Y') }}</span>
-                                            <span class="text-xs text-gray-500">{{ $transaction->transaction_date->format('H:i') }}</span>
+                                            <span>{{ Carbon\Carbon::parse($transaction->transaction_date)->format(App\Models\Setting::getSystemDateFormat()) }}</span>
+                                            <span class="text-xs text-gray-500">{{ Carbon\Carbon::parse($transaction->transaction_date)->format('H:i') }}</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

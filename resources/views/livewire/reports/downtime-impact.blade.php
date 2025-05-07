@@ -344,11 +344,24 @@
 
 @push('scripts')
 <script>
+    // Inicialização dupla para garantir que os gráficos sejam carregados corretamente
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aguardar um momento para garantir que o DOM esteja pronto
+        setTimeout(function() {
+            initCharts();
+            console.log('Gráficos inicializados via DOMContentLoaded');
+        }, 500);
+    });
+    
     document.addEventListener('livewire:initialized', function() {
         initCharts();
-
+        console.log('Gráficos inicializados via livewire:initialized');
+        
         Livewire.hook('morph.updated', () => {
-            initCharts();
+            console.log('Morph updated, reinicializando gráficos');
+            setTimeout(function() {
+                initCharts();
+            }, 300);
         });
     });
 

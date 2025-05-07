@@ -21,7 +21,7 @@
                             {{ __('messages.'.$plan->status) }}
                         </div>
                         <div class="mt-1 text-sm font-medium text-gray-700">
-                            {{ \Carbon\Carbon::parse($plan->next_date)->format('d/m/Y') }}
+                            {{ \Carbon\Carbon::parse($plan->next_date)->format(\App\Models\Setting::getSystemDateFormat()) }}
                         </div>
                     </div>
                 </div>

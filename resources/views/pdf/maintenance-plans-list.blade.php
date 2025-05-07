@@ -1,30 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ App::getLocale() }}">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('messages.maintenance_plans_list') }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
-            line-height: 1.4;
+            line-height: 1.5;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
         .header {
-            text-align: center;
+            text-align: left;
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
         }
         .logo {
             max-height: 70px;
             max-width: 220px;
-            margin-bottom: 10px;
         }
-        h1 {
+        .document-title {
             font-size: 18px;
-            margin: 0 0 5px 0;
+            font-weight: bold;
+            margin: 10px 0;
             color: #2563eb;
+        }
+        .document-info {
+            margin-bottom: 20px;
+        }
+        .document-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .document-info th {
+            text-align: left;
+            padding: 5px;
+            width: 30%;
+            background-color: #f5f5f5;
+        }
+        .document-info td {
+            padding: 5px;
         }
         .filters-section {
             margin-bottom: 15px;
@@ -45,23 +66,30 @@
         .filter-value {
             font-size: 11px;
         }
-        table.data-table {
+        .items-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
         }
-        table.data-table th {
-            background-color: #e5e7eb;
+        .items-table thead th {
+            background-color: #f3f4f6;
             padding: 8px;
             text-align: left;
             font-weight: bold;
             border: 1px solid #d1d5db;
             font-size: 11px;
         }
-        table.data-table td {
+        .items-table tbody td {
             border: 1px solid #d1d5db;
             padding: 6px 8px;
             font-size: 11px;
+            vertical-align: top;
+        }
+        .items-table tfoot td {
+            border-top: 2px solid #d1d5db;
+            padding: 8px;
+            font-weight: bold;
+            background-color: #f9fafb;
         }
         .status-badge {
             display: inline-block;
@@ -107,9 +135,44 @@
             $logoPath = \App\Models\Setting::get('company_logo');
             $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
             $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
         @endphp
-        <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
-        <h1>{{ __('messages.maintenance_plans_list') }}</h1>
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">{{ __('messages.maintenance_plans_list') }}</div>
+            <div>{{ __('messages.generated_at') }}: {{ now()->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</div>
+        </div>
+    </div>
+    
+    <div class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.report_period') }}:</th>
+                <td>{{ isset($filters['dateFrom']) && isset($filters['dateTo']) ? $filters['dateFrom'] . ' - ' . $filters['dateTo'] : __('messages.all_time') }}</td>
+            </tr>
+            <tr>
+                <th>{{ __('messages.total_records') }}:</th>
+                <td>{{ $plans->count() }}</td>
+            </tr>
+            <tr>
+                <th>{{ __('messages.generated_by') }}:</th>
+                <td>{{ auth()->user()->name ?? __('messages.system') }}</td>
+            </tr>
+        </table>
     </div>
 
     <div class="filters-section">
@@ -138,11 +201,11 @@
         
         <div class="filter">
             <span class="filter-label">{{ __('messages.generated_at') }}:</span>
-            <span class="filter-value">{{ now() }}</span>
+            <span class="filter-value">{{ now()->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</span>
         </div>
     </div>
 
-    <table class="data-table">
+    <table class="items-table">
         <thead>
             <tr>
                 <th>{{ __('messages.id') }}</th>
@@ -195,15 +258,26 @@
             </tr>
             @endforelse
         </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="6" style="text-align: right;"><strong>{{ __('messages.total_maintenance_plans') }}:</strong></td>
+                <td><strong>{{ count($plans) }}</strong></td>
+            </tr>
+        </tfoot>
     </table>
 
-    <div class="summary">
-        <p>{{ __('messages.total_records') }}: {{ count($plans) }}</p>
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.maintenance_plans_notes') }}</td>
+            </tr>
+        </table>
     </div>
 
-    <div class="footer">
-        <p>{{ $companyName }} &copy; {{ date('Y') }} - All Rights Reserved</p>
-        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA</p>
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</p>
     </div>
 </body>
 </html>

@@ -235,7 +235,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-600">
                                         <div class="flex items-center">
                                             <i class="far fa-calendar-alt mr-2 text-gray-400"></i>
-                                            {{ $item->purchase_date ? date('M d, Y', strtotime($item->purchase_date)) : 'Not scheduled' }}
+                                            {{ $item->purchase_date ? Carbon\Carbon::parse($item->purchase_date)->format(App\Models\Setting::getSystemDateFormat()) : 'Not scheduled' }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -401,7 +401,7 @@
                             <div>
                                 <p class="text-xs text-gray-500 uppercase">Purchase Date</p>
                                 <p class="text-sm font-medium">
-                                    {{ $viewingEquipment->purchase_date ? date('M d, Y', strtotime($viewingEquipment->purchase_date)) : 'Not available' }}
+                                    {{ $viewingEquipment->purchase_date ? Carbon\Carbon::parse($viewingEquipment->purchase_date)->format(App\Models\Setting::getSystemDateFormat()) : 'Not available' }}
                                 </p>
                             </div>
                         </div>
@@ -413,7 +413,7 @@
                             <div>
                                 <p class="text-xs text-gray-500 uppercase">Last Maintenance</p>
                                 <p class="text-sm font-medium">
-                                    {{ $viewingEquipment->last_maintenance ? date('M d, Y', strtotime($viewingEquipment->last_maintenance)) : 'Never' }}
+                                    {{ $viewingEquipment->last_maintenance ? Carbon\Carbon::parse($viewingEquipment->last_maintenance)->format(App\Models\Setting::getSystemDateFormat()) : 'Never' }}
                                 </p>
                             </div>
                         </div>
@@ -425,7 +425,7 @@
                             <div>
                                 <p class="text-xs text-gray-500 uppercase">Purchase Date</p>
                                 <p class="text-sm font-medium">
-                                    {{ $viewingEquipment->purchase_date ? date('M d, Y', strtotime($viewingEquipment->purchase_date)) : 'Not scheduled' }}
+                                    {{ $viewingEquipment->purchase_date ? Carbon\Carbon::parse($viewingEquipment->purchase_date)->format(App\Models\Setting::getSystemDateFormat()) : 'Not scheduled' }}
                                 </p>
                             </div>
                         </div>

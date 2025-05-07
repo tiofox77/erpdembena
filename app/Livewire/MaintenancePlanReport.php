@@ -17,8 +17,7 @@ class MaintenancePlanReport extends Component
     use WithPagination;
 
     // Filters
-    public $startDate;
-    public $endDate;
+    public $selectedMonth; // Mês selecionado no formato 'YYYY-MM'
     public $status = '';
     public $type = '';
     public $equipment_id = '';
@@ -36,9 +35,8 @@ class MaintenancePlanReport extends Component
 
     public function mount()
     {
-        // Default to current month
-        $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d');
+        // Default to current month (YYYY-MM format)
+        $this->selectedMonth = Carbon::now()->format('Y-m');
     }
 
     public function sortBy($field)
@@ -53,36 +51,63 @@ class MaintenancePlanReport extends Component
 
     public function clearFilters()
     {
-        $this->reset(['status', 'type', 'equipment_id', 'task_id', 'line_id', 'area_id']);
-        $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $this->selectedMonth = Carbon::now()->format('Y-m');
+        $this->status = '';
+        $this->type = '';
+        $this->equipment_id = '';
+        $this->task_id = '';
+        $this->line_id = '';
+        $this->area_id = '';
     }
 
     public function generatePdf()
     {
         $this->generatingPdf = true;
         
-        // Get the filtered data without pagination
-        $plans = $this->getFilteredPlans(false);
+        // Obter todos os planos filtrados sem paginação
+        $plans = $this->getFilteredPlans(false); 
         
-        // Get company information
-        $companyName = Setting::get('company_name', config('app.name'));
-        $companyLogoPath = Setting::get('company_logo', null);
-        $companyLogo = null;
+        // Preparar informações de mês e período
+        list($year, $month) = explode('-', $this->selectedMonth);
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+        $monthTitle = $startOfMonth->translatedFormat('F Y'); // Nome do mês e ano na língua atual
         
-        // Process logo for PDF if it exists
-        if ($companyLogoPath && Storage::disk('public')->exists($companyLogoPath)) {
-            $companyLogo = 'data:image/png;base64,' . base64_encode(
-                Storage::disk('public')->get($companyLogoPath)
-            );
+        // Processa cada plano para calcular suas datas de manutenção no mês
+        $processedPlans = [];
+        
+        foreach ($plans as $plan) {
+            // Calcular datas de ocorrência para este plano no mês selecionado
+            $occurrences = $this->generateOccurrences($plan, $startOfMonth, $endOfMonth);
+            
+            if (count($occurrences) > 0) {
+                // Criar uma cópia do plano com suas datas de ocorrência
+                $planWithDates = clone $plan;
+                $planWithDates->occurrences = $occurrences;
+                $processedPlans[] = $planWithDates;
+            }
         }
+        
+        // Organizar os planos processados por frequência
+        $plansByFrequency = collect($processedPlans)->groupBy('frequency_type');
+        
+        // Prepare logo and company info
+        $companyLogo = null;
+        $logoPath = Setting::get('company_logo');
+        if ($logoPath) {
+            $companyLogo = 'storage/' . $logoPath;
+        }
+        $companyName = Setting::get('company_name', 'Company');
         
         // Generate PDF
         $pdf = PDF::loadView('pdf.maintenance-plan-report', [
-            'plans' => $plans,
-            'startDate' => $this->startDate,
-            'endDate' => $this->endDate,
-            'generatedAt' => Carbon::now()->format('Y-m-d H:i:s'),
+            'plans' => $processedPlans,
+            'plansByFrequency' => $plansByFrequency,
+            'selectedMonth' => $this->selectedMonth,
+            'monthTitle' => $monthTitle,
+            'startDate' => $startOfMonth->format(Setting::getSystemDateFormat()),
+            'endDate' => $endOfMonth->format(Setting::getSystemDateFormat()),
+            'generatedAt' => Carbon::now()->format(Setting::getSystemDateTimeFormat()),
             'companyName' => $companyName,
             'companyLogo' => $companyLogo
         ]);
@@ -105,15 +130,128 @@ class MaintenancePlanReport extends Component
         $this->dispatch('pdfGenerated', $this->pdfUrl);
     }
     
+    /**
+     * Gera todas as ocorrências de um plano de manutenção dentro do período mensal
+     * com base no tipo de frequência configurado
+     *
+     * @param MaintenancePlan $plan O plano de manutenção
+     * @param Carbon $startOfMonth Data de início do mês
+     * @param Carbon $endOfMonth Data de fim do mês
+     * @return array Array com objetos Carbon das datas de ocorrência
+     */
+    private function generateOccurrences($plan, $startOfMonth, $endOfMonth)
+    {
+        $occurrences = [];
+        $scheduledDate = Carbon::parse($plan->scheduled_date);
+        $processedDates = []; // Rastreador para evitar duplicações
+
+        // Se a data agendada estiver fora do período e depois do fim do período,
+        // não teremos ocorrências desse plano neste mês
+        if ($scheduledDate->greaterThan($endOfMonth)) {
+            return $occurrences;
+        }
+
+        // Para planos do tipo 'once' (única vez)
+        if ($plan->frequency_type === 'once') {
+            // Se cair dentro do período, adiciona
+            if ($scheduledDate->greaterThanOrEqualTo($startOfMonth) && $scheduledDate->lessThanOrEqualTo($endOfMonth)) {
+                $occurrences[] = $scheduledDate->copy();
+            }
+            return $occurrences;
+        }
+
+        // Para planos recorrentes
+        $currentDate = $scheduledDate->copy();
+
+        // Se a data agendada for anterior ao início do período, precisamos avançar
+        // para a primeira ocorrência dentro do período
+        while ($currentDate->lessThan($startOfMonth)) {
+            $currentDate = $this->getNextOccurrence($currentDate, $plan);
+        }
+
+        // Agora adiciona todas as ocorrências dentro do período
+        while ($currentDate->lessThanOrEqualTo($endOfMonth)) {
+            $currentDateStr = $currentDate->format('Y-m-d');
+            
+            // Evitar duplicações: verificar se já processamos esta data
+            if (isset($processedDates[$currentDateStr])) {
+                $currentDate = $this->getNextOccurrence($currentDate, $plan);
+                continue;
+            }
+            
+            $occurrences[] = $currentDate->copy();
+            $processedDates[$currentDateStr] = true;
+            
+            $currentDate = $this->getNextOccurrence($currentDate, $plan);
+        }
+
+        return $occurrences;
+    }
+    
+    /**
+     * Calcula a próxima ocorrência com base na frequência
+     *
+     * @param Carbon $currentDate Data atual
+     * @param MaintenancePlan $plan Plano de manutenção
+     * @return Carbon A data da próxima ocorrência
+     */
+    private function getNextOccurrence($currentDate, $plan)
+    {
+        $nextDate = $currentDate->copy();
+
+        switch ($plan->frequency_type) {
+            case 'daily':
+                return $nextDate->addDay();
+
+            case 'custom':
+                // Avança o número de dias personalizados
+                return $nextDate->addDays($plan->custom_days ?? 1);
+
+            case 'weekly':
+                // Se um dia da semana estiver definido, avança para o próximo dia específico
+                if (!is_null($plan->day_of_week)) {
+                    // Primeiro avança uma semana
+                    $nextDate = $nextDate->addWeek();
+                    // Depois ajusta para o dia da semana desejado
+                    return $nextDate->startOfWeek()->addDays($plan->day_of_week);
+                }
+                // Se nenhum dia específico, simplesmente avança 7 dias
+                return $nextDate->addWeek();
+
+            case 'monthly':
+                // Se um dia do mês estiver definido
+                if (!is_null($plan->day_of_month)) {
+                    $nextDate = $nextDate->addMonth();
+                    $daysInMonth = $nextDate->daysInMonth;
+                    
+                    // Certifica-se de que o dia não excede o total de dias no mês
+                    $dayOfMonth = min($plan->day_of_month, $daysInMonth);
+                    
+                    return $nextDate->startOfMonth()->addDays($dayOfMonth - 1);
+                }
+                // Se nenhum dia específico, simplesmente avança um mês
+                return $nextDate->addMonth();
+
+            case 'yearly':
+                // Avança um ano
+                return $nextDate->addYear();
+
+            case 'once':
+            default:
+                // Para planos que ocorrem apenas uma vez, não há próxima ocorrência
+                return $nextDate->addYear(); // Avança um ano para garantir que saia do loop
+        }
+    }
+
     public function getFilteredPlans($paginate = true)
     {
         $query = MaintenancePlan::query()
             ->with(['equipment', 'task', 'line', 'area', 'assignedTo'])
-            ->when($this->startDate, function ($query) {
-                return $query->whereDate('scheduled_date', '>=', $this->startDate);
-            })
-            ->when($this->endDate, function ($query) {
-                return $query->whereDate('scheduled_date', '<=', $this->endDate);
+            ->when($this->selectedMonth, function ($query) {
+                // Extrai ano e mês da string YYYY-MM
+                list($year, $month) = explode('-', $this->selectedMonth);
+                // Filtra planos para o mês selecionado
+                return $query->whereDate('scheduled_date', '<=', Carbon::createFromDate($year, $month, 1)->endOfMonth());
             })
             ->when($this->status, function ($query) {
                 return $query->where('status', $this->status);

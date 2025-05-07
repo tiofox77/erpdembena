@@ -147,10 +147,27 @@
             $logoPath = \App\Models\Setting::get('company_logo');
             $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
             $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
         @endphp
-        <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
-        <h1>{{ __('messages.maintenance_plan') }}</h1>
-        <h2>{{ $plan->title }}</h2>
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">{{ __('messages.maintenance_plan') }}</div>
+            <div>{{ __('messages.plan') }}: {{ $plan->title }} | {{ __('messages.id') }}: {{ $plan->id }}</div>
+        </div>
     </div>
 
     <div class="section">
@@ -202,7 +219,7 @@
             </div>
             <div class="info-row">
                 <div class="info-label">{{ __('messages.created_at') }}:</div>
-                <div class="info-value">{{ $plan->created_at }}</div>
+                <div class="info-value">{{ \Carbon\Carbon::parse($plan->created_at)->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</div>
             </div>
         </div>
     </div>
@@ -260,7 +277,7 @@
         @foreach($plan->notes as $note)
         <div class="maintenance-note">
             <div class="note-header">
-                <div>{{ $note->created_at }} - {{ $note->user->name ?? __('messages.unknown_user') }}</div>
+                <div>{{ \Carbon\Carbon::parse($note->created_at)->format(\App\Models\Setting::getSystemDateTimeFormat()) }} - {{ $note->user->name ?? __('messages.unknown_user') }}</div>
                 <div><span class="status-badge status-{{ strtolower($note->status) }}">{{ $note->status }}</span></div>
             </div>
             <div class="note-content">{{ $note->notes }}</div>
@@ -269,9 +286,18 @@
     </div>
     @endif
 
-    <div class="footer">
-        <p>{{ $companyName }} &copy; {{ date('Y') }} - All Rights Reserved</p>
-        <p>{{ __('messages.generated_at') }}: {{ now() }}</p>
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.maintenance_plan_notes') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</p>
     </div>
 </body>
 </html>

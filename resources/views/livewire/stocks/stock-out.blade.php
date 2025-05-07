@@ -132,7 +132,7 @@
                     @forelse($this->stockOuts as $stockOut)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ date('d M Y', strtotime($stockOut->date)) }}
+                            {{ Carbon\Carbon::parse($stockOut->date)->format(App\Models\Setting::getSystemDateFormat()) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $stockOut->reference_number ?? 'N/A' }}
@@ -530,7 +530,7 @@
                                 <p class="text-sm text-gray-500 flex items-center">
                                     <i class="fas fa-calendar-alt text-gray-400 mr-1"></i> Date
                                 </p>
-                                <p class="font-medium">{{ date('d M Y', strtotime($viewingStockOut->date)) }}</p>
+                                <p class="font-medium">{{ Carbon\Carbon::parse($viewingStockOut->date)->format(App\Models\Setting::getSystemDateFormat()) }}</p>
                             </div>
                             
                             <div>

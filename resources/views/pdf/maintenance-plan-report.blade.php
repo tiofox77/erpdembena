@@ -1,45 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ App::getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maintenance Plan Report</title>
+    <title>{{ __('messages.maintenance_plan_report') }}</title>
     <style>
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
             margin: 0;
             padding: 20px;
-            color: #333;
-            font-size: 12px;
-        }
-        h1 {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 10px;
         }
         .header {
+            text-align: left;
             margin-bottom: 20px;
-            text-align: center;
             padding-bottom: 10px;
             border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
-        .header-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .logo {
+            max-height: 70px;
+            max-width: 220px;
         }
-        .company-logo {
-            max-height: 60px;
-            max-width: 180px;
-            margin-bottom: 10px;
-        }
-        .company-name {
-            font-size: 16px;
+        .document-title {
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin: 10px 0;
+            color: #2563eb;
+        }
+        .document-info {
+            margin-bottom: 20px;
+        }
+        .document-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .document-info th {
+            text-align: left;
+            padding: 5px;
+            width: 30%;
+            background-color: #f5f5f5;
+        }
+        .document-info td {
+            padding: 5px;
         }
         .report-info {
             margin-bottom: 20px;
@@ -50,20 +54,30 @@
         .report-info p {
             margin: 5px 0;
         }
-        table {
+        .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 10px;
+            margin-bottom: 15px;
         }
-        th, td {
-            border: 1px solid #ddd;
+        .items-table thead th {
+            background-color: #f3f4f6;
             padding: 8px;
             text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
             font-weight: bold;
+            border: 1px solid #d1d5db;
+            font-size: 11px;
+        }
+        .items-table tbody td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .items-table tfoot td {
+            border-top: 2px solid #d1d5db;
+            padding: 8px;
+            font-weight: bold;
+            background-color: #f9fafb;
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -132,124 +146,186 @@
 </head>
 <body>
     <div class="header">
-        <div class="header-content">
-            @if(isset($companyLogo) && $companyLogo)
-                <img src="{{ $companyLogo }}" alt="Company Logo" class="company-logo">
-            @endif
-            @if(isset($companyName) && $companyName)
-                <div class="company-name">{{ $companyName }}</div>
-            @endif
-            <h1>Maintenance Plan Report</h1>
+        @php
+            $logoPath = \App\Models\Setting::get('company_logo');
+            $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
+            $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
+        @endphp
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">{{ __('messages.maintenance_plan_report') }}</div>
+            <div>{{ __('messages.generated_at') }}: {{ \Carbon\Carbon::parse($generatedAt)->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</div>
         </div>
     </div>
 
     <div class="report-info">
-        <p><strong>Date Range:</strong> {{ \Carbon\Carbon::parse($startDate)->format('Y-m-d') }} to {{ \Carbon\Carbon::parse($endDate)->format('Y-m-d') }}</p>
-        <p><strong>Generated On:</strong> {{ $generatedAt }}</p>
-        <p><strong>Total Plans:</strong> {{ count($plans) }}</p>
+        <p><strong>{{ __('messages.report_period') }}:</strong> {{ $monthTitle }}</p>
+        <p><strong>{{ __('messages.generated_on') }}:</strong> {{ $generatedAt }}</p>
+        <p><strong>{{ __('messages.total_plans') }}:</strong> {{ count($plans) }}</p>
     </div>
+    
+    @php
+        // Agrupar planos por dia dentro do mês selecionado
+        $plansByDay = [];
+        
+        foreach ($plans as $plan) {
+            foreach ($plan->occurrences as $occurrence) {
+                $dayKey = $occurrence->format('Y-m-d');
+                if (!isset($plansByDay[$dayKey])) {
+                    $plansByDay[$dayKey] = [];
+                }
+                $plansByDay[$dayKey][] = $plan;
+            }
+        }
+        
+        // Ordenar os dias
+        ksort($plansByDay);
+        
+        // Labels de frequência para exibição
+        $frequencyLabels = [
+            'daily' => __('messages.daily'),
+            'weekly' => __('messages.weekly'),
+            'monthly' => __('messages.monthly'),
+            'yearly' => __('messages.yearly'),
+            'custom' => __('messages.custom'),
+            'once' => __('messages.one_time'),
+        ];
+    @endphp
 
     @if(count($plans) > 0)
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Task</th>
-                    <th>Equipment</th>
-                    <th>Area/Line</th>
-                    <th>Frequency</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Assigned To</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($plans as $plan)
-                    <tr>
-                        <td>{{ $plan->scheduled_date->format('Y-m-d') }}</td>
-                        <td>{{ $plan->task ? $plan->task->title : 'No Task' }}</td>
-                        <td>{{ $plan->equipment ? $plan->equipment->name : 'No Equipment' }}</td>
-                        <td>
-                            @if($plan->area)
-                                Area: {{ $plan->area->name }}
-                            @endif
-                            @if($plan->line)
-                                <br>Line: {{ $plan->line->name }}
-                            @endif
-                        </td>
-                        <td>
-                            @switch($plan->frequency_type)
-                                @case('once')
-                                    Once
-                                    @break
-                                @case('daily')
-                                    Daily
-                                    @break
-                                @case('weekly')
-                                    Weekly
-                                    @break
-                                @case('monthly')
-                                    Monthly
-                                    @break
-                                @case('yearly')
-                                    Yearly
-                                    @break
-                                @case('custom')
-                                    Every {{ $plan->custom_days }} days
-                                    @break
-                                @default
-                                    {{ ucfirst($plan->frequency_type) }}
-                            @endswitch
-                        </td>
-                        <td>
-                            @switch($plan->type)
-                                @case('preventive')
-                                    <span class="type-badge type-preventive">Preventive</span>
-                                    @break
-                                @case('predictive')
-                                    <span class="type-badge type-predictive">Predictive</span>
-                                    @break
-                                @case('conditional')
-                                    <span class="type-badge type-conditional">Conditional</span>
-                                    @break
-                                @default
-                                    <span class="type-badge type-other">{{ ucfirst($plan->type) }}</span>
-                            @endswitch
-                        </td>
-                        <td>
-                            @switch($plan->status)
-                                @case('pending')
-                                    <span class="status-badge status-pending">Pending</span>
-                                    @break
-                                @case('in_progress')
-                                    <span class="status-badge status-in-progress">In Progress</span>
-                                    @break
-                                @case('completed')
-                                    <span class="status-badge status-completed">Completed</span>
-                                    @break
-                                @case('cancelled')
-                                    <span class="status-badge status-cancelled">Cancelled</span>
-                                    @break
-                                @case('schedule')
-                                    <span class="status-badge status-schedule">Schedule</span>
-                                    @break
-                                @default
-                                    <span class="status-badge">{{ ucfirst($plan->status) }}</span>
-                            @endswitch
-                        </td>
-                        <td>{{ $plan->assignedTo ? $plan->assignedTo->name : 'Unassigned' }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <h3 style="margin-top: 20px; margin-bottom: 15px; color: #2563eb; text-align: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">
+            {{ __('messages.maintenance_plan_schedule') }} - {{ $monthTitle }}
+        </h3>
+
+        @foreach($plansByDay as $day => $dayPlans)
+            @php
+                $dayDate = \Carbon\Carbon::createFromFormat('Y-m-d', $day);
+                $dateFormat = \App\Models\Setting::getSystemDateFormat();
+                $dayLabel = $dayDate->format($dateFormat) . ' (' . $dayDate->translatedFormat('l') . ')'; // Formato configurado + (Nome do dia da semana)
+                
+                // Agrupar planos do dia por tipo de frequência
+                $dayPlansByFrequency = collect($dayPlans)->groupBy('frequency_type');
+            @endphp
+            
+            <div class="day-section">
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #4b5563; font-size: 14px; background-color: #f3f4f6; padding: 8px; border-radius: 4px;">
+                    {{ $dayLabel }} - {{ count($dayPlans) }} {{ __('messages.plans') }}
+                </h4>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('messages.frequency') }}</th>
+                            <th>{{ __('messages.task') }}</th>
+                            <th>{{ __('messages.equipment') }}</th>
+                            <th>{{ __('messages.area_line') }}</th>
+                            <th>{{ __('messages.type') }}</th>
+                            <th>{{ __('messages.status') }}</th>
+                            <th>{{ __('messages.assigned_to') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($dayPlans as $plan)
+                            <tr>
+                                <td>
+                                    {{ $frequencyLabels[$plan->frequency_type] ?? $plan->frequency_type }}
+                                    @if($plan->frequency_type == 'custom' && $plan->custom_days)
+                                        ({{ $plan->custom_days }} {{ __('messages.days') }})
+                                    @endif
+                                </td>
+                                <td>{{ $plan->task ? $plan->task->title : __('messages.no_task') }}</td>
+                                <td>{{ $plan->equipment ? $plan->equipment->name : __('messages.no_equipment') }}</td>
+                                <td>
+                                    @if($plan->area)
+                                        {{ __('messages.area') }}: {{ $plan->area->name }}
+                                    @endif
+                                    
+                                    @if($plan->line)
+                                        <br>{{ __('messages.line') }}: {{ $plan->line->name }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @switch($plan->type)
+                                        @case('preventive')
+                                            {{ __('messages.preventive') }}
+                                            @break
+                                        @case('predictive')
+                                            {{ __('messages.predictive') }}
+                                            @break
+                                        @case('conditional')
+                                            {{ __('messages.conditional') }}
+                                            @break
+                                        @default
+                                            {{ $plan->type }}
+                                    @endswitch
+                                </td>
+                                <td>
+                                    @switch($plan->status)
+                                        @case('pending')
+                                            {{ __('messages.pending') }}
+                                            @break
+                                        @case('in_progress')
+                                            {{ __('messages.in_progress') }}
+                                            @break
+                                        @case('completed')
+                                            {{ __('messages.completed') }}
+                                            @break
+                                        @case('cancelled')
+                                            {{ __('messages.cancelled') }}
+                                            @break
+                                        @case('schedule')
+                                            {{ __('messages.schedule') }}
+                                            @break
+                                        @default
+                                            {{ $plan->status }}
+                                    @endswitch
+                                </td>
+                                <td>{{ $plan->assignedTo ? $plan->assignedTo->name : __('messages.unassigned') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            
+            @if(!$loop->last && $loop->index % 3 == 2)
+                <div class="page-break"></div>
+            @endif
+        @endforeach
     @else
-        <div class="no-data">
-            <p>No maintenance plans found matching the specified criteria.</p>
+        <div class="no-data" style="text-align: center; padding: 30px; background-color: #f9fafb; border-radius: 8px; margin: 20px 0;">
+            <p style="font-size: 14px; color: #6b7280;">
+                {{ __('messages.no_maintenance_plans_found') }}
+            </p>
         </div>
     @endif
 
-    <div class="footer">
-        <p>Report generated from Maintenance Management System ({{ now()->format('Y-m-d H:i:s') }})</p>
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.maintenance_plan_report_notes') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format('d/m/Y H:i') }}</p>
     </div>
 </body>
 </html>

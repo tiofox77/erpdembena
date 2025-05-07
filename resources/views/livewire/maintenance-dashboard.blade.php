@@ -85,21 +85,21 @@
                 <div class="flex items-center justify-center mb-2 text-blue-500">
                     <i class="fas fa-calendar-check text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold mb-1">Planned</h3>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.planned') }}</h3>
                 <p class="text-3xl font-bold text-blue-700">{{ $plannedTasksCount }}</p>
             </div>
             <div class="bg-green-50 p-4 rounded-lg text-center border border-green-100 transition-all hover:shadow-md">
                 <div class="flex items-center justify-center mb-2 text-green-500">
                     <i class="fas fa-check-circle text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold mb-1">Actual</h3>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.actual') }}</h3>
                 <p class="text-3xl font-bold text-green-700">{{ $actualTasksCount }}</p>
             </div>
             <div class="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-100 transition-all hover:shadow-md">
                 <div class="flex items-center justify-center mb-2 text-indigo-500">
                     <i class="fas fa-chart-line text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold mb-1">Compliance %</h3>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.compliance_percentage') }}</h3>
                 <p class="text-3xl font-bold text-indigo-700">{{ $compliancePercentage }}%</p>
             </div>
         </div>
@@ -109,14 +109,14 @@
                 <div class="flex items-center justify-center mb-2 text-yellow-500">
                     <i class="fas fa-clock text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold mb-1">Pending</h3>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.pending') }}</h3>
                 <p class="text-3xl font-bold text-yellow-700">{{ $pendingTasksCount }}</p>
             </div>
             <div class="bg-red-50 p-4 rounded-lg text-center border border-red-100 transition-all hover:shadow-md">
                 <div class="flex items-center justify-center mb-2 text-red-500">
                     <i class="fas fa-exclamation-triangle text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold mb-1">Non-Compliance %</h3>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.non_compliance_percentage') }}</h3>
                 <p class="text-3xl font-bold text-red-700">{{ $nonCompliancePercentage }}%</p>
             </div>
         </div>
@@ -124,7 +124,7 @@
 
     <!-- Metrics Overview -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6 dashboard-card">
-        <h3 class="text-xl font-semibold mb-4">Metrics Overview</h3>
+        <h3 class="text-xl font-semibold mb-4">{{ __('messages.metrics_overview') }}</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div class="flex flex-col items-center p-4 bg-purple-50 rounded-lg border border-purple-100 transition-all hover:shadow-md">
@@ -132,7 +132,7 @@
                     <i class="fas fa-calendar-alt text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-purple-700">{{ $scheduledTasks }}</div>
-                <div class="text-sm text-gray-600 text-center mt-1">Total Maintenance Plans</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.total_maintenance_plans') }}</div>
             </div>
 
             <div class="flex flex-col items-center p-4 bg-red-50 rounded-lg border border-red-100 transition-all hover:shadow-md">
@@ -140,7 +140,7 @@
                     <i class="fas fa-exclamation-circle text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-red-700">{{ $overdueTasks }}</div>
-                <div class="text-sm text-gray-600 text-center mt-1">Overdue Tasks</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.overdue_tasks') }}</div>
             </div>
 
             <div class="flex flex-col items-center p-4 bg-yellow-50 rounded-lg border border-yellow-100 transition-all hover:shadow-md">
@@ -148,7 +148,7 @@
                     <i class="fas fa-tools text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-yellow-700">{{ $equipmentInMaintenance }}</div>
-                <div class="text-sm text-gray-600 text-center mt-1">Equipment in Maintenance</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.equipment_in_maintenance') }}</div>
             </div>
 
             <div class="flex flex-col items-center p-4 bg-red-50 rounded-lg border border-red-100 transition-all hover:shadow-md">
@@ -156,7 +156,7 @@
                     <i class="fas fa-exclamation-triangle text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-red-700">{{ $equipmentOutOfService }}</div>
-                <div class="text-sm text-gray-600 text-center mt-1">Equipment Out of Service</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.equipment_out_of_service') }}</div>
             </div>
 
             <div class="flex flex-col items-center p-4 bg-blue-50 rounded-lg border border-blue-100 transition-all hover:shadow-md">
@@ -164,38 +164,18 @@
                     <i class="fas fa-wrench text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-blue-700">{{ $equipmentCount }}</div>
-                <div class="text-sm text-gray-600 text-center mt-1">Total Equipment</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.total_equipment') }}</div>
             </div>
         </div>
     </div>
 
-    <!-- Planned Dates Timeline -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 dashboard-card">
-        <h3 class="text-lg font-semibold mb-4 flex items-center">
-            <i class="fas fa-calendar-week text-indigo-500 mr-2"></i> Planned Dates
-        </h3>
-        <div class="overflow-x-auto">
-            <div class="flex space-x-2 pb-3">
-                @foreach($plannedDates as $date)
-                <div class="px-3 py-2 bg-blue-100 text-blue-800 rounded-md text-sm whitespace-nowrap border border-blue-200 hover:shadow-sm transition-all">
-                    <i class="far fa-calendar-alt mr-1"></i> {{ $date }}
-                </div>
-                @endforeach
-                
-                @if(count($plannedDates) === 0)
-                <div class="w-full text-center py-4 text-gray-500">
-                    <i class="far fa-calendar-times mr-1"></i> No planned dates found
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
+    <!-- Widget Planned Dates removido conforme solicitado -->
 
     <!-- Task Status by Department and Category -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-project-diagram text-purple-500 mr-2"></i> Area Wise Task Status
+                <i class="fas fa-project-diagram text-purple-500 mr-2"></i> {{ __('messages.area_wise_task_status') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="deptTaskChart" width="400" height="300"></canvas>
@@ -204,7 +184,7 @@
 
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-chart-pie text-indigo-500 mr-2"></i> Area Wise Task Compliance %
+                <i class="fas fa-chart-pie text-green-500 mr-2"></i> {{ __('messages.area_wise_compliance') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="deptComplianceChart" width="400" height="300"></canvas>
@@ -215,7 +195,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-sitemap text-blue-500 mr-2"></i> Lines Wise Task Status
+                <i class="fas fa-layer-group text-blue-500 mr-2"></i> {{ __('messages.category_wise_task_status') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="categoryTaskChart" width="400" height="300"></canvas>
@@ -224,7 +204,7 @@
 
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-chart-line text-green-500 mr-2"></i> Lines Wise Task Compliance %
+                <i class="fas fa-chart-line text-green-500 mr-2"></i> {{ __('messages.category_wise_compliance') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="categoryComplianceChart" width="400" height="300"></canvas>
@@ -237,7 +217,7 @@
         <!-- Monthly Distribution Chart -->
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i> Monthly Maintenance Distribution
+                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i> {{ __('messages.monthly_maintenance_distribution') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="monthlyChart" width="400" height="300"></canvas>
@@ -247,7 +227,7 @@
         <!-- Status Distribution Chart -->
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-chart-pie text-yellow-500 mr-2"></i> Maintenance Status
+                <i class="fas fa-clipboard-list text-indigo-500 mr-2"></i> {{ __('messages.maintenance_plan_status') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="statusChart" width="400" height="300"></canvas>
@@ -281,7 +261,7 @@
         <!-- Task Description Status -->
         <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-tasks text-purple-500 mr-2"></i> Task Description Wise Status
+                <i class="fas fa-tasks text-purple-500 mr-2"></i> {{ __('messages.task_description_wise_status') }}
             </h3>
             <div class="h-80 chart-container">
                 <canvas id="taskDescriptionChart" width="400" height="300"></canvas>

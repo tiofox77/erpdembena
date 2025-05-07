@@ -137,13 +137,13 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-500 flex items-center">
                                                 <i class="far fa-calendar-alt mr-1 text-gray-400"></i>
-                                                {{ $task->created_at->format('M d, Y g:i A') }}
+                                                {{ Carbon\Carbon::parse($task->created_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-500 flex items-center">
                                                 <i class="far fa-clock mr-1 text-gray-400"></i>
-                                                {{ $task->updated_at->format('M d, Y g:i A') }}
+                                                {{ Carbon\Carbon::parse($task->updated_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -254,7 +254,7 @@
                         </div>
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="far fa-calendar-alt mr-2"></i>
-                            <span>Created: {{ $viewingTask->created_at->format('Y-m-d g:i A') }}</span>
+                            <span>Created: {{ Carbon\Carbon::parse($viewingTask->created_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}</span>
                         </div>
                     </div>
                 </div>
@@ -275,7 +275,7 @@
                         </span>
                         <div>
                             <p class="text-xs text-gray-500 uppercase">Last Updated</p>
-                            <p class="text-sm font-medium">{{ $viewingTask->updated_at->format('Y-m-d g:i A') }}</p>
+                            <p class="text-sm font-medium">{{ Carbon\Carbon::parse($viewingTask->updated_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}</p>
                         </div>
                     </div>
                 </div>

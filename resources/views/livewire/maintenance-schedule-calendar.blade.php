@@ -136,7 +136,7 @@
     <div class="mt-4 pt-3 border-t">
         <div class="flex justify-between items-center mb-2">
             <h3 class="text-md font-medium text-gray-900">
-                {{ trans('calendar_filters.tasks_for_date') }} {{ Carbon\Carbon::parse($selectedDate)->format('m/d/Y') }}
+                {{ trans('calendar_filters.tasks_for_date') }} {{ Carbon\Carbon::parse($selectedDate)->format(\App\Models\Setting::getSystemDateFormat()) }}
                 @if(Carbon\Carbon::parse($selectedDate)->isSunday())
                     <span class="text-xs px-2 py-1 ml-2 rounded-full bg-gray-200 text-gray-700">{{ trans('calendar_filters.sunday_rest_day_tag') }}</span>
                 @endif

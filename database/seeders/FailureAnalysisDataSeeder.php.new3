@@ -1,0 +1,233 @@
+    /**
+     * Criar registros de falhas (manutenção corretiva)
+     */
+    private function createFailureRecords($equipmentIds, $causeIds, $modeIds, $userIds)
+    {
+        $now = Carbon::now();
+        $oneYearAgo = Carbon::now()->subYear(); // Expandir para 1 ano de histórico
+        
+        // Definir pesos para distribuir realisticamente as falhas
+        $equipmentWeights = [
+            0 => 8,  // Torno CNC terá muitas falhas
+            1 => 6,  // Fresadora terá algumas falhas
+            2 => 7,  // Prensa Hidráulica terá várias falhas
+            3 => 3,  // Esteira terá poucas falhas
+            4 => 4,  // Robô de Solda terá algumas falhas
+            5 => 5,  // Máquina de Injeção terá várias falhas
+            6 => 3,  // Empacotadora terá poucas falhas
+            7 => 4,  // Robô Manipulador terá algumas falhas
+            8 => 5,  // Máquina de Corte a Laser terá várias falhas
+            9 => 6   // Centro de Usinagem terá algumas falhas
+        ];
+        
+        $causeWeights = [
+            0 => 6,  // Erro de Operação será muito comum
+            1 => 4,  // Sobrecarga terá algumas ocorrências
+            2 => 8,  // Desgaste de Componente será extremamente comum
+            3 => 5,  // Fadiga de Material será comum
+            4 => 7,  // Lubrificação Inadequada será muito comum
+            5 => 5,  // Manutenção Atrasada terá várias ocorrências
+            6 => 2,  // Dimensionamento Incorreto será raro
+            7 => 4,  // Variação de Energia terá algumas ocorrências
+            8 => 3,  // Contaminação terá algumas ocorrências
+            9 => 4,  // Falha de Vedação terá algumas ocorrências
+            10 => 3, // Pressão Inadequada terá algumas ocorrências
+            11 => 3, // Obstrução terá algumas ocorrências
+            12 => 2, // Falha de Software será rara
+            13 => 5, // Sobretemperatura será comum
+            14 => 2  // Umidade será rara
+        ];
+        
+        $modeWeights = [
+            0 => 6,  // Quebra de Engrenagem será comum
+            1 => 8,  // Falha de Rolamento será muito comum
+            2 => 4,  // Curto-Circuito terá algumas ocorrências
+            3 => 7,  // Sobreaquecimento de Motor será comum
+            4 => 5,  // Vazamento Hidráulico será comum
+            5 => 4,  // Bomba Hidráulica Danificada terá algumas ocorrências
+            6 => 3,  // Vazamento de Ar terá algumas ocorrências
+            7 => 6,  // Falha de Sensor será comum
+            8 => 2,  // Falha de PLC será rara
+            9 => 4,  // Contaminação de Fluido terá algumas ocorrências
+            10 => 5, // Travamento Mecânico será comum
+            11 => 3, // Falha de Calibração terá algumas ocorrências
+            12 => 4, // Quebra de Correia terá algumas ocorrências
+            13 => 3, // Obstrução de Filtro terá algumas ocorrências
+            14 => 5  // Desalinhamento será comum
+        ];
+        
+        // Distribuição de status - variação mais realista
+        $statuses = [
+            'open' => 10,           // 10% aberto
+            'in_progress' => 15,     // 15% em andamento
+            'resolved' => 35,        // 35% resolvido
+            'closed' => 40           // 40% fechado
+        ];
+        
+        // Criar função para selecionar com base em pesos
+        $weightedRandom = function($weights) {
+            $sum = array_sum($weights);
+            $rand = mt_rand(1, $sum);
+            $runningSum = 0;
+            
+            foreach ($weights as $key => $weight) {
+                $runningSum += $weight;
+                if ($rand <= $runningSum) {
+                    return $key;
+                }
+            }
+            
+            return array_key_first($weights); // Fallback
+        };
+
+        // Escolher status com base em pesos
+        $selectStatus = function() use ($statuses) {
+            $rand = mt_rand(1, 100);
+            $cumulative = 0;
+            
+            foreach ($statuses as $status => $probability) {
+                $cumulative += $probability;
+                if ($rand <= $cumulative) {
+                    return $status;
+                }
+            }
+            
+            return 'closed'; // Fallback
+        };
+        
+        $numRecords = 50; // Aumentando para 50 registros
+        $this->command->info("Criando {$numRecords} registros de falhas de equipamentos...");
+        
+        // Distribuir falhas ao longo do ano - mais recentes têm mais resolvidas
+        $timeSegments = [
+            0 => ['start' => $oneYearAgo, 'end' => $oneYearAgo->copy()->addMonths(3)], // 9-12 meses atrás
+            1 => ['start' => $oneYearAgo->copy()->addMonths(3), 'end' => $oneYearAgo->copy()->addMonths(6)], // 6-9 meses atrás
+            2 => ['start' => $oneYearAgo->copy()->addMonths(6), 'end' => $oneYearAgo->copy()->addMonths(9)], // 3-6 meses atrás
+            3 => ['start' => $oneYearAgo->copy()->addMonths(9), 'end' => $now]  // 0-3 meses atrás
+        ];
+        
+        for ($i = 0; $i < $numRecords; $i++) {
+            // Selecionar segmento de tempo
+            $segmentIndex = $i % 4; // Distribuir uniformemente entre os segmentos
+            $segment = $timeSegments[$segmentIndex];
+            
+            // Selecionar equipamento com base nos pesos
+            $equipmentIndex = $weightedRandom($equipmentWeights);
+            // Garantir que o índice não exceda o tamanho do array
+            $equipmentIndex = min($equipmentIndex, count($equipmentIds) - 1);
+            $equipmentId = $equipmentIds[$equipmentIndex];
+            
+            // Selecionar causa e modo com base nos pesos
+            $causeIndex = $weightedRandom($causeWeights);
+            // Garantir que o índice não exceda o tamanho do array
+            $causeIndex = min($causeIndex, count($causeIds) - 1);
+            $causeId = $causeIds[$causeIndex];
+            
+            $modeIndex = $weightedRandom($modeWeights);
+            // Garantir que o índice não exceda o tamanho do array
+            $modeIndex = min($modeIndex, count($modeIds) - 1);
+            $modeId = $modeIds[$modeIndex];
+            
+            // Gerar data de início aleatória no segmento de tempo correto
+            $startTime = Carbon::createFromTimestamp(
+                mt_rand($segment['start']->timestamp, $segment['end']->timestamp)
+            );
+            
+            // Status - probabilidade de fechado aumenta para falhas mais antigas
+            $statusAdjustment = 4 - $segmentIndex; // 1 para recentes, 4 para mais antigas
+            if ($statusAdjustment > 1) {
+                // Aumentar probabilidade de resolved/closed para falhas mais antigas
+                $adjustedStatuses = $statuses;
+                $adjustedStatuses['open'] = max(1, $statuses['open'] - ($statusAdjustment * 2));
+                $adjustedStatuses['in_progress'] = max(1, $statuses['in_progress'] - $statusAdjustment);
+                $adjustedStatuses['resolved'] += $statusAdjustment;
+                $adjustedStatuses['closed'] += $statusAdjustment;
+                
+                $status = $selectStatus();
+            } else {
+                $status = $selectStatus();
+            }
+            
+            // Calcular data de término e tempo de inatividade
+            $endTime = null;
+            $downtimeLength = null;
+            
+            if ($status === 'resolved' || $status === 'closed') {
+                // Falhas levam entre 2 e 72 horas para serem resolvidas, mais variação
+                $hoursToFix = mt_rand(2, 72);
+                $endTime = $startTime->copy()->addHours($hoursToFix);
+                
+                // Formato de downtime em horas decimais
+                $minutesExtra = mt_rand(0, 59);
+                $downtimeLength = $hoursToFix + ($minutesExtra / 60);
+            }
+            
+            // Descrições mais variadas
+            $descriptions = [
+                'Equipamento parou durante operação',
+                'Ruído anormal detectado durante ciclo de trabalho',
+                'Vibração excessiva observada em componentes rotativos',
+                'Falha durante ciclo de operação, parada não programada',
+                'Componente com desgaste visível além dos limites aceitáveis',
+                'Alarme de erro ativado no painel de controle principal',
+                'Vazamento de fluido hidráulico identificado na base',
+                'Perda de precisão nas operações de alta tolerância',
+                'Queda significativa de desempenho produtivo',
+                'Falha intermitente durante ciclos específicos',
+                'Superaquecimento detectado em componentes elétricos',
+                'Curto-circuito no sistema de controle',
+                'Erro de comunicação com outros equipamentos',
+                'Trancamento mecânico durante operação',
+                'Vazamento de ar no sistema pneumático',
+                'Falha no sistema de segurança',
+                'Quebra de componente estrutural',
+                'Parada emergencial acionada por operador',
+                'Falha de calibração detectada em sensores',
+                'Perda de pressão hidráulica durante ciclo'
+            ];
+            
+            // Ações tomadas mais detalhadas
+            $actions = [
+                'Substituição completa do componente danificado e recalibração do sistema',
+                'Realinhamento do conjunto de peças e ajuste de tolerâncias mecânicas',
+                'Lubrificação de componentes móveis e limpeza dos sistemas de transmissão',
+                'Reaperto de todas as conexões elétricas e mecânicas conforme especificação',
+                'Calibração de sensores e verificação de todo o sistema de controle',
+                'Limpeza do sistema hidráulico e substituição de fluido contaminado',
+                'Atualização de software de controle para nova versão com correções',
+                'Ajuste de parâmetros operacionais conforme manual do fabricante',
+                'Reinicialização forçada do sistema eletrônico e reset de memória',
+                'Reparo de fiação danificada e isolamento de circuitos expostos',
+                'Desmontagem completa do conjunto para inspeção e remontagem',
+                'Substituição de selos e vedações hidráulicas desgastadas',
+                'Troca preventiva de componentes associados ao ponto de falha',
+                'Correção de problema estrutural por soldagem e reforço',
+                'Alinhamento laser de componentes rotativos e verificação de balanceamento',
+                'Treinamento do operador para evitar recorrência do problema',
+                'Instalação de sistema de monitoramento para diagnóstico precoce',
+                'Aplicação de modificação recomendada pelo fabricante',
+                'Instalação de componentes de maior capacidade/resistência',
+                'Implementação de modificação aprovada pela engenharia'
+            ];
+            
+            // Criar o registro de falha
+            MaintenanceCorrective::create([
+                'year' => $startTime->year,
+                'month' => $startTime->month,
+                'week' => $startTime->weekOfYear,
+                'system_process' => 'Produção',
+                'equipment_id' => $equipmentId,
+                'failure_mode_id' => $modeId,
+                'failure_cause_id' => $causeId,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'downtime_length' => $downtimeLength,
+                'description' => $descriptions[array_rand($descriptions)],
+                'actions_taken' => ($status === 'resolved' || $status === 'closed') ? $actions[array_rand($actions)] : null,
+                'reported_by' => $userIds[array_rand($userIds)],
+                'resolved_by' => ($status === 'resolved' || $status === 'closed') ? $userIds[array_rand($userIds)] : null,
+                'status' => $status,
+            ]);
+        }
+    }
+}

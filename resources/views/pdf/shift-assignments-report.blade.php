@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ App::getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,23 +33,30 @@
             color: #666;
             margin-bottom: 10px;
         }
-        table {
+        .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-bottom: 15px;
         }
-        th {
+        .items-table thead th {
             background-color: #f3f4f6;
+            padding: 8px;
             text-align: left;
-            padding: 12px;
             font-weight: bold;
-            color: #374151;
-            border-bottom: 2px solid #ddd;
+            border: 1px solid #d1d5db;
+            font-size: 11px;
         }
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #ddd;
+        .items-table tbody td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .items-table tfoot td {
+            border-top: 2px solid #d1d5db;
+            padding: 8px;
+            font-weight: bold;
+            background-color: #f9fafb;
         }
         tr:nth-child(even) {
             background-color: #f9fafb;
@@ -103,15 +110,35 @@
 </head>
 <body>
     <div class="header">
-        @if($hasLogo && $logoPath)
-            <img src="{{ $logoPath }}" alt="{{ $companyName }} Logo" class="logo">
-        @endif
-        <h1>{{ $companyName }}</h1>
-        <p class="date">{{ $date }}</p>
+        @php
+            $logoPath = \App\Models\Setting::get('company_logo');
+            $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
+            $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+            $companyAddress = \App\Models\Setting::get('company_address', '');
+            $companyPhone = \App\Models\Setting::get('company_phone', '');
+            $companyEmail = \App\Models\Setting::get('company_email', '');
+            $companyWebsite = \App\Models\Setting::get('company_website', '');
+            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
+        @endphp
+        <div style="display: flex; align-items: flex-start;">
+            <div style="margin-right: 20px;">
+                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+            </div>
+            <div>
+                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="document-title">{{ $title }}</div>
+            <div>{{ __('messages.generated_at') }}: {{ $date }}</div>
+        </div>
     </div>
 
     <main>
-        <table>
+        <table class="items-table">
             <thead>
                 <tr>
                     <th>Employee</th>
@@ -170,8 +197,18 @@
         @endif
     </main>
 
-    <div class="footer">
-        <p> {{ date('Y') }} {{ $companyName }} - All rights reserved</p>
+    <div style="margin-top: 20px;" class="document-info">
+        <table>
+            <tr>
+                <th>{{ __('messages.notes') }}:</th>
+                <td>{{ __('messages.shift_assignments_report_notes') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; font-size: 10px; color: #6b7280;">
+        <p>{{ $companyName }} &copy; {{ date('Y') }} - {{ __('messages.all_rights_reserved') }}</p>
+        <p>{{ __('messages.report_generated_by') }} ERP DEMBENA v{{ config('app.version', '1.0') }} | {{ now()->format('d/m/Y H:i') }}</p>
     </div>
 </body>
 </html>
