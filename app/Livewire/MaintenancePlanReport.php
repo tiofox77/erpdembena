@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Setting;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class MaintenancePlanReport extends Component
 {
@@ -370,39 +371,217 @@ class MaintenancePlanReport extends Component
     }
 
 
-    public function getFilteredPlans($paginate = true)
+    /**
+     * Atualiza os feriados quando o mês selecionado é alterado
+     */
+    public function updatedSelectedMonth($value)
     {
-        $query = MaintenancePlan::query()
-            ->with(['equipment', 'task', 'line', 'area', 'assignedTo'])
-            ->when($this->selectedMonth, function ($query) {
-                // Extrai ano e mês da string YYYY-MM
-                list($year, $month) = explode('-', $this->selectedMonth);
-                // Filtra planos para o mês selecionado
-                return $query->whereDate('scheduled_date', '<=', Carbon::createFromDate($year, $month, 1)->endOfMonth());
-            })
-            ->when($this->status, function ($query) {
-                return $query->where('status', $this->status);
-            })
-            ->when($this->type, function ($query) {
-                return $query->where('type', $this->type);
-            })
-            ->when($this->equipment_id, function ($query) {
-                return $query->where('equipment_id', $this->equipment_id);
-            })
-            ->when($this->task_id, function ($query) {
-                return $query->where('task_id', $this->task_id);
-            })
-            ->when($this->line_id, function ($query) {
-                return $query->where('line_id', $this->line_id);
-            })
-            ->when($this->area_id, function ($query) {
-                return $query->where('area_id', $this->area_id);
-            })
-            ->orderBy($this->sortField, $this->sortDirection);
-            
-        return $paginate ? $query->paginate(15) : $query->get();
+        // Recarregar os feriados para o novo mês selecionado
+        $this->loadHolidays();
+        // Resetar a paginação quando mudar o mês
+        $this->resetPage();
     }
 
+    public function getFilteredPlans($paginate = true)
+    {
+        // Extrai ano e mês da string YYYY-MM
+        list($year, $month) = explode('-', $this->selectedMonth);
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+        
+        // Buscar todos os planos ativos
+        $query = MaintenancePlan::with(['equipment', 'task', 'line', 'area', 'assignedTo'])
+            ->where(function($query) use ($endOfMonth) {
+                // Incluir planos únicos com data até o fim do mês selecionado
+                $query->where(function($q) use ($endOfMonth) {
+                    $q->where('frequency_type', 'once')
+                      ->where('scheduled_date', '<=', $endOfMonth);
+                });
+                
+                // OU planos recorrentes com data de início até o fim do mês
+                $query->orWhere(function($q) use ($endOfMonth) {
+                    $q->where('frequency_type', '!=', 'once')
+                      ->where('scheduled_date', '<=', $endOfMonth);
+                });
+            });
+            
+        // Aplicar outros filtros
+        if (!empty($this->status)) {
+            $query->where('status', $this->status);
+        }
+        
+        if (!empty($this->type)) {
+            $query->where('type', $this->type);
+        }
+        
+        if (!empty($this->equipment_id)) {
+            $query->where('equipment_id', $this->equipment_id);
+        }
+        
+        if (!empty($this->task_id)) {
+            $query->where('task_id', $this->task_id);
+        }
+        
+        if (!empty($this->line_id)) {
+            $query->where('line_id', $this->line_id);
+        }
+        
+        if (!empty($this->area_id)) {
+            $query->where('area_id', $this->area_id);
+        }
+        
+        // Ordenar resultados
+        $query->orderBy($this->sortField, $this->sortDirection);
+        
+        // Obter todos os planos que atendem aos filtros
+        $allPlans = $query->get();
+        
+        // Array para armazenar planos com ocorrências no mês selecionado
+        $plansWithOccurrences = [];
+        
+        // Filtrar apenas os planos que têm ocorrências no mês selecionado
+        foreach ($allPlans as $plan) {
+            $occurrences = $this->generateOccurrences($plan, $startOfMonth, $endOfMonth);
+            if (count($occurrences) > 0) {
+                // Adicionar as ocorrências calculadas ao plano
+                $plan->calculatedOccurrences = $occurrences;
+                $plansWithOccurrences[] = $plan;
+            }
+        }
+        
+        // Criar uma collection a partir do array filtrado
+        $collection = collect($plansWithOccurrences);
+        
+        // Retornar com ou sem paginação
+        if ($paginate) {
+            $perPage = 15;
+            return new LengthAwarePaginator(
+                $collection->forPage($this->getPage(), $perPage),
+                $collection->count(),
+                $perPage,
+                $this->getPage(),
+                ['path' => request()->url()]
+            );
+        } else {
+            return $collection;
+        }
+    }
+    
+    protected function getPage()
+    {
+        return request()->input('page', 1);
+    }
+
+    /**
+     * Método estático para calcular ocorrências de um plano de manutenção em um período
+     * Esta função é usada diretamente no template blade
+     * 
+     * @param MaintenancePlan $plan O plano de manutenção
+     * @param Carbon $startOfMonth Início do período
+     * @param Carbon $endOfMonth Fim do período
+     * @return array Array de objetos Carbon com as datas de ocorrência
+     */
+    public static function generatePlannedOccurrences($plan, $startOfMonth, $endOfMonth)
+    {
+        $occurrences = [];
+        $processedDates = []; // Rastreador para evitar duplicações
+        $scheduledDate = Carbon::parse($plan->scheduled_date);
+        
+        // Se for um plano de ocorrência única, verificar se está no período
+        if ($plan->frequency_type === 'once') {
+            if ($scheduledDate->greaterThanOrEqualTo($startOfMonth) && $scheduledDate->lessThanOrEqualTo($endOfMonth)) {
+                $occurrences[] = $scheduledDate->copy();
+            }
+            return $occurrences;
+        }
+        
+        // Para planos recorrentes, calcular ocorrências
+        $currentDate = $scheduledDate->copy();
+        
+        // Avançar até o início do mês
+        while ($currentDate->lessThan($startOfMonth)) {
+            // Calcular próxima data com base na frequência
+            switch ($plan->frequency_type) {
+                case 'daily':
+                    $currentDate = $currentDate->addDay();
+                    break;
+                case 'weekly':
+                    $targetDayOfWeek = $plan->frequency_day_of_week ?? 1; // Default: segunda
+                    $currentDate = $currentDate->addWeek();
+                    $currentDate = $currentDate->previous((int)$targetDayOfWeek);
+                    break;
+                case 'monthly':
+                    $targetDay = $plan->frequency_day ?? 1; // Default: dia 1
+                    $currentDate = $currentDate->addMonth();
+                    $daysInMonth = $currentDate->daysInMonth;
+                    $day = min($targetDay, $daysInMonth);
+                    $currentDate->day = $day;
+                    break;
+                case 'yearly':
+                    $currentDate = $currentDate->addYear();
+                    break;
+                case 'custom':
+                    $customDays = $plan->custom_days ?? 7; // Default: 7 dias
+                    $currentDate = $currentDate->addDays($customDays);
+                    break;
+                default:
+                    $currentDate = $currentDate->addDay(); // Fallback
+            }
+            
+            // Evitar loop infinito
+            if ($currentDate->greaterThan($endOfMonth)) {
+                return $occurrences;
+            }
+        }
+        
+        // Limite de iterações para evitar loops infinitos
+        $maxIterations = 100;
+        $iteration = 0;
+        
+        // Adicionar ocorrências dentro do período
+        while ($currentDate->lessThanOrEqualTo($endOfMonth) && $iteration < $maxIterations) {
+            $iteration++;
+            $currentDateStr = $currentDate->format('Y-m-d');
+            
+            // Evitar duplicações
+            if (isset($processedDates[$currentDateStr])) {
+                continue;
+            }
+            
+            // Verificar se é domingo ou feriado
+            if (!$currentDate->isSunday()) {
+                // Verificar feriados - simplificado pois não temos acesso aos feriados aqui
+                // Em um ambiente real, isso seria feito com acesso ao banco de dados
+                $occurrences[] = $currentDate->copy();
+                $processedDates[$currentDateStr] = true;
+            }
+            
+            // Avançar para a próxima data
+            switch ($plan->frequency_type) {
+                case 'daily':
+                    $currentDate = $currentDate->addDay();
+                    break;
+                case 'weekly':
+                    $currentDate = $currentDate->addWeek();
+                    break;
+                case 'monthly':
+                    $currentDate = $currentDate->addMonth();
+                    break;
+                case 'yearly':
+                    $currentDate = $currentDate->addYear();
+                    break;
+                case 'custom':
+                    $customDays = $plan->custom_days ?? 7;
+                    $currentDate = $currentDate->addDays($customDays);
+                    break;
+                default:
+                    $currentDate = $currentDate->addDay();
+            }
+        }
+        
+        return $occurrences;
+    }
+    
     public function render()
     {
         $equipments = MaintenanceEquipment::orderBy('name')->get();

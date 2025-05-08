@@ -211,7 +211,18 @@
                                 @forelse($plans as $plan)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $plan->scheduled_date->format(\App\Models\Setting::getSystemDateFormat()) }}
+                                            @if(isset($plan->calculatedOccurrences) && count($plan->calculatedOccurrences) > 0)
+                                                <div class="flex flex-col gap-1">
+                                                    @foreach($plan->calculatedOccurrences as $index => $date)
+                                                        <span class="{{ $index > 0 ? 'border-t pt-1' : '' }}">
+                                                            {{ $date->format(\App\Models\Setting::getSystemDateFormat()) }}
+                                                            <span class="text-xs text-gray-500 ml-1">({{ $date->translatedFormat('l') }})</span>
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400 italic">{{ __('messages.no_occurrences') }}</span>
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $plan->task ? $plan->task->title : 'No Task' }}
