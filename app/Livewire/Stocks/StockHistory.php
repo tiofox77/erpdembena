@@ -287,6 +287,9 @@ class StockHistory extends Component
     public function generatePdf()
     {
         try {
+            // Mostrar notificação antes de iniciar o download
+            $this->dispatch('notify', type: 'success', message: __('livewire/stocks/stock-history.pdf_generating'));
+            
             // Apply all current filters to get transactions
             $query = StockTransaction::with(['part', 'part.equipment', 'createdBy'])
                 ->when($this->search, function($query) {
@@ -355,10 +358,7 @@ class StockHistory extends Component
             }, $filename);
             
         } catch (\Exception $e) {
-            $this->dispatch('showToast', [
-                'type' => 'error',
-                'message' => 'Error generating PDF: ' . $e->getMessage()
-            ]);
+            $this->dispatch('notify', type: 'error', message: __('livewire/stocks/stock-history.pdf_error') . $e->getMessage());
         }
     }
 }

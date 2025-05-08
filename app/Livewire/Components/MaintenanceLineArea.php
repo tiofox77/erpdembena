@@ -207,13 +207,13 @@ class MaintenanceLineArea extends Component
                     'name' => $this->area['name'],
                     'description' => $this->area['description']
                 ]);
-                $message = 'Area updated successfully';
+                $message = __('livewire/components/maintenance-line-area.area_updated_success');
             } else {
                 $area = Area::create([
                     'name' => $this->area['name'],
                     'description' => $this->area['description']
                 ]);
-                $message = 'Area created successfully';
+                $message = __('livewire/components/maintenance-line-area.area_created_success');
             }
 
             // Send success notification with specific type (create or update)
@@ -223,7 +223,7 @@ class MaintenanceLineArea extends Component
             $this->showAreaModal = false;
             $this->resetAreaForm();
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: 'Error saving area: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: __('livewire/components/maintenance-line-area.' . ($this->isEditing ? 'area_updated_error' : 'area_created_error')) . $e->getMessage());
         }
     }
 
@@ -301,13 +301,13 @@ class MaintenanceLineArea extends Component
                     'name' => $this->line['name'],
                     'description' => $this->line['description']
                 ]);
-                $message = 'Line updated successfully';
+                $message = __('livewire/components/maintenance-line-area.line_updated_success');
             } else {
                 $line = Line::create([
                     'name' => $this->line['name'],
                     'description' => $this->line['description']
                 ]);
-                $message = 'Line created successfully';
+                $message = __('livewire/components/maintenance-line-area.line_created_success');
             }
 
             // Send success notification with specific type (create or update)
@@ -318,7 +318,7 @@ class MaintenanceLineArea extends Component
             $this->reset(['line']);
         } catch (\Exception $e) {
             Log::error('Error saving line: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', title: 'Error', message: 'An error occurred while saving the line. Please try again.');
+            $this->dispatch('notify', type: 'error', title: __('livewire/components/maintenance-line-area.access_denied'), message: __('livewire/components/maintenance-line-area.error_saving_line'));
         }
     }
 
@@ -338,11 +338,11 @@ class MaintenanceLineArea extends Component
         try {
             // Check permission based on item type
             if ($this->deleteType === 'area' && !$this->canDeleteArea()) {
-                $this->dispatch('notify', type: 'error', title: 'Access Denied', message: 'You do not have permission to delete areas.');
+                $this->dispatch('notify', type: 'error', title: __('livewire/components/maintenance-line-area.access_denied'), message: __('livewire/components/maintenance-line-area.no_permission_delete_area'));
                 $this->showDeleteModal = false;
                 return;
             } elseif ($this->deleteType === 'line' && !$this->canDeleteLine()) {
-                $this->dispatch('notify', type: 'error', title: 'Access Denied', message: 'You do not have permission to delete lines.');
+                $this->dispatch('notify', type: 'error', title: __('livewire/components/maintenance-line-area.access_denied'), message: __('livewire/components/maintenance-line-area.no_permission_delete_line'));
                 $this->showDeleteModal = false;
                 return;
             }
@@ -355,16 +355,16 @@ class MaintenanceLineArea extends Component
                 // We'll delete the area directly for now
 
                 $item->delete();
-                $this->dispatch('notify', type: 'success', message: 'Area deleted successfully');
+                $this->dispatch('notify', type: 'success', message: __('livewire/components/maintenance-line-area.area_deleted_success'));
             } else {
                 $item = Line::findOrFail($this->deleteId);
                 $item->delete();
-                $this->dispatch('notify', type: 'success', message: 'Line deleted successfully');
+                $this->dispatch('notify', type: 'success', message: __('livewire/components/maintenance-line-area.line_deleted_success'));
             }
 
             $this->showDeleteModal = false;
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: 'Error deleting item: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: __('livewire/components/maintenance-line-area.error_deleting_item') . $e->getMessage());
             $this->showDeleteModal = false;
         }
     }
@@ -373,6 +373,15 @@ class MaintenanceLineArea extends Component
     {
         // Validação em tempo real
         $this->validateOnly($propertyName);
+    }
+
+    /**
+     * Reset area form fields
+     */
+    public function resetAreaForm()
+    {
+        $this->reset(['area']);
+        $this->isEditing = false;
     }
 
     public function render()

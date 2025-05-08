@@ -1,6 +1,30 @@
 <?php
 
 return [
+    // PDF notifications
+    'pdf_generating' => 'The PDF is being prepared for download...',
+    'pdf_list_generating' => 'The List PDF is being prepared for download...',
+    'pdf_error' => 'Error generating PDF: ',
+    'pdf_list_error' => 'Error generating list PDF: ',
+    'assignments_pdf_generating' => 'The assignments PDF is being prepared for download...',
+    'assignments_pdf_error' => 'Error generating assignments PDF: ',
+    
+    // CRUD notifications
+    'created_success' => 'Shift created successfully',
+    'updated_success' => 'Shift updated successfully',
+    'deleted_success' => 'Shift deleted successfully',
+    'created_error' => 'Error creating shift: ',
+    'updated_error' => 'Error updating shift: ',
+    'deleted_error' => 'Error deleting shift: ',
+    
+    // Assignment notifications
+    'assignment_created_success' => 'Shift assignment created successfully',
+    'assignment_updated_success' => 'Shift assignment updated successfully',
+    'assignment_deleted_success' => 'Shift assignment deleted successfully',
+    'assignment_created_error' => 'Error creating shift assignment: ',
+    'assignment_updated_error' => 'Error updating shift assignment: ',
+    'assignment_deleted_error' => 'Error deleting shift assignment: ',
+    
     // Page Headers
     'shifts_management' => 'Shifts Management',
     'add_shift' => 'Add Shift',

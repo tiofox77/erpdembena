@@ -10,6 +10,7 @@ use App\Models\EquipmentPartRequest;
 use App\Models\EquipmentPartRequestImage;
 use App\Models\EquipmentPartRequestItem;
 use App\Models\EquipmentPart;
+use App\Models\UnitType;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -40,6 +41,7 @@ class EquipmentPartRequests extends Component
     public $showDeleteModal = false;
     public $showViewModal = false;
     public $viewRequest = null;
+    public $unitTypes = [];
 
     public $request = [
         'reference_number' => '',
@@ -121,12 +123,27 @@ class EquipmentPartRequests extends Component
     {
         $this->resetForm();
         
+        // Carregar os tipos de unidades ativos
+        $this->loadUnitTypes();
+        
         // Garantir que requestItems tenha pelo menos um item vazio quando o componente é inicializado
         if (empty($this->requestItems)) {
             $this->requestItems = [
                 $this->getEmptyRequestItem()
             ];
         }
+    }
+    
+    /**
+     * Carrega os tipos de unidades ativos do banco de dados
+     */
+    private function loadUnitTypes()
+    {
+        $this->unitTypes = UnitType::where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get()
+            ->toArray();
     }
 
     // Real-time validation
@@ -508,6 +525,9 @@ class EquipmentPartRequests extends Component
     public function generatePDF($id)
     {
         try {
+            // Mostrar notificação toastr antes de iniciar o download
+            $this->dispatch('notify', type: 'success', message: __('livewire/maintenance/equipment-part-requests.pdf_generating'));
+            
             $request = EquipmentPartRequest::with(['items.part', 'requester', 'approver', 'images'])
                 ->findOrFail($id);
             
@@ -520,7 +540,7 @@ class EquipmentPartRequests extends Component
             }, 'request-' . $request->reference_number . '.pdf');
             
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: 'Error generating PDF: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: __('livewire/maintenance/equipment-part-requests.pdf_error') . $e->getMessage());
         }
     }
 
@@ -528,6 +548,9 @@ class EquipmentPartRequests extends Component
     public function generateListPDF()
     {
         try {
+            // Mostrar notificação toastr antes de iniciar o download
+            $this->dispatch('notify', type: 'success', message: __('livewire/maintenance/equipment-part-requests.pdf_list_generating'));
+            
             $requests = EquipmentPartRequest::with(['items.part', 'requester'])
                 ->when($this->search, function ($query) {
                     return $query->where(function ($q) {
@@ -551,11 +574,11 @@ class EquipmentPartRequests extends Component
             $pdf = \PDF::loadView('livewire.equipment-part-requests.pdf.list', [
                 'requests' => $requests,
                 'statusOptions' => [
-                    'pending' => 'Pending',
-                    'approved' => 'Approved',
-                    'rejected' => 'Rejected',
-                    'ordered' => 'Ordered',
-                    'received' => 'Received',
+                    'pending' => __('livewire/maintenance/equipment-part-requests.pending'),
+                    'approved' => __('livewire/maintenance/equipment-part-requests.approved'),
+                    'rejected' => __('livewire/maintenance/equipment-part-requests.rejected'),
+                    'ordered' => __('livewire/maintenance/equipment-part-requests.ordered'),
+                    'received' => __('livewire/maintenance/equipment-part-requests.received'),
                 ],
                 'filters' => [
                     'search' => $this->search,
@@ -568,7 +591,7 @@ class EquipmentPartRequests extends Component
             }, 'part-requests-list.pdf');
             
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: 'Error generating PDF: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: __('livewire/maintenance/equipment-part-requests.pdf_list_error') . $e->getMessage());
         }
     }
     

@@ -95,18 +95,18 @@ class StockOut extends Component
         
         // Check if part exists and has stock
         if (!$part) {
-            $this->dispatch('showToast', [
-                'type' => 'error',
-                'message' => 'Part not found.'
-            ]);
+            $this->dispatch('notify', 
+                type: 'error',
+                message: __('livewire/stocks/stock-out.part_not_found')
+            );
             return;
         }
         
         if ($part->stock_quantity < $this->newPart['quantity']) {
-            $this->dispatch('showToast', [
-                'type' => 'error',
-                'message' => 'Insufficient stock quantity. Only ' . $part->stock_quantity . ' available.'
-            ]);
+            $this->dispatch('notify', 
+                type: 'error',
+                message: __('livewire/stocks/stock-out.insufficient_stock', ['quantity' => $part->stock_quantity])
+            );
             return;
         }
 
@@ -119,10 +119,10 @@ class StockOut extends Component
                 // Check if the new quantity exceeds stock
                 if ($this->selectedParts[$index]['quantity'] > $part->stock_quantity) {
                     $this->selectedParts[$index]['quantity'] = $part->stock_quantity;
-                    $this->dispatch('showToast', [
-                        'type' => 'warning',
-                        'message' => 'Quantity adjusted to maximum available stock.'
-                    ]);
+                    $this->dispatch('notify', 
+                        type: 'warning',
+                        message: __('livewire/stocks/stock-out.quantity_adjusted_to_max')
+                    );
                 }
                 
                 $this->resetNewPart();
@@ -220,10 +220,10 @@ class StockOut extends Component
             DB::commit();
             
             $this->closeModal();
-            $this->dispatch('showToast', [
-                'type' => 'success',
-                'message' => $this->isEditing ? 'Stock out record updated successfully.' : 'Stock out record created successfully.'
-            ]);
+            $this->dispatch('notify', 
+                type: 'success',
+                message: $this->isEditing ? __('livewire/stocks/stock-out.updated_success') : __('livewire/stocks/stock-out.created_success')
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('showToast', [
@@ -341,10 +341,10 @@ class StockOut extends Component
             DB::commit();
             
             $this->showDeleteModal = false;
-            $this->dispatch('showToast', [
-                'type' => 'success',
-                'message' => 'Stock out deleted successfully!'
-            ]);
+            $this->dispatch('notify', 
+                type: 'success',
+                message: __('livewire/stocks/stock-out.deleted_success')
+            );
             
         } catch (\Exception $e) {
             DB::rollBack();
@@ -357,7 +357,10 @@ class StockOut extends Component
     
     public function generatePdf($id = null) {
         try {
+            // Mostrar notificação antes de iniciar o download
             if ($id) {
+                $this->dispatch('notify', type: 'success', message: __('livewire/stocks/stock-out.pdf_generating'));
+                
                 // Generate PDF for a specific stock out
                 $stockOut = StockOutModel::with(['items.equipmentPart', 'user'])->findOrFail($id);
                 $pdf = Pdf::loadView('livewire.stocks.stock-out-pdf', [
@@ -368,6 +371,8 @@ class StockOut extends Component
                     echo $pdf->output();
                 }, $stockOut->reference_number . '.pdf');
             } else {
+                $this->dispatch('notify', type: 'success', message: __('livewire/stocks/stock-out.pdf_list_generating'));
+                
                 // Generate PDF for filtered stock outs
                 $stockOuts = StockOutModel::with(['items.equipmentPart', 'user'])
                     ->when($this->search, function($query) {
@@ -396,10 +401,7 @@ class StockOut extends Component
                 }, 'stock-outs-report-' . date('Y-m-d') . '.pdf');
             }
         } catch (\Exception $e) {
-            $this->dispatch('showToast', [
-                'type' => 'error',
-                'message' => 'Error generating PDF: ' . $e->getMessage()
-            ]);
+            $this->dispatch('notify', type: 'error', message: __('livewire/stocks/stock-out.pdf_error') . $e->getMessage());
         }
     }
 

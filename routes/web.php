@@ -207,6 +207,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:settings.manage'])->prefix('settings')->name('settings.')->group(function () {
         // Configurações do Sistema
         Route::get('/system', App\Livewire\Settings\SystemSettings::class)->name('system');
+        
+        // Tipos de Unidades
+        Route::get('/unit-types', App\Livewire\Settings\UnitTypes::class)->name('unit-types');
     });
 
     // HR Module Routes

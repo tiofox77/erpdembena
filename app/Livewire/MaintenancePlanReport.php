@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\MaintenancePlan;
 use App\Models\MaintenanceEquipment;
 use App\Models\MaintenanceTask;
+use App\Models\Holiday;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
@@ -32,11 +33,60 @@ class MaintenancePlanReport extends Component
     // PDF generation
     public $generatingPdf = false;
     public $pdfUrl = null;
+    
+    // Holidays storage
+    protected $holidays = [];
 
     public function mount()
     {
         // Default to current month (YYYY-MM format)
         $this->selectedMonth = Carbon::now()->format('Y-m');
+        
+        // Load holidays for the current year
+        $this->loadHolidays();
+    }
+    
+    /**
+     * Carrega os feriados do ano atual para uso na geração de ocorrências
+     */
+    protected function loadHolidays()
+    {
+        $this->holidays = [];
+        
+        // Extrai o ano do mês selecionado
+        list($year, $month) = explode('-', $this->selectedMonth);
+        
+        // Carrega feriados fixos do ano
+        $fixedHolidays = Holiday::where('is_active', true)
+            ->whereYear('date', $year)
+            ->get();
+            
+        foreach ($fixedHolidays as $holiday) {
+            $date = Carbon::parse($holiday->date);
+            $this->holidays[$date->format('Y-m-d')] = [
+                'title' => $holiday->title,
+                'recurring' => $holiday->is_recurring
+            ];
+        }
+        
+        // Carrega feriados recorrentes para o ano
+        $recurringHolidays = Holiday::where('is_active', true)
+            ->where('is_recurring', true)
+            ->get();
+            
+        foreach ($recurringHolidays as $holiday) {
+            $originalDate = Carbon::parse($holiday->date);
+            $thisYearDate = Carbon::createFromDate(
+                $year,
+                $originalDate->month,
+                min($originalDate->day, Carbon::createFromDate($year, $originalDate->month, 1)->daysInMonth)
+            );
+            
+            $this->holidays[$thisYearDate->format('Y-m-d')] = [
+                'title' => $holiday->title,
+                'recurring' => true
+            ];
+        }
     }
 
     public function sortBy($field)
@@ -123,8 +173,8 @@ class MaintenancePlanReport extends Component
         
         $this->generatingPdf = false;
         
-        // Show success message
-        session()->flash('success', 'PDF report generated successfully!');
+        // Show success message using standard notification format
+        $this->dispatch('notify', type: 'success', message: __('livewire/maintenance/plan-report.pdf_generated_successfully'));
         
         // Dispatch browser event to trigger download
         $this->dispatch('pdfGenerated', $this->pdfUrl);
@@ -155,7 +205,9 @@ class MaintenancePlanReport extends Component
         if ($plan->frequency_type === 'once') {
             // Se cair dentro do período, adiciona
             if ($scheduledDate->greaterThanOrEqualTo($startOfMonth) && $scheduledDate->lessThanOrEqualTo($endOfMonth)) {
-                $occurrences[] = $scheduledDate->copy();
+                // Ajustar para evitar domingos e feriados mesmo para planos de ocorrência única
+                $adjustedDate = $this->adjustForHolidaysAndSundays($scheduledDate->copy());
+                $occurrences[] = $adjustedDate;
             }
             return $occurrences;
         }
@@ -166,23 +218,28 @@ class MaintenancePlanReport extends Component
         // Se a data agendada for anterior ao início do período, precisamos avançar
         // para a primeira ocorrência dentro do período
         while ($currentDate->lessThan($startOfMonth)) {
-            $currentDate = $this->getNextOccurrence($currentDate, $plan);
+            $currentDate = $this->getNextOccurrence($currentDate, $plan, $processedDates);
         }
 
+        // Limitar o número máximo de iterações para evitar loops infinitos em caso de erro
+        $maxIterations = 100;
+        $iteration = 0;
+        
         // Agora adiciona todas as ocorrências dentro do período
-        while ($currentDate->lessThanOrEqualTo($endOfMonth)) {
+        while ($currentDate->lessThanOrEqualTo($endOfMonth) && $iteration < $maxIterations) {
+            $iteration++;
             $currentDateStr = $currentDate->format('Y-m-d');
             
             // Evitar duplicações: verificar se já processamos esta data
             if (isset($processedDates[$currentDateStr])) {
-                $currentDate = $this->getNextOccurrence($currentDate, $plan);
+                $currentDate = $this->getNextOccurrence($currentDate, $plan, $processedDates);
                 continue;
             }
             
             $occurrences[] = $currentDate->copy();
             $processedDates[$currentDateStr] = true;
             
-            $currentDate = $this->getNextOccurrence($currentDate, $plan);
+            $currentDate = $this->getNextOccurrence($currentDate, $plan, $processedDates);
         }
 
         return $occurrences;
@@ -193,19 +250,24 @@ class MaintenancePlanReport extends Component
      *
      * @param Carbon $currentDate Data atual
      * @param MaintenancePlan $plan Plano de manutenção
+     * @param array &$processedDates Array para rastreamento de datas já processadas
      * @return Carbon A data da próxima ocorrência
      */
-    private function getNextOccurrence($currentDate, $plan)
+    private function getNextOccurrence($currentDate, $plan, &$processedDates = [])
     {
         $nextDate = $currentDate->copy();
 
         switch ($plan->frequency_type) {
             case 'daily':
-                return $nextDate->addDay();
+                $nextDate = $nextDate->addDay();
+                // Verifica se cai em domingo ou feriado e ajusta se necessário
+                return $this->adjustForHolidaysAndSundays($nextDate);
 
             case 'custom':
                 // Avança o número de dias personalizados
-                return $nextDate->addDays($plan->custom_days ?? 1);
+                $nextDate = $nextDate->addDays($plan->custom_days ?? 1);
+                // Verifica se cai em domingo ou feriado e ajusta se necessário
+                return $this->adjustForHolidaysAndSundays($nextDate);
 
             case 'weekly':
                 // Se um dia da semana estiver definido, avança para o próximo dia específico
@@ -213,10 +275,21 @@ class MaintenancePlanReport extends Component
                     // Primeiro avança uma semana
                     $nextDate = $nextDate->addWeek();
                     // Depois ajusta para o dia da semana desejado
-                    return $nextDate->startOfWeek()->addDays($plan->day_of_week);
+                    $nextDate = $nextDate->startOfWeek()->addDays($plan->day_of_week);
+                    
+                    // Verifica se o dia da semana selecionado não é domingo (0)
+                    // Se for domingo, avança para segunda-feira
+                    if ($plan->day_of_week === 0) {
+                        $nextDate = $nextDate->addDay();
+                    }
+                    
+                    // Verifica se cai em feriado e ajusta se necessário
+                    return $this->adjustForHolidays($nextDate);
                 }
                 // Se nenhum dia específico, simplesmente avança 7 dias
-                return $nextDate->addWeek();
+                $nextDate = $nextDate->addWeek();
+                // Verifica se cai em domingo ou feriado e ajusta se necessário
+                return $this->adjustForHolidaysAndSundays($nextDate);
 
             case 'monthly':
                 // Se um dia do mês estiver definido
@@ -227,14 +300,20 @@ class MaintenancePlanReport extends Component
                     // Certifica-se de que o dia não excede o total de dias no mês
                     $dayOfMonth = min($plan->day_of_month, $daysInMonth);
                     
-                    return $nextDate->startOfMonth()->addDays($dayOfMonth - 1);
+                    $nextDate = $nextDate->startOfMonth()->addDays($dayOfMonth - 1);
+                    // Verifica se cai em domingo ou feriado e ajusta se necessário
+                    return $this->adjustForHolidaysAndSundays($nextDate);
                 }
                 // Se nenhum dia específico, simplesmente avança um mês
-                return $nextDate->addMonth();
+                $nextDate = $nextDate->addMonth();
+                // Verifica se cai em domingo ou feriado e ajusta se necessário
+                return $this->adjustForHolidaysAndSundays($nextDate);
 
             case 'yearly':
                 // Avança um ano
-                return $nextDate->addYear();
+                $nextDate = $nextDate->addYear();
+                // Verifica se cai em domingo ou feriado e ajusta se necessário
+                return $this->adjustForHolidaysAndSundays($nextDate);
 
             case 'once':
             default:
@@ -242,6 +321,54 @@ class MaintenancePlanReport extends Component
                 return $nextDate->addYear(); // Avança um ano para garantir que saia do loop
         }
     }
+    
+    /**
+     * Ajusta a data se cair em domingo ou feriado
+     * 
+     * @param Carbon $date Data a ser verificada
+     * @param array &$processedDates Array para rastreamento de datas já processadas
+     * @return Carbon Data ajustada
+     */
+    private function adjustForHolidaysAndSundays($date, &$processedDates = [])
+    {
+        // Primeiro ajusta para a próxima data disponível se for domingo
+        if ($date->isSunday()) {
+            $date = $date->addDay(); // Avança para segunda-feira
+        }
+        
+        // Depois verifica se a nova data cai em um feriado
+        return $this->adjustForHolidays($date, $processedDates);
+    }
+    
+    /**
+     * Ajusta a data se cair em um feriado ou se já tiver sido processada
+     * 
+     * @param Carbon $date Data a ser verificada
+     * @param array &$processedDates Array para rastreamento de datas já processadas
+     * @return Carbon Data ajustada
+     */
+    private function adjustForHolidays($date, &$processedDates = [])
+    {
+        $dateStr = $date->format('Y-m-d');
+        $maxAdjustments = 20; // Limite de ajustes para evitar loops infinitos
+        $adjustCount = 0;
+        
+        // Continua ajustando enquanto a data cair em um feriado ou já tiver sido processada
+        while ((isset($this->holidays[$dateStr]) || isset($processedDates[$dateStr])) && $adjustCount < $maxAdjustments) {
+            $adjustCount++;
+            $date = $date->addDay();
+            
+            // Se o novo dia for domingo, avança mais um dia
+            if ($date->isSunday()) {
+                $date = $date->addDay();
+            }
+            
+            $dateStr = $date->format('Y-m-d');
+        }
+        
+        return $date;
+    }
+
 
     public function getFilteredPlans($paginate = true)
     {

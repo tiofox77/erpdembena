@@ -108,6 +108,10 @@ return [
     'request_rejected' => 'Part request rejected successfully',
     'parts_issued' => 'Parts issued successfully',
     'error_occurred' => 'An error occurred',
+    'pdf_generating' => 'The PDF is being prepared for download...',
+    'pdf_list_generating' => 'The PDF list is being prepared for download...',
+    'pdf_error' => 'Error generating PDF: ',
+    'pdf_list_error' => 'Error generating PDF list: ',
     
     // Empty States
     'no_requests_found' => 'No part requests found',

@@ -103,27 +103,40 @@
             margin-bottom: 5px;
         }
         .images-section {
+            margin-top: 20px;
             margin-bottom: 20px;
         }
-        .image-gallery {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
         .image-container {
+            page-break-inside: avoid; /* Evita quebrar uma imagem entre páginas */
             border: 1px solid #ddd;
             padding: 5px;
-            width: 30%;
+            margin: 0 auto;
+            max-width: 90%;
         }
         .image-container img {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
         }
         .image-caption {
             font-size: 10px;
             text-align: center;
             margin-top: 5px;
+            color: #666;
+            font-weight: bold;
+        }
+        .images-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            page-break-inside: auto;
+        }
+        .images-table td {
+            width: 50%;
+            vertical-align: top;
+            text-align: center;
+            page-break-inside: avoid;
         }
         .footer {
             text-align: center;
@@ -236,16 +249,30 @@
     @if($request->images->count() > 0)
     <div class="images-section">
         <h3>Images ({{ $request->images->count() }})</h3>
-        <div class="image-gallery">
-            @foreach($request->images as $image)
-            <div class="image-container">
-                <img src="{{ public_path('storage/' . $image->image_path) }}" alt="Request Image">
-                <div class="image-caption">
-                    {{ $image->caption ?: 'No caption' }}
-                </div>
-            </div>
+        
+        <!-- Usamos uma tabela para garantir 2 imagens por linha -->
+        <table style="width: 100%; border-collapse: separate; border-spacing: 10px;">
+            @php $counter = 0; @endphp
+            @foreach($request->images->chunk(2) as $chunk)
+                <tr>
+                    @foreach($chunk as $image)
+                        @php $counter++; @endphp
+                        <td style="width: 50%; vertical-align: top; text-align: center;">
+                            <div class="image-container">
+                                <img src="{{ public_path('storage/' . $image->image_path) }}" alt="Request Image {{$counter}}">
+                                <div class="image-caption">
+                                    <strong>Image {{$counter}}:</strong> {{ $image->caption ?: 'No caption' }}
+                                </div>
+                            </div>
+                        </td>
+                        <!-- Se houver apenas uma imagem no chunk, adiciona uma célula vazia -->
+                        @if($chunk->count() == 1)
+                            <td style="width: 50%;"></td>
+                        @endif
+                    @endforeach
+                </tr>
             @endforeach
-        </div>
+        </table>
     </div>
     @endif
 

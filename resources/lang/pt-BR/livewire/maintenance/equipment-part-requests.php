@@ -108,6 +108,10 @@ return [
     'request_rejected' => 'Solicitação de peça rejeitada com sucesso',
     'parts_issued' => 'Peças emitidas com sucesso',
     'error_occurred' => 'Ocorreu um erro',
+    'pdf_generating' => 'O PDF está sendo preparado para download...',
+    'pdf_list_generating' => 'A listagem em PDF está sendo preparada para download...',
+    'pdf_error' => 'Erro ao gerar PDF: ',
+    'pdf_list_error' => 'Erro ao gerar PDF da listagem: ',
     
     // Empty States
     'no_requests_found' => 'Nenhuma solicitação de peça encontrada',

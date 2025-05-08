@@ -297,6 +297,9 @@ class StockIn extends Component
     {
         try {
             if ($id) {
+                // Mostrar notificação antes de iniciar o download
+                $this->dispatch('notify', type: 'success', message: __('livewire/stocks/stock-in.pdf_generating'));
+                
                 // Generate PDF for a specific stock in transaction
                 $transaction = StockTransaction::with(['part', 'createdBy'])
                     ->where('type', 'stock_in')
@@ -310,6 +313,9 @@ class StockIn extends Component
                     echo $pdf->output();
                 }, 'stock-in-' . $transaction->id . '.pdf');
             } else {
+                // Mostrar notificação antes de iniciar o download
+                $this->dispatch('notify', type: 'success', message: __('livewire/stocks/stock-in.pdf_list_generating'));
+                
                 // Generate PDF for filtered stock in transactions
                 $transactions = StockTransaction::with(['part', 'createdBy'])
                     ->where('type', 'stock_in')
@@ -341,10 +347,7 @@ class StockIn extends Component
                 }, 'stock-in-report-' . date('Y-m-d') . '.pdf');
             }
         } catch (\Exception $e) {
-            $this->dispatch('showToast', [
-                'type' => 'error',
-                'message' => 'Error generating PDF: ' . $e->getMessage()
-            ]);
+            $this->dispatch('notify', type: 'error', message: __('livewire/stocks/stock-in.pdf_error') . $e->getMessage());
         }
     }
 

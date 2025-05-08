@@ -414,30 +414,30 @@
                 <!-- Parts & Stock Submenu -->
                 <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="partsMenu">
                     <i class="fas fa-tools text-gray-500"></i>
-                    <span>{{ trans('messages.equipment_parts') }}</span>
+                    <span class="font-semibold">{{ trans('messages.equipment_parts') }}</span>
                     <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('equipment.parts') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') || request()->routeIs('stocks.part-requests') ? 'active' : '' }}"></i>
                 </div>
 
                 <div class="sidebar-nested-submenu {{ request()->routeIs('equipment.parts') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') || request()->routeIs('stocks.part-requests') ? 'active' : '' }}" id="partsSubmenu">
                     <a href="{{ route('equipment.parts') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-cogs text-gray-500"></i>
-                        <span>{{ trans('messages.parts_list') }}</span>
+                        <span class="font-semibold">{{ trans('messages.parts_list') }}</span>
                     </a>
                     <a href="{{ route('stocks.part-requests') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.part-requests') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-clipboard-list text-gray-500"></i>
-                        <span>{{ trans('messages.request_part') }}</span>
+                        <span class="font-semibold">{{ trans('messages.request_part') }}</span>
                     </a>
                     <a href="{{ route('stocks.stockin') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.stockin') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-arrow-circle-up text-gray-500"></i>
-                        <span>{{ trans('messages.stock_in') }}</span>
+                        <span class="font-semibold">{{ trans('messages.stock_in') }}</span>
                     </a>
                     <a href="{{ route('stocks.stockout') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.stockout') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-arrow-circle-down text-gray-500"></i>
-                        <span>{{ trans('messages.stock_out') }}</span>
+                        <span class="font-semibold">{{ trans('messages.stock_out') }}</span>
                     </a>
                     <a href="{{ route('stocks.history') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.history') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-history text-gray-500"></i>
-                        <span>{{ trans('messages.stock_history') }}</span>
+                        <span class="font-semibold">{{ trans('messages.stock_history') }}</span>
                     </a>
                 </div>
             @endcan
@@ -466,26 +466,26 @@
                     <!-- Maintenance Settings Submenu -->
                     <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="maintenanceSettingsMenu">
                         <i class="fas fa-cogs text-gray-500"></i>
-                        <span>{{ trans('messages.maintenance_corrective_settings') }}</span>
+                        <span class="font-semibold">{{ trans('messages.maintenance_corrective_settings') }}</span>
                         <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('maintenance.failure-modes') || request()->routeIs('maintenance.failure-mode-categories') || request()->routeIs('maintenance.failure-causes') || request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }}"></i>
                     </div>
 
                     <div class="sidebar-nested-submenu {{ request()->routeIs('maintenance.failure-modes') || request()->routeIs('maintenance.failure-mode-categories') || request()->routeIs('maintenance.failure-causes') || request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }}" id="maintenanceSettingsSubmenu">
                         <a href="{{ route('maintenance.failure-modes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-modes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-exclamation-triangle text-gray-500"></i>
-                            <span>{{ trans('messages.failure_modes') }}</span>
+                            <span class="font-semibold">{{ trans('messages.failure_modes') }}</span>
                         </a>
                         <a href="{{ route('maintenance.failure-mode-categories') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-mode-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-tags text-gray-500"></i>
-                            <span>{{ trans('messages.failure_mode_categories') }}</span>
+                            <span class="font-semibold">{{ trans('messages.failure_mode_categories') }}</span>
                         </a>
                         <a href="{{ route('maintenance.failure-causes') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-causes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-question-circle text-gray-500"></i>
-                            <span>{{ trans('messages.failure_causes') }}</span>
+                            <span class="font-semibold">{{ trans('messages.failure_causes') }}</span>
                         </a>
                         <a href="{{ route('maintenance.failure-cause-categories') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.failure-cause-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-sitemap text-gray-500"></i>
-                            <span>{{ trans('messages.failure_cause_categories') }}</span>
+                            <span class="font-semibold">{{ trans('messages.failure_cause_categories') }}</span>
                         </a>
                     </div>
                 @endcan
@@ -495,19 +495,19 @@
                 <!-- User Management Submenu -->
                 <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="userManagementMenu">
                     <i class="fas fa-users text-gray-500"></i>
-                    <span>{{ trans('messages.user_management') }}</span>
+                    <span class="font-semibold">{{ trans('messages.user_management') }}</span>
                     <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('maintenance.users') || request()->routeIs('maintenance.technicians') ? 'active' : '' }}"></i>
                 </div>
 
                 <div class="sidebar-nested-submenu {{ request()->routeIs('maintenance.users') || request()->routeIs('maintenance.technicians') ? 'active' : '' }}" id="userManagementSubmenu">
                     <a href="{{ route('maintenance.users') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.users') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-user-shield text-gray-500"></i>
-                        <span>{{ trans('messages.users') }}</span>
+                        <span class="font-semibold">{{ trans('messages.users') }}</span>
                     </a>
                     @can('technicians.view')
                         <a href="{{ route('maintenance.technicians') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.technicians') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-user-cog text-blue-500"></i>
-                            <span>{{ trans('messages.technicians') }}</span>
+                            <span class="font-semibold">{{ trans('messages.technicians') }}</span>
                         </a>
                     @endcan
                 </div>
@@ -531,7 +531,7 @@
                 <!-- Replace the existing Reports & History link with a submenu -->
                 <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="reportsHistoryMenu">
                     <i class="fas fa-chart-bar text-gray-500"></i>
-                    <span>{{ trans('messages.reports_and_history') }}</span>
+                    <span class="font-semibold">{{ trans('messages.reports_and_history') }}</span>
                     <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('reports.equipment.*') || request()->routeIs('reports.maintenance.*') || request()->routeIs('reports.cost.*') || request()->routeIs('reports.downtime.*') || request()->routeIs('reports.failure.*') || request()->routeIs('reports.resource.*') || request()->routeIs('history.*') ? 'active' : '' }}"></i>
                 </div>
 
@@ -540,68 +540,81 @@
                     <!-- Equipment Performance Reports -->
                     <a href="{{ route('reports.equipment.availability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.availability') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-chart-line text-gray-500"></i>
-                        <span>{{ trans('messages.equipment_availability') }}</span>
+                        <span class="font-semibold">{{ trans('messages.equipment_availability') }}</span>
                     </a>
                     <a href="{{ route('reports.equipment.reliability') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.equipment.reliability') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-heartbeat text-gray-500"></i>
-                        <span>{{ trans('messages.equipment_reliability') }}</span>
+                        <span class="font-semibold">{{ trans('messages.equipment_reliability') }}</span>
                     </a>
 
                     <!-- Maintenance Effectiveness Reports -->
                     <a href="{{ route('reports.maintenance.types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-tools text-gray-500"></i>
-                        <span>{{ trans('messages.maintenance_types') }}</span>
+                        <span class="font-semibold">{{ trans('messages.maintenance_types') }}</span>
                     </a>
                     <a href="{{ route('reports.maintenance.compliance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.compliance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-clipboard-check text-gray-500"></i>
-                        <span>{{ trans('messages.maintenance_compliance') }}</span>
+                        <span class="font-semibold">{{ trans('messages.maintenance_compliance') }}</span>
                     </a>
                     <a href="{{ route('reports.maintenance.plan') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.maintenance.plan') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-file-alt text-gray-500"></i>
-                        <span>{{ trans('messages.maintenance_plan_report') }}</span>
+                        <span class="font-semibold">{{ trans('messages.maintenance_plan_report') }}</span>
                     </a>
 
                     <!-- Cost & Resource Analysis Reports -->
                     <a href="{{ route('reports.resource.utilization') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.resource.utilization') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-users-cog text-gray-500"></i>
-                        <span>{{ trans('messages.resource_utilization') }}</span>
+                        <span class="font-semibold">{{ trans('messages.resource_utilization') }}</span>
                     </a>
 
                     <!-- Failure Analysis Reports -->
                     <a href="{{ route('reports.failure.analysis') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.failure.analysis') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-exclamation-triangle text-gray-500"></i>
-                        <span>{{ trans('messages.root_cause_analysis') }}</span>
+                        <span class="font-semibold">{{ trans('messages.root_cause_analysis') }}</span>
                     </a>
                     <a href="{{ route('reports.downtime.impact') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('reports.downtime.impact') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-hourglass-half text-gray-500"></i>
-                        <span>{{ trans('messages.downtime_impact') }}</span>
+                        <span class="font-semibold">{{ trans('messages.downtime_impact') }}</span>
                     </a>
 
                     <!-- History Tracking Components -->
                     <a href="{{ route('history.equipment.timeline') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.equipment.timeline') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-history text-gray-500"></i>
-                        <span>{{ trans('messages.equipment_timeline') }}</span>
+                        <span class="font-semibold">{{ trans('messages.equipment_timeline') }}</span>
                     </a>
                     <a href="{{ route('history.maintenance.audit') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.maintenance.audit') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-clipboard-list text-gray-500"></i>
-                        <span>{{ trans('messages.maintenance_audit_log') }}</span>
+                        <span class="font-semibold">{{ trans('messages.maintenance_audit_log') }}</span>
                     </a>
                     <a href="{{ route('history.parts.lifecycle') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.parts.lifecycle') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-cogs text-gray-500"></i>
-                        <span>{{ trans('messages.part_supply_lifecycle') }}</span>
+                        <span class="font-semibold">{{ trans('messages.part_supply_lifecycle') }}</span>
                     </a>
                     <a href="{{ route('history.team.performance') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('history.team.performance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-user-clock text-gray-500"></i>
-                        <span>{{ trans('messages.team_performance') }}</span>
+                        <span class="font-semibold">{{ trans('messages.team_performance') }}</span>
                     </a>
                 </div>
             @endcan
 
             @can('settings.manage')
-                <a href="{{ route('maintenance.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <!-- Settings Submenu -->
+                <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="settingsMenu">
                     <i class="fas fa-cog text-gray-500"></i>
-                    <span>{{ trans('messages.settings') }}</span>
-                </a>
+                    <span class="font-semibold">{{ trans('messages.settings') }}</span>
+                    <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('settings.*') || request()->routeIs('maintenance.settings') ? 'active' : '' }}"></i>
+                </div>
+                
+                <div class="sidebar-nested-submenu {{ request()->routeIs('settings.*') || request()->routeIs('maintenance.settings') ? 'active' : '' }}" id="settingsSubmenu">
+                    <a href="{{ route('maintenance.settings') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-sliders-h text-gray-500"></i>
+                        <span class="font-semibold">{{ trans('messages.system_settings') }}</span>
+                    </a>
+                    <a href="{{ route('settings.unit-types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('settings.unit-types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-ruler-combined text-gray-500"></i>
+                        <span class="font-semibold">{{ trans('messages.unit_types') }}</span>
+                    </a>
+                </div>
             @endcan
         </div>
 
@@ -1050,7 +1063,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
             
-            // Configurar todos os menus
+            // Configurar menus
             setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
             setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
             setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
@@ -1059,6 +1072,7 @@
             setupMenuToggle('partsMenu', 'partsSubmenu');
             setupMenuToggle('hrMenu', 'hrSubmenu');
             setupMenuToggle('userManagementMenu', 'userManagementSubmenu');
+            setupMenuToggle('settingsMenu', 'settingsSubmenu');
         });
         
         // Integração com Livewire para reconfigurar menus após atualizações do DOM
@@ -1076,6 +1090,7 @@
                 setupMenuToggle('partsMenu', 'partsSubmenu');
                 setupMenuToggle('hrMenu', 'hrSubmenu');
                 setupMenuToggle('userManagementMenu', 'userManagementSubmenu');
+                setupMenuToggle('settingsMenu', 'settingsSubmenu');
             });
         });
     </script>

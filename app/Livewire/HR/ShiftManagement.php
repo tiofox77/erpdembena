@@ -318,6 +318,9 @@ class ShiftManagement extends Component
 
     public function exportShiftsPDF()
     {
+        // Mostrar notificação antes de iniciar o download
+        $this->dispatch('notify', type: 'success', message: __('livewire/hr/shifts.pdf_generating'));
+        
         $shifts = Shift::when($this->searchShift, function ($query) {
                 return $query->where('name', 'like', "%{$this->searchShift}%");
             })
@@ -353,6 +356,9 @@ class ShiftManagement extends Component
 
     public function exportAssignmentsPDF()
     {
+        // Mostrar notificação antes de iniciar o download
+        $this->dispatch('notify', type: 'success', message: __('livewire/hr/shifts.assignments_pdf_generating'));
+        
         $shiftAssignments = ShiftAssignment::with(['employee', 'shift'])
             ->when($this->searchAssignment, function ($query) {
                 return $query->whereHas('employee', function ($query) {

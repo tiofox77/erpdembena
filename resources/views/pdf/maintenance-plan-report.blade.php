@@ -180,21 +180,9 @@
     </div>
     
     @php
-        // Agrupar planos por dia dentro do mês selecionado
-        $plansByDay = [];
-        
-        foreach ($plans as $plan) {
-            foreach ($plan->occurrences as $occurrence) {
-                $dayKey = $occurrence->format('Y-m-d');
-                if (!isset($plansByDay[$dayKey])) {
-                    $plansByDay[$dayKey] = [];
-                }
-                $plansByDay[$dayKey][] = $plan;
-            }
-        }
-        
-        // Ordenar os dias
-        ksort($plansByDay);
+        // Organizar planos de manutenção por tipo de frequência
+        $plansByFrequency = [];
+        $occurrencesByPlanId = [];
         
         // Labels de frequência para exibição
         $frequencyLabels = [
@@ -205,32 +193,55 @@
             'custom' => __('messages.custom'),
             'once' => __('messages.one_time'),
         ];
+        
+        // Definir a ordem de exibição das frequências
+        $frequencyOrder = [
+            'daily' => 1,
+            'weekly' => 2,
+            'monthly' => 3, 
+            'yearly' => 4,
+            'custom' => 5,
+            'once' => 6
+        ];
+        
+        // Agrupar planos por tipo de frequência
+        foreach ($plans as $plan) {
+            if (!isset($plansByFrequency[$plan->frequency_type])) {
+                $plansByFrequency[$plan->frequency_type] = [];
+            }
+            
+            // Mapear ocorrências para cada plano
+            $occurrencesByPlanId[$plan->id] = $plan->occurrences;
+            $plansByFrequency[$plan->frequency_type][] = $plan;
+        }
+        
+        // Ordenar os tipos de frequência conforme a ordem definida
+        uksort($plansByFrequency, function($a, $b) use ($frequencyOrder) {
+            $orderA = $frequencyOrder[$a] ?? 999;
+            $orderB = $frequencyOrder[$b] ?? 999;
+            return $orderA <=> $orderB;
+        });
     @endphp
 
     @if(count($plans) > 0)
         <h3 style="margin-top: 20px; margin-bottom: 15px; color: #2563eb; text-align: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">
             {{ __('messages.maintenance_plan_schedule') }} - {{ $monthTitle }}
         </h3>
-
-        @foreach($plansByDay as $day => $dayPlans)
+        
+        @foreach($plansByFrequency as $frequencyType => $frequencyPlans)
             @php
-                $dayDate = \Carbon\Carbon::createFromFormat('Y-m-d', $day);
-                $dateFormat = \App\Models\Setting::getSystemDateFormat();
-                $dayLabel = $dayDate->format($dateFormat) . ' (' . $dayDate->translatedFormat('l') . ')'; // Formato configurado + (Nome do dia da semana)
-                
-                // Agrupar planos do dia por tipo de frequência
-                $dayPlansByFrequency = collect($dayPlans)->groupBy('frequency_type');
+                $frequencyLabel = $frequencyLabels[$frequencyType] ?? ucfirst($frequencyType);
             @endphp
             
-            <div class="day-section">
-                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #4b5563; font-size: 14px; background-color: #f3f4f6; padding: 8px; border-radius: 4px;">
-                    {{ $dayLabel }} - {{ count($dayPlans) }} {{ __('messages.plans') }}
+            <div class="frequency-section" style="margin-bottom: 25px;">
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #1E40AF; font-size: 15px; background-color: #DBEAFE; padding: 10px; border-radius: 4px; text-transform: uppercase;">
+                    {{ $frequencyLabel }} - {{ count($frequencyPlans) }} {{ __('messages.plans') }}
                 </h4>
                 
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th>{{ __('messages.frequency') }}</th>
+                            <th>{{ __('messages.scheduled_date') }}</th>
                             <th>{{ __('messages.task') }}</th>
                             <th>{{ __('messages.equipment') }}</th>
                             <th>{{ __('messages.area_line') }}</th>
@@ -240,72 +251,88 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($dayPlans as $plan)
-                            <tr>
-                                <td>
-                                    {{ $frequencyLabels[$plan->frequency_type] ?? $plan->frequency_type }}
-                                    @if($plan->frequency_type == 'custom' && $plan->custom_days)
-                                        ({{ $plan->custom_days }} {{ __('messages.days') }})
-                                    @endif
+                        @foreach($frequencyPlans as $plan)
+                            @foreach($occurrencesByPlanId[$plan->id] as $occurrence)
+                                <tr>
+                                    <td>
+                                        {{ $occurrence->format(\App\Models\Setting::getSystemDateFormat()) }}
+                                        <span style="font-size: 10px; color: #6B7280; display: block;">
+                                            ({{ $occurrence->translatedFormat('l') }})
+                                        </span>
+                                    </td>
+                                    <td>{{ $plan->task ? $plan->task->title : __('messages.no_task') }}</td>
+                                    <td>{{ $plan->equipment ? $plan->equipment->name : __('messages.no_equipment') }}</td>
+                                    <td>
+                                        @if($plan->area)
+                                            {{ __('messages.area') }}: {{ $plan->area->name }}
+                                        @endif
+                                        
+                                        @if($plan->line)
+                                            <br>{{ __('messages.line') }}: {{ $plan->line->name }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="type-badge type-{{ $plan->type }}">
+                                            @switch($plan->type)
+                                                @case('preventive')
+                                                    {{ __('messages.preventive') }}
+                                                    @break
+                                                @case('predictive')
+                                                    {{ __('messages.predictive') }}
+                                                    @break
+                                                @case('conditional')
+                                                    {{ __('messages.conditional') }}
+                                                    @break
+                                                @default
+                                                    {{ $plan->type }}
+                                            @endswitch
+                                        </span>
+                                    </td>
+                                    <td>
+                                    <span class="status-badge status-{{ $plan->status }}">
+                                        @switch($plan->status)
+                                            @case('pending')
+                                                {{ __('messages.pending') }}
+                                                @break
+                                            @case('in_progress')
+                                                {{ __('messages.in_progress') }}
+                                                @break
+                                            @case('completed')
+                                                {{ __('messages.completed') }}
+                                                @break
+                                            @case('cancelled')
+                                                {{ __('messages.cancelled') }}
+                                                @break
+                                            @case('schedule')
+                                                {{ __('messages.scheduled') }}
+                                                @break
+                                            @default
+                                                {{ $plan->status }}
+                                        @endswitch
+                                    </span>
                                 </td>
-                                <td>{{ $plan->task ? $plan->task->title : __('messages.no_task') }}</td>
-                                <td>{{ $plan->equipment ? $plan->equipment->name : __('messages.no_equipment') }}</td>
                                 <td>
-                                    @if($plan->area)
-                                        {{ __('messages.area') }}: {{ $plan->area->name }}
-                                    @endif
-                                    
-                                    @if($plan->line)
-                                        <br>{{ __('messages.line') }}: {{ $plan->line->name }}
-                                    @endif
+                                    {{ $plan->assignedTo->name ?? __('messages.unassigned') }}
                                 </td>
-                                <td>
-                                    @switch($plan->type)
-                                        @case('preventive')
-                                            {{ __('messages.preventive') }}
-                                            @break
-                                        @case('predictive')
-                                            {{ __('messages.predictive') }}
-                                            @break
-                                        @case('conditional')
-                                            {{ __('messages.conditional') }}
-                                            @break
-                                        @default
-                                            {{ $plan->type }}
-                                    @endswitch
-                                </td>
-                                <td>
-                                    @switch($plan->status)
-                                        @case('pending')
-                                            {{ __('messages.pending') }}
-                                            @break
-                                        @case('in_progress')
-                                            {{ __('messages.in_progress') }}
-                                            @break
-                                        @case('completed')
-                                            {{ __('messages.completed') }}
-                                            @break
-                                        @case('cancelled')
-                                            {{ __('messages.cancelled') }}
-                                            @break
-                                        @case('schedule')
-                                            {{ __('messages.schedule') }}
-                                            @break
-                                        @default
-                                            {{ $plan->status }}
-                                    @endswitch
-                                </td>
-                                <td>{{ $plan->assignedTo ? $plan->assignedTo->name : __('messages.unassigned') }}</td>
                             </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="7" style="text-align: right; font-weight: bold;">
+                                {{ __('messages.total_plans') }}: {{ count($frequencyPlans) }} | 
+                                {{ __('messages.total_occurrences') }}: {{ array_reduce($frequencyPlans, function($carry, $plan) use ($occurrencesByPlanId) { return $carry + count($occurrencesByPlanId[$plan->id]); }, 0) }}
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
+                
+                @if(!$loop->last)
+                    <div style="page-break-after: always;"></div>
+                @endif
             </div>
-            
-            @if(!$loop->last && $loop->index % 3 == 2)
-                <div class="page-break"></div>
-            @endif
-        @endforeach
+        @endforeach    
     @else
         <div class="no-data" style="text-align: center; padding: 30px; background-color: #f9fafb; border-radius: 8px; margin: 20px 0;">
             <p style="font-size: 14px; color: #6b7280;">

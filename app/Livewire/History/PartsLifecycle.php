@@ -244,9 +244,17 @@ class PartsLifecycle extends Component
             }
 
             if ($this->partCategory) {
-                $transactionQuery->whereHas('part', function($query) {
-                    $query->where('category', $this->partCategory);
-                });
+                // Usamos o formato 'maintenance_equipment_id-name' para filtrar
+                $parts = explode('-', $this->partCategory);
+                if (count($parts) == 2 && is_numeric($parts[0])) {
+                    $equipment_id = $parts[0];
+                    $name = $parts[1];
+                    
+                    $transactionQuery->whereHas('part', function($query) use ($equipment_id, $name) {
+                        $query->where('maintenance_equipment_id', $equipment_id)
+                              ->where('name', 'like', '%' . $name . '%');
+                    });
+                }
             }
 
             if ($this->transactionType && $this->transactionType !== 'all') {

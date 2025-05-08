@@ -134,13 +134,31 @@
                                                                 wire:model="requestItems.{{ $index }}.unit"
                                                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                                             >
-                                                                <option value="pcs">Pieces (pcs)</option>
-                                                                <option value="kg">Kilograms (kg)</option>
-                                                                <option value="m">Meters (m)</option>
-                                                                <option value="l">Liters (l)</option>
-                                                                <option value="set">Set</option>
-                                                                <option value="box">Box</option>
-                                                                <option value="roll">Roll</option>
+                                                                <option value="">-- Select Unit --</option>
+                                                                @php
+                                                                    // Agrupar unidades por categoria
+                                                                    $unitsByCategory = collect($unitTypes)->groupBy('category');
+                                                                    $categories = [
+                                                                        'quantity' => 'Quantity',
+                                                                        'length' => 'Length',
+                                                                        'mass' => 'Mass/Weight',
+                                                                        'volume' => 'Volume',
+                                                                        'area' => 'Area',
+                                                                        'time' => 'Time',
+                                                                        'electrical' => 'Electrical',
+                                                                        'temperature' => 'Temperature',
+                                                                        'pressure' => 'Pressure',
+                                                                        'other' => 'Other'
+                                                                    ];
+                                                                @endphp
+                                                                
+                                                                @foreach($unitsByCategory as $category => $units)
+                                                                    <optgroup label="{{ $categories[$category] ?? ucfirst($category) }}">
+                                                                        @foreach($units as $unit)
+                                                                            <option value="{{ $unit['symbol'] }}">{{ $unit['name'] }} ({{ $unit['symbol'] }})</option>
+                                                                        @endforeach
+                                                                    </optgroup>
+                                                                @endforeach
                                                             </select>
                                                         </div>
                                                     </div>
@@ -152,48 +170,12 @@
                                                 </div>
                                             @endif
                                         </div>
-                                        <!-- Suggested Vendor (Common) -->
-                                        <div>
-                                            <label for="suggested_vendor" class="block text-sm font-medium text-gray-700">Suggested Vendor Name</label>
-                                            <input 
-                                                type="text" 
-                                                id="suggested_vendor" 
-                                                wire:model="request.suggested_vendor" 
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                            >
-                                        </div>
+                                        <!-- Início dos campos principais do pedido -->
+                                        <!-- Os campos de suggested_vendor, quantity_required e unit foram removidos desta seção -->
+                                        <!-- Agora a gestão destes campos é feita apenas em nível de item -->
 
-                                        <!-- Delivery Date -->
-                                        <div>
-                                            <label for="quantity_required" class="block text-sm font-medium text-gray-700">Quantity Required</label>
-                                            <input 
-                                                type="number" 
-                                                id="quantity_required" 
-                                                wire:model="request.quantity_required" 
-                                                min="1"
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                            >
-                                        </div>
 
-                                        <!-- Unit -->
-                                        <div>
-                                            <label for="unit" class="block text-sm font-medium text-gray-700">Units</label>
-                                            <select 
-                                                id="unit" 
-                                                wire:model="request.unit" 
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                            >
-                                                <option value="pcs">Pieces (pcs)</option>
-                                                <option value="kg">Kilograms (kg)</option>
-                                                <option value="m">Meters (m)</option>
-                                                <option value="l">Liters (l)</option>
-                                                <option value="set">Set</option>
-                                                <option value="box">Box</option>
-                                                <option value="pair">Pair</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Suggested Vendor -->
+                                        <!-- Suggested Vendor Name -->
                                         <div>
                                             <label for="suggested_vendor" class="block text-sm font-medium text-gray-700">Suggested Vendor Name</label>
                                             <input 

@@ -1,6 +1,30 @@
 <?php
 
 return [
+    // PDF notifications
+    'pdf_generating' => 'O PDF está sendo preparado para download...',
+    'pdf_list_generating' => 'A listagem em PDF está sendo preparada para download...',
+    'pdf_error' => 'Erro ao gerar PDF: ',
+    'pdf_list_error' => 'Erro ao gerar PDF da listagem: ',
+    'assignments_pdf_generating' => 'O PDF de atribuições está sendo preparado para download...',
+    'assignments_pdf_error' => 'Erro ao gerar PDF de atribuições: ',
+    
+    // CRUD notifications
+    'created_success' => 'Turno criado com sucesso',
+    'updated_success' => 'Turno atualizado com sucesso',
+    'deleted_success' => 'Turno excluído com sucesso',
+    'created_error' => 'Erro ao criar turno: ',
+    'updated_error' => 'Erro ao atualizar turno: ',
+    'deleted_error' => 'Erro ao excluir turno: ',
+    
+    // Assignment notifications
+    'assignment_created_success' => 'Atribuição de turno criada com sucesso',
+    'assignment_updated_success' => 'Atribuição de turno atualizada com sucesso',
+    'assignment_deleted_success' => 'Atribuição de turno excluída com sucesso',
+    'assignment_created_error' => 'Erro ao criar atribuição de turno: ',
+    'assignment_updated_error' => 'Erro ao atualizar atribuição de turno: ',
+    'assignment_deleted_error' => 'Erro ao excluir atribuição de turno: ',
+    
     // Page Headers
     'shifts_management' => 'Gerenciamento de Turnos',
     'add_shift' => 'Adicionar Turno',
