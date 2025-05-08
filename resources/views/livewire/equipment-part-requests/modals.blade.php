@@ -212,7 +212,7 @@
                                                 id="delivery_date" 
                                                 wire:model="request.delivery_date" 
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                                value="{{ $request->delivery_date ? date('Y-m-d', strtotime($request->delivery_date)) : '' }}"
+                                                value="{{ isset($request['delivery_date']) && $request['delivery_date'] ? date('Y-m-d', strtotime($request['delivery_date'])) : '' }}"
                                             >
                                         </div>
                                     </div>
