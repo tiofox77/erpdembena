@@ -85,7 +85,7 @@
                                 >
                                     <option value="">{{ __('messages.all_equipment') }}</option>
                                     @foreach($equipments as $equipment)
-                                        <option value="{{ $equipment->id }}">{{ $equipment->name }}</option>
+                                        <option value="{{ $equipment->id }}">{{ $equipment->name }} - {{ $equipment->serial_number }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -103,7 +103,7 @@
                                 >
                                     <option value="">{{ __('messages.all_tasks') }}</option>
                                     @foreach($tasks as $task)
-                                        <option value="{{ $task->id }}">{{ $task->name }}</option>
+                                        <option value="{{ $task->id }}">{{ $task->title }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -113,13 +113,16 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <!-- Line Filter -->
                         <div>
-                            <label for="line_id" class="block text-sm font-medium text-gray-700 mb-1">Line</label>
+                            <label for="line_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-project-diagram text-gray-500 mr-1"></i>
+                                {{ __('messages.line') }}
+                            </label>
                             <select 
                                 id="line_id" 
                                 wire:model.live="line_id" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white"
                             >
-                                <option value="">All Lines</option>
+                                <option value="">{{ __('messages.all_lines') }}</option>
                                 @foreach($lines as $line)
                                     <option value="{{ $line->id }}">{{ $line->name }}</option>
                                 @endforeach
@@ -128,13 +131,16 @@
                         
                         <!-- Area Filter -->
                         <div>
-                            <label for="area_id" class="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                            <label for="area_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-map-marked-alt text-gray-500 mr-1"></i>
+                                {{ __('messages.area') }}
+                            </label>
                             <select 
                                 id="area_id" 
                                 wire:model.live="area_id" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white"
                             >
-                                <option value="">All Areas</option>
+                                <option value="">{{ __('messages.all_areas') }}</option>
                                 @foreach($areas as $area)
                                     <option value="{{ $area->id }}">{{ $area->name }}</option>
                                 @endforeach

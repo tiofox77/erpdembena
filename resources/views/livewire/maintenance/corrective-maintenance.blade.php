@@ -16,11 +16,16 @@
                         <div class="flex items-center space-x-2">
                             <!-- PDF Export Button -->
                             <button
-                                wire:click="generateListPdf"
-                                class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded flex items-center transition-colors"
+                                wire:click="downloadReportPdf"
+                                class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded flex items-center transition-colors relative overflow-hidden"
                                 wire:loading.attr="disabled"
                             >
-                                <i class="fas fa-file-pdf mr-2"></i> {{ __('messages.export_to_pdf') }}
+                                <div wire:loading.remove wire:target="downloadReportPdf">
+                                    <i class="fas fa-file-pdf mr-2"></i> {{ __('messages.export_to_pdf') }}
+                                </div>
+                                <div wire:loading wire:target="downloadReportPdf" class="flex items-center">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i> {{ __('messages.generating_pdf') }}...
+                                </div>
                             </button>
                             
                             <button
@@ -381,6 +386,19 @@
                                                         <i class="fas fa-edit"></i>
                                                     </button>
                                                     <button
+                                                        wire:click="downloadSinglePdf({{ $record->id }})"
+                                                        class="text-red-600 hover:text-red-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-100 relative"
+                                                        title="Download PDF"
+                                                        wire:loading.attr="disabled"
+                                                    >
+                                                        <div wire:loading.remove wire:target="downloadSinglePdf({{ $record->id }})">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </div>
+                                                        <div wire:loading wire:target="downloadSinglePdf({{ $record->id }})" class="absolute inset-0 flex items-center justify-center">
+                                                            <i class="fas fa-spinner fa-spin text-red-600"></i>
+                                                        </div>
+                                                    </button>
+                                                    <button
                                                         wire:click="confirmDelete({{ $record->id }})"
                                                         class="text-red-600 hover:text-red-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-100"
                                                         title="Delete"
@@ -426,10 +444,20 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-    <!-- Create/Edit Modal -->
-    @if($showModal)
+        <!-- Add/Edit Modal -->
+    <div x-data="{ 
+        showDeleteConfirm: false,
+        init() {
+            // Quando o componente é inicializado, verificamos se estamos no modo de edição
+            Livewire.on('modalOpened', () => {
+                // Garantir que os selects de categoria estejam atualizados na edição
+                if (@this.isEditing) {
+                    console.log('Modal aberta em modo de edição');
+                }
+            });
+        }
+    }" x-cloak>
+        @if($showModal)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg shadow-lg w-full max-w-6xl p-6 overflow-y-auto max-h-[90vh]">
                 <div class="flex justify-between items-center mb-4">

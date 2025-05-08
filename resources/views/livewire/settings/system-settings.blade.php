@@ -61,7 +61,19 @@
                             <li class="mr-2" role="presentation">
                                 <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'requirements' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
                                     wire:click="setActiveTab('requirements')" type="button" role="tab">
-                                    {{ __('messages.system_requirements') }}
+                                    System Requirements
+                                </button>
+                            </li>
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'database' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
+                                    wire:click="setActiveTab('database')" type="button" role="tab">
+                                    Database Performance
+                                </button>
+                            </li>
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'backup' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
+                                    wire:click="setActiveTab('backup')" type="button" role="tab">
+                                    {{ __('messages.database_backup') }}
                                 </button>
                             </li>
                         </ul>
@@ -441,6 +453,33 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-medium text-gray-900 mb-4">Maintenance & Diagnostics</h3>
 
+                                    <!-- Seeders Section -->
+                                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex">
+                                                <div class="flex-shrink-0">
+                                                    <i class="fas fa-database text-blue-600"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <h3 class="text-base font-medium text-blue-800">Gerenciamento de Seeders</h3>
+                                                    <div class="mt-2 text-sm text-blue-700">
+                                                        <p>
+                                                            Execute seeders para popular o banco de dados com dados de exemplo ou restaurar configurações padrão.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button 
+                                                    type="button"
+                                                    wire:click="openSeederModal"
+                                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                                    <i class="fas fa-seedling mr-2"></i> Executar Seeders
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
                                         <div class="flex">
                                             <div class="flex-shrink-0">
@@ -478,6 +517,34 @@
 
                                 <div class="mb-6">
                                     <h3 class="text-lg font-medium text-gray-900 mb-4">System Tools</h3>
+                                    
+                                    <!-- Gerador de Dados para Teste -->
+                                    <div class="bg-purple-50 border border-purple-200 rounded-md p-4 mb-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex">
+                                                <div class="flex-shrink-0">
+                                                    <i class="fas fa-database text-purple-600"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <h3 class="text-base font-medium text-purple-800">Gerador de Dados para Teste</h3>
+                                                    <div class="mt-2 text-sm text-purple-700">
+                                                        <p>
+                                                            Crie dados de teste para desenvolvimento e demonstração. Permite gerar registros para tabelas específicas com valores aleatórios ou personalizados.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button 
+                                                    type="button"
+                                                    wire:click="$dispatch('openDataGenerator')"
+                                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                                    <i class="fas fa-table mr-2"></i> Gerar Dados
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <button
                                             type="button"
@@ -512,6 +579,147 @@
                             </form>
                         </div>
 
+                        <!-- Database Performance Tab -->
+                        <div class="{{ $activeTab === 'database' ? 'block' : 'hidden' }}" role="tabpanel">
+                            <div class="mb-4">
+                                <h3 class="text-lg font-medium text-gray-900">Database Performance & Statistics</h3>
+                                <p class="mt-1 text-sm text-gray-600">Analise o desempenho e tamanho do banco de dados para otimizar a performance do sistema.</p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center mb-4">
+                                <button type="button" wire:click="analyzeDatabasePerformance" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150 {{ $isLoadingDbStats ? 'opacity-75 cursor-not-allowed' : '' }}" {{ $isLoadingDbStats ? 'disabled' : '' }}>
+                                    <div wire:loading wire:target="analyzeDatabasePerformance" class="mr-2">
+                                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </div>
+                                    <i class="fas fa-sync-alt mr-2" wire:loading.remove wire:target="analyzeDatabasePerformance"></i>
+                                    Refresh Database Stats
+                                </button>
+                            </div>
+
+                            <!-- Database Size Overview -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+                                <h4 class="text-md font-medium text-blue-800 mb-3">Database Size Overview</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div class="bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                                        <p class="text-sm text-gray-500">Total Database Size</p>
+                                        <p class="text-2xl font-bold text-indigo-600">{{ $this->formatBytes($databaseSize) }}</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                                        <p class="text-sm text-gray-500">Total Tables</p>
+                                        <p class="text-2xl font-bold text-indigo-600">{{ count($databaseTables) }}</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                                        <p class="text-sm text-gray-500">Slow Queries</p>
+                                        <p class="text-2xl font-bold text-indigo-600">
+                                            @foreach($databaseStatus as $status)
+                                                @if($status['name'] === 'Slow_queries')
+                                                    {{ $status['value'] }}
+                                                    @break
+                                                @endif
+                                            @endforeach
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Database Tables -->
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium text-gray-800 mb-3">Top 10 Tables by Size</h4>
+                                <div class="overflow-x-auto bg-white rounded-lg border">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Table Name</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rows</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Size</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Index Size</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            @php $counter = 0; @endphp
+                                            @forelse($databaseTables as $table)
+                                                @if($counter < 10)
+                                                    <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $table->table }}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $table->size_mb }} MB</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $table->rows }}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $table->data_mb }} MB</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $table->index_mb }} MB</td>
+                                                    </tr>
+                                                    @php $counter++; @endphp
+                                                @endif
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No table data available</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Database Metrics -->
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium text-gray-800 mb-3">Database Performance Metrics</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @forelse($databaseStatus as $status)
+                                        <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                            <h5 class="text-sm font-semibold text-gray-800">{{ $status['name'] }}</h5>
+                                            <p class="text-lg font-bold text-indigo-600 mt-1">{{ $status['value'] }}</p>
+                                            <p class="text-xs text-gray-500 mt-1">{{ $status['description'] }}</p>
+                                        </div>
+                                    @empty
+                                        <div class="bg-white p-4 rounded-lg border border-gray-200 col-span-2">
+                                            <p class="text-sm text-gray-500 text-center">No metrics available</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                            <!-- Slow Queries Log -->
+                            @if(!empty($slowQueries))
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium text-gray-800 mb-3">Slow Queries Log</h4>
+                                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                    @if(isset($slowQueries['enabled']) && $slowQueries['enabled'])
+                                        <div class="flex items-center text-green-600 mb-2">
+                                            <i class="fas fa-check-circle mr-2"></i>
+                                            <p class="text-sm">{{ $slowQueries['message'] }}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Log file: <code class="text-xs bg-gray-100 p-1 rounded">{{ $slowQueries['log_file'] }}</code></p>
+                                    @else
+                                        <div class="flex items-center text-amber-600 mb-2">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            <p class="text-sm">{{ $slowQueries['message'] }}</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500">Ativar o log de queries lentas permite identificar problemas de desempenho no banco de dados.</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
+
+                            <!-- Optimization Tips -->
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+                                <h4 class="text-md font-medium text-yellow-800 mb-3">Database Optimization Tips</h4>
+                                <ul class="text-sm text-yellow-700 space-y-2 list-disc list-inside">
+                                    <li>Tabelas grandes podem impactar a performance do sistema</li>
+                                    <li>Considere otimizar consultas frequentes com índices adequados</li>
+                                    <li>Realize backups regulares do banco de dados</li>
+                                    <li>Execute limpeza periódica de dados temporários ou obsoletos</li>
+                                    <li>Monitore o crescimento do banco de dados e planeje expansões conforme necessário</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Database Backup Tab -->
+                        <div class="{{ $activeTab === 'backup' ? 'block' : 'hidden' }}" role="tabpanel">
+                            <livewire:settings.database-backup />
+                        </div>
+                        
                         <!-- System Requirements Tab -->
                         <div class="{{ $activeTab === 'requirements' ? 'block' : 'hidden' }}" role="tabpanel">
                             <div class="mb-4">
@@ -737,4 +945,111 @@
         </div>
     </div>
     @endif
+    
+    <!-- Modal de Seeders -->
+    <div x-data="{ open: @entangle('showSeederModal') }" 
+         x-show="open" 
+         x-cloak 
+         class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50" 
+         role="dialog" 
+         aria-modal="true"
+         x-transition:enter="transition ease-out duration-300" 
+         x-transition:enter-start="opacity-0" 
+         x-transition:enter-end="opacity-100" 
+         x-transition:leave="transition ease-in duration-200" 
+         x-transition:leave-start="opacity-100" 
+         x-transition:leave-end="opacity-0">
+        <div class="relative top-20 mx-auto p-1 w-full max-w-2xl">
+            <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out" 
+                 x-transition:enter="transition ease-out duration-300" 
+                 x-transition:enter-start="transform opacity-0 scale-95" 
+                 x-transition:enter-end="transform opacity-100 scale-100" 
+                 x-transition:leave="transition ease-in duration-200" 
+                 x-transition:leave-start="transform opacity-100 scale-100" 
+                 x-transition:leave-end="transform opacity-0 scale-95">
+                
+                <!-- Cabeçalho com gradiente -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg px-4 py-3 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-white flex items-center">
+                        <i class="fas fa-seedling mr-2 animate-pulse"></i>
+                        Executar Seeders
+                    </h3>
+                    <button type="button" wire:click="closeSeederModal" class="text-white hover:text-gray-200 focus:outline-none transition-all duration-200 ease-in-out transform hover:scale-110 hover:rotate-90">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Corpo do modal -->
+                <div class="p-6">
+                    <div class="mb-4">
+                        <label for="selectedSeeder" class="block text-sm font-medium text-gray-700 mb-1">Selecione o Seeder</label>
+                        <select
+                            wire:model.live="selectedSeeder"
+                            id="selectedSeeder"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white"
+                            @if($runningSeeder) disabled @endif
+                        >
+                            <option value="">Selecione um seeder</option>
+                            @foreach($availableSeeders as $key => $name)
+                                <option value="{{ $key }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-2 text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Selecione 'Todos os Seeders' para executar todos os seeders configurados no sistema, ou um seeder específico.
+                        </p>
+                    </div>
+                    
+                    @if(!empty($seederOutput))
+                        <div class="my-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Saída do Seeder</label>
+                            <pre class="bg-gray-800 text-white p-4 rounded-md overflow-auto max-h-60 text-sm font-mono">{{ $seederOutput }}</pre>
+                        </div>
+                    @endif
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <strong>Atenção:</strong> Executar seeders pode modificar ou adicionar dados ao banco de dados.
+                                    Recomenda-se fazer um backup antes de prosseguir.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rodapé com botões de ação -->
+                <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200">
+                    <button type="button" wire:click="closeSeederModal" class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" 
+                        wire:click="runSeeder" 
+                        wire:loading.attr="disabled" 
+                        @if($runningSeeder || empty($selectedSeeder)) disabled @endif
+                        class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                        <span wire:loading.remove wire:target="runSeeder">
+                            <i class="fas fa-play-circle mr-2"></i>
+                            Executar Seeder
+                        </span>
+                        <span wire:loading wire:target="runSeeder" class="inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Executando...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Integração com o Gerador de Dados -->
+    <livewire:settings.data-generator />
 </div>

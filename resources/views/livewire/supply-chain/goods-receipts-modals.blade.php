@@ -215,14 +215,7 @@
                             </table>
                         </div>
                         
-                        <!-- Botão de adicionar item -->
-                        <div class="mt-4 flex justify-end">
-                            <button type="button" wire:click="addItem" 
-                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                                <i class="fas fa-plus-circle mr-2"></i>
-                                {{ __('messages.add_item') }}
-                            </button>
-                        </div>
+                        <!-- Botão de adicionar item foi removido -->
                     </div>
                 </div>
             </div>

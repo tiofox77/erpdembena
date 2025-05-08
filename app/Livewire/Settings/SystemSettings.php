@@ -57,12 +57,38 @@ class SystemSettings extends Component
         'failed' => 0
     ];
 
+    // Seeders
+    public $availableSeeders = [];
+    public $selectedSeeder = '';
+    public $runningSeeder = false;
+    public $seederOutput = '';
+    public $showSeederModal = false;
+    
     // Modal states
     public $showConfirmModal = false;
     public $confirmAction = '';
     public $confirmMessage = '';
     public $confirmData = null;
 
+    // Database Performance
+    public $databaseSize = 0;
+    public $databaseTables = [];
+    public $databaseStatus = [];
+    public $slowQueries = [];
+    public $isLoadingDbStats = false;
+    
+    // Database Backup
+    public $backupFiles = [];
+    public $isCreatingBackup = false;
+    public $backupFrequency = 'daily'; // daily, weekly, monthly
+    public $backupTime = '00:00';
+    public $backupRetention = 7; // dias
+    public $backupAutomation = false;
+    public $isLoadingBackups = false;
+    public $selectedBackupFile = null;
+    public $isRestoringBackup = false;
+    public $importBackupFile = null;
+    
     // Active tab
     #[Url(history: true)]
     public $activeTab = 'general';
@@ -87,6 +113,13 @@ class SystemSettings extends Component
             'company_email' => 'nullable|email|max:100',
             'company_website' => 'nullable|string|max:100',
             'company_tax_id' => 'nullable|string|max:30',
+            'backupFrequency' => 'required|in:daily,weekly,monthly',
+            'backupTime' => 'required|date_format:H:i',
+            'backupRetention' => 'required|integer|min:1|max:90',
+            'backupAutomation' => 'boolean',
+            'importBackupFile' => $this->importBackupFile instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
+                ? 'file|max:102400'
+                : 'nullable',
         ];
     }
 
@@ -117,8 +150,120 @@ class SystemSettings extends Component
     public function mount()
     {
         $this->loadSettings();
+        $this->loadSystemRequirements();
+        $this->checkCurrentVersion();
+        $this->loadAvailableSeeders();
+        
+        // Carrega estatísticas do banco de dados ao iniciar
+        if ($this->activeTab === 'database') {
+            $this->analyzeDatabasePerformance();
+        }
+    }
+    
+    /**
+     * Carrega a lista de seeders disponíveis no sistema
+     */
+    protected function loadAvailableSeeders()
+    {
+        try {
+            $seederPath = app_path('../database/seeders');
+            $seeders = array_filter(scandir($seederPath), function($file) {
+                return !in_array($file, ['.', '..']) && pathinfo($file, PATHINFO_EXTENSION) === 'php';
+            });
+            
+            $this->availableSeeders = [];
+            
+            foreach ($seeders as $seeder) {
+                $name = pathinfo($seeder, PATHINFO_FILENAME);
+                $this->availableSeeders[$name] = $name;
+            }
+            
+            // Adicionar opção para executar todos os seeders
+            $this->availableSeeders = ['DatabaseSeeder' => 'Todos os Seeders (DatabaseSeeder)'] + $this->availableSeeders;
+        } catch (\Exception $e) {
+            Log::error('Erro ao carregar seeders: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Abre o modal para executar seeders
+     */
+    public function openSeederModal()
+    {
+        $this->selectedSeeder = 'DatabaseSeeder';
+        $this->seederOutput = '';
+        $this->showSeederModal = true;
+    }
+    
+    /**
+     * Executa o seeder selecionado
+     */
+    public function runSeeder()
+    {
+        if (empty($this->selectedSeeder)) {
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: 'Selecione um seeder para executar'
+            );
+            return;
+        }
+        
+        $this->runningSeeder = true;
+        $this->seederOutput = '';
+        
+        try {
+            // Limpar o cache para garantir que as novas classes sejam carregadas
+            Artisan::call('optimize:clear');
+            $this->seederOutput .= "Cache limpo com sucesso.\n";
+            
+            // Executar o seeder
+            $output = Artisan::call('db:seed', [
+                '--class' => $this->selectedSeeder,
+                '--force' => true
+            ]);
+            
+            $this->seederOutput .= Artisan::output();
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: 'Seeder executado com sucesso'
+            );
+        } catch (\Exception $e) {
+            Log::error('Erro ao executar seeder: ' . $e->getMessage());
+            $this->seederOutput .= "Erro: {$e->getMessage()}\n";
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: 'Erro ao executar seeder: ' . $e->getMessage()
+            );
+        } finally {
+            $this->runningSeeder = false;
+        }
+    }
+    
+    /**
+     * Fecha o modal de seeders
+     */
+    public function closeSeederModal()
+    {
+        $this->showSeederModal = false;
+        $this->selectedSeeder = '';
+        $this->seederOutput = '';
+    }
+    
+    /**
+     * Verifica e carrega a versão atual do sistema
+     */
+    protected function checkCurrentVersion()
+    {
         $this->current_version = config('app.version', '1.0.0');
-
+    }
+    
+    /**
+     * Carrega os requisitos do sistema para verificação
+     */
+    protected function loadSystemRequirements()
+    {
         // Auto check system requirements if that tab is active
         if ($this->activeTab === 'requirements') {
             $this->checkSystemRequirements();
@@ -128,10 +273,12 @@ class SystemSettings extends Component
     /**
      * Define listeners for the component
      */
-    protected function getListeners()
+    public function getListeners()
     {
         return [
-            'runArtisanCommand' => 'runArtisanCommand',
+            'refreshSettings' => 'loadSettings',
+            'confirmAction' => 'processConfirmedAction',
+            'databaseBackupCreated' => 'loadBackupFiles',
         ];
     }
 
@@ -142,6 +289,14 @@ class SystemSettings extends Component
     {
         $this->company_name = Setting::get('company_name', config('app.name'));
         $this->app_timezone = Setting::get('app_timezone', config('app.timezone'));
+        
+        // Carregar configurações de backup
+        $this->backupFrequency = Setting::get('backup_frequency', 'daily');
+        $this->backupTime = Setting::get('backup_time', '00:00');
+        $this->backupRetention = Setting::get('backup_retention', 7);
+        $this->backupAutomation = (bool)Setting::get('backup_automation', false);
+        
+        // Nota: Backups são gerenciados pelo componente DatabaseBackup
         $this->date_format = Setting::get('date_format', 'm/d/Y');
         $this->currency = Setting::get('currency', 'USD');
         $this->language = Setting::get('language', 'en');
@@ -172,7 +327,12 @@ class SystemSettings extends Component
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;
-
+        
+        // Carrega estatísticas do banco de dados quando a aba é selecionada
+        if ($tab === 'database') {
+            $this->analyzeDatabasePerformance();
+        }
+        
         // Auto check system requirements when switching to that tab
         if ($tab === 'requirements') {
             $this->checkSystemRequirements();
@@ -1489,12 +1649,27 @@ class SystemSettings extends Component
      */
     public function processConfirmedAction()
     {
-        if ($this->confirmAction === 'startUpdate') {
-            $this->startUpdate();
-        } elseif ($this->confirmAction === 'runArtisanCommand' && $this->confirmData) {
-            $this->runArtisanCommand($this->confirmData);
+        switch ($this->confirmAction) {
+            case 'runSeeder':
+                $this->runSeeder();
+                break;
+            case 'runArtisanCommand':
+                $this->runArtisanCommand($this->confirmData);
+                break;
+            case 'startUpdate':
+                $this->startUpdate();
+                break;
+            case 'restoreBackup':
+                $this->restoreBackup();
+                break;
+            case 'deleteBackup':
+                $this->deleteBackup();
+                break;
+            default:
+                // Ação não reconhecida
+                break;
         }
-
+        
         $this->closeConfirmModal();
     }
 
@@ -1532,6 +1707,121 @@ class SystemSettings extends Component
         Setting::clearCache();
     }
 
+    /**
+     * Analisa o tamanho do banco de dados e estatísticas de performance
+     */
+    public function analyzeDatabasePerformance()
+    {
+        $this->isLoadingDbStats = true;
+        
+        try {
+            // Obter o tamanho total do banco de dados
+            $dbName = config('database.connections.mysql.database');
+            $sizeQuery = DB::select("SELECT 
+                table_schema as 'database', 
+                SUM(data_length + index_length) as 'size' 
+                FROM information_schema.TABLES 
+                WHERE table_schema = '$dbName' 
+                GROUP BY table_schema");
+            
+            if (!empty($sizeQuery)) {
+                $this->databaseSize = $sizeQuery[0]->size;
+            }
+            
+            // Obter tamanho das tabelas individuais
+            $tableQuery = DB::select("SELECT 
+                table_name AS 'table',
+                ROUND(((data_length + index_length) / 1024 / 1024), 2) AS 'size_mb',
+                table_rows AS 'rows',
+                ROUND((data_length / 1024 / 1024), 2) AS 'data_mb',
+                ROUND((index_length / 1024 / 1024), 2) AS 'index_mb'
+                FROM information_schema.TABLES
+                WHERE table_schema = '$dbName'
+                ORDER BY (data_length + index_length) DESC");
+            
+            $this->databaseTables = $tableQuery;
+            
+            // Obter estatísticas do banco de dados
+            $statusQuery = DB::select('SHOW STATUS');
+            $filteredStatus = [];
+            $importantMetrics = [
+                'Connections' => 'Total de conexões desde o início do servidor',
+                'Threads_connected' => 'Conexões ativas atualmente',
+                'Uptime' => 'Tempo de funcionamento em segundos',
+                'Questions' => 'Total de queries executadas',
+                'Slow_queries' => 'Número de queries lentas',
+                'Com_select' => 'Número de comandos SELECT',
+                'Com_insert' => 'Número de comandos INSERT',
+                'Com_update' => 'Número de comandos UPDATE',
+                'Com_delete' => 'Número de comandos DELETE'
+            ];
+            
+            foreach ($statusQuery as $status) {
+                if (array_key_exists($status->Variable_name, $importantMetrics)) {
+                    $filteredStatus[] = [
+                        'name' => $status->Variable_name,
+                        'value' => $status->Value,
+                        'description' => $importantMetrics[$status->Variable_name]
+                    ];
+                }
+            }
+            
+            $this->databaseStatus = $filteredStatus;
+            
+            // Tentar obter consultas lentas (se o log slow queries estiver ativado)
+            try {
+                $slowQueriesLog = DB::select("SHOW VARIABLES LIKE 'slow_query_log'");
+                if (!empty($slowQueriesLog) && $slowQueriesLog[0]->Value == 'ON') {
+                    $slowQueriesFile = DB::select("SHOW VARIABLES LIKE 'slow_query_log_file'");
+                    $this->slowQueries = [
+                        'enabled' => true,
+                        'log_file' => $slowQueriesFile[0]->Value ?? 'Não disponível',
+                        'message' => 'Log de queries lentas está ativado'
+                    ];
+                } else {
+                    $this->slowQueries = [
+                        'enabled' => false,
+                        'message' => 'Log de queries lentas não está ativado no MySQL'
+                    ];
+                }
+            } catch (\Exception $e) {
+                $this->slowQueries = [
+                    'enabled' => false,
+                    'message' => 'Não foi possível verificar o status do log de queries lentas: ' . $e->getMessage()
+                ];
+            }
+            
+            $this->dispatch('notify', 
+                type: 'success',
+                message: 'Estatísticas do banco de dados atualizadas com sucesso!'
+            );
+        } catch (\Exception $e) {
+            Log::error('Erro ao analisar banco de dados: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error',
+                message: 'Erro ao analisar banco de dados: ' . $e->getMessage()
+            );
+        }
+        
+        $this->isLoadingDbStats = false;
+    }
+    
+    /**
+     * Formata tamanho em bytes para uma unidade legível por humanos
+     */
+    private function formatBytes($bytes, $precision = 2) 
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB']; 
+   
+        $bytes = max($bytes, 0); 
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
+        $pow = min($pow, count($units) - 1); 
+   
+        $bytes /= (1 << (10 * $pow)); 
+   
+        return round($bytes, $precision) . ' ' . $units[$pow]; 
+    }
+    
     /**
      * Check system requirements
      */

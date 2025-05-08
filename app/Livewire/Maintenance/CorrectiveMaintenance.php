@@ -207,6 +207,18 @@ class CorrectiveMaintenance extends Component
         if ($propertyName === 'corrective.start_time' || $propertyName === 'corrective.end_time') {
             $this->calculateDowntime();
         }
+        
+        // NÃO atualizar automaticamente a categoria quando o modo de falha é alterado
+        if ($propertyName === 'corrective.failure_mode_id' && !empty($this->corrective['failure_mode_id'])) {
+            // Apenas registrar a mudança para debug
+            $failureMode = \App\Models\FailureMode::find($this->corrective['failure_mode_id']);
+            if ($failureMode) {
+                \Log::info('Categoria atualizada automaticamente', [
+                    'failure_mode_id' => $this->corrective['failure_mode_id'],
+                    'category_id' => $failureMode->category_id
+                ]);
+            }
+        }
     }
 
     // Calculate downtime based on start and end time
@@ -271,8 +283,55 @@ class CorrectiveMaintenance extends Component
         $this->resetValidation();
         $this->isEditing = true;
 
-        $correctiveRecord = MaintenanceCorrective::with(['failureMode.category', 'failureCause.category'])->findOrFail($id);
+        // Carregar o registro com suas relações
+        $correctiveRecord = MaintenanceCorrective::with([
+            'failureMode.category', 
+            'failureCause.category'
+        ])->findOrFail($id);
 
+        // Para debug
+        \Log::info('Editando registro de manutenção corretiva', [
+            'id' => $id,
+            'has_failure_mode' => isset($correctiveRecord->failureMode),
+            'failure_mode_id' => $correctiveRecord->failure_mode_id,
+            'failure_mode' => (is_object($correctiveRecord->failureMode)) ? $correctiveRecord->failureMode->toArray() : $correctiveRecord->failureMode
+        ]);
+
+        // Buscar diretamente a categoria do modo de falha do banco de dados
+        $failureModeCategory = null;
+        if (!empty($correctiveRecord->failure_mode_id)) {
+            // Buscar diretamente do banco de dados, ignorando o relacionamento carregado
+            $failureMode = \App\Models\FailureMode::find($correctiveRecord->failure_mode_id);
+            
+            if ($failureMode) {
+                $failureModeCategory = $failureMode->category_id;
+                
+                // Registrar para debug
+                \Log::info('Categoria obtida diretamente do banco de dados', [
+                    'failure_mode_id' => $correctiveRecord->failure_mode_id,
+                    'category_id' => $failureModeCategory
+                ]);
+            }
+        }
+
+        // Buscar diretamente a categoria da causa de falha do banco de dados
+        $failureCauseCategory = null;
+        if (!empty($correctiveRecord->failure_cause_id)) {
+            // Buscar diretamente do banco de dados, ignorando o relacionamento carregado
+            $failureCause = \App\Models\FailureCause::find($correctiveRecord->failure_cause_id);
+            
+            if ($failureCause) {
+                $failureCauseCategory = $failureCause->category_id;
+                
+                // Registrar para debug
+                \Log::info('Categoria da causa obtida diretamente do banco de dados', [
+                    'failure_cause_id' => $correctiveRecord->failure_cause_id,
+                    'category_id' => $failureCauseCategory
+                ]);
+            }
+        }
+
+        // Inicializar os dados do formulário
         $this->corrective = [
             'id' => $correctiveRecord->id,
             'year' => $correctiveRecord->year,
@@ -281,9 +340,9 @@ class CorrectiveMaintenance extends Component
             'system_process' => $correctiveRecord->system_process,
             'equipment_id' => $correctiveRecord->equipment_id,
             'failure_mode_id' => $correctiveRecord->failure_mode_id,
-            'failure_mode_category_id' => is_object($correctiveRecord->failureMode) ? $correctiveRecord->failureMode->category_id : null,
+            'failure_mode_category_id' => $failureModeCategory,
             'failure_cause_id' => $correctiveRecord->failure_cause_id,
-            'failure_cause_category_id' => is_object($correctiveRecord->failureCause) ? $correctiveRecord->failureCause->category_id : null,
+            'failure_cause_category_id' => $failureCauseCategory,
             'start_time' => $correctiveRecord->start_time ? $correctiveRecord->start_time->format('Y-m-d H:i') : null,
             'end_time' => $correctiveRecord->end_time ? $correctiveRecord->end_time->format('Y-m-d H:i') : null,
             'downtime_length' => $correctiveRecord->downtime_length,
@@ -294,7 +353,22 @@ class CorrectiveMaintenance extends Component
             'status' => $correctiveRecord->status,
         ];
 
+        // Registrar os valores para debug
+        \Log::info('Valores definidos no formulário', [
+            'failure_mode_id' => $this->corrective['failure_mode_id'],
+            'failure_mode_category_id' => $this->corrective['failure_mode_category_id'],
+        ]);
+
         $this->showModal = true;
+        
+        // Disparar evento para que o Alpine.js saiba que a modal foi aberta
+        $this->dispatch('modal-opened', [
+            'isEditing' => $this->isEditing,
+            'failure_mode_id' => $this->corrective['failure_mode_id'],
+            'failure_mode_category_id' => $this->corrective['failure_mode_category_id'],
+            'failure_cause_id' => $this->corrective['failure_cause_id'],
+            'failure_cause_category_id' => $this->corrective['failure_cause_category_id'],
+        ]);
     }
 
     // View details of a corrective record
@@ -377,7 +451,44 @@ class CorrectiveMaintenance extends Component
             $correctiveRecord->system_process = $this->corrective['system_process'];
             $correctiveRecord->equipment_id = $this->corrective['equipment_id'];
 
-            // Directly use selected failure mode and cause without automatic linking
+            // Registrando os valores para debug antes de salvar
+            \Log::info('Valores recebidos no formulário antes de salvar', [
+                'failure_mode_id' => $this->corrective['failure_mode_id'] ?? null,
+                'failure_mode_category_id' => $this->corrective['failure_mode_category_id'] ?? null,
+                'failure_cause_id' => $this->corrective['failure_cause_id'] ?? null,
+                'failure_cause_category_id' => $this->corrective['failure_cause_category_id'] ?? null
+            ]);
+            
+            // NÃO alterar o modo de falha com base na categoria - manter os campos independentes
+            // Registrar apenas para fins de debug se houver inconsistência
+            if (!empty($this->corrective['failure_mode_id'])) {
+                $failureMode = \App\Models\FailureMode::find($this->corrective['failure_mode_id']);
+                if ($failureMode) {
+                    if (!empty($this->corrective['failure_mode_category_id']) && $failureMode->category_id != $this->corrective['failure_mode_category_id']) {
+                        \Log::info('Modo de falha e categoria inconsistentes, mantendo seleção do usuário', [
+                            'failure_mode_id' => $this->corrective['failure_mode_id'],
+                            'failure_mode_category' => $failureMode->category_id,
+                            'selected_category' => $this->corrective['failure_mode_category_id']
+                        ]);
+                    }
+                }
+            }
+            
+            // O mesmo para causa de falha
+            if (!empty($this->corrective['failure_cause_id'])) {
+                $failureCause = \App\Models\FailureCause::find($this->corrective['failure_cause_id']);
+                if ($failureCause) {
+                    if (!empty($this->corrective['failure_cause_category_id']) && $failureCause->category_id != $this->corrective['failure_cause_category_id']) {
+                        \Log::info('Causa de falha e categoria inconsistentes, mantendo seleção do usuário', [
+                            'failure_cause_id' => $this->corrective['failure_cause_id'],
+                            'failure_cause_category' => $failureCause->category_id,
+                            'selected_category' => $this->corrective['failure_cause_category_id']
+                        ]);
+                    }
+                }
+            }
+            
+            // Agora usamos os IDs potencialmente atualizados
             $correctiveRecord->failure_mode_id = $this->corrective['failure_mode_id'];
             $correctiveRecord->failure_cause_id = $this->corrective['failure_cause_id'];
 
@@ -387,9 +498,33 @@ class CorrectiveMaintenance extends Component
             $correctiveRecord->description = $this->corrective['description'];
             $correctiveRecord->actions_taken = $this->corrective['actions_taken'];
             $correctiveRecord->reported_by = $this->corrective['reported_by'];
-            $correctiveRecord->resolved_by = $this->corrective['status'] === 'resolved' || $this->corrective['status'] === 'closed'
-                ? ($this->corrective['resolved_by'] ?? Auth::id())
-                : null;
+            
+            // Verificando se o valor de resolved_by é válido antes de atribuir
+            // A estrutura do banco agora exige que o resolved_by seja um ID válido da tabela technicians
+            try {
+                // Registrar para debug
+                \Log::info('Tentando definir resolved_by', [
+                    'status' => $this->corrective['status'],
+                    'resolved_by_input' => $this->corrective['resolved_by'] ?? 'null'
+                ]);
+                
+                // Se o status for 'resolved' ou 'closed', configuramos o resolved_by
+                if ($this->corrective['status'] === 'resolved' || $this->corrective['status'] === 'closed') {
+                    // Definir como o valor do técnico selecionado no formulário
+                    if (!empty($this->corrective['resolved_by'])) {
+                        $correctiveRecord->resolved_by = $this->corrective['resolved_by'];
+                    } else {
+                        $correctiveRecord->resolved_by = null;
+                    }
+                } else {
+                    // Se não estiver resolvido ou fechado, definir como null
+                    $correctiveRecord->resolved_by = null;
+                }
+            } catch (\Exception $e) {
+                // Em caso de erro, definir como null para evitar falha no salvamento
+                \Log::error('Erro ao configurar resolved_by: ' . $e->getMessage());
+                $correctiveRecord->resolved_by = null;
+            }
             $correctiveRecord->status = $this->corrective['status'];
 
             // Save the record
@@ -556,15 +691,66 @@ class CorrectiveMaintenance extends Component
         ]);
     }
 
-    // Complete removal of any filtering or resetting logic
+    /**
+     * Quando uma categoria de modo de falha é selecionada
+     * 
+     * NOTA: Aqui não resetamos o modo de falha, apenas permitimos que a categoria seja selecionada
+     * durante a edição sem afetar o modo de falha já selecionado
+     */
     public function updatedCorrectiveFailureModeCategoryId()
     {
-        // Completely removed - no action needed
+        // Não fazer nada - só queremos que a categoria seja exibida corretamente
+        // sem limpar o modo de falha selecionado
     }
-
+    
+    /**
+     * Quando um modo de falha é selecionado, atualizamos automaticamente a categoria
+     * Isso garante que a categoria seja sempre consistente com o modo de falha
+     */
+    public function updatedCorrectiveFailureModeId($value)
+    {
+        if (!empty($value)) {
+            // Buscar a categoria do modo de falha selecionado
+            $mode = FailureMode::find($value);
+            if ($mode && $mode->category_id) {
+                $this->corrective['failure_mode_category_id'] = $mode->category_id;
+                \Log::info('Categoria atualizada automaticamente', [
+                    'failure_mode_id' => $value,
+                    'category_id' => $mode->category_id
+                ]);
+            }
+        }
+    }
+    
+    /**
+     * Quando uma categoria de causa de falha é selecionada
+     * 
+     * NOTA: Aqui não resetamos a causa de falha, apenas permitimos que a categoria seja selecionada
+     * durante a edição sem afetar a causa de falha já selecionada
+     */
     public function updatedCorrectiveFailureCauseCategoryId()
     {
-        // Completely removed - no action needed
+        // Não fazer nada - só queremos que a categoria seja exibida corretamente
+        // sem limpar a causa de falha selecionada
+    }
+    
+    /**
+     * Quando uma causa de falha é selecionada, atualizamos automaticamente a categoria
+     * Isso garante que a categoria seja sempre consistente com a causa de falha
+     */
+    public function updatedCorrectiveFailureCauseId($value)
+    {
+        if (!empty($value)) {
+            // Buscar a categoria da causa de falha selecionada
+            $cause = FailureCause::find($value);
+            if ($cause && $cause->category_id) {
+                $this->corrective['failure_cause_category_id'] = $cause->category_id;
+                \Log::info('Categoria de causa atualizada automaticamente', [
+                    'failure_cause_id' => $value,
+                    'category_id' => $cause->category_id
+                ]);
+            }
+        }
     }
     
     /**
@@ -715,6 +901,146 @@ class CorrectiveMaintenance extends Component
                 type: 'error', 
                 message: __('messages.pdf_generation_failed') . ' - ' . $e->getMessage()
             );
+            return null;
+        }
+    }
+    
+    /**
+     * Exporta a lista de manutenção corretiva para PDF
+     * 
+     * @return mixed
+     */
+    public function exportToPdf()
+    {
+        try {
+            // Get filtered data
+            $corrective_plans = $this->getFilteredData(false);
+            
+            // Prepare filter descriptions
+            $monthName = !empty($this->filterMonth) ? $this->getMonths()[$this->filterMonth] : null;
+            $yearValue = !empty($this->filterYear) ? $this->filterYear : null;
+            
+            // Obter nome do status traduzido
+            $statusName = null;
+            if (!empty($this->filterStatus)) {
+                $statuses = MaintenanceCorrective::getStatuses();
+                $statusName = $statuses[$this->filterStatus] ?? $this->filterStatus;
+            }
+            
+            // Prepare the data for the PDF
+            $data = [
+                'corrective_plans' => $corrective_plans,
+                'title' => __('messages.corrective_maintenance_list'),
+                'filters' => [
+                    'status' => $statusName,
+                    'year' => $yearValue,
+                    'month' => $monthName,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.corrective-maintenance-list', $data);
+            
+            $filename = 'corrective_maintenance_list_' . now()->format('Y-m-d') . '.pdf';
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating corrective maintenance list PDF: ' . $e->getMessage() . ' ' . $e->getTraceAsString());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed') . ' - ' . $e->getMessage()
+            );
+            return null;
+        }
+    }
+    
+    /**
+     * Gera e disponibiliza para download um PDF para um registro específico
+     * de manutenção corretiva
+     * 
+     * @param int $id ID do registro de manutenção corretiva
+     * @return mixed
+     */
+    public function downloadSinglePdf($id)
+    {
+        try {
+            $corrective = MaintenanceCorrective::with(['equipment', 'failureMode', 'failureCause', 'reporter', 'resolver'])
+                                              ->findOrFail($id);
+            
+            // Gerar o PDF usando o método estático do modelo
+            $pdfPath = MaintenanceCorrective::generatePdf($corrective);
+            
+            // Exibir mensagem de sucesso
+            $this->dispatch(
+                'notify',
+                type: 'success',
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            // Retornar o caminho para download
+            return response()->download(storage_path('app/public/' . $pdfPath));
+        } catch (\Exception $e) {
+            // Registrar erro com detalhes completos para debugging
+            Log::error('Erro ao gerar PDF da manutenção corretiva: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
+            
+            // Mostrar mensagem de erro exata para o usuário
+            $this->dispatch(
+                'notify',
+                type: 'error',
+                message: __('messages.error_generating_pdf') . ': ' . $e->getMessage()
+            );
+            
+            return null;
+        }
+    }
+    
+    /**
+     * Gera e disponibiliza para download um PDF com relatório de múltiplos registros
+     * de manutenção corretiva baseado nos filtros atuais
+     * 
+     * @return mixed
+     */
+    public function downloadReportPdf()
+    {
+        try {
+            // Criar array de filtros a partir das propriedades públicas
+            $filters = [
+                'year' => $this->filterYear,
+                'month' => $this->filterMonth,
+                'status' => $this->filterStatus,
+                'equipment_id' => $this->filterEquipment
+            ];
+            
+            // Usar os filtros atuais para gerar o relatório
+            $pdfPath = MaintenanceCorrective::generatePdf(null, $filters);
+            
+            // Exibir mensagem de sucesso
+            $this->dispatch(
+                'notify',
+                type: 'success',
+                message: __('messages.report_pdf_generated_successfully')
+            );
+            
+            // Retornar o caminho para download
+            return response()->download(storage_path('app/public/' . $pdfPath));
+        } catch (\Exception $e) {
+            // Registrar erro com detalhes completos para debugging
+            Log::error('Erro ao gerar relatório PDF: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
+            Log::error('Filtros usados: ' . json_encode($this->filters));
+            
+            // Mostrar mensagem de erro exata para o usuário
+            $this->dispatch(
+                'notify',
+                type: 'error',
+                message: __('messages.error_generating_report') . ': ' . $e->getMessage()
+            );
+            
             return null;
         }
     }

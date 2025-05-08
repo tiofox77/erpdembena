@@ -1285,30 +1285,150 @@ class MaintenancePlan extends Component
     }
     
     /**
-     * Generate PDF for an individual maintenance plan
+     * Calculate all maintenance dates based on frequency, excluding holidays and Sundays
      * 
-     * @param int $id The maintenance plan ID
+     * @param MaintenancePlanModel $plan
+     * @return array Array of maintenance dates
+     */
+    private function calculateMaintenanceDates($plan)
+    {
+        $dates = [];
+        $startDate = Carbon::parse($plan->scheduled_date);
+        $now = now();
+        $endDate = $now->copy()->addYear(); // Calculate dates for 1 year ahead
+        
+        // Get all holidays for the period
+        $holidays = Holiday::whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->pluck('date')
+            ->toArray();
+            
+        $currentDate = $startDate->copy();
+        
+        switch ($plan->frequency_type) {
+            case 'once':
+                // If it's Sunday or holiday, find next available date
+                while ($currentDate->isSunday() || in_array($currentDate->format('Y-m-d'), $holidays)) {
+                    $currentDate->addDay();
+                }
+                $dates[] = $currentDate->format('Y-m-d');
+                break;
+                
+            case 'daily':
+                while ($currentDate <= $endDate) {
+                    // Skip Sundays and holidays
+                    if (!$currentDate->isSunday() && !in_array($currentDate->format('Y-m-d'), $holidays)) {
+                        $dates[] = $currentDate->format('Y-m-d');
+                    }
+                    $currentDate->addDay();
+                }
+                break;
+                
+            case 'weekly':
+                while ($currentDate <= $endDate) {
+                    // If specific day of week is set, adjust to that day
+                    if ($plan->day_of_week) {
+                        $currentDate->modify('next ' . strtolower(\Carbon\Carbon::getDays()[$plan->day_of_week]));
+                    }
+                    
+                    // Skip if it falls on a holiday
+                    if (!in_array($currentDate->format('Y-m-d'), $holidays)) {
+                        $dates[] = $currentDate->format('Y-m-d');
+                    }
+                    
+                    $currentDate->addWeek();
+                }
+                break;
+                
+            case 'monthly':
+                while ($currentDate <= $endDate) {
+                    if ($plan->day_of_month) {
+                        $daysInMonth = $currentDate->daysInMonth;
+                        $targetDay = min($plan->day_of_month, $daysInMonth);
+                        $currentDate->setDay($targetDay);
+                    }
+                    
+                    // Skip Sundays and holidays, find next working day
+                    $originalDate = $currentDate->copy();
+                    while ($currentDate->isSunday() || in_array($currentDate->format('Y-m-d'), $holidays)) {
+                        $currentDate->addDay();
+                    }
+                    
+                    $dates[] = $currentDate->format('Y-m-d');
+                    $currentDate = $originalDate->addMonth();
+                }
+                break;
+                
+            case 'yearly':
+                while ($currentDate <= $endDate) {
+                    if ($plan->month && $plan->month_day) {
+                        $currentDate->setMonth($plan->month);
+                        $daysInMonth = $currentDate->daysInMonth;
+                        $targetDay = min($plan->month_day, $daysInMonth);
+                        $currentDate->setDay($targetDay);
+                    }
+                    
+                    // Skip Sundays and holidays, find next working day
+                    $originalDate = $currentDate->copy();
+                    while ($currentDate->isSunday() || in_array($currentDate->format('Y-m-d'), $holidays)) {
+                        $currentDate->addDay();
+                    }
+                    
+                    $dates[] = $currentDate->format('Y-m-d');
+                    $currentDate = $originalDate->addYear();
+                }
+                break;
+                
+            case 'custom':
+                if ($plan->custom_days) {
+                    $interval = $plan->custom_days;
+                    while ($currentDate <= $endDate) {
+                        // Skip Sundays and holidays
+                        if (!$currentDate->isSunday() && !in_array($currentDate->format('Y-m-d'), $holidays)) {
+                            $dates[] = $currentDate->format('Y-m-d');
+                        }
+                        $currentDate->addDays($interval);
+                    }
+                }
+                break;
+        }
+        
+        return $dates;
+    }
+    
+    /**
+     * Generate PDF for a specific maintenance plan
+     * 
+     * @param int $id
      * @return mixed Response with PDF download or null on error
      */
     public function generatePdf($id)
     {
         try {
+            // Carregar o plano de manutenção com todas as relações necessárias
             $plan = MaintenancePlanModel::with([
                 'equipment', 
                 'equipment.area',
                 'equipment.line',
                 'task',
-                'assignedTo',
-                'notes' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }
+                'assignedTo'
             ])->findOrFail($id);
+            
+            // Calcular as datas de manutenção com base na frequência
+            $maintenanceDates = $this->calculateMaintenanceDates($plan);
+            
+            // Buscar as notas separadamente para evitar problemas com relações
+            $maintenanceNotes = \App\Models\MaintenanceNote::where('maintenance_plan_id', $id)
+                                   ->orderBy('created_at', 'desc')
+                                   ->get();  
             
             // Prepare the data for the PDF
             $data = [
                 'plan' => $plan,
                 'title' => __('messages.maintenance_plan_details'),
                 'generatedAt' => now()->format('Y-m-d H:i:s'),
+                'maintenanceDates' => $maintenanceDates,
+                'companyName' => \App\Models\Setting::get('company_name', 'ERP DEMBENA'),
+                'maintenanceNotes' => $maintenanceNotes, // Enviar as notas separadamente
             ];
             
             // Load the PDF view

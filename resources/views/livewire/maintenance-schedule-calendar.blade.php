@@ -111,19 +111,19 @@
                 </div>
 
                 <!-- Day Events -->
-                <div class="space-y-1 overflow-y-auto" style="max-height: calc(100% - 30px);">
+                <div class="space-y-1 overflow-y-auto overflow-x-hidden" style="max-height: calc(100% - 30px); width: 100%;">
                     @if(isset($events[$day['date']]))
                         @foreach($events[$day['date']] as $event)
                             <div
                                 wire:click.stop="editEvent({{ $event['id'] }})"
-                                class="text-xs p-1 rounded truncate cursor-pointer
+                                class="text-xs p-1 rounded cursor-pointer block w-full
                                     {{ $event['color'] }}
                                     {{ $event['status'] === 'completed' ? 'opacity-60' : '' }}
                                     {{ $event['status'] === 'cancelled' ? 'opacity-40 line-through' : '' }}
                                     hover:bg-opacity-90"
                                 title="{{ $event['title'] }} - {{ $event['equipment'] }}{{ isset($event['frequency']) && $event['frequency'] != 'once' ? ' (' . ucfirst($event['frequency']) . ')' : '' }}"
                             >
-                                {{ Str::limit($event['title'], 18) }}
+                                {{ $event['title'] }}
                             </div>
                         @endforeach
                     @endif

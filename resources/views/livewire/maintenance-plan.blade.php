@@ -14,8 +14,12 @@
                         type="button"
                         class="bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium py-1.5 px-3 sm:py-2 sm:px-4 rounded flex items-center transition-colors"
                         wire:click="generateListPdf"
+                        wire:loading.attr="disabled"
                     >
-                        <i class="fas fa-file-pdf mr-2"></i> {{ __('messages.export_to_pdf') }}
+                        <i class="fas fa-file-pdf mr-2" wire:loading.class="hidden" wire:target="generateListPdf"></i>
+                        <i class="fas fa-spinner fa-spin mr-2" wire:loading.class.remove="hidden" wire:loading.class="inline-block" wire:target="generateListPdf" style="display: none;"></i>
+                        <span wire:loading.class="hidden" wire:target="generateListPdf">{{ __('messages.export_to_pdf') }}</span>
+                        <span wire:loading.class.remove="hidden" wire:loading.class="inline" wire:target="generateListPdf" style="display: none;">{{ __('messages.generating_pdf') }}</span>
                     </button>
                     <!-- Add Schedule Button -->
                     <button
@@ -291,9 +295,18 @@
                                         <td class="px-2 sm:px-4 py-2 whitespace-nowrap text-right text-xs sm:text-sm">
                                             <div class="flex justify-end space-x-1 sm:space-x-2">
                                                 <!-- PDF Button -->
-                                                <button wire:click="generatePdf({{ $schedule->id }})" class="text-red-600 hover:text-red-900 transform hover:scale-110 transition-transform" title="{{ __('messages.export_to_pdf') }}" wire:loading.attr="disabled">
-                                                    <i class="fas fa-file-pdf w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="generatePdf({{ $schedule->id }})"></i>
-                                                    <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="generatePdf({{ $schedule->id }})"></i>
+                                                <button 
+                                                    wire:click="generatePdf({{ $schedule->id }})"
+                                                    class="text-red-600 hover:text-red-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-100 relative"
+                                                    title="{{ __('messages.export_to_pdf') }}"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                    <div wire:loading.remove wire:target="generatePdf({{ $schedule->id }})">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </div>
+                                                    <div wire:loading wire:target="generatePdf({{ $schedule->id }})" class="absolute inset-0 flex items-center justify-center">
+                                                        <i class="fas fa-spinner fa-spin text-red-600"></i>
+                                                    </div>
                                                 </button>
                                                 <!-- View Button -->
                                                 <button wire:click="viewSchedule({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900 transform hover:scale-110 transition-transform" title="{{ __('messages.view_details') }}" wire:loading.attr="disabled">

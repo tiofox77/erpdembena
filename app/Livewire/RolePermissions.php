@@ -61,11 +61,73 @@ class RolePermissions extends Component
      */
     protected function loadPermissions()
     {
-        // This method is intentionally left empty as permissions
-        // are loaded through the computed properties
+        // Ensure all required permissions exist
+        $this->ensureRequiredPermissionsExist();
+        
+        // This method is primarily for computed properties
         // Permission groups are loaded in getPermissionGroupsProperty
         // Roles are loaded in getRolesProperty
         // Permissions are loaded in getPermissionsProperty
+    }
+    
+    /**
+     * Ensure required permissions exist in the system
+     * This method ensures critical permissions are available
+     */
+    protected function ensureRequiredPermissionsExist()
+    {
+        $requiredPermissions = [
+            // Inventory & Stock Management
+            'inventory.manage' => 'Manage inventory and stock',
+            'inventory.view' => 'View inventory',
+            'stock.manage' => 'Manage stock transactions',
+            'stock.in' => 'Add stock (stock in)',
+            'stock.out' => 'Remove stock (stock out)',
+            'stock.history' => 'View stock history',
+            'parts.request' => 'Request parts',
+            
+            // These may already exist but added for completeness
+            'maintenance.dashboard' => 'Access maintenance dashboard',
+            'maintenance.equipment' => 'Manage maintenance equipment',
+            'maintenance.plan' => 'Manage maintenance plans',
+            'maintenance.corrective' => 'Manage corrective maintenance',
+        ];
+        
+        // Create permissions if they don't exist
+        foreach ($requiredPermissions as $name => $description) {
+            Permission::firstOrCreate(
+                ['name' => $name],
+                [
+                    'name' => $name,
+                    'guard_name' => 'web',
+                    'description' => $description
+                ]
+            );
+        }
+        
+        // Ensure maintenance-manager has the necessary permissions
+        $maintenanceManager = Role::where('name', 'maintenance-manager')->first();
+        if ($maintenanceManager) {
+            $stockPermissions = [
+                'inventory.manage',
+                'inventory.view',
+                'stock.manage',
+                'stock.in',
+                'stock.out',
+                'stock.history',
+                'parts.request'
+            ];
+            
+            // Get permission objects
+            $permissions = Permission::whereIn('name', $stockPermissions)->get();
+            
+            // Add missing permissions to the role
+            foreach ($permissions as $permission) {
+                if (!$maintenanceManager->hasPermissionTo($permission->name)) {
+                    $maintenanceManager->givePermissionTo($permission->name);
+                }
+            }
+        }
     }
 
     // Validation rules

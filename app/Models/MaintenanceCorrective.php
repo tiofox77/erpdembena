@@ -138,6 +138,171 @@ class MaintenanceCorrective extends Model
         return $query;
     }
 
+    /**
+     * Gera um PDF de relatório para manutenção corretiva
+     *
+     * @param \App\Models\MaintenanceCorrective|null $corrective Registro específico de manutenção corretiva (opcional)
+     * @param array $filters Filtros para relatório de múltiplos registros (opcional)
+     * @return string Caminho do arquivo PDF gerado
+     */
+    public static function generatePdf($corrective = null, $filters = [])
+    {
+        // Se um registro específico foi fornecido, gera relatório para apenas esse registro
+        if ($corrective) {
+            return self::generateSinglePdf($corrective);
+        }
+        
+        // Caso contrário, gera relatório para múltiplos registros com base nos filtros
+        return self::generateMultiplePdf($filters);
+    }
+    
+    /**
+     * Gera um PDF de relatório para um único registro de manutenção corretiva
+     *
+     * @param \App\Models\MaintenanceCorrective $corrective Registro de manutenção corretiva
+     * @return string Caminho do arquivo PDF gerado
+     */
+    private static function generateSinglePdf($corrective)
+    {
+        try {
+            // Garantir que todos os relacionamentos estejam carregados
+            if (!$corrective->relationLoaded('equipment')) {
+                $corrective->load(['equipment', 'failureMode', 'failureCause', 'reporter', 'resolver']);
+            }
+            
+            // Registrar informações para debugging
+            \Log::info('Gerando PDF para manutenção corretiva:', [
+                'id' => $corrective->id,
+                'equipment' => $corrective->equipment ? $corrective->equipment->name : 'N/A',
+                'status' => $corrective->status,
+                'start_time' => $corrective->start_time
+            ]);
+            
+            $pdf = \PDF::loadView('pdf.maintenance-corrective-report', [
+                'corrective' => $corrective,
+                'isSingleReport' => true,
+                'generatedAt' => now(),
+            ]);
+            
+            $fileName = 'maintenance_corrective_' . $corrective->id . '_' . date('YmdHis') . '.pdf';
+            $storagePath = 'reports/' . $fileName;
+            
+            // Salvar o PDF no storage
+            \Storage::put('public/' . $storagePath, $pdf->output());
+            
+            return $storagePath;
+        } catch (\Exception $e) {
+            // Registrar o erro com detalhes completos
+            \Log::error('Erro ao gerar PDF individual: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // Relançar a exceção para ser tratada pelo controlador
+            throw new \Exception('Erro ao gerar PDF: ' . $e->getMessage(), 0, $e);
+        }
+    }
+    
+    /**
+     * Gera um PDF de relatório para múltiplos registros de manutenção corretiva
+     *
+     * @param array $filters Filtros para os registros
+     * @return string Caminho do arquivo PDF gerado
+     */
+    private static function generateMultiplePdf($filters = [])
+    {
+        try {
+            \Log::info('Iniciando geração de PDF de relatório múltiplo com filtros:', $filters);
+            
+            $query = self::query();
+            
+            // Aplicar filtros
+            if (!empty($filters['year'])) {
+                $query->filterByYear($filters['year']);
+                \Log::debug('Aplicado filtro de ano: ' . $filters['year']);
+            }
+            
+            if (!empty($filters['month'])) {
+                $query->filterByMonth($filters['month']);
+                \Log::debug('Aplicado filtro de mês: ' . $filters['month']);
+            }
+            
+            if (!empty($filters['status'])) {
+                $query->filterByStatus($filters['status']);
+                \Log::debug('Aplicado filtro de status: ' . $filters['status']);
+            }
+            
+            if (!empty($filters['equipment_id'])) {
+                $query->filterByEquipment($filters['equipment_id']);
+                \Log::debug('Aplicado filtro de equipamento ID: ' . $filters['equipment_id']);
+            }
+            
+            // Carregar relacionamentos necessários
+            $correctives = $query->with(['equipment', 'failureMode', 'failureCause', 'reporter', 'resolver'])
+                                ->orderBy('start_time', 'desc')
+                                ->get();
+            
+            \Log::info('Registros encontrados para o relatório: ' . $correctives->count());
+            
+            // Preparar título do período baseado nos filtros
+            $periodTitle = '';
+            
+            if (!empty($filters['year'])) {
+                $periodTitle .= $filters['year'];
+                
+                if (!empty($filters['month'])) {
+                    $monthName = \Carbon\Carbon::create()->month($filters['month'])->translatedFormat('F');
+                    $periodTitle .= ' - ' . $monthName;
+                }
+            } else {
+                $periodTitle = __('messages.all_time');
+            }
+            
+            if (!empty($filters['equipment_id']) && $equipment = \App\Models\MaintenanceEquipment::find($filters['equipment_id'])) {
+                $periodTitle .= ' | ' . $equipment->name;
+            }
+            
+            // Verificar a existência do template antes de carregar
+            $viewPath = 'pdf.maintenance-corrective-report';
+            if (!view()->exists($viewPath)) {
+                throw new \Exception("Template de PDF não encontrado: {$viewPath}");
+            }
+            
+            \Log::debug('Carregando template PDF com período: ' . $periodTitle);
+            
+            $pdf = \PDF::loadView($viewPath, [
+                'correctives' => $correctives,
+                'periodTitle' => $periodTitle,
+                'generatedAt' => now(),
+                'filters' => $filters
+            ]);
+            
+            $fileName = 'maintenance_correctives_report_' . date('YmdHis') . '.pdf';
+            $storagePath = 'reports/' . $fileName;
+            
+            // Verificar pasta de armazenamento
+            $directory = 'public/reports';
+            if (!\Storage::exists($directory)) {
+                \Storage::makeDirectory($directory);
+                \Log::info('Diretório de relatórios criado: ' . $directory);
+            }
+            
+            // Salvar o PDF no storage
+            \Storage::put('public/' . $storagePath, $pdf->output());
+            \Log::info('PDF salvo com sucesso em: ' . $storagePath);
+            
+            return $storagePath;
+        } catch (\Exception $e) {
+            // Registrar erro com detalhes completos
+            \Log::error('Erro ao gerar PDF múltiplo: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('Filtros utilizados: ' . json_encode($filters));
+            
+            // Relançar a exceção para ser tratada pelo controlador
+            throw new \Exception('Erro ao gerar relatório PDF: ' . $e->getMessage(), 0, $e);
+        }
+    }
+    
+    // O método getFormattedDowntimeAttribute já deve estar definido em outra parte da classe
+
     public function scopeFilterByMonth($query, $month)
     {
         if ($month) {

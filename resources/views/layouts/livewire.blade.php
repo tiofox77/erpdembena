@@ -826,7 +826,7 @@
                 <!-- Right: Actions -->
                 <div class="flex items-center space-x-4">
                     <!-- Verificar button -->
-                    <button class="flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition duration-200 text-sm">
+                    <button wire:click="$emit('verifyNotifications')" class="flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition duration-200 text-sm hover:scale-105">
                         <i class="fas fa-check-circle mr-2"></i>
                         <span>{{ trans('messages.verify') }}</span>
                     </button>

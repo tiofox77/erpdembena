@@ -49,6 +49,8 @@ class GoodsReceipts extends Component
     // Delete Confirmation Properties
     public $showConfirmDelete = false;
     public $deleteId = null;
+
+    // O método addItem() foi removido
     
     protected $listeners = [
         'productSelected' => 'addProduct',
