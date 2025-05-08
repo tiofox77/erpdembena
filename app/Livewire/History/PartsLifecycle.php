@@ -166,15 +166,24 @@ class PartsLifecycle extends Component
     public function loadCategories()
     {
         try {
-            // Get unique categories from parts table
-            $this->categories = EquipmentPart::select('category')
-                ->distinct()
-                ->whereNotNull('category')
-                ->orderBy('category')
-                ->pluck('category')
+            // Obter equipamentos únicos agrupados por maintenance_equipment_id
+            // Precisamos incluir name no SELECT para usá-lo no ORDER BY
+            $parts = EquipmentPart::select('name', 'maintenance_equipment_id')
+                ->orderBy('name')
+                ->get()
+                ->map(function($part) {
+                    // Criar o identificador composto depois de buscar dados
+                    return $part->maintenance_equipment_id 
+                        ? $part->maintenance_equipment_id . '-' . $part->name 
+                        : '0-' . $part->name;
+                })
+                ->unique() // Remover duplicatas depois de buscar todos os dados
+                ->values() // Reindexar o array
                 ->toArray();
+                
+            $this->categories = $parts;
         } catch (\Exception $e) {
-            Log::error('Error loading part categories: ' . $e->getMessage());
+            Log::error('Error loading part equipment groups: ' . $e->getMessage());
             $this->categories = [];
         }
     }
@@ -185,7 +194,12 @@ class PartsLifecycle extends Component
             $query = EquipmentPart::query()->orderBy('name');
 
             if ($this->partCategory) {
-                $query->where('category', $this->partCategory);
+                // Usamos o formato 'maintenance_equipment_id-name' para filtrar
+                $parts = explode('-', $this->partCategory);
+                if (count($parts) == 2 && is_numeric($parts[0])) {
+                    $query->where('maintenance_equipment_id', $parts[0])
+                          ->where('name', 'like', '%' . $parts[1] . '%');
+                }
             }
 
             $this->parts = $query->get();
@@ -269,16 +283,18 @@ class PartsLifecycle extends Component
             }
 
             // Top supplier by purchase value
-            $topSupplierId = StockTransaction::whereBetween('created_at', [$startDateTime, $endDateTime])
+            $topSupplier = StockTransaction::whereBetween('created_at', [$startDateTime, $endDateTime])
                 ->where('type', 'stock_in')
-                ->select('supplier_id')
+                ->select('supplier')
                 ->selectRaw('SUM(quantity * unit_cost) as total_value')
-                ->groupBy('supplier_id')
+                ->whereNotNull('supplier')
+                ->groupBy('supplier')
                 ->orderByDesc('total_value')
                 ->first();
 
-            if ($topSupplierId && $topSupplierId->supplier_id) {
-                $this->topSupplier = Supplier::find($topSupplierId->supplier_id);
+            if ($topSupplier && $topSupplier->supplier) {
+                // Armazenamos o nome do fornecedor diretamente
+                $this->topSupplier = (object)['name' => $topSupplier->supplier];
             }
 
         } catch (\Exception $e) {

@@ -25,7 +25,8 @@ class EquipmentPart extends Model
         'last_restock_date',
         'minimum_stock_level',
         'maintenance_equipment_id',
-        'bar_code'
+        'bar_code',
+        'category'
     ];
 
     /**

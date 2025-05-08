@@ -16,6 +16,7 @@ class MaintenanceNote extends Model
      */
     protected $fillable = [
         'maintenance_plan_id',
+        'maintenance_task_id',
         'status',
         'notes',
         'file_path',
@@ -37,5 +38,13 @@ class MaintenanceNote extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    
+    /**
+     * Get the maintenance task related to this note.
+     */
+    public function maintenanceTask()
+    {
+        return $this->belongsTo(MaintenanceTask::class, 'maintenance_task_id');
     }
 }

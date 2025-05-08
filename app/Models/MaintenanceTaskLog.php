@@ -15,7 +15,8 @@ class MaintenanceTaskLog extends Model
     protected $fillable = [
         'task_id',
         'equipment_id',
-        'user_id',
+        'user_id',           // Usuário (legacy)
+        'technician_id',     // Novo campo para técnico
         'maintenance_plan_id',
         'date_performed',
         'scheduled_date',
@@ -23,6 +24,9 @@ class MaintenanceTaskLog extends Model
         'duration_minutes',
         'notes',
         'status',
+        'action',
+        'parts_replaced',
+        'tools_used',
         'created_at',
         'updated_at'
     ];
@@ -49,6 +53,14 @@ class MaintenanceTaskLog extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    
+    /**
+     * Get the technician who performed this maintenance task
+     */
+    public function technician()
+    {
+        return $this->belongsTo(Technician::class, 'technician_id');
     }
 
     public function maintenancePlan()

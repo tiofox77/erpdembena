@@ -20,6 +20,7 @@ class StockTransaction extends Model
         'type',
         'unit_cost',
         'supplier',
+        'supplier_id',
         'invoice_number',
         'transaction_date',
         'notes',
@@ -50,6 +51,14 @@ class StockTransaction extends Model
      * Get the user who created the transaction.
      */
     public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    
+    /**
+     * Alias for createdBy to maintain compatibility with existing code.
+     */
+    public function user()
     {
         return $this->belongsTo(User::class, 'created_by');
     }

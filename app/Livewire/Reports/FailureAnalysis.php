@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use App\Models\MaintenanceArea as Area;
 use App\Models\MaintenanceEquipment as Equipment;
@@ -305,6 +306,21 @@ class FailureAnalysis extends Component
                 Log::info('FailureAnalysis: Aplicando filtro de busca: ' . $this->search);
             }
             
+            // Verificar se a tabela existe antes de prosseguir
+            Log::info('FailureAnalysis: Verificando existência da tabela maintenance_correctives');
+            
+            // Verificar se a tabela existe
+            $tableExists = Schema::hasTable('maintenance_correctives');
+            Log::info('FailureAnalysis: Tabela maintenance_correctives existe? ' . ($tableExists ? 'Sim' : 'Não'));
+            
+            if (!$tableExists) {
+                Log::error('FailureAnalysis: A tabela maintenance_correctives não existe no banco de dados');
+                $this->error = 'A tabela de manutenção corretiva ainda não foi criada no banco de dados.';
+                $this->loading = false;
+                $this->ready = true;
+                return;
+            }
+            
             // Verificar estrutura da tabela
             Log::info('FailureAnalysis: Verificando estrutura da tabela MaintenanceCorrective');
             $columns = DB::getSchemaBuilder()->getColumnListing('maintenance_correctives');
@@ -326,10 +342,6 @@ class FailureAnalysis extends Component
             Log::info('FailureAnalysis: Colunas de data encontradas: ' . implode(', ', $dateColumns));
             Log::info('FailureAnalysis: Usando coluna alternativa para data: ' . $dateColumn);
             
-            // Verificar o total de registros na tabela sem filtros
-            $totalRecords = MaintenanceCorrective::count();
-            Log::info('FailureAnalysis: Total de registros na tabela sem filtros: ' . $totalRecords);
-            
             // Verificar registros no período
             // Garantir que as datas estejam formatadas corretamente
             $start = $this->startDate instanceof Carbon ? $this->startDate : Carbon::parse($this->startDate)->startOfDay();
@@ -347,8 +359,20 @@ class FailureAnalysis extends Component
                 Log::info("FailureAnalysis: Período expandido para o ano atual: {$start->format('Y-m-d')} a {$end->format('Y-m-d')}");
             }
             
-            // Usar uma consulta mais permissiva para encontrar registros
-            $testQuery = MaintenanceCorrective::query();
+            // Só prosseguir se a tabela existir
+            if ($tableExists) {
+                // Usar uma consulta mais permissiva para encontrar registros
+                $testQuery = MaintenanceCorrective::query();
+                
+                // Se houver dados suficientes, aplicar o filtro de data
+                $allRecords = MaintenanceCorrective::count();
+                Log::info('FailureAnalysis: Total de registros na tabela: ' . $allRecords);
+            } else {
+                $this->error = 'A tabela de manutenção corretiva ainda não foi criada no banco de dados.';
+                $this->loading = false;
+                $this->ready = true;
+                return;
+            }
             
             // Se houver dados suficientes, aplicar o filtro de data
             $allRecords = MaintenanceCorrective::count();

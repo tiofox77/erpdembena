@@ -4,7 +4,7 @@
             <!-- Header with title and add button -->
             <div class="p-4 sm:px-6 flex flex-col sm:flex-row justify-between sm:items-center border-b border-gray-200">
                 <h1 class="text-lg font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-clipboard-list mr-3 text-gray-500"></i> {{ __('messages.part_request_management') }}
+                    <i class="fas fa-clipboard-list mr-3 text-gray-500"></i> {{ __('part_requests.part_request_management') }}
                 </h1>
                 <div class="mt-3 sm:mt-0 flex space-x-2">
                     <button 
@@ -12,14 +12,14 @@
                         wire:click="generateListPDF"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                        <i class="fas fa-file-pdf mr-2 text-red-500"></i> {{ __('messages.export_list') }}
+                        <i class="fas fa-file-pdf mr-2 text-red-500"></i> {{ __('part_requests.export_list') }}
                     </button>
                     <button 
                         type="button" 
                         wire:click="openModal"
                         class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                        <i class="fas fa-plus-circle mr-2"></i> {{ __('messages.new_request') }}
+                        <i class="fas fa-plus-circle mr-2"></i> {{ __('part_requests.new_request') }}
                     </button>
                 </div>
             </div>
@@ -34,7 +34,7 @@
                             type="text"
                             id="search"
                             wire:model.live.debounce.300ms="search"
-                            placeholder="{{ __('messages.search_reference_part') }}"
+                            placeholder="{{ __('part_requests.search_reference_part') }}"
                             class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
                         >
                     </div>
@@ -47,7 +47,7 @@
                             wire:model.live="status"
                             class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
                         >
-                            <option value="">{{ __('messages.all_statuses') }}</option>
+                            <option value="">{{ __('part_requests.all_statuses') }}</option>
                             @foreach($statusOptions as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
@@ -56,16 +56,16 @@
 
                     <!-- Items Per Page -->
                     <div>
-                        <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.items_per_page') }}</label>
+                        <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">{{ __('part_requests.items_per_page') }}</label>
                         <select
                             id="perPage"
                             wire:model.live="perPage"
                             class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
                         >
-                            <option value="10">10 {{ __('messages.per_page') }}</option>
-                            <option value="25">25 {{ __('messages.per_page') }}</option>
-                            <option value="50">50 {{ __('messages.per_page') }}</option>
-                            <option value="100">100 {{ __('messages.per_page') }}</option>
+                            <option value="10">10 {{ __('part_requests.per_page') }}</option>
+                            <option value="25">25 {{ __('part_requests.per_page') }}</option>
+                            <option value="50">50 {{ __('part_requests.per_page') }}</option>
+                            <option value="100">100 {{ __('part_requests.per_page') }}</option>
                         </select>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
                         wire:click="clearFilters" 
                         class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                        <i class="fas fa-times-circle mr-2"></i> {{ __('messages.clear_filters') }}
+                        <i class="fas fa-times-circle mr-2"></i> {{ __('part_requests.clear_filters') }}
                     </button>
                 </div>
             </div>
@@ -88,7 +88,7 @@
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center cursor-pointer" wire:click="sortBy('reference_number')">
-                                    Dembena Reference
+                                    {{ __('part_requests.reference_number') }}
                                     @if($sortField === 'reference_number')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
@@ -97,7 +97,7 @@
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('messages.item_description') }}
+                                {{ __('part_requests.item_description') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center cursor-pointer" wire:click="sortBy('supplier_reference')">
@@ -277,7 +277,7 @@
                         @empty
                             <tr>
                                 <td colspan="10" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                    {{ __('messages.no_part_requests_found') }}
+                                    {{ __('part_requests.no_part_requests_found') }}
                                 </td>
                             </tr>
                         @endforelse

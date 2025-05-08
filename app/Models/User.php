@@ -97,6 +97,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(MaintenanceTask::class, 'assigned_to');
     }
+    
+    /**
+     * Get the technician profile associated with the user
+     */
+    public function technician()
+    {
+        return $this->hasOne(Technician::class);
+    }
+    
+    /**
+     * Check if the user is a technician
+     */
+    public function isTechnician()
+    {
+        return $this->technician()->exists();
+    }
 
     public function plansAssigned()
     {

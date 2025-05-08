@@ -229,24 +229,10 @@ class MaintenancePlan extends Component
         // Obter o ID se estiver editando
         $maintenanceId = $this->isEditing ? $this->scheduleId : null;
         
-        // VERIFICAÇÃO 1: Se já existe manutenção com mesmo ID, NÃO reagendamos
-        // Pois isso causaria duplicação no calendário
-        if ($maintenanceId) {
-            $existingWithSameId = MaintenancePlanModel::where('id', $maintenanceId)->exists();
-            if ($existingWithSameId) {
-                // Já existe uma manutenção com este ID, não vamos reagendar
-                $message = "AVISO: Não é possível reagendar manutenção que já existe no sistema. ";
-                $message .= "Para evitar duplicações, edite diretamente o registro original.";
-                
-                $this->dispatch('notify', 
-                    type: 'error', 
-                    message: $message
-                );
-                
-                // Bloquear completamente o processo de reagendamento
-                return false;
-            }
-        }
+        // NOTA: A verificação anterior que impedia edição de registros existentes foi removida
+        // para permitir a edição normal de planos de manutenção
+        // Se tivermos um ID de manutenção, significa que estamos editando um registro existente,
+        // o que é completamente permitido
 
         // VERIFICAÇÃO 2: Se já existe manutenção semelhante, alertamos
         $existingMaintenance = $this->checkForDuplicateMaintenanceGlobal();
@@ -319,14 +305,10 @@ class MaintenancePlan extends Component
      */
     protected function wouldCauseDuplication($date, $maintenanceId = null)
     {
-        // Se já existe uma manutenção com o mesmo ID, não podemos reagendar
+        // Se estamos editando uma manutenção existente, permitir continuar normalmente
         if ($maintenanceId) {
-            $existingWithSameId = MaintenancePlanModel::where('id', $maintenanceId)->exists();
-            if ($existingWithSameId) {
-                $message = "ERRO: Não é possível reagendar pois já existe uma manutenção com o mesmo ID no sistema.";
-                $this->dispatch('notify', type: 'error', message: $message);
-                return true; // Sim, causaria duplicação
-            }
+            // Edição de registro existente é permitida
+            return false; // Não causaria duplicação, pois estamos simplesmente editando
         }
         
         // Verificar se já existe manutenção para o mesmo equipamento em outras datas
@@ -633,31 +615,52 @@ class MaintenancePlan extends Component
                 }
             }
             
-            // VERIFICAÇÃO RÍGIDA 3: Verificar duplicação exata na mesma data para o mesmo equipamento
+            // VERIFICAÇÃO MODIFICADA: Verificar duplicação na mesma data para o mesmo equipamento
+            // mas apenas se NÃO estivermos editando o registro original
             $scheduledDate = Carbon::parse($this->scheduled_date)->format('Y-m-d');
-            $duplicateOnDate = MaintenancePlanModel::where('equipment_id', $this->equipment_id)
-                ->whereDate('scheduled_date', $scheduledDate);
             
-            // Se estiver editando, excluir o agendamento atual da consulta
-            if ($this->isEditing) {
-                $duplicateOnDate->where('id', '!=', $this->scheduleId);
-            }
-            
-            // Verificar se existe duplicação
-            $duplicateExists = $duplicateOnDate->exists();
-            if ($duplicateExists) {
-                $equipment = MaintenanceEquipment::find($this->equipment_id);
-                $equipmentName = $equipment ? $equipment->name : 'this equipment';
+            // Apenas verificar duplicação se não estivermos editando OU
+            // se estivermos editando com mudança de equipamento/data
+            if (!$this->isEditing) {
+                $duplicateOnDate = MaintenancePlanModel::where('equipment_id', $this->equipment_id)
+                    ->whereDate('scheduled_date', $scheduledDate);
                 
-                $message = "ERRO DE DUPLICAÇÃO: Já existe um plano de manutenção agendado para {$equipmentName} em " . 
-                          Carbon::parse($scheduledDate)->format('d/m/Y') . ". Selecione outra data ou equipamento.";
+                // Verificar se existe duplicação
+                $duplicateExists = $duplicateOnDate->exists();
+                if ($duplicateExists) {
+                    $equipment = MaintenanceEquipment::find($this->equipment_id);
+                    $equipmentName = $equipment ? $equipment->name : 'this equipment';
+                    
+                    $message = "AVISO: Já existe um plano de manutenção agendado para {$equipmentName} em " . 
+                              Carbon::parse($scheduledDate)->format('d/m/Y') . ". Selecione outra data ou equipamento.";
+                    
+                    $this->dispatch('notify', 
+                        type: 'error', 
+                        message: $message
+                    );
+                    
+                    return; // Interromper o salvamento apenas para novos registros
+                }
+            } elseif ($this->isEditing) {
+                // Se estiver editando, verificar apenas duplicações com outros registros (exceto o atual)
+                $duplicateOnDate = MaintenancePlanModel::where('equipment_id', $this->equipment_id)
+                    ->whereDate('scheduled_date', $scheduledDate)
+                    ->where('id', '!=', $this->scheduleId)
+                    ->exists();
                 
-                $this->dispatch('notify', 
-                    type: 'error', 
-                    message: $message
-                );
-                
-                return; // Interromper o salvamento
+                if ($duplicateOnDate) {
+                    $equipment = MaintenanceEquipment::find($this->equipment_id);
+                    $equipmentName = $equipment ? $equipment->name : 'this equipment';
+                    
+                    $message = "AVISO: A combinação de data e equipamento já está sendo usada em outro plano. Por favor, verifique.";
+                    
+                    $this->dispatch('notify', 
+                        type: 'warning', // Mudamos para warning em vez de error
+                        message: $message
+                    );
+                    
+                    // Permitimos continuar mesmo com o aviso, já que estamos editando
+                }
             }
 
             $schedule->task_id = $this->task_id;
