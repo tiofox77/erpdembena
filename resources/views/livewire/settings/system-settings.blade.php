@@ -1014,40 +1014,162 @@
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
+    <!-- Modal de Confirmação de Atualização - Versão Animada e Interativa -->
     @if($showConfirmModal)
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
-                    Confirmation Required
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+         x-data="{}"
+         x-init="setTimeout(() => { $el.classList.add('opacity-100'); $el.classList.remove('opacity-0'); }, 50)"
+         class="opacity-0 transition-opacity duration-300 ease-in-out">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-0 transform transition-all duration-300 ease-out scale-95 opacity-0"
+             x-init="setTimeout(() => { $el.classList.add('scale-100', 'opacity-100'); $el.classList.remove('scale-95', 'opacity-0'); }, 150)">
+            
+            <!-- Cabeçalho com gradiente animado -->
+            <div class="bg-gradient-to-r from-yellow-500 via-yellow-600 to-yellow-500 background-animate rounded-t-lg px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-sync-alt mr-3 animate-pulse"></i>
+                    <span class="tracking-wide">Confirmação de Atualização</span>
                 </h3>
-                <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeConfirmModal">
+                <button type="button" class="text-white hover:text-gray-200 text-xl transition-transform duration-200 ease-in-out transform hover:scale-110 hover:rotate-90" 
+                        wire:click="closeConfirmModal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <div class="bg-yellow-50 p-4 rounded-md mb-4">
-                <p class="text-sm text-yellow-700">{{ $confirmMessage }}</p>
+            <!-- Corpo do modal com elementos visuais interativos -->
+            <div class="p-6">
+                <!-- Detalhes da atualização -->
+                <div class="mb-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="fas fa-info-circle text-blue-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-1">Nova Versão: v{{ $latest_version }}</h4>
+                            <p class="text-gray-700">{{ $confirmMessage }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Etapas da atualização visualizadas -->
+                <div class="bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                    <h4 class="text-md font-medium text-gray-800 mb-3">Etapas do processo:</h4>
+                    
+                    <div class="space-y-3">
+                        <!-- Etapa 1: Backup -->
+                        <div class="flex items-center" x-data="{hover: false}" @mouseenter="hover = true" @mouseleave="hover = false">
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 transition-all duration-300" 
+                                 :class="{'bg-blue-200 scale-110': hover}">
+                                <i class="fas fa-database text-blue-600"></i>
+                            </div>
+                            <span class="text-gray-800" :class="{'font-medium': hover}">Backup do sistema</span>
+                            <div class="flex-grow"></div>
+                            <div class="text-gray-500 text-sm italic transition-opacity duration-300" x-show="hover" x-transition>Cópia de segurança</div>
+                        </div>
+                        
+                        <!-- Etapa 2: Download -->
+                        <div class="flex items-center" x-data="{hover: false}" @mouseenter="hover = true" @mouseleave="hover = false">
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 transition-all duration-300"
+                                 :class="{'bg-blue-200 scale-110': hover}">
+                                <i class="fas fa-download text-blue-600"></i>
+                            </div>
+                            <span class="text-gray-800" :class="{'font-medium': hover}">Download das atualizações</span>
+                            <div class="flex-grow"></div>
+                            <div class="text-gray-500 text-sm italic transition-opacity duration-300" x-show="hover" x-transition>Arquivos necessários</div>
+                        </div>
+                        
+                        <!-- Etapa 3: Instalação -->
+                        <div class="flex items-center" x-data="{hover: false}" @mouseenter="hover = true" @mouseleave="hover = false">
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 transition-all duration-300"
+                                 :class="{'bg-blue-200 scale-110': hover}">
+                                <i class="fas fa-cogs text-blue-600"></i>
+                            </div>
+                            <span class="text-gray-800" :class="{'font-medium': hover}">Instalação das atualizações</span>
+                            <div class="flex-grow"></div>
+                            <div class="text-gray-500 text-sm italic transition-opacity duration-300" x-show="hover" x-transition>Atualização do código</div>
+                        </div>
+                        
+                        <!-- Etapa 4: Migrações -->
+                        <div class="flex items-center" x-data="{hover: false}" @mouseenter="hover = true" @mouseleave="hover = false">
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 transition-all duration-300"
+                                 :class="{'bg-blue-200 scale-110': hover}">
+                                <i class="fas fa-database text-blue-600"></i>
+                            </div>
+                            <span class="text-gray-800" :class="{'font-medium': hover}">Migrações do banco de dados</span>
+                            <div class="flex-grow"></div>
+                            <div class="text-gray-500 text-sm italic transition-opacity duration-300" x-show="hover" x-transition>Atualização de estruturas</div>
+                        </div>
+                        
+                        <!-- Etapa 5: Finalização -->
+                        <div class="flex items-center" x-data="{hover: false}" @mouseenter="hover = true" @mouseleave="hover = false">
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 transition-all duration-300"
+                                 :class="{'bg-blue-200 scale-110': hover}">
+                                <i class="fas fa-check-circle text-blue-600"></i>
+                            </div>
+                            <span class="text-gray-800" :class="{'font-medium': hover}">Finalizando configurações</span>
+                            <div class="flex-grow"></div>
+                            <div class="text-gray-500 text-sm italic transition-opacity duration-300" x-show="hover" x-transition>Conclusão do processo</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Checkbox para backup -->
+                <div class="flex items-center mb-6">
+                    <input id="backup_before_update_modal" wire:model.live="backup_before_update" type="checkbox" 
+                           class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all duration-200 ease-in-out transform hover:scale-110">
+                    <label for="backup_before_update_modal" class="ml-3 block text-gray-700 font-medium">
+                        Criar backup antes de atualizar
+                    </label>
+                </div>
+                
+                <!-- Aviso de impacto -->
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                <strong>Atenção:</strong> Durante o processo de atualização, o sistema ficará temporariamente indisponível. 
+                                Recomendamos realizar esta operação em um momento de baixo tráfego.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex justify-end space-x-3">
+            <!-- Rodapé com botões de ação animados -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-4 border-t border-gray-200">
                 <button
                     type="button"
-                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
                     wire:click="closeConfirmModal">
-                    <i class="fas fa-times mr-1"></i> Cancel
+                    <i class="fas fa-times mr-2"></i> Cancelar
                 </button>
                 <button
                     type="button"
-                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-md"
                     wire:click="processConfirmedAction">
-                    <i class="fas fa-check mr-1"></i> Confirm
+                    <i class="fas fa-check mr-2"></i> Confirmar Atualização
                 </button>
             </div>
         </div>
     </div>
+    
+    <!-- Estilo para animação de gradiente -->
+    <style>
+        .background-animate {
+            background-size: 400%;
+            -webkit-animation: GradientAnimation 3s ease infinite;
+            -moz-animation: GradientAnimation 3s ease infinite;
+            animation: GradientAnimation 3s ease infinite;
+        }
+        
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
     @endif
     
     <!-- Modal de Seeders -->

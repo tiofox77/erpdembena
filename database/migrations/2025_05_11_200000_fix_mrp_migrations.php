@@ -340,13 +340,21 @@ class FixMrpMigrations extends Migration
      */
     protected function listTableForeignKeys($table)
     {
-        $conn = Schema::getConnection()->getDoctrineSchemaManager();
+        // Verificar as chaves estrangeiras usando SQL direto para evitar problemas com o Doctrine
+        $schema = Schema::getConnection()->getDatabaseName();
         
         $foreignKeys = [];
         try {
-            $foreignKeys = array_map(function($key) {
-                return $key->getName();
-            }, $conn->listTableForeignKeys($table));
+            $fks = DB::select(
+                "SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS 
+                WHERE CONSTRAINT_TYPE = 'FOREIGN KEY' 
+                AND TABLE_SCHEMA = ? 
+                AND TABLE_NAME = ?", [$schema, $table]
+            );
+            
+            foreach ($fks as $fk) {
+                $foreignKeys[] = $fk->CONSTRAINT_NAME;
+            }
         } catch (\Exception $e) {
             // Ignorar erro se a tabela não existir
         }
