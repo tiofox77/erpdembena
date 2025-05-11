@@ -114,7 +114,7 @@
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <form wire:submit.prevent="store">
+                    <form wire:submit.prevent="save">
                         <div class="p-6 space-y-4">
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700">{{ trans('messages.name') }} <span class="text-red-500">*</span></label>

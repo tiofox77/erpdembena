@@ -150,6 +150,7 @@ class SystemSettings extends Component
     public function mount()
     {
         $this->loadSettings();
+        $this->isLoadingDbStats = false;
         $this->loadSystemRequirements();
         $this->checkCurrentVersion();
         $this->loadAvailableSeeders();

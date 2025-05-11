@@ -104,7 +104,7 @@ class UnitTypes extends Component
         $this->resetValidation();
     }
 
-    public function store()
+    public function save()
     {
         $this->validate();
         
@@ -123,20 +123,20 @@ class UnitTypes extends Component
             $this->closeModal();
             $this->resetInputFields();
             
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'title' => trans('messages.success'),
-                'message' => $this->unit_type_id 
+            $this->dispatch('notify', 
+                type: 'success',
+                title: trans('messages.success'),
+                message: $this->unit_type_id 
                     ? trans('messages.unit_type_updated') 
                     : trans('messages.unit_type_created')
-            ]);
+            );
         } catch (\Exception $e) {
             Log::error('Error creating/updating unit type: ' . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => trans('messages.error'),
-                'message' => trans('messages.operation_failed')
-            ]);
+            $this->dispatch('notify', 
+                type: 'error',
+                title: trans('messages.error'),
+                message: trans('messages.operation_failed')
+            );
         }
     }
 
@@ -154,11 +154,11 @@ class UnitTypes extends Component
             $this->openModal();
         } catch (\Exception $e) {
             Log::error('Error editing unit type: ' . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => trans('messages.error'),
-                'message' => trans('messages.operation_failed')
-            ]);
+            $this->dispatch('notify', 
+                type: 'error',
+                title: trans('messages.error'),
+                message: trans('messages.operation_failed')
+            );
         }
     }
 
@@ -179,18 +179,18 @@ class UnitTypes extends Component
             UnitType::find($this->deleteId)->delete();
             $this->closeDeleteModal();
             
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'title' => trans('messages.success'),
-                'message' => trans('messages.unit_type_deleted')
-            ]);
+            $this->dispatch('notify', 
+                type: 'success',
+                title: trans('messages.success'),
+                message: trans('messages.unit_type_deleted')
+            );
         } catch (\Exception $e) {
             Log::error('Error deleting unit type: ' . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => trans('messages.error'),
-                'message' => trans('messages.operation_failed')
-            ]);
+            $this->dispatch('notify', 
+                type: 'error',
+                title: trans('messages.error'),
+                message: trans('messages.operation_failed')
+            );
         }
     }
 
@@ -201,20 +201,20 @@ class UnitTypes extends Component
             $unitType->is_active = !$unitType->is_active;
             $unitType->save();
             
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'title' => trans('messages.success'),
-                'message' => $unitType->is_active 
+            $this->dispatch('notify', 
+                type: 'success',
+                title: trans('messages.success'),
+                message: $unitType->is_active 
                     ? trans('messages.unit_type_activated') 
                     : trans('messages.unit_type_deactivated')
-            ]);
+            );
         } catch (\Exception $e) {
             Log::error('Error toggling unit type status: ' . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => trans('messages.error'),
-                'message' => trans('messages.operation_failed')
-            ]);
+            $this->dispatch('notify', 
+                type: 'error',
+                title: trans('messages.error'),
+                message: trans('messages.operation_failed')
+            );
         }
     }
 }

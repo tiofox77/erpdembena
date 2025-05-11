@@ -618,6 +618,89 @@
             @endcan
         </div>
 
+        <!-- MRP Menu - Add permission check -->
+        @canany(['mrp.dashboard', 'mrp.demand_forecasting.view', 'mrp.bom_management.view', 'mrp.inventory_levels.view',
+                'mrp.production_scheduling.view', 'mrp.production_orders.view', 'mrp.purchase_planning.view',
+                'mrp.capacity_planning.view', 'mrp.financial_reporting.view'])
+        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="mrpMenu">
+            <i class="fas fa-industry text-indigo-500"></i>
+            <span>{{ trans('messages.mrp') }}</span>
+            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+        </div>
+
+        <div class="sidebar-submenu" id="mrpSubmenu">
+            @can('mrp.dashboard')
+            <a href="{{ route('mrp.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tachometer-alt text-gray-500"></i>
+                <span>{{ trans('messages.dashboard') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.demand_forecasting.view')
+            <a href="{{ route('mrp.demand-forecasting') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.demand-forecasting') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-chart-line text-gray-500"></i>
+                <span>{{ trans('messages.demand_forecasting') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.bom_management.view')
+            <a href="{{ route('mrp.bom-management') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.bom-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-sitemap text-gray-500"></i>
+                <span>{{ trans('messages.bom_management') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.inventory_levels.view')
+            <a href="{{ route('mrp.inventory-levels') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.inventory-levels') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-boxes text-gray-500"></i>
+                <span>{{ trans('messages.inventory_levels') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.production_scheduling.view')
+            <a href="{{ route('mrp.production-scheduling') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.production-scheduling') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-calendar-alt text-gray-500"></i>
+                <span>{{ trans('messages.production_scheduling') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.production_orders.view')
+            <a href="{{ route('mrp.production-orders') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.production-orders') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-clipboard-list text-gray-500"></i>
+                <span>{{ trans('messages.production_orders') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.purchase_planning.view')
+            <a href="{{ route('mrp.purchase-planning') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.purchase-planning') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-shopping-cart text-gray-500"></i>
+                <span>{{ trans('messages.purchase_planning') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.capacity_planning.view')
+            <a href="{{ route('mrp.capacity-planning') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.capacity-planning') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-cogs text-gray-500"></i>
+                <span>{{ trans('messages.capacity_planning') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.resources.view')
+            <a href="{{ route('mrp.resources-management') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.resources-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tools text-gray-500"></i>
+                <span>{{ trans('messages.resources_management') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.financial_reporting.view')
+            <a href="{{ route('mrp.financial-reporting') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.financial-reporting') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-chart-pie text-gray-500"></i>
+                <span>{{ trans('messages.financial_reporting') }}</span>
+            </a>
+            @endcan
+        </div>
+        @endcanany
+
         <!-- Supply Chain Menu - Add permission check -->
         @canany(['supplychain.dashboard', 'supplychain.purchase_orders.view', 'supplychain.goods_receipts.view', 
                 'supplychain.products.view', 'supplychain.suppliers.view', 'supplychain.inventory.view'])
@@ -1065,6 +1148,7 @@
             
             // Configurar menus
             setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
+            setupMenuToggle('mrpMenu', 'mrpSubmenu');
             setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
             setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
             setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');

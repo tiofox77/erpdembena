@@ -257,6 +257,39 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:hr.dashboard'])->get('/reports', App\Livewire\HR\Reports::class)->name('reports');
     });
     
+    // MRP (Material Requirements Planning) Routes
+    Route::prefix('mrp')->name('mrp.')->group(function() {
+        // Dashboard
+        Route::middleware(['permission:mrp.dashboard'])->get('/dashboard', App\Livewire\Mrp\MrpDashboard::class)->name('dashboard');
+        
+        // Demand Forecasting
+        Route::middleware(['permission:mrp.demand_forecasting.view'])->get('/demand-forecasting', App\Livewire\Mrp\DemandForecasting::class)->name('demand-forecasting');
+        
+        // BOM Management
+        Route::middleware(['permission:mrp.bom_management.view'])->get('/bom-management', App\Livewire\Mrp\BomManagement::class)->name('bom-management');
+        
+        // Inventory Levels
+        Route::middleware(['permission:mrp.inventory_levels.view'])->get('/inventory-levels', App\Livewire\Mrp\InventoryLevels::class)->name('inventory-levels');
+        
+        // Production Scheduling
+        Route::middleware(['permission:mrp.production_scheduling.view'])->get('/production-scheduling', App\Livewire\Mrp\ProductionScheduling::class)->name('production-scheduling');
+        
+        // Production Orders
+        Route::middleware(['permission:mrp.production_orders.view'])->get('/production-orders', App\Livewire\Mrp\ProductionOrders::class)->name('production-orders');
+        
+        // Purchase Planning
+        Route::middleware(['permission:mrp.purchase_planning.view'])->get('/purchase-planning', App\Livewire\Mrp\PurchasePlanning::class)->name('purchase-planning');
+        
+        // Capacity Planning
+        Route::middleware(['permission:mrp.capacity_planning.view'])->get('/capacity-planning', App\Livewire\Mrp\CapacityPlanning::class)->name('capacity-planning');
+        
+        // Resources Management
+        Route::middleware(['permission:mrp.resources.view'])->get('/resources-management', App\Livewire\Mrp\ResourcesManagement::class)->name('resources-management');
+        
+        // Financial Reporting
+        Route::middleware(['permission:mrp.financial_reporting.view'])->get('/financial-reporting', App\Livewire\Mrp\FinancialReporting::class)->name('financial-reporting');
+    });
+
     // Supply Chain Module Routes
     Route::prefix('supply-chain')->name('supply-chain.')->group(function() {
         // Dashboard
