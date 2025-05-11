@@ -6,6 +6,8 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\SupplyChain\ShippingNote;
 use App\Models\SupplyChain\PurchaseOrder;
+use App\Models\SupplyChain\CustomForm;
+use App\Models\SupplyChain\CustomFormSubmission;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,10 +25,13 @@ class ShippingNotes extends Component
     
     public $showAddModal = false;
     public $showViewModal = false;
+    public $showCustomFormModal = false;
     public $editMode = false;
     public $editId = null;
+    public $selectedFormId = null;
+    public $selectedNoteId = null;
 
-    public $listeners = ['refreshShippingNotes' => '$refresh'];
+    public $listeners = ['refreshShippingNotes' => '$refresh', 'refreshComponent' => '$refresh'];
 
     protected $rules = [
         'status' => 'required|string',
@@ -87,6 +92,7 @@ class ShippingNotes extends Component
     {
         $this->showAddModal = false;
         $this->showViewModal = false;
+        $this->showCustomFormModal = false;
         $this->resetForm();
     }
 
@@ -97,6 +103,8 @@ class ShippingNotes extends Component
         $this->attachment = null;
         $this->existingAttachment = null;
         $this->editId = null;
+        $this->selectedFormId = null;
+        $this->selectedNoteId = null;
         $this->resetValidation();
     }
 
@@ -193,14 +201,92 @@ class ShippingNotes extends Component
         ]);
     }
 
+    /**
+     * Abre um formulário personalizado para o status da nota de envio
+     */
+    public function openCustomForm($noteId)
+    {
+        $this->selectedNoteId = $noteId;
+        
+        // Buscar formulários disponíveis
+        $availableForms = CustomForm::where('entity_type', 'shipping_note')
+            ->where('is_active', true)
+            ->get();
+            
+        if ($availableForms->isEmpty()) {
+            $this->dispatch('notify',
+                type: 'error',
+                message: __('messages.no_custom_forms_available')
+            );
+            return;
+        }
+        
+        // Se tiver apenas um formulário, seleciona automaticamente
+        if ($availableForms->count() === 1) {
+            $this->selectedFormId = $availableForms->first()->id;
+            $this->dispatch('openFormSubmission', $noteId, $this->selectedFormId);
+        } else {
+            // Se tiver mais de um, abre modal para escolha
+            $this->showCustomFormModal = true;
+        }
+    }
+    
+    /**
+     * Seleciona um formulário personalizado e abre para preenchimento
+     */
+    public function selectCustomForm()
+    {
+        if (!$this->selectedFormId || !$this->selectedNoteId) {
+            $this->dispatch('notify',
+                type: 'error',
+                message: __('messages.select_form_first')
+            );
+            return;
+        }
+        
+        $this->dispatch('openFormSubmission', $this->selectedNoteId, $this->selectedFormId);
+        $this->showCustomFormModal = false;
+    }
+    
+    /**
+     * Visualiza submissões de formulários para uma nota de envio
+     */
+    public function viewFormSubmissions($noteId)
+    {
+        $note = ShippingNote::findOrFail($noteId);
+        $submissions = CustomFormSubmission::where('entity_id', $noteId)->get();
+        
+        if ($submissions->isEmpty()) {
+            $this->dispatch('notify',
+                type: 'info',
+                message: __('messages.no_submissions_found')
+            );
+            return;
+        }
+        
+        // Se tiver apenas uma submissão, visualiza diretamente
+        if ($submissions->count() === 1) {
+            $this->dispatch('viewFormSubmission', $submissions->first()->id);
+        } else {
+            // TODO: Implementar visualização de múltiplas submissões 
+            $this->dispatch('viewFormSubmission', $submissions->first()->id);
+        }
+    }
+
     public function render()
     {
+        // Carregar formulários personalizados disponíveis
+        $customForms = CustomForm::where('entity_type', 'shipping_note')
+            ->where('is_active', true)
+            ->get();
+            
         return view('livewire.supply-chain.shipping-notes', [
             'statusList' => ShippingNote::$statusList,
             'statusColors' => ShippingNote::$statusColors,
             'statusIcons' => ShippingNote::$statusIcons,
             'purchaseOrder' => $this->purchaseOrder,
-            'shippingNotes' => $this->currentShippingNotes
+            'shippingNotes' => $this->currentShippingNotes,
+            'customForms' => $customForms
         ]);
     }
 }

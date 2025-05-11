@@ -6,11 +6,18 @@
                 <i class="fas fa-shipping-fast text-blue-600 mr-3"></i>
                 {{ __('messages.shipping_notes') }}
             </h1>
-            <button wire:click="openAddModal" 
-                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
-                {{ __('messages.add_shipping_note') }}
-            </button>
+            <div class="flex space-x-3">
+                <a href="{{ route('supply-chain.custom-forms') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    {{ __('messages.custom_forms') }}
+                </a>
+                <button wire:click="openAddModal" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                    <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
+                    {{ __('messages.add_shipping_note') }}
+                </button>
+            </div>
         </div>
 
         <!-- Cartão de Busca e Filtros -->
@@ -235,15 +242,30 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
                                         <button wire:click="viewNote({{ $note->id }})" 
-                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110">
+                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.view_note') }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         <button wire:click="editNote({{ $note->id }})" 
-                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110">
+                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.edit_note') }}">
                                             <i class="fas fa-edit"></i>
                                         </button>
+                                        <!-- Botão para abrir formulário personalizado -->
+                                        <button wire:click="openCustomForm({{ $note->id }})" 
+                                            class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.fill_custom_form') }}">
+                                            <i class="fas fa-file-alt"></i>
+                                        </button>
+                                        <!-- Botão para visualizar submissões de formulários -->
+                                        <button wire:click="viewFormSubmissions({{ $note->id }})" 
+                                            class="text-purple-600 hover:text-purple-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.view_form_submissions') }}">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </button>
                                         <button wire:click="confirmDeleteNote({{ $note->id }})" 
-                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110">
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.delete_note') }}">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>

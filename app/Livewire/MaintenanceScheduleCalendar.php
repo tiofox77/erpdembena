@@ -536,7 +536,7 @@ class MaintenanceScheduleCalendar extends Component
     /**
      * Obtém o status da nota de manutenção para um plano e data específicos
      * Se não existir nota, retorna o status do plano
-     *
+     * 
      * @param int $planId ID do plano de manutenção
      * @param string $dateStr Data em formato Y-m-d
      * @param string $defaultStatus Status padrão caso não exista nota
@@ -544,9 +544,9 @@ class MaintenanceScheduleCalendar extends Component
      */
     private function getMaintenanceNoteStatus($planId, $dateStr, $defaultStatus = 'pending')
     {
-        // Buscar a nota mais recente para este plano e data
+        // Buscar a nota mais recente para este plano, independente da data de criação
+        // Isso garante que o status mais atual da tarefa seja exibido
         $note = \App\Models\MaintenanceNote::where('maintenance_plan_id', $planId)
-            ->whereDate('created_at', $dateStr)
             ->orderBy('created_at', 'desc')
             ->first();
         
@@ -555,7 +555,7 @@ class MaintenanceScheduleCalendar extends Component
             return $note->status;
         }
         
-        // Se não encontrou, retorna o status padrão
+        // Se não encontrou, retorna o status padrão que é o status do plano
         return $defaultStatus;
     }
 

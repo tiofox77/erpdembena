@@ -6,7 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Mrp\ProductionOrder;
 use App\Models\Mrp\PurchasePlan;
-use App\Models\Product;
+use App\Models\SupplyChain\Product;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
@@ -558,7 +558,7 @@ class FinancialReporting extends Component
 
     public function getProductsProperty()
     {
-        return Product::where('active', true)
+        return Product::where('is_active', true)
             ->when($this->search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', '%' . $search . '%')

@@ -166,9 +166,24 @@
                     <div wire:click="editEvent({{ $event['id'] }})" class="p-2 border rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
                         <div class="flex justify-between">
                             <h4 class="font-medium text-gray-900">{{ $event['title'] }}</h4>
-                            <span class="px-2 py-0.5 text-xs rounded-full {{ $event['color'] }}">
-                                {{ ucfirst($event['status']) }}
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                @php
+                                    $noteStatus = $this->getMaintenanceNoteStatus($event['id'], $this->selectedDate, $event['status']);
+                                    $noteStatusColor = match($noteStatus) {
+                                        'pending' => 'bg-yellow-100 text-yellow-800',
+                                        'in-progress' => 'bg-blue-100 text-blue-800',
+                                        'completed' => 'bg-green-100 text-green-800',
+                                        'cancelled' => 'bg-red-100 text-red-800',
+                                        default => 'bg-gray-100 text-gray-800'
+                                    };
+                                @endphp
+                                <span class="px-2 py-0.5 text-xs rounded-full {{ $noteStatusColor }}" title="{{ trans('calendar_filters.note_status') }}">
+                                    <i class="fas fa-clipboard-check mr-1 text-xs"></i>{{ ucfirst($noteStatus) }}
+                                </span>
+                                <span class="px-2 py-0.5 text-xs rounded-full {{ $event['color'] }}" title="{{ trans('calendar_filters.plan_status') }}">
+                                    {{ ucfirst($event['status']) }}
+                                </span>
+                            </div>
                         </div>
                         <p class="text-sm text-gray-600">{{ $event['equipment'] }}
                             @if(isset($event['frequency']) && $event['frequency'] != 'once')

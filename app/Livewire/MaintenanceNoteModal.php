@@ -18,6 +18,7 @@ class MaintenanceNoteModal extends Component
     public $task;
     public $maintenancePlanId;
     public $currentStatus;
+    public $selectedStatus; // Novo campo para armazenar o status selecionado pelo usuário
     public $notes = '';
     public $workFile; // Nova propriedade para o arquivo
     public $history = [];
@@ -26,6 +27,7 @@ class MaintenanceNoteModal extends Component
 
     protected $rules = [
         'notes' => 'required|string|min:5',
+        'selectedStatus' => 'required|string|in:in_progress,completed,cancelled,pending,schedule',
         'workFile' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // Max 10MB, documentos comuns
     ];
 
@@ -44,9 +46,8 @@ class MaintenanceNoteModal extends Component
     #[On('openNotesModal')]
     public function openModal($eventId)
     {
-        $this->reset(['notes', 'workFile', 'uploadError']);
+        $this->reset(['notes', 'workFile', 'uploadError', 'selectedStatus']);
 
-        $this->viewOnly = false;
         $this->maintenancePlanId = $eventId;
         $plan = MaintenancePlan::with(['task', 'equipment', 'notes'])->findOrFail($eventId);
 
@@ -58,6 +59,19 @@ class MaintenanceNoteModal extends Component
         ];
 
         $this->currentStatus = $plan->status;
+        $this->selectedStatus = $plan->status; // Inicializa o status selecionado com o status atual
+
+        // Verifica se a tarefa está com status 'completed'. Se estiver, abrir no modo somente visualização
+        $this->viewOnly = ($plan->status === 'completed');
+        
+        // Se a tarefa estiver concluída, avisar o usuário
+        if ($this->viewOnly) {
+            $this->dispatch('notify', 
+                type: 'info', 
+                title: __('messages.completed_task'),
+                message: __('messages.completed_task_edit_disabled')
+            );
+        }
 
         // Carregar histórico de notas
         $this->loadHistory();
@@ -80,6 +94,7 @@ class MaintenanceNoteModal extends Component
         ];
 
         $this->currentStatus = $plan->status;
+        $this->selectedStatus = $plan->status; // Inicializa o status selecionado com o status atual
         $this->workFile = null; // Limpar o arquivo
 
         // Load maintenance notes history
@@ -111,7 +126,7 @@ class MaintenanceNoteModal extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['task', 'maintenancePlanId', 'notes', 'workFile', 'currentStatus', 'viewOnly']);
+        $this->reset(['task', 'maintenancePlanId', 'notes', 'workFile', 'currentStatus', 'selectedStatus', 'viewOnly', 'uploadError']);
     }
 
     public function updatedWorkFile()
@@ -142,19 +157,31 @@ class MaintenanceNoteModal extends Component
             return;
         }
 
-        $this->validate();
-
         try {
+            // Validar entradas incluindo selectedStatus
+            $this->validate();
+
+            // Buscar o plano para obter o status atual (para referência no histórico se necessário)
+            $plan = MaintenancePlan::findOrFail($this->maintenancePlanId);
+            $oldStatus = $plan->status;
+            
+            // Verificar se a tarefa já está com status 'completed'
+            // Isso é uma segunda camada de proteção, além da interface
+            if ($plan->status === 'completed') {
+                // Se a tarefa já estiver concluída, não permitir alterações
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    title: __('messages.action_not_allowed'),
+                    message: __('messages.completed_task_cannot_be_modified')
+                );
+                return;
+            }
+
+            // Inicializar variáveis do arquivo
             $filePath = null;
             $fileName = null;
 
-            // Processar o upload do arquivo, se fornecido
             if ($this->workFile) {
-                // Verificar se é um arquivo válido antes de salvar
-                if (!$this->workFile->isValid()) {
-                    throw new \Exception('O arquivo não é válido ou está corrompido.');
-                }
-
                 $originalName = $this->workFile->getClientOriginalName();
                 $extension = $this->workFile->getClientOriginalExtension();
 
@@ -171,82 +198,53 @@ class MaintenanceNoteModal extends Component
                 }
             }
 
-            // Save the note
+            // Preparar mensagem da nota
+            $noteContent = $this->notes;
+            
+            // Adicionar informação sobre mudança de status na nota, se o status foi alterado
+            if ($this->selectedStatus !== $this->currentStatus) {
+                // Gravar automaticamente a alteração de status no conteúdo da nota
+                $noteContent = $this->notes . "\n\n[Status atualizado de '" . ucfirst($this->currentStatus) . "' para '" . ucfirst($this->selectedStatus) . "']";
+            }
+
+            // Salvar a nota com o status selecionado
             MaintenanceNote::create([
                 'maintenance_plan_id' => $this->maintenancePlanId,
-                'status' => $this->currentStatus,
-                'notes' => $this->notes,
+                'status' => $this->selectedStatus, // Usar o status selecionado pelo usuário
+                'notes' => $noteContent,
                 'file_path' => $filePath,
                 'file_name' => $fileName,
                 'user_id' => auth()->id(),
             ]);
 
-            // Reload history
-            $this->loadHistory();
-
-            // Clear note field and file
-            $this->reset(['notes', 'workFile', 'uploadError']);
-
-            // Send notification
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'title' => 'Nota Adicionada',
-                'message' => 'A nota foi adicionada ao histórico com sucesso.'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Erro ao salvar nota: ' . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => 'Erro',
-                'message' => 'Ocorreu um erro ao salvar a nota: ' . $e->getMessage()
-            ]);
-        }
-    }
-
-    public function updateStatus($status)
-    {
-        try {
-            // Buscar o plano para obter o status atual (apenas para referência)
-            $plan = MaintenancePlan::findOrFail($this->maintenancePlanId);
-            $oldStatus = $plan->status;
-
-            // NÃO atualizar o status do plano de manutenção
-            // Apenas registrar o status na nota
-
-            // Registrar a mudança de status no histórico
-            MaintenanceNote::create([
-                'maintenance_plan_id' => $this->maintenancePlanId,
-                'status' => $status, // Status da nota (não altera o plano)
-                'notes' => "Status da atividade alterado de '$oldStatus' para '$status'",
-                'user_id' => auth()->id(),
-            ]);
-
-            // Atualizar apenas o status atual no componente para exibição
-            $this->currentStatus = $status;
-            $this->task['status'] = $status;
+            // Atualizar o status atual para fins de interface
+            $this->currentStatus = $this->selectedStatus;
+            $this->task['status'] = $this->selectedStatus;
 
             // Recarregar histórico
             $this->loadHistory();
 
-            // Enviar notificação
-            $this->dispatch('notify', [
-                'type' => 'info',
-                'title' => 'Status Atualizado',
-                'message' => 'O status da atividade foi atualizado com sucesso no histórico.'
-            ]);
+            // Limpar campo de nota e arquivo
+            $this->reset(['notes', 'workFile', 'uploadError']);
 
-            // Não é necessário emitir evento para atualizar o calendário
-            // já que o status do plano original não foi alterado
+            // Enviar notificação usando padrão recomendado
+            $this->dispatch('notify', 
+                type: 'success', 
+                title: __('messages.note_added'),
+                message: __('messages.note_added_successfully')
+            );
 
         } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => 'Erro',
-                'message' => 'Ocorreu um erro ao atualizar o status: ' . $e->getMessage()
-            ]);
+            Log::error('Erro ao salvar nota: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                title: __('messages.error'),
+                message: __('messages.error_saving_note') . ': ' . $e->getMessage()
+            );
         }
     }
+
+    // Método updateStatus removido pois agora o status é atualizado apenas quando o formulário é submetido
 
     // Método para download do arquivo
     public function downloadFile($noteId)
