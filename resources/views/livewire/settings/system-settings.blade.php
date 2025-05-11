@@ -377,20 +377,124 @@
                                 @endif
 
                                 @if($isUpdating)
-                                <div class="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Update Progress</h3>
-                                    <p class="mb-2 text-sm text-gray-600">{{ $update_status }}</p>
-                                    <div class="relative pt-1">
-                                        <div class="overflow-hidden h-2 text-xs flex rounded bg-indigo-200">
-                                            <div style="width: {{ $update_progress }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"></div>
+                                <div class="bg-blue-50 border border-blue-200 rounded-md p-6 mb-4 shadow-lg transform transition-all duration-300 ease-in-out">
+                                    <h3 class="text-xl font-bold text-blue-800 mb-4 flex items-center">
+                                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Atualizando o Sistema
+                                    </h3>
+                                    
+                                    <!-- Etapas do processo com ícones -->
+                                    <div class="mb-6 grid grid-cols-5 gap-2">
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-2">
+                                                <div class="{{ $update_progress >= 10 ? 'bg-green-500' : ($update_progress > 0 ? 'bg-blue-500 animate-pulse' : 'bg-gray-300') }} rounded-full h-10 w-10 flex items-center justify-center text-white transition-all duration-500 ease-in-out">
+                                                    <i class="fas {{ $update_progress >= 10 ? 'fa-check' : 'fa-sync-alt' }}"></i>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs font-medium {{ $update_progress >= 10 ? 'text-green-700' : 'text-gray-600' }}">Backup</span>
                                         </div>
-                                        <div class="text-right mt-1">
-                                            <span class="text-xs font-semibold inline-block text-indigo-600">
-                                                {{ $update_progress }}%
-                                            </span>
+                                        
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-2">
+                                                <div class="{{ $update_progress >= 30 ? 'bg-green-500' : ($update_progress >= 20 ? 'bg-blue-500 animate-pulse' : 'bg-gray-300') }} rounded-full h-10 w-10 flex items-center justify-center text-white transition-all duration-500 ease-in-out">
+                                                    <i class="fas {{ $update_progress >= 30 ? 'fa-check' : 'fa-cog' }}"></i>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs font-medium {{ $update_progress >= 30 ? 'text-green-700' : 'text-gray-600' }}">Preparação</span>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-2">
+                                                <div class="{{ $update_progress >= 50 ? 'bg-green-500' : ($update_progress >= 30 ? 'bg-blue-500 animate-pulse' : 'bg-gray-300') }} rounded-full h-10 w-10 flex items-center justify-center text-white transition-all duration-500 ease-in-out">
+                                                    <i class="fas {{ $update_progress >= 50 ? 'fa-check' : 'fa-download' }}"></i>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs font-medium {{ $update_progress >= 50 ? 'text-green-700' : 'text-gray-600' }}">Download</span>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-2">
+                                                <div class="{{ $update_progress >= 90 ? 'bg-green-500' : ($update_progress >= 70 ? 'bg-blue-500 animate-pulse' : 'bg-gray-300') }} rounded-full h-10 w-10 flex items-center justify-center text-white transition-all duration-500 ease-in-out">
+                                                    <i class="fas {{ $update_progress >= 90 ? 'fa-check' : 'fa-database' }}"></i>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs font-medium {{ $update_progress >= 90 ? 'text-green-700' : 'text-gray-600' }}">Banco de Dados</span>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-2">
+                                                <div class="{{ $update_progress >= 100 ? 'bg-green-500' : ($update_progress >= 90 ? 'bg-blue-500 animate-pulse' : 'bg-gray-300') }} rounded-full h-10 w-10 flex items-center justify-center text-white transition-all duration-500 ease-in-out">
+                                                    <i class="fas {{ $update_progress >= 100 ? 'fa-check' : 'fa-flag-checkered' }}"></i>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs font-medium {{ $update_progress >= 100 ? 'text-green-700' : 'text-gray-600' }}">Finalização</span>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Status atual com animação -->
+                                    <div class="bg-white rounded-lg p-3 shadow-inner mb-4 border border-blue-100">
+                                        <div class="flex items-center">
+                                            <div class="text-blue-500 mr-3">
+                                                <i class="fas fa-info-circle text-xl"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h4 class="font-semibold text-blue-800">Status Atual:</h4>
+                                                <p class="text-sm text-blue-700">{{ $update_status }}</p>
+                                            </div>
+                                            <div class="ml-2">
+                                                <span class="inline-flex h-3 w-3 relative">
+                                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Barra de progresso aprimorada -->
+                                    <div class="relative pt-1">
+                                        <div class="flex mb-2 items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                                                    Progresso da Atualização
+                                                </span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-xs font-semibold inline-block text-blue-600">
+                                                    {{ $update_progress }}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-blue-200">
+                                            <div style="width: {{ $update_progress }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 transition-all duration-500 relative">
+                                                <div class="absolute inset-0 bg-white opacity-30 rounded-full progress-wave"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mensagem informativa -->
+                                    <div class="text-center text-sm text-blue-600 mt-2 animate-pulse">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>
+                                        Por favor, não feche o navegador durante o processo de atualização.
+                                    </div>
                                 </div>
+                                
+                                <!-- Estilos para animação de onda na barra de progresso -->
+                                <style>
+                                    @keyframes progress-wave {
+                                        0% {
+                                            transform: translateX(-100%);
+                                        }
+                                        100% {
+                                            transform: translateX(100%);
+                                        }
+                                    }
+                                    .progress-wave {
+                                        animation: progress-wave 2s linear infinite;
+                                    }
+                                </style>
                                 @endif
 
                                 <form wire:submit.prevent="saveUpdateSettings" class="bg-white rounded-md">

@@ -33,8 +33,15 @@ class AppServiceProvider extends ServiceProvider
             app()->setLocale('en');
         }
 
-        // Set timezone to UTC as default
-        date_default_timezone_set('UTC');
+        // Definir timezone baseado nas settings ou usar UTC como padrão
+        try {
+            $timezone = Setting::get('app_timezone', 'UTC');
+            date_default_timezone_set($timezone);
+            Config::set('app.timezone', $timezone);
+        } catch (\Exception $e) {
+            // Se as settings não estiverem disponíveis, usar UTC como padrão
+            date_default_timezone_set('UTC');
+        }
 
         // Update app version from database
         try {

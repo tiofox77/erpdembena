@@ -584,24 +584,32 @@ class DatabaseBackup extends Component
      */
     private function scheduleBackupTask()
     {
-        // Este método precisaria implementar a lógica específica para agendar tarefas
-        // no sistema operacional (Windows Task Scheduler, Cron no Linux, etc.)
-        // Como é algo específico do sistema, o método pode criar um arquivo de configuração
-        // que um script externo utilizaria para configurar o agendamento.
-        
-        $configPath = storage_path('app/backup_schedule.json');
-        $config = [
-            'enabled' => true,
-            'frequency' => $this->backupFrequency,
-            'time' => $this->backupTime,
-            'retention' => $this->backupRetention,
-            'last_updated' => date('Y-m-d H:i:s'),
-        ];
-        
-        file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT));
-        
-        // Esta configuração seria lida por um script de linha de comando que executa
-        // php artisan db:backup e que seria agendado no sistema
+        try {
+            // Configurar o agendamento de backup no sistema
+            $configPath = storage_path('app/backup_schedule.json');
+            $config = [
+                'enabled' => true,
+                'frequency' => $this->backupFrequency,
+                'time' => $this->backupTime,
+                'retention' => $this->backupRetention,
+                'last_updated' => date('Y-m-d H:i:s'),
+                'next_run' => $this->calculateNextRunTime(),
+            ];
+            
+            file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT));
+            
+            // Registrar no log que o backup foi agendado
+            Log::info('Backup automático agendado', [
+                'frequency' => $this->backupFrequency,
+                'time' => $this->backupTime,
+                'retention_days' => $this->backupRetention
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Erro ao agendar backup automático: ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**
@@ -609,15 +617,65 @@ class DatabaseBackup extends Component
      */
     private function removeBackupTask()
     {
-        $configPath = storage_path('app/backup_schedule.json');
-        
-        if (file_exists($configPath)) {
-            $config = json_decode(file_get_contents($configPath), true);
-            $config['enabled'] = false;
-            $config['last_updated'] = date('Y-m-d H:i:s');
+        try {
+            $configPath = storage_path('app/backup_schedule.json');
             
-            file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT));
+            if (file_exists($configPath)) {
+                $config = json_decode(file_get_contents($configPath), true);
+                $config['enabled'] = false;
+                $config['last_updated'] = date('Y-m-d H:i:s');
+                
+                file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT));
+                
+                Log::info('Backup automático desativado');
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Erro ao remover tarefa de backup: ' . $e->getMessage());
+            return false;
         }
+    }
+    
+    /**
+     * Calcular próxima data e hora de execução do backup com base na frequência
+     * @return string Data e hora formatadas
+     */
+    private function calculateNextRunTime()
+    {
+        // Extrair a hora e minuto programados
+        list($hour, $minute) = explode(':', $this->backupTime);
+        
+        // Data base para cálculo (hoje na hora configurada)
+        $date = new \DateTime();
+        $date->setTime((int)$hour, (int)$minute, 0);
+        
+        // Se a hora já passou hoje, começamos a partir de amanhã
+        $now = new \DateTime();
+        if ($date < $now) {
+            $date->modify('+1 day');
+        }
+        
+        // Ajustar conforme a frequência
+        switch ($this->backupFrequency) {
+            case 'daily':
+                // Já está configurado para o próximo dia disponível
+                break;
+                
+            case 'weekly':
+                // Ajustar para o próximo domingo
+                while ($date->format('w') != 0) { // 0 = domingo
+                    $date->modify('+1 day');
+                }
+                break;
+                
+            case 'monthly':
+                // Ajustar para o primeiro dia do próximo mês
+                $date->modify('first day of next month');
+                break;
+        }
+        
+        return $date->format('Y-m-d H:i:s');
     }
     
     /**
