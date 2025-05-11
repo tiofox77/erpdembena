@@ -496,67 +496,142 @@ class MaintenanceScheduleCalendar extends Component
         
         return false;
     }
-    
+
     /**
-     * Verifica se um evento deve ser filtrado com base no status da nota e no filtro atual
-     *
-     * @param int $planId ID do plano de manutenção
+     * Verifica se já existe uma manutenção para o mesmo equipamento na data especificada
+     * Usado para evitar duplicações no calendário
+     * 
      * @param string $dateStr Data em formato Y-m-d
-     * @return bool Retorna true se o evento deve ser filtrado (removido), false se deve ser exibido
+     * @param int $equipmentId ID do equipamento
+     * @param int $currentPlanId ID do plano atual (para evitar contar o próprio plano)
+     * @return bool Retorna true se já existe manutenção, false caso contrário
      */
+
+/**
+ * Verifica se um evento deve ser filtrado com base no status da nota e no filtro atual
+ *
+ * @param int $planId ID do plano de manutenção
+ * @param string $dateStr Data em formato Y-m-d
+ * @return bool Retorna true se o evento deve ser filtrado (removido), false se deve ser exibido
+ */
     private function hasCompletedOrCancelledNote($planId, $dateStr)
-    {
-        // Obtém o status da nota mais recente para este plano e data
-        $noteStatus = $this->getMaintenanceNoteStatus($planId, $dateStr, null);
+{
+    // Log para debug - início do método
+    \Log::info('=== INÍCIO hasCompletedOrCancelledNote ===', [
+        'planId' => $planId,
+        'dateStr' => $dateStr,
+        'noteStatusFilter' => $this->noteStatusFilter
+    ]);
+    
+    try {
+        // Converter a string de data para Carbon para manipulação segura
+        $date = \Carbon\Carbon::parse($dateStr);
         
-        // Se não existe nota, usamos o status do plano para filtrar
-        if ($noteStatus === null) {
+        // Buscar especificamente a nota mais recente para este plano E esta data específica
+        $note = \App\Models\MaintenanceNote::where('maintenance_plan_id', $planId)
+            ->whereDate('note_date', $date->format('Y-m-d'))
+            ->orderBy('created_at', 'desc')
+            ->first();
+            
+        // Log para registro da nota encontrada
+        \Log::info('Nota encontrada para filtragem:', [
+            'encontrou_nota' => $note ? 'sim' : 'não',
+            'note_status' => $note ? $note->status : 'nenhum'
+        ]);
+        
+        // Se não existe nota para esta data específica, verificamos o filtro
+        if (!$note) {
             // Se estamos filtrando para mostrar apenas completed ou cancelled, não mostramos eventos sem notas
             if ($this->noteStatusFilter === 'completed' || $this->noteStatusFilter === 'cancelled') {
+                \Log::info('Filtrando evento sem nota porque filtro é completed/cancelled');
                 return true; // Filtrar (remover) o evento
             }
+            \Log::info('Mantendo evento sem nota');
             return false; // Manter o evento
         }
         
         // Se o filtro for 'all', mostramos tudo
         if ($this->noteStatusFilter === 'all') {
+            \Log::info('Filtro é all, mantendo evento');
             return false; // Mostrar tudo
         }
         
         // Se o filtro for específico, verificamos se corresponde ao status da nota
         if ($this->noteStatusFilter !== 'all') {
             // Se o status da nota não corresponder ao filtro, removemos o evento
-            return $noteStatus !== $this->noteStatusFilter;
+            $shouldFilter = ($note->status !== $this->noteStatusFilter);
+            \Log::info('Verificando filtro específico', [
+                'note_status' => $note->status,
+                'filtro' => $this->noteStatusFilter,
+                'resultado' => $shouldFilter ? 'filtrar' : 'manter'
+            ]);
+            return $shouldFilter;
         }
         
         // Por padrão, se o status for 'completed' ou 'cancelled', filtramos
-        return in_array($noteStatus, ['completed', 'cancelled']);
+        $shouldFilter = in_array($note->status, ['completed', 'cancelled']);
+        \Log::info('Verificação padrão de completed/cancelled', [
+            'resultado' => $shouldFilter ? 'filtrar' : 'manter'
+        ]);
+        return $shouldFilter;
+    } catch (\Exception $e) {
+        \Log::error('Erro ao verificar nota para filtragem', [
+            'error' => $e->getMessage()
+        ]);
+        return false; // Em caso de erro, melhor mostrar o evento
+    } finally {
+        \Log::info('=== FIM hasCompletedOrCancelledNote ===');
+    }
     }
     
-    /**
-     * Obtém o status da nota de manutenção para um plano e data específicos
-     * Se não existir nota, retorna o status do plano
-     * 
-     * @param int $planId ID do plano de manutenção
-     * @param string $dateStr Data em formato Y-m-d
-     * @param string $defaultStatus Status padrão caso não exista nota
-     * @return string Status da nota ou status padrão
-     */
     private function getMaintenanceNoteStatus($planId, $dateStr, $defaultStatus = 'pending')
     {
-        // Buscar a nota mais recente para este plano, independente da data de criação
-        // Isso garante que o status mais atual da tarefa seja exibido
-        $note = \App\Models\MaintenanceNote::where('maintenance_plan_id', $planId)
-            ->orderBy('created_at', 'desc')
-            ->first();
-        
-        // Se encontrou uma nota, retorna o status dela
-        if ($note) {
-            return $note->status;
+        // Buscar a nota mais recente para este plano E para esta data específica
+        // Isso garante que o status de uma data não afete as outras datas
+        try {
+            // Log para debug - início do método
+            \Log::info('=== INÍCIO getMaintenanceNoteStatus ===', [
+                'planId' => $planId,
+                'dateStr' => $dateStr,
+                'defaultStatus' => $defaultStatus
+            ]);
+            
+            // Converter a string de data para Carbon para manipulação segura
+            $date = \Carbon\Carbon::parse($dateStr);
+            
+            // Buscar as notas específicas para a data do calendário usando o campo note_date
+            $note = \App\Models\MaintenanceNote::where('maintenance_plan_id', $planId)
+                ->whereDate('note_date', $date->format('Y-m-d'))
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            // Se encontrou uma nota para esta data, retorna o status dela
+            if ($note) {
+                \Log::info('Nota encontrada para a data específica', [
+                    'noteId' => $note->id,
+                    'status' => $note->status,
+                    'created_at' => $note->created_at
+                ]);
+                return $note->status;
+            }
+            
+            // Se não encontrou nota para esta data, retorna o status padrão (do plano)
+            \Log::info('Nenhuma nota encontrada para a data específica', [
+                'usando_status_padrao' => $defaultStatus
+            ]);
+            return $defaultStatus;
+        } catch (\Exception $e) {
+            // Log de erro caso ocorra alguma exceção
+            \Log::error('Erro ao obter status da nota de manutenção', [
+                'error' => $e->getMessage(),
+                'planId' => $planId,
+                'dateStr' => $dateStr
+            ]);
+            return $defaultStatus;
+        } finally {
+            // Log para debug - fim do método
+            \Log::info('=== FIM getMaintenanceNoteStatus ===');
         }
-        
-        // Se não encontrou, retorna o status padrão que é o status do plano
-        return $defaultStatus;
     }
 
     /**
@@ -686,8 +761,17 @@ class MaintenanceScheduleCalendar extends Component
     // Edit an event
     public function editEvent($eventId)
     {
-        // Dispatch event to open the notes modal
-        $this->dispatch('openNotesModal', $eventId);
+        // Log para debug
+        \Log::info('=== INÍCIO editEvent ===', [
+            'eventId' => $eventId,
+            'selectedDate' => $this->selectedDate
+        ]);
+        
+        // Dispatch event to open the notes modal with the selected date
+        $this->dispatch('openNotesModal', $eventId, $this->selectedDate);
+        
+        // Log para debug
+        \Log::info('=== FIM editEvent ===');
     }
 
     // Create a new event on the selected date

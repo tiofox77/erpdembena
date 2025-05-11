@@ -380,6 +380,7 @@ return [
     'completed_task_edit_disabled' => 'Esta tarefa está marcada como concluída e não pode ser modificada.',
     'completed_task_readonly_notice' => 'Esta tarefa foi marcada como concluída. Você pode apenas visualizar seu histórico, mas não pode adicionar novas notas ou alterar seu status.',
     'completed_task_cannot_be_modified' => 'Tarefas concluídas não podem ser modificadas. Entre em contato com um supervisor se forem necessárias alterações.',
+    'task_with_completed_note_cannot_be_modified' => 'Esta tarefa possui uma nota com status "concluído" em seu histórico e não pode ser modificada. Depois que uma tarefa é marcada como concluída, nenhuma alteração adicional é permitida.',
     'action_not_allowed' => 'Ação Não Permitida',
     
     // Status de tarefas

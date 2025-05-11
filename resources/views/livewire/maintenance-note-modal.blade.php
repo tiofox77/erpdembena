@@ -127,7 +127,17 @@
                 <!-- Column 2: Note Form and History -->
                 <div class="col-span-2">
                     <!-- Formulário de nova nota -->
-                    @if(!$viewOnly)
+                    @php
+                        // Verificar se existe alguma nota com status completed no histórico
+                        $hasCompletedNote = false;
+                        foreach ($history as $note) {
+                            if ($note['status'] === 'completed') {
+                                $hasCompletedNote = true;
+                                break;
+                            }
+                        }
+                    @endphp
+                    @if(!$viewOnly && !$hasCompletedNote)
                     <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-5">
                         <div class="flex items-center bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 border-b border-gray-200">
                             <i class="fas fa-plus-circle text-green-600 mr-2"></i>
@@ -232,6 +242,23 @@
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                    @endif
+                    
+                    <!-- Alerta para tarefas com nota completada no histórico -->
+                    @if(!$viewOnly && $hasCompletedNote)
+                    <div class="mb-5 rounded-md bg-blue-50 p-4 border border-blue-200">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-blue-800">{{ __('messages.completed_task') }}</h3>
+                                <div class="mt-2 text-sm text-blue-700">
+                                    <p>{{ __('messages.task_with_completed_note_cannot_be_modified') }}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     @endif

@@ -177,12 +177,13 @@
                                         default => 'bg-gray-100 text-gray-800'
                                     };
                                 @endphp
-                                <span class="px-2 py-0.5 text-xs rounded-full {{ $noteStatusColor }}" title="{{ trans('calendar_filters.note_status') }}">
-                                    <i class="fas fa-clipboard-check mr-1 text-xs"></i>{{ ucfirst($noteStatus) }}
-                                </span>
                                 <span class="px-2 py-0.5 text-xs rounded-full {{ $event['color'] }}" title="{{ trans('calendar_filters.plan_status') }}">
                                     {{ ucfirst($event['status']) }}
                                 </span>
+                                <span class="px-2 py-0.5 text-xs rounded-full {{ $noteStatusColor }}" title="{{ trans('calendar_filters.note_status') }}">
+                                    <i class="fas fa-clipboard-check mr-1 text-xs"></i>{{ ucfirst($noteStatus) }}
+                                </span>
+                               
                             </div>
                         </div>
                         <p class="text-sm text-gray-600">{{ $event['equipment'] }}

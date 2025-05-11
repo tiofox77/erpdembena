@@ -18,12 +18,13 @@ class MaintenanceNoteModal extends Component
     public $task;
     public $maintenancePlanId;
     public $currentStatus;
-    public $selectedStatus; // Novo campo para armazenar o status selecionado pelo usuário
+    public $selectedStatus; // Campo para armazenar o status selecionado pelo usuário
     public $notes = '';
-    public $workFile; // Nova propriedade para o arquivo
+    public $workFile; // Propriedade para o arquivo
     public $history = [];
-    public $viewOnly = false; // Flag to determine if the modal is in view-only mode
+    public $viewOnly = false; // Flag para determinar se o modal está em modo somente visualização
     public $uploadError = null;
+    public $selectedDate; // Nova propriedade para armazenar a data selecionada no calendário
 
     protected $rules = [
         'notes' => 'required|string|min:5',
@@ -44,11 +45,19 @@ class MaintenanceNoteModal extends Component
     }
 
     #[On('openNotesModal')]
-    public function openModal($eventId)
+    public function openModal($eventId, $selectedDate = null)
     {
-        $this->reset(['notes', 'workFile', 'uploadError', 'selectedStatus']);
+        $this->reset(['notes', 'workFile', 'uploadError', 'selectedStatus', 'selectedDate']);
 
         $this->maintenancePlanId = $eventId;
+        $this->selectedDate = $selectedDate ?? now()->format('Y-m-d');
+        
+        // Log para debug
+        Log::info('=== INÍCIO openModal ===', [
+            'eventId' => $eventId,
+            'selectedDate' => $this->selectedDate
+        ]);
+        
         $plan = MaintenancePlan::with(['task', 'equipment', 'notes'])->findOrFail($eventId);
 
         $this->task = [
@@ -62,15 +71,29 @@ class MaintenanceNoteModal extends Component
         $this->selectedStatus = $plan->status; // Inicializa o status selecionado com o status atual
 
         // Verifica se a tarefa está com status 'completed'. Se estiver, abrir no modo somente visualização
-        $this->viewOnly = ($plan->status === 'completed');
+        $hasCompletedNote = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
+            ->where('status', 'completed')
+            ->exists();
         
-        // Se a tarefa estiver concluída, avisar o usuário
+        // Define o modo somente visualização se o plano estiver marcado como concluído OU
+        // se existir alguma nota com status 'completed'
+        $this->viewOnly = ($plan->status === 'completed' || $hasCompletedNote);
+        
+        // Se a tarefa estiver concluída ou tiver uma nota completada, avisar o usuário
         if ($this->viewOnly) {
-            $this->dispatch('notify', 
-                type: 'info', 
-                title: __('messages.completed_task'),
-                message: __('messages.completed_task_edit_disabled')
-            );
+            if ($hasCompletedNote && $plan->status !== 'completed') {
+                $this->dispatch('notify', 
+                    type: 'info', 
+                    title: __('messages.completed_task'),
+                    message: __('messages.task_with_completed_note_cannot_be_modified')
+                );
+            } else {
+                $this->dispatch('notify', 
+                    type: 'info', 
+                    title: __('messages.completed_task'),
+                    message: __('messages.completed_task_edit_disabled')
+                );
+            }
         }
 
         // Carregar histórico de notas
@@ -105,22 +128,58 @@ class MaintenanceNoteModal extends Component
 
     public function loadHistory()
     {
-        $this->history = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
-            ->with('user')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function($note) {
-                return [
-                    'id' => $note->id,
-                    'status' => $note->status,
-                    'notes' => $note->notes,
-                    'file_name' => $note->file_name,
-                    'file_path' => $note->file_path,
-                    'user' => $note->user ? $note->user->name : 'System',
-                    'created_at' => $note->created_at->format(\App\Models\Setting::getSystemDateTimeFormat()),
-                ];
-            })
-            ->toArray();
+        try {
+            // Log para debug
+            Log::info('=== INÍCIO loadHistory ===', [
+                'planId' => $this->maintenancePlanId,
+                'selectedDate' => $this->selectedDate
+            ]);
+            
+            // Converter a string de data para Carbon para manipulação segura
+            $date = null;
+            if ($this->selectedDate) {
+                $date = \Carbon\Carbon::parse($this->selectedDate);
+                Log::info('Data selecionada parseada', ['date' => $date->format('Y-m-d')]);
+            }
+            
+            // Iniciar a query
+            $query = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId);
+            
+            // Filtrar por data se uma data foi selecionada
+            if ($date) {
+                $query->where(function($q) use ($date) {
+                    $q->where('note_date', $date->format('Y-m-d'))
+                      ->orWhereNull('note_date'); // Para compatibilidade com notas antigas
+                });
+            }
+            
+            // Buscar as notas e transformá-las
+            $this->history = $query->with('user')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($note) {
+                    return [
+                        'id' => $note->id,
+                        'status' => $note->status,
+                        'notes' => $note->notes,
+                        'file_name' => $note->file_name,
+                        'file_path' => $note->file_path,
+                        'user' => $note->user ? $note->user->name : 'System',
+                        'created_at' => $note->created_at->format('Y-m-d H:i:s'),
+                        'note_date' => $note->note_date ? $note->note_date->format('Y-m-d') : null,
+                    ];
+                })->toArray();
+                
+            Log::info('Histórico carregado', ['count' => count($this->history)]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao carregar histórico', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->history = [];
+        } finally {
+            Log::info('=== FIM loadHistory ===');
+        }
     }
 
     public function closeModal()
@@ -177,6 +236,21 @@ class MaintenanceNoteModal extends Component
                 return;
             }
 
+            // Verificar se já existe alguma nota anterior com status 'completed'
+            $hasCompletedNote = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
+                ->where('status', 'completed')
+                ->exists();
+                
+            if ($hasCompletedNote) {
+                // Se já existe uma nota com status completed, não permitir alterações
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    title: __('messages.action_not_allowed'),
+                    message: __('messages.task_with_completed_note_cannot_be_modified')
+                );
+                return;
+            }
+
             // Inicializar variáveis do arquivo
             $filePath = null;
             $fileName = null;
@@ -207,10 +281,18 @@ class MaintenanceNoteModal extends Component
                 $noteContent = $this->notes . "\n\n[Status atualizado de '" . ucfirst($this->currentStatus) . "' para '" . ucfirst($this->selectedStatus) . "']";
             }
 
-            // Salvar a nota com o status selecionado
+            // Log para debug
+            Log::info('Salvando nota para data específica', [
+                'maintenance_plan_id' => $this->maintenancePlanId,
+                'status' => $this->selectedStatus,
+                'selectedDate' => $this->selectedDate
+            ]);
+            
+            // Salvar a nota com o status selecionado E a data específica
             MaintenanceNote::create([
                 'maintenance_plan_id' => $this->maintenancePlanId,
                 'status' => $this->selectedStatus, // Usar o status selecionado pelo usuário
+                'note_date' => $this->selectedDate, // Usar a data selecionada no calendário
                 'notes' => $noteContent,
                 'file_path' => $filePath,
                 'file_name' => $fileName,
