@@ -23,14 +23,17 @@ return new class extends Migration
                 Schema::drop('mrp_demand_forecasts');
             }
             
-            // Criar a tabela novamente com a estrutura correta
+            // Criar a tabela novamente com a estrutura correta que corresponde ao componente Livewire
             Schema::create('mrp_demand_forecasts', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('product_id')->comment('Referência ao produto da previsão');
-                $table->integer('year')->comment('Ano da previsão');
-                $table->integer('month')->comment('Mês da previsão (1-12)');
-                $table->integer('quantity')->comment('Quantidade prevista');
+                $table->date('forecast_date')->comment('Data da previsão');
+                $table->integer('forecast_quantity')->comment('Quantidade prevista');
+                $table->decimal('confidence_level', 5, 2)->nullable()->comment('Nível de confiança (0-100%)');
+                $table->enum('forecast_type', ['manual', 'automatic', 'adjusted'])->default('manual')->comment('Tipo de previsão');
                 $table->text('notes')->nullable()->comment('Notas adicionais');
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
                 
@@ -40,6 +43,17 @@ return new class extends Migration
                       ->references('id')
                       ->on('sc_products')
                       ->onDelete('cascade');
+                      
+                // Chaves estrangeiras para os usuários
+                $table->foreign('created_by')
+                      ->references('id')
+                      ->on('users')
+                      ->onDelete('set null');
+                      
+                $table->foreign('updated_by')
+                      ->references('id')
+                      ->on('users')
+                      ->onDelete('set null');
             });
             
             // Garantir que a migration original seja marcada como executada

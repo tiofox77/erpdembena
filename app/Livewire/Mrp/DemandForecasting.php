@@ -182,6 +182,11 @@ class DemandForecasting extends Component
     {
         $this->validate();
         
+        // Process data before saving - convert empty values to null
+        if (isset($this->forecast['confidence_level']) && $this->forecast['confidence_level'] === '') {
+            $this->forecast['confidence_level'] = null;
+        }
+        
         if ($this->editMode) {
             $forecast = DemandForecast::findOrFail($this->forecastId);
             $forecast->fill($this->forecast);
