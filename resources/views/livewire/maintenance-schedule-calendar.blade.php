@@ -161,6 +161,21 @@
         @if(empty($selectedDateEvents))
             <p class="text-sm text-gray-500 italic">{{ trans('calendar_filters.no_tasks_scheduled') }}</p>
         @else
+            <!-- Legenda de status -->
+            <div class="mb-4 p-2 border border-gray-200 rounded-md bg-gray-50">
+                <h5 class="text-sm font-medium text-gray-700 mb-1">{{ trans('calendar_filters.status_legend') }}:</h5>
+                <div class="flex flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <span class="inline-block w-3 h-3 bg-gray-200 rounded-full mr-1"></span>
+                        <span class="text-xs text-gray-700"><i class="fas fa-tasks text-xs mr-1"></i>{{ trans('calendar_filters.plan_status') }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="inline-block w-3 h-3 bg-blue-100 rounded-full mr-1"></span>
+                        <span class="text-xs text-gray-700"><i class="fas fa-clipboard-check text-xs mr-1"></i>{{ trans('calendar_filters.note_status') }}</span>
+                    </div>
+                </div>
+            </div>
+            
             <div class="space-y-2">
                 @foreach($selectedDateEvents as $event)
                     <div wire:click="editEvent({{ $event['id'] }})" class="p-2 border rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
@@ -168,7 +183,10 @@
                             <h4 class="font-medium text-gray-900">{{ $event['title'] }}</h4>
                             <div class="flex items-center space-x-2">
                                 @php
+                                    // Obter o status correto da nota de manutenção
                                     $noteStatus = $this->getMaintenanceNoteStatus($event['id'], $this->selectedDate, $event['status']);
+                                    
+                                    // Define a cor correta para o status da nota
                                     $noteStatusColor = match($noteStatus) {
                                         'pending' => 'bg-yellow-100 text-yellow-800',
                                         'in-progress' => 'bg-blue-100 text-blue-800',
@@ -176,10 +194,21 @@
                                         'cancelled' => 'bg-red-100 text-red-800',
                                         default => 'bg-gray-100 text-gray-800'
                                     };
+                                    
+                                    // Define a cor para o status do plano
+                                    $planStatusColor = match($event['plan_status'] ?? 'pending') {
+                                        'pending' => 'bg-gray-100 text-gray-800',
+                                        'in-progress' => 'bg-gray-200 text-gray-800',
+                                        'completed' => 'bg-gray-300 text-gray-800',
+                                        'cancelled' => 'bg-gray-400 text-gray-800',
+                                        default => 'bg-gray-100 text-gray-800'
+                                    };
                                 @endphp
-                                <span class="px-2 py-0.5 text-xs rounded-full {{ $event['color'] }}" title="{{ trans('calendar_filters.plan_status') }}">
-                                    {{ ucfirst($event['status']) }}
+                                <!-- Badge para o status do PLANO de manutenção -->
+                                <span class="px-2 py-0.5 text-xs rounded-full {{ $planStatusColor }}" title="{{ trans('calendar_filters.plan_status') }}">
+                                    <i class="fas fa-tasks mr-1 text-xs"></i>{{ ucfirst($event['plan_status'] ?? 'pending') }}
                                 </span>
+                                <!-- Badge para o status da NOTA de manutenção -->
                                 <span class="px-2 py-0.5 text-xs rounded-full {{ $noteStatusColor }}" title="{{ trans('calendar_filters.note_status') }}">
                                     <i class="fas fa-clipboard-check mr-1 text-xs"></i>{{ ucfirst($noteStatus) }}
                                 </span>

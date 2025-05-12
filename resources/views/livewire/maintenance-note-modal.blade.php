@@ -107,14 +107,40 @@
                                     </div>
                                     <div class="flex-1">
                                         <span class="text-sm font-medium text-gray-500">{{ __('messages.status') }}:</span>
+                                        @php
+                                            // Obter o status da última nota, se existir
+                                            $latestNoteStatus = isset($notes[0]) ? $notes[0]['status'] : ($task['note_status'] ?? 'pending');
+                                        @endphp
                                         <span class="px-2 py-0.5 text-xs rounded-full ml-1
-                                            {{ $task['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : '' }}
-                                            {{ $task['status'] === 'completed' ? 'bg-green-100 text-green-800' : '' }}
-                                            {{ $task['status'] === 'cancelled' ? 'bg-gray-100 text-gray-800' : '' }}
-                                            {{ $task['status'] === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                            {{ $task['status'] === 'schedule' ? 'bg-purple-100 text-purple-800' : '' }}">
-                                            {{ ucfirst($task['status']) }}
+                                            {{ $latestNoteStatus === 'in-progress' || $latestNoteStatus === 'in_progress' ? 'bg-blue-100 text-blue-800' : '' }}
+                                            {{ $latestNoteStatus === 'completed' ? 'bg-green-100 text-green-800' : '' }}
+                                            {{ $latestNoteStatus === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}
+                                            {{ $latestNoteStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                            {{ $latestNoteStatus === 'schedule' ? 'bg-purple-100 text-purple-800' : '' }}">
+                                            {{ ucfirst(str_replace('_', '-', $latestNoteStatus)) }}
                                         </span>
+                                        
+                                        <!-- Status do plano (em cinza) -->
+                                        <span class="px-2 py-0.5 text-xs rounded-full ml-1 bg-gray-100 text-gray-800" title="{{ __('messages.plan_status') }}">
+                                            <i class="fas fa-tasks text-xs mr-1"></i>{{ ucfirst($task['status']) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Legenda explicativa dos status -->
+                                <div class="mt-3 p-2 border border-gray-200 rounded-md bg-gray-50 text-xs">
+                                    <h6 class="font-medium text-gray-700 mb-1">{{ __('messages.status_explanation') }}:</h6>
+                                    <div class="grid grid-cols-1 gap-1">
+                                        <div class="flex items-center">
+                                            <span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color: #EFF6FF;"></span>
+                                            <span><i class="fas fa-clipboard-check text-xs mr-1 text-blue-600"></i>{{ __('messages.note_status') }}</span>
+                                            <span class="ml-1 text-gray-600">- {{ __('messages.tracks_execution_status') }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color: #F3F4F6;"></span>
+                                            <span><i class="fas fa-tasks text-xs mr-1 text-gray-600"></i>{{ __('messages.plan_status') }}</span>
+                                            <span class="ml-1 text-gray-600">- {{ __('messages.tracks_overall_plan_status') }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -285,12 +311,12 @@
                                                     <i class="fas fa-user ml-2 mr-1"></i> {{ $note['user'] }}
                                                 </span>
                                                 <span class="px-2 py-0.5 text-xs rounded-full flex items-center
-                                                    {{ $note['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                    {{ $note['status'] === 'in_progress' || $note['status'] === 'in-progress' ? 'bg-blue-100 text-blue-800' : '' }}
                                                     {{ $note['status'] === 'completed' ? 'bg-green-100 text-green-800' : '' }}
-                                                    {{ $note['status'] === 'cancelled' ? 'bg-gray-100 text-gray-800' : '' }}
+                                                    {{ $note['status'] === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}
                                                     {{ $note['status'] === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
                                                     {{ $note['status'] === 'schedule' ? 'bg-purple-100 text-purple-800' : '' }}">
-                                                    <i class="fas fa-circle text-xs mr-1"></i> {{ ucfirst($note['status']) }}
+                                                    <i class="fas fa-circle text-xs mr-1"></i> {{ ucfirst(str_replace('_', '-', $note['status'])) }}
                                                 </span>
                                             </div>
                                             <div class="p-3 bg-gray-50 rounded-md">

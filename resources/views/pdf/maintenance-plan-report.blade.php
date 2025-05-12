@@ -169,7 +169,7 @@
         </div>
         <div style="margin-top: 15px;">
             <div class="document-title">{{ __('messages.maintenance_plan_report') }}</div>
-            <div>{{ __('messages.generated_at') }}: {{ \Carbon\Carbon::parse($generatedAt)->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</div>
+            <div>{{ __('messages.generated_at') }}: {{ $generatedAt }}</div>
         </div>
     </div>
 

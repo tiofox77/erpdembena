@@ -57,38 +57,19 @@ class SystemSettings extends Component
         'failed' => 0
     ];
 
-    // Seeders
-    public $availableSeeders = [];
-    public $selectedSeeder = '';
-    public $runningSeeder = false;
-    public $seederOutput = '';
-    public $showSeederModal = false;
-    
     // Modal states
     public $showConfirmModal = false;
     public $confirmAction = '';
     public $confirmMessage = '';
     public $confirmData = null;
+    
+    // Seeder modal
+    public $showSeederModal = false;
+    public $selectedSeeder = '';
+    public $availableSeeders = [];
+    public $runningSeeder = false;
+    public $seederOutput = '';
 
-    // Database Performance
-    public $databaseSize = 0;
-    public $databaseTables = [];
-    public $databaseStatus = [];
-    public $slowQueries = [];
-    public $isLoadingDbStats = false;
-    
-    // Database Backup
-    public $backupFiles = [];
-    public $isCreatingBackup = false;
-    public $backupFrequency = 'daily'; // daily, weekly, monthly
-    public $backupTime = '00:00';
-    public $backupRetention = 7; // dias
-    public $backupAutomation = false;
-    public $isLoadingBackups = false;
-    public $selectedBackupFile = null;
-    public $isRestoringBackup = false;
-    public $importBackupFile = null;
-    
     // Active tab
     #[Url(history: true)]
     public $activeTab = 'general';
@@ -113,13 +94,6 @@ class SystemSettings extends Component
             'company_email' => 'nullable|email|max:100',
             'company_website' => 'nullable|string|max:100',
             'company_tax_id' => 'nullable|string|max:30',
-            'backupFrequency' => 'required|in:daily,weekly,monthly',
-            'backupTime' => 'required|date_format:H:i',
-            'backupRetention' => 'required|integer|min:1|max:90',
-            'backupAutomation' => 'boolean',
-            'importBackupFile' => $this->importBackupFile instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
-                ? 'file|max:102400'
-                : 'nullable',
         ];
     }
 
@@ -150,121 +124,8 @@ class SystemSettings extends Component
     public function mount()
     {
         $this->loadSettings();
-        $this->isLoadingDbStats = false;
-        $this->loadSystemRequirements();
-        $this->checkCurrentVersion();
-        $this->loadAvailableSeeders();
-        
-        // Carrega estatísticas do banco de dados ao iniciar
-        if ($this->activeTab === 'database') {
-            $this->analyzeDatabasePerformance();
-        }
-    }
-    
-    /**
-     * Carrega a lista de seeders disponíveis no sistema
-     */
-    protected function loadAvailableSeeders()
-    {
-        try {
-            $seederPath = app_path('../database/seeders');
-            $seeders = array_filter(scandir($seederPath), function($file) {
-                return !in_array($file, ['.', '..']) && pathinfo($file, PATHINFO_EXTENSION) === 'php';
-            });
-            
-            $this->availableSeeders = [];
-            
-            foreach ($seeders as $seeder) {
-                $name = pathinfo($seeder, PATHINFO_FILENAME);
-                $this->availableSeeders[$name] = $name;
-            }
-            
-            // Adicionar opção para executar todos os seeders
-            $this->availableSeeders = ['DatabaseSeeder' => 'Todos os Seeders (DatabaseSeeder)'] + $this->availableSeeders;
-        } catch (\Exception $e) {
-            Log::error('Erro ao carregar seeders: ' . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Abre o modal para executar seeders
-     */
-    public function openSeederModal()
-    {
-        $this->selectedSeeder = 'DatabaseSeeder';
-        $this->seederOutput = '';
-        $this->showSeederModal = true;
-    }
-    
-    /**
-     * Executa o seeder selecionado
-     */
-    public function runSeeder()
-    {
-        if (empty($this->selectedSeeder)) {
-            $this->dispatch('notify', 
-                type: 'error', 
-                message: 'Selecione um seeder para executar'
-            );
-            return;
-        }
-        
-        $this->runningSeeder = true;
-        $this->seederOutput = '';
-        
-        try {
-            // Limpar o cache para garantir que as novas classes sejam carregadas
-            Artisan::call('optimize:clear');
-            $this->seederOutput .= "Cache limpo com sucesso.\n";
-            
-            // Executar o seeder
-            $output = Artisan::call('db:seed', [
-                '--class' => $this->selectedSeeder,
-                '--force' => true
-            ]);
-            
-            $this->seederOutput .= Artisan::output();
-            
-            $this->dispatch('notify', 
-                type: 'success', 
-                message: 'Seeder executado com sucesso'
-            );
-        } catch (\Exception $e) {
-            Log::error('Erro ao executar seeder: ' . $e->getMessage());
-            $this->seederOutput .= "Erro: {$e->getMessage()}\n";
-            
-            $this->dispatch('notify', 
-                type: 'error', 
-                message: 'Erro ao executar seeder: ' . $e->getMessage()
-            );
-        } finally {
-            $this->runningSeeder = false;
-        }
-    }
-    
-    /**
-     * Fecha o modal de seeders
-     */
-    public function closeSeederModal()
-    {
-        $this->showSeederModal = false;
-        $this->selectedSeeder = '';
-        $this->seederOutput = '';
-    }
-    
-    /**
-     * Verifica e carrega a versão atual do sistema
-     */
-    protected function checkCurrentVersion()
-    {
         $this->current_version = config('app.version', '1.0.0');
-    }
-    
-    /**
-     * Carrega os requisitos do sistema para verificação
-     */
-    protected function loadSystemRequirements()
-    {
+
         // Auto check system requirements if that tab is active
         if ($this->activeTab === 'requirements') {
             $this->checkSystemRequirements();
@@ -274,12 +135,10 @@ class SystemSettings extends Component
     /**
      * Define listeners for the component
      */
-    public function getListeners()
+    protected function getListeners()
     {
         return [
-            'refreshSettings' => 'loadSettings',
-            'confirmAction' => 'processConfirmedAction',
-            'databaseBackupCreated' => 'loadBackupFiles',
+            'runArtisanCommand' => 'runArtisanCommand',
         ];
     }
 
@@ -290,14 +149,6 @@ class SystemSettings extends Component
     {
         $this->company_name = Setting::get('company_name', config('app.name'));
         $this->app_timezone = Setting::get('app_timezone', config('app.timezone'));
-        
-        // Carregar configurações de backup
-        $this->backupFrequency = Setting::get('backup_frequency', 'daily');
-        $this->backupTime = Setting::get('backup_time', '00:00');
-        $this->backupRetention = Setting::get('backup_retention', 7);
-        $this->backupAutomation = (bool)Setting::get('backup_automation', false);
-        
-        // Nota: Backups são gerenciados pelo componente DatabaseBackup
         $this->date_format = Setting::get('date_format', 'm/d/Y');
         $this->currency = Setting::get('currency', 'USD');
         $this->language = Setting::get('language', 'en');
@@ -328,12 +179,7 @@ class SystemSettings extends Component
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;
-        
-        // Carrega estatísticas do banco de dados quando a aba é selecionada
-        if ($tab === 'database') {
-            $this->analyzeDatabasePerformance();
-        }
-        
+
         // Auto check system requirements when switching to that tab
         if ($tab === 'requirements') {
             $this->checkSystemRequirements();
@@ -1650,27 +1496,12 @@ class SystemSettings extends Component
      */
     public function processConfirmedAction()
     {
-        switch ($this->confirmAction) {
-            case 'runSeeder':
-                $this->runSeeder();
-                break;
-            case 'runArtisanCommand':
-                $this->runArtisanCommand($this->confirmData);
-                break;
-            case 'startUpdate':
-                $this->startUpdate();
-                break;
-            case 'restoreBackup':
-                $this->restoreBackup();
-                break;
-            case 'deleteBackup':
-                $this->deleteBackup();
-                break;
-            default:
-                // Ação não reconhecida
-                break;
+        if ($this->confirmAction === 'startUpdate') {
+            $this->startUpdate();
+        } elseif ($this->confirmAction === 'runArtisanCommand' && $this->confirmData) {
+            $this->runArtisanCommand($this->confirmData);
         }
-        
+
         $this->closeConfirmModal();
     }
 
@@ -1708,121 +1539,6 @@ class SystemSettings extends Component
         Setting::clearCache();
     }
 
-    /**
-     * Analisa o tamanho do banco de dados e estatísticas de performance
-     */
-    public function analyzeDatabasePerformance()
-    {
-        $this->isLoadingDbStats = true;
-        
-        try {
-            // Obter o tamanho total do banco de dados
-            $dbName = config('database.connections.mysql.database');
-            $sizeQuery = DB::select("SELECT 
-                table_schema as 'database', 
-                SUM(data_length + index_length) as 'size' 
-                FROM information_schema.TABLES 
-                WHERE table_schema = '$dbName' 
-                GROUP BY table_schema");
-            
-            if (!empty($sizeQuery)) {
-                $this->databaseSize = $sizeQuery[0]->size;
-            }
-            
-            // Obter tamanho das tabelas individuais
-            $tableQuery = DB::select("SELECT 
-                table_name AS 'table',
-                ROUND(((data_length + index_length) / 1024 / 1024), 2) AS 'size_mb',
-                table_rows AS 'rows',
-                ROUND((data_length / 1024 / 1024), 2) AS 'data_mb',
-                ROUND((index_length / 1024 / 1024), 2) AS 'index_mb'
-                FROM information_schema.TABLES
-                WHERE table_schema = '$dbName'
-                ORDER BY (data_length + index_length) DESC");
-            
-            $this->databaseTables = $tableQuery;
-            
-            // Obter estatísticas do banco de dados
-            $statusQuery = DB::select('SHOW STATUS');
-            $filteredStatus = [];
-            $importantMetrics = [
-                'Connections' => 'Total de conexões desde o início do servidor',
-                'Threads_connected' => 'Conexões ativas atualmente',
-                'Uptime' => 'Tempo de funcionamento em segundos',
-                'Questions' => 'Total de queries executadas',
-                'Slow_queries' => 'Número de queries lentas',
-                'Com_select' => 'Número de comandos SELECT',
-                'Com_insert' => 'Número de comandos INSERT',
-                'Com_update' => 'Número de comandos UPDATE',
-                'Com_delete' => 'Número de comandos DELETE'
-            ];
-            
-            foreach ($statusQuery as $status) {
-                if (array_key_exists($status->Variable_name, $importantMetrics)) {
-                    $filteredStatus[] = [
-                        'name' => $status->Variable_name,
-                        'value' => $status->Value,
-                        'description' => $importantMetrics[$status->Variable_name]
-                    ];
-                }
-            }
-            
-            $this->databaseStatus = $filteredStatus;
-            
-            // Tentar obter consultas lentas (se o log slow queries estiver ativado)
-            try {
-                $slowQueriesLog = DB::select("SHOW VARIABLES LIKE 'slow_query_log'");
-                if (!empty($slowQueriesLog) && $slowQueriesLog[0]->Value == 'ON') {
-                    $slowQueriesFile = DB::select("SHOW VARIABLES LIKE 'slow_query_log_file'");
-                    $this->slowQueries = [
-                        'enabled' => true,
-                        'log_file' => $slowQueriesFile[0]->Value ?? 'Não disponível',
-                        'message' => 'Log de queries lentas está ativado'
-                    ];
-                } else {
-                    $this->slowQueries = [
-                        'enabled' => false,
-                        'message' => 'Log de queries lentas não está ativado no MySQL'
-                    ];
-                }
-            } catch (\Exception $e) {
-                $this->slowQueries = [
-                    'enabled' => false,
-                    'message' => 'Não foi possível verificar o status do log de queries lentas: ' . $e->getMessage()
-                ];
-            }
-            
-            $this->dispatch('notify', 
-                type: 'success',
-                message: 'Estatísticas do banco de dados atualizadas com sucesso!'
-            );
-        } catch (\Exception $e) {
-            Log::error('Erro ao analisar banco de dados: ' . $e->getMessage());
-            $this->dispatch('notify', 
-                type: 'error',
-                message: 'Erro ao analisar banco de dados: ' . $e->getMessage()
-            );
-        }
-        
-        $this->isLoadingDbStats = false;
-    }
-    
-    /**
-     * Formata tamanho em bytes para uma unidade legível por humanos
-     */
-    private function formatBytes($bytes, $precision = 2) 
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB']; 
-   
-        $bytes = max($bytes, 0); 
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
-        $pow = min($pow, count($units) - 1); 
-   
-        $bytes /= (1 << (10 * $pow)); 
-   
-        return round($bytes, $precision) . ' ' . $units[$pow]; 
-    }
-    
     /**
      * Check system requirements
      */
@@ -2091,88 +1807,31 @@ class SystemSettings extends Component
     {
         return [
             'UTC' => 'UTC',
-            // África
-            'Africa/Abidjan' => 'África/Abidjan',
-            'Africa/Accra' => 'África/Accra',
-            'Africa/Addis_Ababa' => 'África/Addis Ababa',
-            'Africa/Algiers' => 'África/Algiers',
-            'Africa/Asmara' => 'África/Asmara',
-            'Africa/Bamako' => 'África/Bamako',
-            'Africa/Bangui' => 'África/Bangui',
-            'Africa/Banjul' => 'África/Banjul',
-            'Africa/Bissau' => 'África/Bissau',
-            'Africa/Blantyre' => 'África/Blantyre',
-            'Africa/Brazzaville' => 'África/Brazzaville',
-            'Africa/Bujumbura' => 'África/Bujumbura',
-            'Africa/Cairo' => 'África/Cairo',
-            'Africa/Casablanca' => 'África/Casablanca',
-            'Africa/Ceuta' => 'África/Ceuta',
-            'Africa/Conakry' => 'África/Conakry',
-            'Africa/Dakar' => 'África/Dakar',
-            'Africa/Dar_es_Salaam' => 'África/Dar es Salaam',
-            'Africa/Djibouti' => 'África/Djibouti',
-            'Africa/Douala' => 'África/Douala',
-            'Africa/El_Aaiun' => 'África/El Aaiun',
-            'Africa/Freetown' => 'África/Freetown',
-            'Africa/Gaborone' => 'África/Gaborone',
-            'Africa/Harare' => 'África/Harare',
-            'Africa/Johannesburg' => 'África/Johannesburg',
-            'Africa/Juba' => 'África/Juba',
-            'Africa/Kampala' => 'África/Kampala',
-            'Africa/Khartoum' => 'África/Khartoum',
-            'Africa/Kigali' => 'África/Kigali',
-            'Africa/Kinshasa' => 'África/Kinshasa',
-            'Africa/Lagos' => 'África/Lagos',
-            'Africa/Libreville' => 'África/Libreville',
-            'Africa/Lome' => 'África/Lome',
-            'Africa/Luanda' => 'África/Luanda',
-            'Africa/Lubumbashi' => 'África/Lubumbashi',
-            'Africa/Lusaka' => 'África/Lusaka',
-            'Africa/Malabo' => 'África/Malabo',
-            'Africa/Maputo' => 'África/Maputo',
-            'Africa/Maseru' => 'África/Maseru',
-            'Africa/Mbabane' => 'África/Mbabane',
-            'Africa/Mogadishu' => 'África/Mogadishu',
-            'Africa/Monrovia' => 'África/Monrovia',
-            'Africa/Nairobi' => 'África/Nairobi',
-            'Africa/Ndjamena' => 'África/Ndjamena',
-            'Africa/Niamey' => 'África/Niamey',
-            'Africa/Nouakchott' => 'África/Nouakchott',
-            'Africa/Ouagadougou' => 'África/Ouagadougou',
-            'Africa/Porto-Novo' => 'África/Porto-Novo',
-            'Africa/Sao_Tome' => 'África/São Tomé',
-            'Africa/Tripoli' => 'África/Tripoli',
-            'Africa/Tunis' => 'África/Tunis',
-            'Africa/Windhoek' => 'África/Windhoek',
-            // América
-            'America/Anchorage' => 'América/Anchorage',
-            'America/Bogota' => 'América/Bogota',
-            'America/Chicago' => 'América/Chicago',
-            'America/Los_Angeles' => 'América/Los Angeles',
-            'America/New_York' => 'América/New York',
-            'America/Sao_Paulo' => 'América/São Paulo',
-            // Ásia
-            'Asia/Bangkok' => 'Ásia/Bangkok',
-            'Asia/Dubai' => 'Ásia/Dubai',
-            'Asia/Hong_Kong' => 'Ásia/Hong Kong',
-            'Asia/Kolkata' => 'Ásia/Kolkata',
-            'Asia/Singapore' => 'Ásia/Singapore',
-            'Asia/Tokyo' => 'Ásia/Tokyo',
-            // Austrália
-            'Australia/Melbourne' => 'Austrália/Melbourne',
-            'Australia/Sydney' => 'Austrália/Sydney',
-            // Europa
-            'Europe/Amsterdam' => 'Europa/Amsterdam',
-            'Europe/Berlin' => 'Europa/Berlin',
-            'Europe/Lisbon' => 'Europa/Lisboa',
-            'Europe/London' => 'Europa/London',
-            'Europe/Madrid' => 'Europa/Madrid',
-            'Europe/Moscow' => 'Europa/Moscow',
-            'Europe/Paris' => 'Europa/Paris',
-            'Europe/Rome' => 'Europa/Rome',
-            // Pacífico
-            'Pacific/Auckland' => 'Pacífico/Auckland',
-            'Pacific/Honolulu' => 'Pacífico/Honolulu',
+            'Africa/Abidjan' => 'Africa/Abidjan',
+            'Africa/Accra' => 'Africa/Accra',
+            'Africa/Nairobi' => 'Africa/Nairobi',
+            'America/Anchorage' => 'America/Anchorage',
+            'America/Bogota' => 'America/Bogota',
+            'America/Chicago' => 'America/Chicago',
+            'America/Los_Angeles' => 'America/Los Angeles',
+            'America/New_York' => 'America/New York',
+            'America/Sao_Paulo' => 'America/S達o Paulo',
+            'Asia/Bangkok' => 'Asia/Bangkok',
+            'Asia/Dubai' => 'Asia/Dubai',
+            'Asia/Hong_Kong' => 'Asia/Hong Kong',
+            'Asia/Kolkata' => 'Asia/Kolkata',
+            'Asia/Singapore' => 'Asia/Singapore',
+            'Asia/Tokyo' => 'Asia/Tokyo',
+            'Australia/Melbourne' => 'Australia/Melbourne',
+            'Australia/Sydney' => 'Australia/Sydney',
+            'Europe/Amsterdam' => 'Europe/Amsterdam',
+            'Europe/Berlin' => 'Europe/Berlin',
+            'Europe/London' => 'Europe/London',
+            'Europe/Moscow' => 'Europe/Moscow',
+            'Europe/Paris' => 'Europe/Paris',
+            'Europe/Rome' => 'Europe/Rome',
+            'Pacific/Auckland' => 'Pacific/Auckland',
+            'Pacific/Honolulu' => 'Pacific/Honolulu',
         ];
     }
 
@@ -2259,5 +1918,78 @@ class SystemSettings extends Component
         }
 
         return $className;
+    }
+    
+    /**
+     * Open the database seeder modal
+     */
+    public function openSeederModal()
+    {
+        // Get available seeders
+        $this->availableSeeders = [
+            'DatabaseSeeder',
+            'UserSeeder',
+            'PermissionSeeder',
+            'SettingsSeeder',
+            'MaintenanceSeeder',
+            'SupplyChainSeeder'
+        ];
+        
+        $this->showSeederModal = true;
+        $this->runningSeeder = false;
+        $this->seederOutput = '';
+        $this->selectedSeeder = '';
+    }
+    
+    /**
+     * Close the database seeder modal
+     */
+    public function closeSeederModal()
+    {
+        $this->showSeederModal = false;
+        $this->runningSeeder = false;
+        $this->selectedSeeder = '';
+    }
+    
+    /**
+     * Run the selected database seeder
+     */
+    public function runSeeder()
+    {
+        if (empty($this->selectedSeeder)) {
+            $this->dispatch('notify', type: 'error', message: 'Please select a seeder first.');
+            return;
+        }
+        
+        $this->runningSeeder = true;
+        $this->seederOutput = "Running seeder: {$this->selectedSeeder}...\n";
+        
+        try {
+            // Make sure the seeder class is valid (basic validation)
+            if (!preg_match('/^[A-Za-z0-9_]+$/', $this->selectedSeeder)) {
+                throw new \Exception('Invalid seeder class name');
+            }
+            
+            // Run the seeder
+            Artisan::call('db:seed', [
+                '--class' => $this->selectedSeeder
+            ]);
+            
+            // Get output
+            $output = Artisan::output();
+            $this->seederOutput .= $output;
+            
+            $this->dispatch('notify', type: 'success', message: "Seeder {$this->selectedSeeder} executed successfully.");
+        } catch (\Exception $e) {
+            $this->seederOutput .= "Error: {$e->getMessage()}\n";
+            $this->dispatch('notify', type: 'error', message: "Error running seeder: {$e->getMessage()}");
+            Log::error("Seeder execution failed: {$e->getMessage()}", [
+                'seeder' => $this->selectedSeeder,
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+        } finally {
+            $this->runningSeeder = false;
+        }
     }
 }

@@ -2210,4 +2210,6 @@ return [
     'products' => 'Products',
     'planned_cost' => 'Planned Cost',
     'actual_cost' => 'Actual Cost',
+    'task_completed_for_specific_date' => 'This maintenance task has been marked as completed for :date only. You can still manage other dates.',
+    'completed_plan_edit_disabled' => 'This maintenance plan is marked as completed. You cannot add or edit maintenance notes.',
 ];
