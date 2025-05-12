@@ -464,4 +464,23 @@ return [
     'form_submission_view' => 'Visualizar Submissão de Formulário',
     'attachment_upload' => 'Enviar Anexo',
     'download_attachment' => 'Baixar Anexo',
+    
+    // BOM Status messages
+    'bom_status_must_be_active' => 'O status do BOM deve estar ativo',
+    'activate_bom_to_continue' => 'Por favor, altere o status do BOM para ativo no Gerenciamento de BOM para continuar',
+    'bom_inactive_warning' => 'Atenção: O produto selecionado possui BOM que não está ativo!',
+    'activate_bom_instruction' => 'Por favor, ative o BOM em Gestão de BOM para continuar.',
+    'insufficient_components_warning' => 'Atenção: Componentes insuficientes para a quantidade planejada!',
+    'maximum_possible' => 'Máximo possível',
+    'view_details' => 'Ver detalhes',
+    'available' => 'Disponível',
+    'required' => 'Necessário',
+    'missing' => 'Faltando',
+    'excessive_quantity' => 'Quantidade excessiva',
+    'verification_time_exceeded' => 'Tempo de verificação excedido',
+    'too_many_components_or_quantity' => 'Muitos componentes ou quantidade muito grande',
+    'invalid_bom_status' => 'BOM com status inválido',
+    'daily_plans_info' => 'Planos diários permitem distribuir a produção em vários dias',
+    'continue_despite_warning' => 'Você pode continuar com o planejamento apesar deste aviso',
+    'empty_daily_plans_message' => 'Você pode criar planos de produção por dia para esta programação',
 ];

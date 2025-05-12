@@ -20,6 +20,10 @@ class MaintenancePlanReport extends Component
 
     // Filters
     public $selectedMonth; // Mês selecionado no formato 'YYYY-MM'
+    public $reportType = 'month'; // Tipo de relatório: 'month', 'day', 'period'
+    public $selectedDay; // Dia específico selecionado no formato 'YYYY-MM-DD'
+    public $periodStart; // Data início do período no formato 'YYYY-MM-DD'
+    public $periodEnd; // Data fim do período no formato 'YYYY-MM-DD'
     public $status = '';
     public $type = '';
     public $equipment_id = '';
@@ -42,6 +46,12 @@ class MaintenancePlanReport extends Component
     {
         // Default to current month (YYYY-MM format)
         $this->selectedMonth = Carbon::now()->format('Y-m');
+        
+        // Inicializa as novas propriedades de data
+        $today = Carbon::today();
+        $this->selectedDay = $today->format('Y-m-d');
+        $this->periodStart = $today->startOfMonth()->format('Y-m-d');
+        $this->periodEnd = $today->endOfMonth()->format('Y-m-d');
         
         // Load holidays for the current year
         $this->loadHolidays();
@@ -102,7 +112,15 @@ class MaintenancePlanReport extends Component
 
     public function clearFilters()
     {
+        // Reset date filters
+        $today = Carbon::today();
         $this->selectedMonth = Carbon::now()->format('Y-m');
+        $this->reportType = 'month';
+        $this->selectedDay = $today->format('Y-m-d');
+        $this->periodStart = $today->startOfMonth()->format('Y-m-d');
+        $this->periodEnd = $today->endOfMonth()->format('Y-m-d');
+        
+        // Reset other filters
         $this->status = '';
         $this->type = '';
         $this->equipment_id = '';
@@ -116,25 +134,59 @@ class MaintenancePlanReport extends Component
         $this->generatingPdf = true;
         
         // Obter todos os planos filtrados sem paginação
-        $plans = $this->getFilteredPlans(false); 
+        $plans = $this->getFilteredPlans(false);
         
-        // Preparar informações de mês e período
-        list($year, $month) = explode('-', $this->selectedMonth);
-        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
-        $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
-        $monthTitle = $startOfMonth->translatedFormat('F Y'); // Nome do mês e ano na língua atual
+        // Definir período com base no tipo de relatório selecionado
+        $startDate = null;
+        $endDate = null;
+        $periodTitle = '';
         
-        // Processa cada plano para calcular suas datas de manutenção no mês
+        switch ($this->reportType) {
+            case 'day':
+                // Relatório para um dia específico
+                $startDate = Carbon::parse($this->selectedDay)->startOfDay();
+                $endDate = Carbon::parse($this->selectedDay)->endOfDay();
+                $periodTitle = $startDate->translatedFormat(Setting::getSystemDateFormat());
+                break;
+                
+            case 'period':
+                // Relatório para um período personalizado
+                $startDate = Carbon::parse($this->periodStart)->startOfDay();
+                $endDate = Carbon::parse($this->periodEnd)->endOfDay();
+                $periodTitle = $startDate->translatedFormat(Setting::getSystemDateFormat()) . ' - ' . 
+                              $endDate->translatedFormat(Setting::getSystemDateFormat());
+                break;
+                
+            case 'month':
+            default:
+                // Relatório para o mês completo (padrão)
+                list($year, $month) = explode('-', $this->selectedMonth);
+                $startDate = Carbon::createFromDate($year, $month, 1)->startOfDay();
+                $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+                $periodTitle = $startDate->translatedFormat('F Y'); // Nome do mês e ano na língua atual
+                break;
+        }
+        
+        // Processa cada plano para calcular suas datas de manutenção no período
         $processedPlans = [];
         
         foreach ($plans as $plan) {
-            // Calcular datas de ocorrência para este plano no mês selecionado
-            $occurrences = $this->generateOccurrences($plan, $startOfMonth, $endOfMonth);
+            // Calcular datas de ocorrência para este plano no período selecionado
+            $occurrences = $this->generateOccurrences($plan, $startDate, $endDate);
             
             if (count($occurrences) > 0) {
                 // Criar uma cópia do plano com suas datas de ocorrência
                 $planWithDates = clone $plan;
                 $planWithDates->occurrences = $occurrences;
+                
+                // Carregar as notas de manutenção associadas a este plano no período
+                $notes = \App\Models\MaintenanceNote::where('maintenance_plan_id', $plan->id)
+                    ->whereBetween('note_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->with('user')
+                    ->orderBy('note_date', 'asc')
+                    ->get();
+                    
+                $planWithDates->notes = $notes;
                 $processedPlans[] = $planWithDates;
             }
         }
@@ -150,21 +202,49 @@ class MaintenancePlanReport extends Component
         }
         $companyName = Setting::get('company_name', 'Company');
         
+        // Prepare additional company info for report header
+        $companyAddress = Setting::get('company_address', '');
+        $companyPhone = Setting::get('company_phone', '');
+        $companyEmail = Setting::get('company_email', '');
+        $companyWebsite = Setting::get('company_website', '');
+        $companyTaxId = Setting::get('company_tax_id', '');
+        
         // Generate PDF
         $pdf = PDF::loadView('pdf.maintenance-plan-report', [
             'plans' => $processedPlans,
             'plansByFrequency' => $plansByFrequency,
+            'reportType' => $this->reportType,
             'selectedMonth' => $this->selectedMonth,
-            'monthTitle' => $monthTitle,
-            'startDate' => $startOfMonth->format(Setting::getSystemDateFormat()),
-            'endDate' => $endOfMonth->format(Setting::getSystemDateFormat()),
+            'selectedDay' => $this->selectedDay,
+            'periodStart' => $this->periodStart,
+            'periodEnd' => $this->periodEnd,
+            'periodTitle' => $periodTitle,
+            'startDate' => $startDate->format(Setting::getSystemDateFormat()),
+            'endDate' => $endDate->format(Setting::getSystemDateFormat()),
             'generatedAt' => Carbon::now()->format(Setting::getSystemDateTimeFormat()),
             'companyName' => $companyName,
-            'companyLogo' => $companyLogo
+            'companyLogo' => $companyLogo,
+            'companyAddress' => $companyAddress,
+            'companyPhone' => $companyPhone,
+            'companyEmail' => $companyEmail,
+            'companyWebsite' => $companyWebsite,
+            'companyTaxId' => $companyTaxId
         ]);
         
-        // Generate a unique filename
-        $filename = 'maintenance_plan_report_' . time() . '.pdf';
+        // Generate a unique filename based on report type
+        $reportTypeSuffix = '';
+        switch ($this->reportType) {
+            case 'day':
+                $reportTypeSuffix = '_day_' . $this->selectedDay;
+                break;
+            case 'period':
+                $reportTypeSuffix = '_period_' . $this->periodStart . '_' . $this->periodEnd;
+                break;
+            default:
+                $reportTypeSuffix = '_month_' . $this->selectedMonth;
+        }
+        
+        $filename = 'maintenance_plan_report' . $reportTypeSuffix . '_' . time() . '.pdf';
         
         // Save to storage
         Storage::disk('public')->put('reports/' . $filename, $pdf->output());
@@ -175,7 +255,11 @@ class MaintenancePlanReport extends Component
         $this->generatingPdf = false;
         
         // Show success message using standard notification format
-        $this->dispatch('notify', type: 'success', message: __('livewire/maintenance/plan-report.pdf_generated_successfully'));
+        $this->dispatch('notify', 
+            type: 'success', 
+            title: __('messages.success'),
+            message: __('livewire/maintenance/plan-report.pdf_generated_successfully')
+        );
         
         // Dispatch browser event to trigger download
         $this->dispatch('pdfGenerated', $this->pdfUrl);
@@ -384,28 +468,49 @@ class MaintenancePlanReport extends Component
 
     public function getFilteredPlans($paginate = true)
     {
-        // Extrai ano e mês da string YYYY-MM
-        list($year, $month) = explode('-', $this->selectedMonth);
-        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
-        $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+        // Determinar período com base no tipo de relatório selecionado
+        $startDate = null;
+        $endDate = null;
+        
+        switch ($this->reportType) {
+            case 'day':
+                // Dia específico
+                $startDate = Carbon::parse($this->selectedDay)->startOfDay();
+                $endDate = Carbon::parse($this->selectedDay)->endOfDay();
+                break;
+                
+            case 'period':
+                // Período personalizado
+                $startDate = Carbon::parse($this->periodStart)->startOfDay();
+                $endDate = Carbon::parse($this->periodEnd)->endOfDay();
+                break;
+                
+            case 'month':
+            default:
+                // Mês completo (padrão)
+                list($year, $month) = explode('-', $this->selectedMonth);
+                $startDate = Carbon::createFromDate($year, $month, 1)->startOfDay();
+                $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+                break;
+        }
         
         // Buscar todos os planos ativos
         $query = MaintenancePlan::with(['equipment', 'task', 'line', 'area', 'assignedTo'])
-            ->where(function($query) use ($endOfMonth) {
-                // Incluir planos únicos com data até o fim do mês selecionado
-                $query->where(function($q) use ($endOfMonth) {
+            ->where(function($query) use ($endDate) {
+                // Incluir planos únicos com data até o fim do período selecionado
+                $query->where(function($q) use ($endDate) {
                     $q->where('frequency_type', 'once')
-                      ->where('scheduled_date', '<=', $endOfMonth);
+                      ->where('scheduled_date', '<=', $endDate);
                 });
                 
-                // OU planos recorrentes com data de início até o fim do mês
-                $query->orWhere(function($q) use ($endOfMonth) {
+                // OU planos recorrentes com data de início até o fim do período
+                $query->orWhere(function($q) use ($endDate) {
                     $q->where('frequency_type', '!=', 'once')
-                      ->where('scheduled_date', '<=', $endOfMonth);
+                      ->where('scheduled_date', '<=', $endDate);
                 });
             });
-            
-        // Aplicar outros filtros
+        
+        // Aplicar filtros adicionais
         if (!empty($this->status)) {
             $query->where('status', $this->status);
         }
@@ -423,11 +528,15 @@ class MaintenancePlanReport extends Component
         }
         
         if (!empty($this->line_id)) {
-            $query->where('line_id', $this->line_id);
+            $query->whereHas('equipment', function($q) {
+                $q->where('line_id', $this->line_id);
+            });
         }
         
         if (!empty($this->area_id)) {
-            $query->where('area_id', $this->area_id);
+            $query->whereHas('equipment', function($q) {
+                $q->where('area_id', $this->area_id);
+            });
         }
         
         // Ordenar resultados
@@ -436,12 +545,12 @@ class MaintenancePlanReport extends Component
         // Obter todos os planos que atendem aos filtros
         $allPlans = $query->get();
         
-        // Array para armazenar planos com ocorrências no mês selecionado
+        // Array para armazenar planos com ocorrências no período selecionado
         $plansWithOccurrences = [];
         
-        // Filtrar apenas os planos que têm ocorrências no mês selecionado
+        // Filtrar apenas os planos que têm ocorrências no período selecionado
         foreach ($allPlans as $plan) {
-            $occurrences = $this->generateOccurrences($plan, $startOfMonth, $endOfMonth);
+            $occurrences = $this->generateOccurrences($plan, $startDate, $endDate);
             if (count($occurrences) > 0) {
                 // Adicionar as ocorrências calculadas ao plano
                 $plan->calculatedOccurrences = $occurrences;

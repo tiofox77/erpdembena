@@ -174,7 +174,19 @@
     </div>
 
     <div class="report-info">
-        <p><strong>{{ __('messages.report_period') }}:</strong> {{ $monthTitle }}</p>
+        <p><strong>{{ __('messages.report_type') }}:</strong> 
+            @switch($reportType)
+                @case('day')
+                    {{ __('messages.specific_day_report') }}
+                    @break
+                @case('period')
+                    {{ __('messages.custom_period_report') }}
+                    @break
+                @default
+                    {{ __('messages.monthly_report') }}
+            @endswitch
+        </p>
+        <p><strong>{{ __('messages.report_period') }}:</strong> {{ $periodTitle }}</p>
         <p><strong>{{ __('messages.generated_on') }}:</strong> {{ $generatedAt }}</p>
         <p><strong>{{ __('messages.total_plans') }}:</strong> {{ count($plans) }}</p>
     </div>
@@ -225,7 +237,7 @@
 
     @if(count($plans) > 0)
         <h3 style="margin-top: 20px; margin-bottom: 15px; color: #2563eb; text-align: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">
-            {{ __('messages.maintenance_plan_schedule') }} - {{ $monthTitle }}
+            {{ __('messages.maintenance_plan_schedule') }} - {{ $periodTitle }}
         </h3>
         
         @foreach($plansByFrequency as $frequencyType => $frequencyPlans)
@@ -341,6 +353,75 @@
         </div>
     @endif
 
+    <!-- Seção de Notas de Manutenção -->
+    @php
+        $hasNotes = false;
+        foreach($plans as $plan) {
+            if(isset($plan->notes) && count($plan->notes) > 0) {
+                $hasNotes = true;
+                break;
+            }
+        }
+    @endphp
+    
+    @if($hasNotes)
+        <div style="page-break-before: always;">
+            <h3 style="margin-top: 20px; margin-bottom: 15px; color: #2563eb; text-align: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">
+                {{ __('messages.maintenance_notes') }} - {{ $periodTitle }}
+            </h3>
+            
+            @foreach($plans as $plan)
+                @if(isset($plan->notes) && count($plan->notes) > 0)
+                    <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 5px;">
+                        <h4 style="margin-top: 0; color: #1E40AF; font-size: 14px;">
+                            {{ $plan->task->title }} - {{ $plan->equipment->name }}
+                        </h4>
+                        
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('messages.date') }}</th>
+                                    <th>{{ __('messages.status') }}</th>
+                                    <th>{{ __('messages.notes') }}</th>
+                                    <th>{{ __('messages.user') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($plan->notes as $note)
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($note->note_date)->format(\App\Models\Setting::getSystemDateFormat()) }}</td>
+                                        <td>
+                                            <span class="status-badge status-{{ $note->status }}">
+                                                @switch($note->status)
+                                                    @case('pending')
+                                                        {{ __('messages.pending') }}
+                                                        @break
+                                                    @case('in_progress')
+                                                        {{ __('messages.in_progress') }}
+                                                        @break
+                                                    @case('completed')
+                                                        {{ __('messages.completed') }}
+                                                        @break
+                                                    @case('cancelled')
+                                                        {{ __('messages.cancelled') }}
+                                                        @break
+                                                    @default
+                                                        {{ $note->status }}
+                                                @endswitch
+                                            </span>
+                                        </td>
+                                        <td>{{ $note->notes }}</td>
+                                        <td>{{ $note->user ? $note->user->name : __('messages.unknown') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+    @endif
+    
     <div style="margin-top: 20px;" class="document-info">
         <table>
             <tr>

@@ -104,17 +104,27 @@
                                             
                                             <div>
                                                 <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">
-                                                    <i class="fas fa-folder text-gray-500 mr-1"></i>
                                                     {{ __('livewire/products.category') }}
                                                 </label>
-                                                <select wire:model="category_id" id="category_id" 
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
-                                                    <option value="">{{ __('livewire/products.select_category') }}</option>
+                                                <select id="category_id" wire:model="category_id" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                                    <option value="">{{ __('livewire/layout.select_option') }}</option>
                                                     @foreach($categories as $category)
                                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                                     @endforeach
                                                 </select>
                                                 @error('category_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                                            </div>
+                                            
+                                            <div>
+                                                <label for="product_type" class="block text-sm font-medium text-gray-700 mb-1">
+                                                    {{ __('livewire/products.product_type') }}
+                                                </label>
+                                                <select wire:model="product_type" id="product_type" 
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
+                                                    <option value="finished_product">{{ __('livewire/products.finished_product') }}</option>
+                                                    <option value="raw_material">{{ __('livewire/products.raw_material') }}</option>
+                                                </select>
+                                                @error('product_type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                                             </div>
                                             
                                             <div>

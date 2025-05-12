@@ -177,23 +177,26 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-bold">
                                     @if($item->is_out_of_stock)
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 shadow-sm transform transition-all duration-300 hover:scale-105">
+                                        <i class="fas fa-times-circle mr-1"></i>
                                         {{ __('messages.out_of_stock') }}
                                     </span>
-                                    <span class="ml-1 text-red-600 text-base">0</span>
-                                    <i class="fas fa-exclamation-circle text-red-600 ml-1 animate-pulse"></i>
+                                    <span class="ml-1 text-red-600 text-base font-bold">0</span>
+                                    <i class="fas fa-exclamation-circle text-red-600 ml-1 animate-pulse transform transition-all duration-500 hover:rotate-12 hover:scale-110"></i>
                                     @elseif($item->is_low_stock)
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 shadow-sm transform transition-all duration-300 hover:scale-105">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
                                         {{ __('messages.low_stock') }}
                                     </span>
-                                    <span class="ml-1 text-amber-600 text-base">{{ $item->quantity_on_hand }}</span>
-                                    <i class="fas fa-exclamation-triangle text-amber-600 ml-1 animate-pulse"></i>
+                                    <span class="ml-1 text-amber-600 text-base font-bold">{{ $item->quantity_on_hand }}</span>
+                                    <i class="fas fa-exclamation-triangle text-amber-600 ml-1 animate-pulse transform transition-all duration-500 hover:rotate-12 hover:scale-110"></i>
                                     @else
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 shadow-sm transform transition-all duration-300 hover:scale-105">
+                                        <i class="fas fa-check-circle mr-1"></i>
                                         {{ __('messages.in_stock') }}
                                     </span>
-                                    <span class="ml-1 text-green-600 text-base">{{ $item->quantity_on_hand }}</span>
-                                    <i class="fas fa-check-circle text-green-600 ml-1"></i>
+                                    <span class="ml-1 text-green-600 text-base font-bold">{{ $item->quantity_on_hand }}</span>
+                                    <i class="fas fa-check-circle text-green-600 ml-1 transform transition-all duration-300 hover:rotate-12 hover:scale-110"></i>
                                     @endif
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1 flex items-center">
@@ -328,34 +331,52 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse ($recentTransactions as $transaction)
-                            <tr>
+                            <tr class="{{ $transaction->getBackgroundColorClass() }} transition-all duration-300 ease-in-out transform hover:scale-[1.01]">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $transaction->created_at->format('d/m/Y') }}</div>
+                                    <div class="text-sm text-gray-900 font-medium">{{ $transaction->created_at->format('d/m/Y') }}</div>
                                     <div class="text-xs text-gray-500">{{ $transaction->created_at->format('H:i') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $transaction->transaction_number }}</div>
+                                    <div class="text-sm font-mono font-medium text-gray-900">{{ $transaction->transaction_number }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $transaction->product->name }}</div>
+                                    <div class="text-sm text-gray-900 font-medium flex items-center">
+                                        <i class="fas {{ $transaction->getIcon() }} {{ $transaction->getIconColorClass() }} mr-2"></i>
+                                        {{ $transaction->product->name }}
+                                    </div>
                                     <div class="text-xs text-gray-500">{{ $transaction->product->sku }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="inline-flex items-center">
                                         @if($transaction->transaction_type === 'adjustment')
                                             @if($transaction->quantity > 0)
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    <i class="fas fa-plus-circle mr-1"></i>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-green-200">
+                                                    <i class="fas fa-plus-circle mr-1 animate-pulse"></i>
                                                     {{ __('messages.stock_added') }}
                                                 </span>
                                             @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                    <i class="fas fa-minus-circle mr-1"></i>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-orange-200">
+                                                    <i class="fas fa-minus-circle mr-1 animate-pulse"></i>
                                                     {{ __('messages.stock_removed') }}
                                                 </span>
                                             @endif
+                                        @elseif($transaction->transaction_type === 'purchase_receipt')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-green-200">
+                                                <i class="fas fa-truck-loading mr-1"></i>
+                                                {{ __('messages.purchase_receipt') }}
+                                            </span>
+                                        @elseif($transaction->transaction_type === 'sales_issue')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-orange-200">
+                                                <i class="fas fa-shopping-cart mr-1"></i>
+                                                {{ __('messages.sales_issue') }}
+                                            </span>
+                                        @elseif($transaction->transaction_type === 'production')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-purple-200">
+                                                <i class="fas fa-industry mr-1"></i>
+                                                {{ __('messages.production') }}
+                                            </span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-blue-200">
                                                 <i class="fas fa-exchange-alt mr-1"></i>
                                                 {{ __('messages.stock_transfer') }}
                                             </span>
@@ -363,21 +384,59 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium {{ $transaction->quantity > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $transaction->quantity > 0 ? '+' : '' }}{{ number_format($transaction->quantity, 2) }}
-                                    </div>
+                                    @if($transaction->quantity > 0)
+                                        <div class="text-sm font-bold text-green-600 flex items-center animate-fadeIn transition-all duration-300 hover:scale-110">
+                                            <span class="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">+</span>
+                                            {{ number_format($transaction->quantity, 2) }}
+                                        </div>
+                                    @elseif($transaction->quantity < 0)
+                                        <div class="text-sm font-bold text-orange-600 flex items-center animate-pulse transition-all duration-300 hover:scale-110">
+                                            <span class="bg-orange-100 text-orange-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">-</span>
+                                            {{ number_format(abs($transaction->quantity), 2) }}
+                                        </div>
+                                    @else
+                                        <div class="text-sm font-medium text-gray-600 flex items-center">
+                                            <span class="bg-gray-100 text-gray-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">0</span>
+                                            {{ number_format($transaction->quantity, 2) }}
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($transaction->source_location_id && $transaction->destination_location_id)
-                                    <div class="text-sm text-gray-900">
-                                        {{ $transaction->sourceLocation->name }} → {{ $transaction->destinationLocation->name }}
+                                    <div class="text-sm text-indigo-700 font-medium flex items-center">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-warehouse text-gray-600 mr-1"></i>
+                                            {{ $transaction->sourceLocation->name }}
+                                        </span>
+                                        <span class="mx-2 text-indigo-500 transform transition-all duration-500 hover:translate-x-1">
+                                            <i class="fas fa-long-arrow-alt-right animate-pulse"></i>
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-warehouse text-gray-600 mr-1"></i>
+                                            {{ $transaction->destinationLocation->name }}
+                                        </span>
                                     </div>
                                     @elseif($transaction->source_location_id)
-                                    <div class="text-sm text-gray-900">{{ $transaction->sourceLocation->name }}</div>
+                                    <div class="text-sm text-red-600 font-medium flex items-center">
+                                        <i class="fas fa-warehouse text-red-500 mr-1"></i>
+                                        {{ $transaction->sourceLocation->name }}
+                                        <span class="ml-2 text-red-400">
+                                            <i class="fas fa-arrow-alt-circle-down"></i>
+                                        </span>
+                                    </div>
                                     @elseif($transaction->destination_location_id)
-                                    <div class="text-sm text-gray-900">{{ $transaction->destinationLocation->name }}</div>
+                                    <div class="text-sm text-green-600 font-medium flex items-center">
+                                        <i class="fas fa-warehouse text-green-500 mr-1"></i>
+                                        {{ $transaction->destinationLocation->name }}
+                                        <span class="ml-2 text-green-400">
+                                            <i class="fas fa-arrow-alt-circle-up"></i>
+                                        </span>
+                                    </div>
                                     @else
-                                    <div class="text-sm text-gray-900">-</div>
+                                    <div class="text-sm text-gray-500 italic flex items-center">
+                                        <i class="fas fa-question-circle text-gray-400 mr-1"></i>
+                                        {{ __('messages.no_location') }}
+                                    </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

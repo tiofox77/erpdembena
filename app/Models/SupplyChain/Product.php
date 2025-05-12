@@ -32,6 +32,7 @@ class Product extends Model
         'lead_time_days',
         'is_stockable',
         'is_active',
+        'product_type',
         'primary_supplier_id',
         'tax_type',
         'tax_rate',

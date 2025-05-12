@@ -12,20 +12,95 @@
                     <h3 class="text-lg font-medium text-gray-700 mb-4 flex items-center">
                         <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filter_options') }}
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <!-- Month Filter -->
-                        <div>
-                            <label for="selectedMonth" class="block text-sm font-medium text-gray-700 mb-1">
-                                <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
-                                {{ __('messages.select_month') }}
-                            </label>
-                            <input 
-                                type="month" 
-                                id="selectedMonth" 
-                                wire:model.live="selectedMonth" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >
+                    <!-- Report Type Selection -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
+                            {{ __('messages.select_date_range') }}
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                            <!-- Report Type Selection -->
+                            <div>
+                                <label for="reportType" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-filter text-gray-500 mr-1"></i>
+                                    {{ __('messages.report_type') }}
+                                </label>
+                                <select 
+                                    id="reportType" 
+                                    wire:model.live="reportType" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                >
+                                    <option value="month">{{ __('messages.monthly_report') }}</option>
+                                    <option value="day">{{ __('messages.specific_day_report') }}</option>
+                                    <option value="period">{{ __('messages.custom_period_report') }}</option>
+                                </select>
+                            </div>
                         </div>
+                        
+                        <!-- Conditional Date Fields Based on Report Type -->
+                        <div>
+                            @if($reportType === 'month')
+                                <!-- Month Selection -->
+                                <div>
+                                    <label for="selectedMonth" class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="far fa-calendar-alt text-gray-500 mr-1"></i>
+                                        {{ __('messages.select_month') }}
+                                    </label>
+                                    <input 
+                                        type="month" 
+                                        id="selectedMonth" 
+                                        wire:model.live="selectedMonth" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    >
+                                </div>
+                            @elseif($reportType === 'day')
+                                <!-- Day Selection -->
+                                <div>
+                                    <label for="selectedDay" class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="far fa-calendar-day text-gray-500 mr-1"></i>
+                                        {{ __('messages.select_specific_day') }}
+                                    </label>
+                                    <input 
+                                        type="date" 
+                                        id="selectedDay" 
+                                        wire:model.live="selectedDay" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    >
+                                </div>
+                            @elseif($reportType === 'period')
+                                <!-- Period Selection -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="periodStart" class="block text-sm font-medium text-gray-700 mb-1">
+                                            <i class="far fa-calendar-minus text-gray-500 mr-1"></i>
+                                            {{ __('messages.start_date') }}
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            id="periodStart" 
+                                            wire:model.live="periodStart" 
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label for="periodEnd" class="block text-sm font-medium text-gray-700 mb-1">
+                                            <i class="far fa-calendar-plus text-gray-500 mr-1"></i>
+                                            {{ __('messages.end_date') }}
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            id="periodEnd" 
+                                            wire:model.live="periodEnd" 
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        >
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         
                         <!-- Status Filter -->
                         <div>

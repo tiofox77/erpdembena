@@ -33,6 +33,7 @@ class Products extends Component
     public $lead_time_days = 0;
     public $is_stockable = true;
     public $is_active = true;
+    public $product_type = 'finished_product';
     public $primary_supplier_id;
     public $tax_type = 'standard';
     public $tax_rate = 0;
@@ -81,6 +82,7 @@ class Products extends Component
             'lead_time_days' => 'required|integer|min:0',
             'is_stockable' => 'boolean',
             'is_active' => 'boolean',
+            'product_type' => 'required|in:finished_product,raw_material',
             'primary_supplier_id' => 'nullable|exists:sc_suppliers,id',
             'tax_type' => 'required|in:standard,reduced,exempt',
             'tax_rate' => 'required|numeric|min:0|max:100',
@@ -164,6 +166,7 @@ class Products extends Component
         $this->lead_time_days = $product->lead_time_days;
         $this->is_stockable = $product->is_stockable;
         $this->is_active = $product->is_active;
+        $this->product_type = $product->product_type;
         $this->primary_supplier_id = $product->primary_supplier_id;
         $this->tax_type = $product->tax_type;
         $this->tax_rate = $product->tax_rate;
@@ -195,6 +198,7 @@ class Products extends Component
         $this->lead_time_days = $product->lead_time_days;
         $this->is_stockable = $product->is_stockable;
         $this->is_active = $product->is_active;
+        $this->product_type = $product->product_type;
         $this->primary_supplier_id = $product->primary_supplier_id;
         $this->tax_type = $product->tax_type;
         $this->tax_rate = $product->tax_rate;
@@ -210,6 +214,12 @@ class Products extends Component
     public function save()
     {
         $this->validate();
+        
+        // Log initial product_type value
+        \Illuminate\Support\Facades\Log::info('Product save started', [
+            'product_id' => $this->product_id,
+            'product_type_before' => $this->product_type
+        ]);
         
         DB::beginTransaction();
         try {
@@ -230,6 +240,7 @@ class Products extends Component
             $product->lead_time_days = $this->lead_time_days;
             $product->is_stockable = $this->is_stockable;
             $product->is_active = $this->is_active;
+            $product->product_type = $this->product_type; // Explicitly set product type
             $product->primary_supplier_id = $this->primary_supplier_id;
             $product->tax_type = $this->tax_type;
             $product->tax_rate = $this->tax_rate;
@@ -250,7 +261,23 @@ class Products extends Component
                 $product->image = str_replace('public/', '', $imagePath);
             }
             
+            // Log before saving
+            \Illuminate\Support\Facades\Log::info('Product before save', [
+                'product_id' => $product->id ?? 'new',
+                'product_type' => $product->product_type,
+                'livewire_product_type' => $this->product_type,
+                'all_attributes' => $product->toArray()
+            ]);
+            
             $product->save();
+            
+            // Log after saving to verify database state
+            \Illuminate\Support\Facades\Log::info('Product after save', [
+                'product_id' => $product->id,
+                'product_type' => $product->product_type,
+                'livewire_product_type' => $this->product_type,
+                'saved_product' => Product::find($product->id)->toArray()
+            ]);
             
             DB::commit();
             
@@ -267,6 +294,19 @@ class Products extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Log detailed error information
+            \Illuminate\Support\Facades\Log::error('Product save error', [
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'error_trace' => $e->getTraceAsString(),
+                'product_id' => $this->product_id,
+                'product_type' => $this->product_type,
+                'livewire_state' => $this->all()
+            ]);
+            
             $this->dispatch('notify', [
                 'type' => 'error',
                 'title' => __('livewire/products.error'),
@@ -348,6 +388,7 @@ class Products extends Component
         $this->lead_time_days = 0;
         $this->is_stockable = true;
         $this->is_active = true;
+        $this->product_type = 'finished_product';
         $this->tax_type = 'standard';
         $this->tax_rate = 0;
         $this->currentTab = 'general';

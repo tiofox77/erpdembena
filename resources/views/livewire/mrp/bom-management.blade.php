@@ -364,9 +364,9 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @php 
-                                    // Detectar qual variável usar na tabela
-                                    // Isso garante que a tabela use a variável que tem dados
-                                    $displayComponents = count($components ?? []) > 0 ? $components : $bomComponents ?? [];
+                                    // Usar apenas os componentes efetivamente associados à BOM atual
+                                    // Isso evita mostrar componentes que não estão cadastrados na BOM
+                                    $displayComponents = $bomComponents ?? [];
                                 @endphp
                                 
                                 @forelse ($displayComponents as $component)

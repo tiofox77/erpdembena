@@ -303,7 +303,8 @@ class Inventory extends Component
 
                 // Create transaction record
                 $transaction = new InventoryTransaction();
-                $transaction->transaction_number = InventoryTransaction::generateTransactionNumber('ADJ');
+                // Generate transaction number within the transaction context to use the lock
+                $transaction->transaction_number = InventoryTransaction::generateTransactionNumber();
                 $transaction->transaction_type = 'adjustment';
                 $transaction->product_id = $productId;
                 $transaction->source_location_id = $this->selectedLocationId;

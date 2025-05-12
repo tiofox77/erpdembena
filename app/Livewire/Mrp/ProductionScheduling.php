@@ -6,6 +6,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Mrp\ProductionSchedule;
 use App\Models\Mrp\ProductionOrder;
+use App\Models\Mrp\BomHeader;
+use App\Models\Mrp\BomDetail;
 use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation as Location;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +28,12 @@ class ProductionScheduling extends Component
     public $currentTab = 'list';
     public $viewType = 'table'; // Tipo de visualização (tabela ou calendário)
     
+    // Verificação de componentes
+    public $componentAvailability = [];
+    public $showComponentWarning = false;
+    public $insufficientComponents = [];
+    public $maxQuantityPossible = 0;
+    
     // Propriedades para modal
     public $showModal = false;
     public $showDeleteModal = false;
@@ -43,6 +51,187 @@ class ProductionScheduling extends Component
         'description' => '',
         'status' => 'pending'
     ];
+    
+    protected $listeners = [
+        'startProduction' => 'startProduction',
+        'completeProduction' => 'completeProduction',
+        'updateWipInventory' => 'updateWipInventory',
+        'updated:schedule.product_id' => 'checkComponentAvailability',
+        'updated:schedule.planned_quantity' => 'checkComponentAvailability'
+    ];
+    
+    /**
+     * Método para verificar a disponibilidade de componentes com base na BOM do produto
+     * É chamado automaticamente quando o produto ou a quantidade planejada é alterada
+     */
+    public function checkComponentAvailability()
+    {
+        // Inicializar variáveis com valores padrão
+        $this->showComponentWarning = false;
+        $this->insufficientComponents = [];
+        $this->maxQuantityPossible = 0;
+        
+        // Define um tempo limite para prevenir loops infinitos
+        $startTime = microtime(true);
+        $timeLimit = 2.0; // limite de 2 segundos para execução
+        
+        // Registrar o início da verificação para debug
+        \Illuminate\Support\Facades\Log::info('Iniciando verificação de componentes', [
+            'product_id' => $this->schedule['product_id'] ?? 'nenhum',
+            'planned_quantity' => $this->schedule['planned_quantity'] ?? 'nenhuma'
+        ]);
+        
+        // Se não há produto selecionado, não há o que verificar
+        if (empty($this->schedule['product_id'])) {
+            return;
+        }
+        
+        // Garantir que a quantidade seja numérica, mesmo que seja zero
+        $planned_quantity = isset($this->schedule['planned_quantity']) && is_numeric($this->schedule['planned_quantity']) 
+            ? (float)$this->schedule['planned_quantity'] 
+            : 0;
+            
+        // Verifica se a quantidade é muito grande (acima de 1 milhão)
+        if ($planned_quantity > 1000000) {
+            $this->showComponentWarning = true;
+            $this->insufficientComponents = [[
+                'name' => __('messages.excessive_quantity'),
+                'sku' => 'N/A',
+                'required' => $planned_quantity,
+                'available' => 'N/A',
+                'missing' => 'N/A'
+            ]];
+            \Illuminate\Support\Facades\Log::warning('Verificação de componentes cancelada: quantidade muito grande', [
+                'planned_quantity' => $planned_quantity
+            ]);
+            return;
+        }
+        
+        // Primeiro, verificar se existe alguma BOM para o produto, independente do status
+        $anyBom = BomHeader::where('product_id', $this->schedule['product_id'])->first();
+        
+        if (!$anyBom) {
+            // Produto não tem BOM cadastrada, não há como verificar componentes
+            return;
+        }
+        
+        // Verificar se a BOM encontrada está com status ativo
+        if ($anyBom->status !== 'active') {
+            // BOM existe mas não está ativa
+            $this->showComponentWarning = true;
+            $this->insufficientComponents = [[
+                'name' => __('messages.invalid_bom_status'),
+                'sku' => $anyBom->bom_number,
+                'required' => __('messages.bom_status_must_be_active'),
+                'available' => $anyBom->status,
+                'missing' => __('messages.activate_bom_to_continue')
+            ]];
+            return;
+        }
+        
+        // Usar a BOM ativa encontrada
+        $bomHeader = $anyBom;
+        
+        // Buscar todos os componentes da BOM
+        $components = BomDetail::where('bom_header_id', $bomHeader->id)
+            ->with(['component' => function($query) {
+                $query->with('inventoryItems');
+            }])
+            ->get();
+            
+        if ($components->isEmpty()) {
+            // BOM existe mas não tem componentes cadastrados
+            return;
+        }
+        
+        // Usar a variável planned_quantity já definida acima
+        $this->componentAvailability = [];
+        $insufficientFound = false;
+        $maxPossible = PHP_INT_MAX;
+        
+        // Registrar a quantidade para debug
+        \Illuminate\Support\Facades\Log::info('Verificando quantidade:', [
+            'planned_quantity' => $planned_quantity,
+            'product_id' => $this->schedule['product_id']
+        ]);
+        
+        foreach ($components as $bomComponent) {
+        // Verificar se o tempo limite foi atingido
+        if ((microtime(true) - $startTime) > $timeLimit) {
+            \Illuminate\Support\Facades\Log::warning('Verificação de componentes interrompida: tempo limite excedido', [
+                'product_id' => $this->schedule['product_id'],
+                'planned_quantity' => $planned_quantity,
+                'processed_components' => count($this->componentAvailability)
+            ]);
+            
+            $this->showComponentWarning = true;
+            $this->insufficientComponents[] = [
+                'name' => __('messages.verification_time_exceeded'),
+                'sku' => 'N/A',
+                'required' => 'N/A',
+                'available' => 'N/A',
+                'missing' => __('messages.too_many_components_or_quantity')
+            ];
+            
+            // Atualizar flags e valores para usar na UI
+            return;
+        }
+        
+        // Pular componentes inválidos
+        if (!$bomComponent->component) {
+            continue;
+        }
+        
+        // Calcular quantidade necessária do componente
+        $required_quantity = $bomComponent->quantity * $planned_quantity;
+        
+        // Calcular quantidade disponível (somar todos os locais de inventário)
+        $available_quantity = 0;
+        if ($bomComponent->component->inventoryItems) {
+            $available_quantity = $bomComponent->component->inventoryItems->sum('quantity_on_hand');
+        }
+        
+        // Verificar se há quantidade suficiente
+        $sufficient = $available_quantity >= $required_quantity;
+        
+        // Calcular quantas unidades do produto final podem ser produzidas com esse componente
+        $maxProducible = $bomComponent->quantity > 0 
+            ? floor($available_quantity / $bomComponent->quantity) 
+            : 0;
+            
+        // Atualizar a quantidade máxima possível (o mínimo entre todos os componentes)
+        if ($maxProducible < $maxPossible) {
+            $maxPossible = $maxProducible;
+        }
+        
+        // Armazenar informações sobre esse componente
+        $this->componentAvailability[] = [
+            'component_id' => $bomComponent->component_id,
+            'name' => $bomComponent->component->name,
+            'sku' => $bomComponent->component->sku,
+            'required_quantity' => $required_quantity,
+            'available_quantity' => $available_quantity,
+            'sufficient' => $sufficient,
+            'max_producible' => $maxProducible
+        ];
+        
+        // Se não há quantidade suficiente, registrar para alerta
+        if (!$sufficient) {
+            $insufficientFound = true;
+            $this->insufficientComponents[] = [
+                'name' => $bomComponent->component->name,
+                'sku' => $bomComponent->component->sku,
+                'required' => $required_quantity,
+                'available' => $available_quantity,
+                'missing' => $required_quantity - $available_quantity
+            ];
+        }
+    }
+        
+        // Atualizar flags e valores para usar na UI
+        $this->showComponentWarning = $insufficientFound;
+        $this->maxQuantityPossible = $maxPossible;
+    }
     
     // Propriedades do formulário
     public $schedule = [
@@ -1210,6 +1399,26 @@ public function confirmDelete($id)
             $this->viewingDailyPlans = true;
             $this->showDailyPlansModal = true;
             
+            // Verificar disponibilidade de componentes para esta programação
+            // Salvar o produto_id e a quantidade planejada atual
+            $savedProductId = $this->schedule['product_id'] ?? null;
+            $savedQuantity = $this->schedule['planned_quantity'] ?? null;
+            
+            // Temporariamente definir os valores da programação que estamos visualizando
+            $this->schedule['product_id'] = $schedule->product_id;
+            $this->schedule['planned_quantity'] = $schedule->planned_quantity;
+            
+            // Executar a verificação de componentes
+            $this->checkComponentAvailability();
+            
+            // Restaurar os valores originais se necessário
+            if ($savedProductId) {
+                $this->schedule['product_id'] = $savedProductId;
+            }
+            if ($savedQuantity) {
+                $this->schedule['planned_quantity'] = $savedQuantity;
+            }
+            
             \Illuminate\Support\Facades\Log::info('Planos diários carregados com sucesso', 
                 ['id' => $id, 'número' => $schedule->schedule_number, 'produto' => $schedule->product->name]
             );
@@ -1477,8 +1686,8 @@ public function store()
         
         $schedules = $query->paginate($this->perPage);
         
-        // Carregar dados para selects
-        $products = Product::where('type', 'finished')->orderBy('name')->get();
+        // Carregar dados para selects - apenas produtos do tipo finished_product
+        $products = Product::where('product_type', 'finished_product')->orderBy('name')->get();
         
         // Carregar localizações de inventário da supply chain
         $locations = Location::orderBy('name')->get();
@@ -1532,5 +1741,4 @@ public function store()
             'title' => 'Programação de Produção'
         ]);
     }
-    
 }

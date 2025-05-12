@@ -10,9 +10,11 @@ use App\Models\Mrp\BomHeader;
 use App\Models\Mrp\BomDetail;
 use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation as Location;
+use App\Models\SupplyChain\InventoryItem;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProductionOrders extends Component
 {
@@ -29,6 +31,7 @@ class ProductionOrders extends Component
     public $showDeleteModal = false;
     public $showDetailsModal = false;
     public $showMaterialsModal = false;
+    public $showAvailabilityModal = false; // Modal para mostrar logs de disponibilidade
     public $editMode = false;
     public $orderId = null;
     
@@ -55,6 +58,11 @@ class ProductionOrders extends Component
     public $availableBoms = [];
     public $availableSchedules = [];
     public $bomComponents = [];
+    
+    // Propriedades para verificação de disponibilidade
+    public $availabilityLog = [];
+    public $availabilityComponents = [];
+    public $verificationInProgress = false;
     
     // Propriedades de filtro
     public $statusFilter = null;
@@ -482,6 +490,190 @@ class ProductionOrders extends Component
         $this->showDeleteModal = false;
         $this->showDetailsModal = false;
         $this->showMaterialsModal = false;
+        $this->showAvailabilityModal = false;
+        
+        // Limpar logs de disponibilidade quando fechar o modal
+        $this->availabilityLog = [];
+        $this->availabilityComponents = [];
+        $this->verificationInProgress = false;
+    }
+    
+    /**
+     * Verificar disponibilidade dos componentes para uma ordem de produção
+     * 
+     * @param ProductionOrder $order A ordem de produção a ser verificada
+     * @param bool $logOnly Se true, apenas registra logs sem bloquear a operação
+     * @return array Resultado da verificação com status e mensagem
+     */
+    public function verifyComponentsAvailability(ProductionOrder $order, $logOnly = false)
+    {
+        // Verificar se há uma BOM associada à ordem
+        if (!$order->bomHeader) {
+            Log::warning("Verificação de disponibilidade falhou: Ordem #{$order->id} não tem BOM associada");
+            return [
+                'success' => false,
+                'message' => 'Esta ordem não possui uma lista de materiais (BOM) associada.'
+            ];
+        }
+        
+        // Para evitar loop infinito, marcamos que a verificação está em andamento
+        if ($this->verificationInProgress) {
+            Log::warning("Evitando loop infinito na verificação de disponibilidade para ordem #{$order->id}");
+            return [
+                'success' => $logOnly, // Se estamos apenas logando, permitimos continuar
+                'message' => 'Verificação já está em andamento. Evitando loop infinito.'
+            ];
+        }
+        
+        $this->verificationInProgress = true;
+        $this->availabilityLog = []; // Limpar logs anteriores
+        
+        try {
+            Log::info("Iniciando verificação de disponibilidade para ordem #{$order->id}", [
+                'product_id' => $order->product_id,
+                'bom_id' => $order->bom_header_id,
+                'quantity' => $order->planned_quantity
+            ]);
+            
+            $this->addAvailabilityLog("Iniciando verificação de componentes para produção de {$order->planned_quantity} unidades do produto ID: {$order->product_id}");
+            
+            // Buscar todos os componentes da BOM com seus produtos associados
+            $components = BomDetail::where('bom_header_id', $order->bom_header_id)
+                ->with(['component' => function($query) {
+                    $query->withSum('inventoryItems', 'quantity_on_hand');
+                }])
+                ->get();
+            
+            $this->addAvailabilityLog("Encontrados " . $components->count() . " componentes na BOM");
+            
+            // Verificar a disponibilidade de cada componente
+            $unavailableComponents = [];
+            $this->availabilityComponents = [];
+            
+            foreach ($components as $index => $component) {
+                // Evitar loop infinito verificando tempo de execução
+                if ($index > 0 && $index % 10 === 0) {
+                    $this->addAvailabilityLog("Verificação em andamento... processados {$index} de " . $components->count() . " componentes");
+                }
+                
+                // Calcular quantidade necessária para a produção
+                $requiredQuantity = $component->quantity * $order->planned_quantity;
+                
+                // Buscar estoque disponível
+                $availableQuantity = $component->component->inventory_items_sum_quantity_on_hand ?? 0;
+                
+                if (!$availableQuantity) {
+                    // Tenta buscar diretamente do inventário
+                    $inventoryItems = InventoryItem::where('product_id', $component->component_id)->get();
+                    $availableQuantity = $inventoryItems->sum('quantity_on_hand');
+                }
+                
+                $isAvailable = $availableQuantity >= $requiredQuantity;
+                $shortage = $isAvailable ? 0 : ($requiredQuantity - $availableQuantity);
+                
+                // Registrar resultado da verificação para este componente
+                $this->availabilityComponents[] = [
+                    'component_id' => $component->component_id,
+                    'name' => $component->component ? ($component->component->name ?? "Sem nome") : "Componente ID: {$component->component_id}",
+                    'required_quantity' => $requiredQuantity,
+                    'available_quantity' => $availableQuantity,
+                    'is_available' => $isAvailable,
+                    'shortage' => $shortage,
+                    'is_critical' => $component->is_critical
+                ];
+                
+                // Fix: Can't use null coalescing operator inside string interpolation
+                $componentName = $component->component ? ($component->component->name ?? "Sem nome") : "Componente ID: {$component->component_id}";
+                $logMessage = "Componente: {$componentName} - ";
+                $logMessage .= "Necessário: {$requiredQuantity} - Disponível: {$availableQuantity} - ";
+                $logMessage .= $isAvailable ? "OK" : "FALTA {$shortage} unidades";
+                
+                $this->addAvailabilityLog($logMessage);
+                
+                // Se o componente não está disponível e é crítico, adicionar à lista de indisponíveis
+                if (!$isAvailable && $component->is_critical) {
+                    $unavailableComponents[] = [
+                        'name' => $component->component->name ?? "Componente ID: {$component->component_id}",
+                        'shortage' => $shortage
+                    ];
+                }
+            }
+            
+            // Verificar se há componentes críticos indisponíveis
+            if (!empty($unavailableComponents) && !$logOnly) {
+                $componentsText = implode(', ', array_map(function($item) {
+                    return "{$item['name']} (faltam {$item['shortage']} unidades)";
+                }, $unavailableComponents));
+                
+                $message = "Componentes críticos indisponíveis: {$componentsText}";
+                $this->addAvailabilityLog("ERRO: " . $message);
+                
+                Log::warning("Verificação de disponibilidade falhou para ordem #{$order->id}: {$message}", [
+                    'unavailable_components' => $unavailableComponents
+                ]);
+                
+                $this->verificationInProgress = false;
+                return [
+                    'success' => false,
+                    'message' => $message
+                ];
+            }
+            
+            $this->addAvailabilityLog("Verificação concluída com sucesso! Todos os componentes críticos estão disponíveis.");
+            
+            Log::info("Verificação de disponibilidade concluída com sucesso para ordem #{$order->id}", [
+                'components' => $this->availabilityComponents
+            ]);
+            
+            $this->verificationInProgress = false;
+            return [
+                'success' => true,
+                'message' => 'Todos os componentes necessários estão disponíveis.'
+            ];
+            
+        } catch (\Exception $e) {
+            $errorMessage = "Erro ao verificar disponibilidade: {$e->getMessage()}";
+            $this->addAvailabilityLog("ERRO: " . $errorMessage);
+            
+            Log::error("Exceção durante verificação de disponibilidade para ordem #{$order->id}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->verificationInProgress = false;
+            return [
+                'success' => $logOnly, // Se estamos apenas logando, permitimos continuar
+                'message' => $errorMessage
+            ];
+        }
+    }
+    
+    /**
+     * Adiciona uma entrada ao log de verificação de disponibilidade
+     */
+    private function addAvailabilityLog($message)
+    {
+        $timestamp = now()->format('H:i:s');
+        $this->availabilityLog[] = "[{$timestamp}] {$message}";
+        
+        // Limitar o tamanho do log para evitar problemas de memória
+        if (count($this->availabilityLog) > 100) {
+            array_shift($this->availabilityLog);
+        }
+    }
+    
+    /**
+     * Mostra o modal com detalhes da verificação de disponibilidade
+     */
+    public function showAvailabilityDetails($id)
+    {
+        $this->orderId = $id;
+        $order = ProductionOrder::findOrFail($id);
+        
+        // Executar verificação de disponibilidade apenas para logs
+        $this->verifyComponentsAvailability($order, true);
+        
+        $this->showAvailabilityModal = true;
     }
     
     /**
@@ -507,6 +699,24 @@ class ProductionOrders extends Component
                 'message' => "Não é possível alterar o status de '{$order->status}' para '{$status}'."
             ]);
             return;
+        }
+        
+        // Verificar disponibilidade de componentes antes de mudar para 'released' ou 'in_progress'
+        if (($status === 'released' || $status === 'in_progress') && $order->bomHeader) {
+            Log::info("Iniciando verificação de disponibilidade para mudança de status da ordem #{$order->id}");
+            
+            $availabilityCheck = $this->verifyComponentsAvailability($order);
+            
+            if (!$availabilityCheck['success']) {
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'title' => 'Componentes Insuficientes',
+                    'message' => $availabilityCheck['message']
+                ]);
+                return;
+            }
+            
+            Log::info("Verificação de disponibilidade concluída com sucesso para mudança de status da ordem #{$order->id}");
         }
         
         // Atualizar campos adicionais baseado na transição de status
@@ -574,31 +784,48 @@ class ProductionOrders extends Component
     {
         $this->validate();
         
-        if ($this->editMode) {
-            $order = ProductionOrder::findOrFail($this->orderId);
-            $order->fill($this->order);
-            $order->updated_by = Auth::id();
+        try {
+            DB::beginTransaction();
+            
+            if ($this->editMode) {
+                $order = ProductionOrder::findOrFail($this->orderId);
+                $order->fill($this->order);
+                $order->updated_by = Auth::id();
+            } else {
+                $order = new ProductionOrder($this->order);
+                $order->created_by = Auth::id();
+                $order->updated_by = Auth::id();
+            }
+            
             $order->save();
+            
+            // Verificar disponibilidade de componentes após salvar se o status não for 'draft' ou 'cancelled'
+            if ($order->status !== 'draft' && $order->status !== 'cancelled' && $order->bomHeader) {
+                Log::info("Verificando disponibilidade de componentes após salvar ordem #{$order->id}");
+                $this->verifyComponentsAvailability($order, true); // Apenas para registro, não bloqueia o salvamento
+            }
+            
+            DB::commit();
+            
+            $this->closeModal();
             
             $this->dispatch('notify', [
                 'type' => 'success',
-                'title' => 'Ordem atualizada!',
-                'message' => 'A ordem de produção foi atualizada com sucesso.'
+                'title' => 'Salvo com Sucesso!',
+                'message' => 'Ordem de produção ' . ($this->editMode ? 'atualizada' : 'criada') . ' com sucesso.'
             ]);
-        } else {
-            $order = new ProductionOrder($this->order);
-            $order->created_by = Auth::id();
-            $order->updated_by = Auth::id();
-            $order->save();
-            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Erro ao salvar ordem de produção: " . $e->getMessage(), [
+                'order_data' => $this->order,
+                'exception' => $e
+            ]);
             $this->dispatch('notify', [
-                'type' => 'success',
-                'title' => 'Ordem criada!',
-                'message' => 'A ordem de produção foi criada com sucesso.'
+                'type' => 'error',
+                'title' => 'Erro ao Salvar',
+                'message' => 'Ocorreu um erro ao salvar a ordem de produção: ' . $e->getMessage()
             ]);
         }
-        
-        $this->closeModal();
     }
     
     /**
@@ -650,20 +877,38 @@ class ProductionOrders extends Component
                 $selectedOrder = ProductionOrder::with(['product', 'location', 'bomHeader', 'schedule'])->find($this->orderId);
             }
             
-            if ($this->showMaterialsModal) {
+            if ($this->showMaterialsModal || $this->showAvailabilityModal) {
                 $selectedOrder = ProductionOrder::with(['bomHeader.details.component', 'product'])->find($this->orderId);
                 
                 if ($selectedOrder && $selectedOrder->bomHeader) {
                     $orderMaterials = $selectedOrder->bomHeader->details->map(function ($detail) use ($selectedOrder) {
                         $requiredQuantity = $detail->quantity * $selectedOrder->planned_quantity;
                         
+                        // Buscar estoque disponível
+                        $availableQuantity = 0;
+                        if ($detail->component) {
+                            // Tentar obter através do relacionamento inventoryItems
+                            if (method_exists($detail->component, 'inventoryItems')) {
+                                $availableQuantity = $detail->component->inventoryItems->sum('quantity_on_hand');
+                            } else {
+                                // Ou diretamente do atributo stock_quantity se disponível
+                                $availableQuantity = $detail->component->stock_quantity ?? 0;
+                            }
+                            
+                            // Se ainda for zero, tentar buscar diretamente
+                            if ($availableQuantity == 0) {
+                                $items = InventoryItem::where('product_id', $detail->component_id)->get();
+                                $availableQuantity = $items->sum('quantity_on_hand');
+                            }
+                        }
+                        
                         return [
                             'component' => $detail->component,
                             'quantity_per_unit' => $detail->quantity,
                             'uom' => $detail->uom,
                             'required_quantity' => $requiredQuantity,
-                            'available_quantity' => $detail->component->stock_quantity ?? 0,
-                            'shortage' => max(0, $requiredQuantity - ($detail->component->stock_quantity ?? 0)),
+                            'available_quantity' => $availableQuantity,
+                            'shortage' => max(0, $requiredQuantity - $availableQuantity),
                             'is_critical' => $detail->is_critical,
                         ];
                     })->toArray();

@@ -60,7 +60,7 @@ class BomManagement extends Component
         'component_id' => '',
         'quantity' => '',
         'uom' => 'unit',
-        'position' => '',
+        'position' => 0,
         'level' => 1,
         'scrap_percentage' => 0,
         'is_critical' => false,
@@ -256,8 +256,9 @@ class BomManagement extends Component
     
     /**
      * Gerar número da BOM baseado no produto
+     * Se o número gerado já existir, adiciona um timestamp para garantir unicidade
      */
-    public function generateBomNumber()
+    public function generateBomNumber($forceUnique = false)
     {
         if (empty($this->bomHeader['product_id'])) {
             return;
@@ -272,10 +273,27 @@ class BomManagement extends Component
         $count = BomHeader::where('product_id', $product->id)->count();
         $nextVersion = $count + 1;
         
-        // Gerar número da BOM: SKU-BOM-V1
+        // Se precisamos forçar um número único (após falha de validação)
+        if ($forceUnique) {
+            // Usar um timestamp para garantir unicidade
+            $timestamp = time();
+            $uniqueBomNumber = $product->sku . '-BOM-V' . $nextVersion . '-' . $timestamp;
+            
+            logger("Gerando número BOM forçadamente único com timestamp: {$uniqueBomNumber}");
+            
+            $this->bomHeader['bom_number'] = $uniqueBomNumber;
+            $this->bomHeader['version'] = $nextVersion;
+            $this->bomHeader['description'] = 'Lista de Materiais para ' . $product->name;
+            
+            return;
+        }
+        
+        // Gerar número padrão da BOM: SKU-BOM-V{versão}
         $this->bomHeader['bom_number'] = $product->sku . '-BOM-V' . $nextVersion;
         $this->bomHeader['version'] = $nextVersion;
         $this->bomHeader['description'] = 'Lista de Materiais para ' . $product->name;
+        
+        logger("BOM number gerado sem forçar unicidade: {$this->bomHeader['bom_number']}");
     }
     
     /**
@@ -447,9 +465,9 @@ class BomManagement extends Component
             ];
         })->toArray();
         
-        // IMPORTANTE: Preencher AMBAS as variáveis usadas em diferentes partes do componente
+        // Apenas preencher bomComponents, deixando components intacto para uso na modal
         $this->bomComponents = $mappedComponents;
-        $this->components = $mappedComponents;
+        // NÃO sobrescrever $this->components aqui, pois ele contém os raw materials para a modal
         
         // Log detalhado para ajudar a depurar a estrutura de dados
         logger("DIAGNÓSTICO - Componentes carregados (bomComponents): " . count($this->bomComponents));
@@ -466,10 +484,31 @@ class BomManagement extends Component
         $this->reset('bomDetail');
         $this->bomDetail['bom_header_id'] = $this->bomHeaderId;
         $this->bomDetail['level'] = 1;
+        $this->bomDetail['position'] = 0;
         $this->bomDetail['scrap_percentage'] = 0;
         $this->bomDetail['is_critical'] = false;
         $this->bomDetail['uom'] = 'unit';
         $this->editMode = false;
+        
+        // Carrega componentes (raw_material) antes de abrir o modal
+        try {
+            logger("COMPONENTE MODAL - Carregando raw_material para o modal");
+            $rawMaterials = Product::where('product_type', 'raw_material')->orderBy('name')->get();
+            logger("COMPONENTE MODAL - Total de raw_material: " . $rawMaterials->count());
+            
+            // Debug para listar todos os componentes encontrados
+            foreach ($rawMaterials as $component) {
+                logger("COMPONENTE MODAL ITEM: ID={$component->id}, Nome={$component->name}, SKU={$component->sku}");
+            }
+            
+            // Armazena na propriedade components para uso no modal
+            $this->components = $rawMaterials;
+            
+        } catch (\Exception $e) {
+            logger("COMPONENTE MODAL - Erro ao carregar raw_material: " . $e->getMessage());
+            $this->components = collect([]);
+        }
+        
         $this->showComponentModal = true;
     }
     
@@ -645,7 +684,37 @@ class BomManagement extends Component
      */
     public function saveBomHeader()
     {
-        $this->validate($this->bomHeaderRules());
+        try {
+            // Tentar validar o formulário
+            $this->validate($this->bomHeaderRules());
+            
+            // Se chegou aqui, a validação passou
+            $validationPassed = true;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Verificar se o erro é apenas relacionado ao bom_number
+            $errors = $e->validator->errors()->messages();
+            
+            // Se o único erro for do campo bom_number e for sobre 'already been taken'
+            if (isset($errors['bomHeader.bom_number']) && 
+                count($errors) === 1 && 
+                strpos(implode('', $errors['bomHeader.bom_number']), 'taken') !== false) {
+                
+                logger("Erro de validação do bom_number: " . implode(", ", $errors['bomHeader.bom_number']));
+                logger("Gerando novo número BOM com força de unicidade");
+                
+                // Gerar um novo número de BOM GARANTIDAMENTE único com timestamp
+                $this->generateBomNumber(true); // Usar parâmetro forceUnique = true
+                
+                logger("Novo número BOM gerado após erro: {$this->bomHeader['bom_number']}");
+                
+                // Agora tentar validar novamente
+                $this->validate($this->bomHeaderRules());
+                $validationPassed = true;
+            } else {
+                // Se houver outros erros além do bom_number, lançar a exceção novamente
+                throw $e;
+            }
+        }
         
         // Ensure empty expiration_date is set to null, not empty string
         if (empty($this->bomHeader['expiration_date'])) {
@@ -797,12 +866,12 @@ class BomManagement extends Component
             logger("DIAGNÓSTICO RENDER - ERRO ao verificar tabela: " . $e->getMessage());
         }
         
-        // Dados para seleção de produtos na BOM
+        // Dados para seleção de produtos na BOM (apenas finished_product)
         try {
-            logger("DIAGNÓSTICO RENDER - Iniciando busca de produtos tipo 'finished'");
-            $productsQuery = Product::where('type', 'finished');
+            logger("DIAGNÓSTICO RENDER - Iniciando busca de produtos tipo 'finished_product'");
+            $productsQuery = Product::where('product_type', 'finished_product');
             $countFinished = $productsQuery->count();
-            logger("DIAGNÓSTICO RENDER - Encontrados {$countFinished} produtos 'finished'");
+            logger("DIAGNÓSTICO RENDER - Encontrados {$countFinished} produtos 'finished_product'");
             
             $this->products = $productsQuery->orderBy('name')->get();
             logger("DIAGNÓSTICO RENDER - Carregados {$this->products->count()} produtos para BOM");
@@ -811,20 +880,46 @@ class BomManagement extends Component
             $this->products = collect([]);
         }
         
-        // Dados para seleção de componentes
+        // Dados para seleção de componentes - carregar apenas produtos do tipo 'raw_material' cadastrados na BD
         try {
-            logger("DIAGNÓSTICO RENDER - Iniciando busca de componentes (raw ou semi-finished)");
-            $componentsQuery = Product::where(function($query) {
-                $query->where('type', 'raw')
-                    ->orWhere('type', 'semi-finished');
+            logger("DIAGNÓSTICO RENDER - Iniciando busca de produtos do tipo 'raw_material' para componentes");
+            
+            // Verificar todos os valores de product_type na tabela
+            $allProductTypes = DB::table('sc_products')->select('product_type')->distinct()->get()->pluck('product_type');
+            logger("DIAGNÓSTICO RENDER - Todos os valores de product_type: " . json_encode($allProductTypes));
+            
+            // Buscar APENAS produtos do tipo 'raw_material' com eager loading de inventoryItems
+            // para calcular o estoque total
+            $componentsQuery = Product::with('inventoryItems')
+                ->where('product_type', 'raw_material');
+            
+            $countProducts = $componentsQuery->count();
+            logger("DIAGNÓSTICO RENDER - Encontrados {$countProducts} produtos do tipo 'raw_material'");
+            
+            // Carregando produtos com suas informações
+            $components = $componentsQuery->orderBy('name')->get();
+            
+            // Para cada produto, calcular o estoque total usando o accessor
+            // ou somar manualmente se necessário
+            $this->components = $components->map(function($product) {
+                // Adicionar atributo total_stock para uso no template
+                if (!isset($product->total_quantity)) {
+                    // Se o accessor não estiver disponível, calcular manualmente
+                    $product->total_quantity = $product->inventoryItems->sum('quantity_on_hand');
+                }
+                
+                logger("COMPONENTE: ID={$product->id}, Nome={$product->name}, "
+                     . "SKU={$product->sku}, Type={$product->product_type}, "
+                     . "Estoque Total={$product->total_quantity}");
+                     
+                return $product;
             });
             
-            $countRaw = Product::where('type', 'raw')->count();
-            $countSemi = Product::where('type', 'semi-finished')->count();
-            logger("DIAGNÓSTICO RENDER - Encontrados {$countRaw} produtos 'raw' e {$countSemi} 'semi-finished'");
-            
-            $this->components = $componentsQuery->orderBy('name')->get();
             logger("DIAGNÓSTICO RENDER - Carregados {$this->components->count()} componentes para seleção");
+            
+            if ($this->components->count() == 0) {
+                logger("DIAGNÓSTICO RENDER - NENHUM produto do tipo 'raw_material' encontrado na base de dados");
+            }
         } catch (\Exception $e) {
             logger("DIAGNÓSTICO RENDER - ERRO ao carregar componentes: " . $e->getMessage());
             $this->components = collect([]);
@@ -886,16 +981,21 @@ class BomManagement extends Component
         }
         
         // Força conversão para array, mesmo que vazio, para evitar erros na view
-        $components = !empty($this->bomComponents) ? $this->bomComponents : [];
+        $bomComponentsArray = !empty($this->bomComponents) ? $this->bomComponents : [];
+        
+        // Debug para verificar componentes disponíveis para a modal
+        logger("DIAGNÓSTICO - Componentes disponíveis para modal (raw_material): " . (is_object($this->components) && method_exists($this->components, 'count') ? $this->components->count() : count($this->components)));
+        logger("DIAGNÓSTICO - Componentes na BOM atual: " . count($bomComponentsArray));
         
         return view('livewire.mrp.bom-management', [
             'bomHeaders' => $bomHeaders,
             'productsForBom' => $this->products,
-            'componentsForBom' => $this->components,
+            'componentsForBom' => $this->components, // Raw materials para o select da modal
             'statuses' => $statuses,
             'uoms' => $uoms,
             'currentBom' => $currentBom,
-            'components' => $components, // Usando a variável local que garantimos que é um array
+            'components' => $this->components, // Alterado para usar os raw materials no select
+            'bomComponents' => $bomComponentsArray, // Componentes da BOM atual
         ])->layout('layouts.livewire', [
             'title' => 'Gestão de Lista de Materiais (BOM)'
         ]);

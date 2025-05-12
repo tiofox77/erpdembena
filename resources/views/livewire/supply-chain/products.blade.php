@@ -134,6 +134,9 @@
                                 {{ __('livewire/products.category') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('livewire/products.product_type') }}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('livewire/products.inventory_info') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -166,6 +169,26 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ $product->category->name ?? '-' }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    @if($product->product_type == 'finished_product')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <i class="fas fa-box-open mr-1"></i>
+                                            {{ __('livewire/products.finished_product') }}
+                                        </span>
+                                    @elseif($product->product_type == 'raw_material')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-boxes mr-1"></i>
+                                            {{ __('livewire/products.raw_material') }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <i class="fas fa-question-circle mr-1"></i>
+                                            {{ $product->product_type ?? '-' }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ __('livewire/products.in_stock') }}: <span class="font-semibold {{ $product->total_stock <= $product->reorder_point ? 'text-red-600' : 'text-green-600' }}">{{ $product->total_stock }}</span></div>
@@ -208,7 +231,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center">
+                            <td colspan="6" class="px-6 py-10 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
                                     <h3 class="text-lg font-medium text-gray-900 mb-1">{{ __('livewire/products.no_products_found') }}</h3>
@@ -308,6 +331,21 @@
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">{{ __('livewire/products.category') }}</p>
                                     <p class="mt-1 text-sm text-gray-900">{{ $category_id ? $categories->firstWhere('id', $category_id)->name : '-' }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">{{ __('livewire/products.product_type') }}</p>
+                                    <p class="mt-1 text-sm text-gray-900">
+                                        @if($product_type == 'finished_product')
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {{ __('livewire/products.finished_product') }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                {{ __('livewire/products.raw_material') }}
+                                            </span>
+                                        @endif
+                                    </p>
                                 </div>
 
                                 <div>

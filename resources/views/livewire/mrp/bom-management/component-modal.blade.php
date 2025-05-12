@@ -36,8 +36,11 @@
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 {{ $editMode ? 'disabled' : '' }}>
                                 <option value="">{{ __('messages.select_component') }}</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
+                                @foreach($components as $component)
+                                    <option value="{{ $component->id }}">
+                                        {{ $component->name }} ({{ $component->sku }}) - 
+                                        <span class="font-semibold {{ $component->total_quantity > 0 ? 'text-green-600' : 'text-red-600' }}">Stock: {{ number_format($component->total_quantity ?? 0, 2) }} {{ $component->unit_of_measure }}</span>
+                                    </option>
                                 @endforeach
                             </select>
                             @error('bomDetail.component_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
