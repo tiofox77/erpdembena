@@ -23,6 +23,9 @@ class ShippingNotes extends Component
     public $existingAttachment;
     public $currentShippingNotes = [];
     
+    public $sortField = 'created_at';
+    public $sortDirection = 'desc';
+    
     public $showAddModal = false;
     public $showViewModal = false;
     public $showCustomFormModal = false;
@@ -30,6 +33,7 @@ class ShippingNotes extends Component
     public $editId = null;
     public $selectedFormId = null;
     public $selectedNoteId = null;
+    public $viewingNote = null;
 
     public $listeners = ['refreshShippingNotes' => '$refresh', 'refreshComponent' => '$refresh'];
 
@@ -54,9 +58,24 @@ class ShippingNotes extends Component
         if ($this->purchase_order_id) {
             $this->currentShippingNotes = ShippingNote::where('purchase_order_id', $this->purchase_order_id)
                 ->with('updatedByUser')
-                ->orderBy('created_at', 'desc')
+                ->orderBy($this->sortField, $this->sortDirection)
                 ->get();
         }
+    }
+    
+    /**
+     * Ordena a tabela pelo campo especificado
+     */
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+        
+        $this->refreshNotes();
     }
 
     public function openAddModal()
@@ -95,6 +114,12 @@ class ShippingNotes extends Component
         $this->showCustomFormModal = false;
         $this->resetForm();
     }
+    
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewingNote = null;
+    }
 
     public function resetForm()
     {
@@ -105,6 +130,7 @@ class ShippingNotes extends Component
         $this->editId = null;
         $this->selectedFormId = null;
         $this->selectedNoteId = null;
+        $this->viewingNote = null;
         $this->resetValidation();
     }
 
@@ -249,8 +275,24 @@ class ShippingNotes extends Component
     }
     
     /**
-     * Visualiza submissões de formulários para uma nota de envio
+     * Visualiza uma nota de envio específica
      */
+    public function viewNote($noteId)
+    {
+        try {
+            $this->viewingNote = ShippingNote::with(['updatedByUser', 'customForm.fields'])
+                ->findOrFail($noteId);
+            
+            $this->showViewModal = true;
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'title' => __('messages.error'),
+                'message' => __('messages.shipping_note_not_found')
+            ]);
+        }
+    }
+    
     public function viewFormSubmissions($noteId)
     {
         $note = ShippingNote::findOrFail($noteId);

@@ -19,7 +19,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class PurchaseOrders extends Component
 {
     use WithPagination;
-    use WithFileUploads;
+    use \Livewire\WithFileUploads;
     
     public $search = '';
     public $perPage = 10;
@@ -58,9 +58,14 @@ class PurchaseOrders extends Component
     public $shippingNote = [
         'status' => '',
         'note' => '',
+        'custom_form_id' => null,
     ];
     public $shippingAttachment = null;
     public $shippingNotes = [];
+    public $selectedCustomForm = null;
+    public $renderCustomForm = false;
+    public $customFormFields = [];
+    public $formData = [];
 
     protected $listeners = [
         'productSelected' => 'addProduct',
@@ -81,6 +86,12 @@ class PurchaseOrders extends Component
     public function render()
     {
         $suppliers = Supplier::orderBy('name')->get();
+        
+        // Carregar formulários personalizados ativos para shipping notes
+        $customForms = \App\Models\SupplyChain\CustomForm::where('entity_type', 'shipping_note')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
         
         $purchaseOrdersQuery = PurchaseOrder::with(['supplier', 'createdBy', 'items'])
             ->when($this->search, function($query) {
@@ -135,6 +146,7 @@ class PurchaseOrders extends Component
             'purchaseOrders' => $purchaseOrders,
             'suppliers' => $suppliers,
             'products' => Product::orderBy('name')->get(),
+            'customForms' => $customForms,
             'statuses' => [
                 'draft' => __('messages.draft'),
                 'pending_approval' => __('messages.pending_approval'),
@@ -753,136 +765,242 @@ class PurchaseOrders extends Component
         $this->shippingNote = [
             'status' => '',
             'note' => '',
+            'custom_form_id' => null,
         ];
         $this->shippingAttachment = null;
+        $this->selectedCustomForm = null;
+        $this->renderCustomForm = false;
+        $this->customFormFields = [];
+    }
+    
+    /**
+     * Carrega os campos do formulário personalizado selecionado
+     */
+    public function loadCustomFormFields()
+    {
+        $this->renderCustomForm = false;
+        $this->customFormFields = [];
+        $this->formData = [];
+        $this->selectedCustomForm = null;
+        
+        // Verifica se o status selecionado é um formulário personalizado
+        if (!empty($this->shippingNote['status']) && strpos($this->shippingNote['status'], 'custom_form_') === 0) {
+            // Extrai o ID do formulário do valor do status
+            $formId = (int) str_replace('custom_form_', '', $this->shippingNote['status']);
+            
+            if ($formId > 0) {
+                $customForm = \App\Models\SupplyChain\CustomForm::with('fields')->find($formId);
+                
+                if ($customForm) {
+                    $this->selectedCustomForm = $customForm;
+                    $this->customFormFields = $customForm->fields->toArray();
+                    $this->renderCustomForm = true;
+                    $this->shippingNote['custom_form_id'] = $formId;
+                    
+                    // Verifica se já existem dados salvos para este formulário
+                    // Busca nas tabelas de submissão e valores de campos
+                    
+                    // Primeiro verificamos se há uma shipping note com este formulário personalizado
+                    $existingShippingNote = \App\Models\SupplyChain\ShippingNote::where('purchase_order_id', $this->viewingOrderId)
+                        ->where('custom_form_id', $formId)
+                        ->latest()
+                        ->first();
+                    
+                    if ($existingShippingNote) {
+                        // Procuramos por submissões relacionadas a esta nota
+                        $submission = \App\Models\SupplyChain\CustomFormSubmission::where('form_id', $formId)
+                            ->where('entity_id', $existingShippingNote->id)
+                            ->latest()
+                            ->with('fieldValues.field')
+                            ->first();
+                        
+                        if ($submission) {
+                            // Popula os dados do formulário com os valores encontrados
+                            foreach ($submission->fieldValues as $fieldValue) {
+                                if ($fieldValue->field) {
+                                    $fieldName = $fieldValue->field->name;
+                                    $this->formData[$fieldName] = $fieldValue->value;
+                                }
+                            }
+                            // Log para debug
+                            \Illuminate\Support\Facades\Log::info('Carregando dados do formulário personalizado', [
+                                'form_id' => $formId,
+                                'shipping_note_id' => $existingShippingNote->id,
+                                'submission_id' => $submission->id,
+                                'data' => $this->formData
+                            ]);
+                        } else {
+                            // Inicializa campos vazios se não encontrar submissão
+                            $this->initializeEmptyFormFields();
+                        }
+                    } else {
+                        // Inicializa campos vazios se não encontrar shipping note
+                        $this->initializeEmptyFormFields();
+                    }
+                }
+            }
+        } else {
+            // Não é um formulário personalizado, então limpa os dados relacionados
+            $this->shippingNote['custom_form_id'] = null;
+        }
+    }
+    
+    /**
+     * Inicializa os campos do formulário com valores vazios
+     */
+    private function initializeEmptyFormFields()
+    {
+        foreach ($this->customFormFields as $field) {
+            $this->formData[$field['name']] = '';
+            
+            // Para campos checkbox, inicializa como array
+            if ($field['type'] === 'checkbox' && !empty($field['options'])) {
+                $this->formData[$field['name']] = [];
+            }
+        }
     }
     
     public function addShippingNote()
     {
-        Log::info('Iniciando addShippingNote', [
-            'shippingNote' => $this->shippingNote,
-            'viewingOrderId' => $this->viewingOrderId,
-            'hasAttachment' => !is_null($this->shippingAttachment)
+        // Validação
+        $validationRules = [
+            'shippingNote.status' => 'required|string',
+        ];
+        
+        // Adicionar validação para os campos do formulário personalizado se necessário
+        if ($this->renderCustomForm && !empty($this->customFormFields)) {
+            foreach ($this->customFormFields as $field) {
+                if ($field['is_required']) {
+                    $validationRules["formData.{$field['name']}"] = 'required';
+                }
+            }
+        }
+        
+        $this->validate($validationRules, [
+            'shippingNote.status.required' => __('messages.shipping_note_status_required'),
         ]);
         
         try {
-            $this->validate([
-                'shippingNote.status' => 'required|string',
-                'shippingNote.note' => 'required|string|min:5',
-                'shippingAttachment' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png',
-            ], [
-                'shippingNote.status.required' => __('messages.shipping_note_status_required'),
-                'shippingNote.note.required' => __('messages.shipping_note_note_required'),
-                'shippingNote.note.min' => __('messages.shipping_note_note_min'),
-                'shippingAttachment.max' => __('messages.shipping_note_attachment_max'),
-                'shippingAttachment.mimes' => __('messages.shipping_note_attachment_mimes')
-            ]);
-            
-            Log::info('Validação de ShippingNote passou');
-            
             DB::beginTransaction();
-            Log::info('Iniciou transação para ShippingNote');
             
-            $attachmentPath = null;
-            if ($this->shippingAttachment) {
-                Log::info('Preparando para salvar o anexo', [
-                    'originalName' => $this->shippingAttachment->getClientOriginalName(),
-                    'size' => $this->shippingAttachment->getSize(),
-                    'extension' => $this->shippingAttachment->getClientOriginalExtension()
+            // Criar a nota de envio
+            $note = new ShippingNote();
+            $note->purchase_order_id = $this->viewingOrderId;
+            
+            // Se for um formulário personalizado
+            if ($this->renderCustomForm && $this->selectedCustomForm) {
+                // Usar um status especial para formulários personalizados
+                $note->status = 'custom_form';
+                $note->custom_form_id = $this->shippingNote['custom_form_id'];
+                
+                // Gerar uma nota automática com o nome do formulário
+                $note->note = "Formulário: {$this->selectedCustomForm->name}";
+                
+                // Salvar a shipping note primeiro para obter o ID
+                $note->save();
+                
+                // Criar uma submissão do formulário personalizado
+                $submission = new \App\Models\SupplyChain\CustomFormSubmission([
+                    'form_id' => $this->selectedCustomForm->id,
+                    'entity_id' => $note->id,
+                    'created_by' => Auth::id()
                 ]);
-                try {
-                    // Obter a ordem de compra para utilizar o OrderNumber no caminho do arquivo
-                    $purchaseOrder = PurchaseOrder::findOrFail($this->viewingOrderId);
-                    $orderNumber = $purchaseOrder->order_number;
+                $submission->save();
+                
+                // Salvar os valores dos campos
+                foreach ($this->formData as $fieldName => $value) {
+                    $field = \App\Models\SupplyChain\CustomFormField::where('form_id', $this->selectedCustomForm->id)
+                        ->where('name', $fieldName)
+                        ->first();
                     
-                    // Criar diretório específico para esta ordem
-                    $storageDirectory = "shipping-notes/{$orderNumber}";
-                    
-                    // Obter o nome original do arquivo e anexar timestamp para evitar duplicidades
-                    $originalName = $this->shippingAttachment->getClientOriginalName();
-                    $extension = $this->shippingAttachment->getClientOriginalExtension();
-                    $timestamp = now()->format('YmdHis');
-                    $fileName = pathinfo($originalName, PATHINFO_FILENAME) . "_{$timestamp}." . $extension;
-                    
-                    // Salvar o arquivo na pasta específica da ordem
-                    $attachmentPath = $this->shippingAttachment->storeAs($storageDirectory, $fileName, 'public');
-                    
-                    Log::info('Anexo salvo com sucesso', [
-                        'path' => $attachmentPath,
-                        'orderNumber' => $orderNumber
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Erro ao salvar anexo', [
-                        'message' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    throw new \Exception(__('messages.error_saving_attachment') . ': ' . $e->getMessage());
+                    if ($field) {
+                        // Verificar se é um campo de arquivo
+                        if ($field->type == 'file' && $value) {
+                            // Se for um objeto UploadedFile, armazená-lo
+                            if (is_object($value) && $value instanceof \Illuminate\Http\UploadedFile) {
+                                // Definir o nome do arquivo com timestamp para evitar duplicações
+                                $fileName = 'custom_forms/'.time().'_'.$value->getClientOriginalName();
+                                
+                                // Armazenar o arquivo
+                                $path = $value->storeAs('public', $fileName);
+                                
+                                // Salvar o caminho do arquivo no banco de dados
+                                \App\Models\SupplyChain\CustomFormFieldValue::create([
+                                    'submission_id' => $submission->id,
+                                    'field_id' => $field->id,
+                                    'value' => $fileName
+                                ]);
+                                
+                                // Log do upload
+                                \Illuminate\Support\Facades\Log::info('Arquivo carregado para formulário personalizado', [
+                                    'field' => $fieldName,
+                                    'original_name' => $value->getClientOriginalName(),
+                                    'stored_path' => $fileName
+                                ]);
+                            }
+                        } else {
+                            // Para outros tipos de campo
+                            \App\Models\SupplyChain\CustomFormFieldValue::create([
+                                'submission_id' => $submission->id,
+                                'field_id' => $field->id,
+                                'value' => is_array($value) ? json_encode($value) : $value
+                            ]);
+                        }
+                    }
                 }
-            }
-            
-            // Verificar se o modelo ShippingNote existe
-            if (!class_exists(\App\Models\SupplyChain\ShippingNote::class)) {
-                Log::error('Modelo ShippingNote não encontrado.');
-                throw new \Exception(__('messages.shipping_note_model_not_found'));
-            }
-            
-            Log::info('Criando nova ShippingNote', [
-                'purchaseOrderId' => $this->viewingOrderId,
-                'status' => $this->shippingNote['status'],
-                'noteLength' => strlen($this->shippingNote['note'])
-            ]);
-            
-            $shippingNote = new ShippingNote();
-            $shippingNote->purchase_order_id = $this->viewingOrderId;
-            $shippingNote->status = $this->shippingNote['status'];
-            $shippingNote->note = $this->shippingNote['note'];
-            $shippingNote->attachment_url = $attachmentPath;
-            $shippingNote->updated_by = Auth::id();
-            
-            try {
-                $saved = $shippingNote->save();
-                Log::info('Resultado do salvamento da ShippingNote', [
-                    'success' => $saved,
-                    'shippingNoteId' => $shippingNote->id ?? 'não gerado'
+                
+                // Log para depuração
+                \Illuminate\Support\Facades\Log::info('Dados de formulário personalizado salvos', [
+                    'shipping_note_id' => $note->id,
+                    'form_id' => $this->selectedCustomForm->id,
+                    'submission_id' => $submission->id,
+                    'data' => $this->formData
                 ]);
                 
-                if (!$saved) {
-                    throw new \Exception(__('messages.error_saving_shipping_note'));
+                // Atualizar o status da ordem de compra com o nome do formulário personalizado
+                $purchaseOrder = \App\Models\SupplyChain\PurchaseOrder::find($this->viewingOrderId);
+                if ($purchaseOrder) {
+                    $formName = $this->selectedCustomForm->name;
+                    $purchaseOrder->status = $formName;
+                    $purchaseOrder->save();
+                    
+                    // Log da atualização de status
+                    \Illuminate\Support\Facades\Log::info('Status da ordem de compra atualizado para nome do formulário', [
+                        'order_id' => $purchaseOrder->id,
+                        'previous_status' => $purchaseOrder->getOriginal('status'),
+                        'new_status' => $formName
+                    ]);
                 }
-            } catch (\Exception $e) {
-                Log::error('Erro ao salvar ShippingNote', [
-                    'message' => $e->getMessage(), 
-                    'sql' => DB::getQueryLog(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                throw $e;
-            }
-            
-            // Atualizar o status da ordem com base no status da ShippingNote
-            try {
-                Log::info('Atualizando status da ordem baseado na ShippingNote', [
-                    'orderId' => $this->viewingOrderId,
-                    'shippingStatus' => $this->shippingNote['status']
-                ]);
+            } else {
+                // É um status padrão normal
+                $note->status = $this->shippingNote['status'];
                 
+                // Gerar uma nota padrão com o status selecionado
+                $statusText = array_key_exists($this->shippingNote['status'], ShippingNote::$statusList) 
+                    ? ShippingNote::$statusList[$this->shippingNote['status']] 
+                    : $this->shippingNote['status'];
+                $note->note = "Status atualizado para: {$statusText}";
+                
+                // Atualizar status da ordem com base na nota de envio
                 $this->updateOrderStatusBasedOnShippingNote($this->viewingOrderId, $this->shippingNote['status']);
-                Log::info('Status da ordem atualizado com sucesso');
-            } catch (\Exception $e) {
-                Log::error('Erro ao atualizar status da ordem', [
-                    'message' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                throw $e;
             }
             
-            DB::commit();
-            Log::info('Transação de ShippingNote finalizada com sucesso');
+            // Definir outros campos comuns a todos os tipos de nota
+            $note->attachment_url = null; // Campo de anexo não é mais utilizado
+            $note->updated_by = Auth::id();
             
+            // Para status padrão, salvar agora. Para formulários personalizados, já foi salvo acima
+            if (!($this->renderCustomForm && $this->selectedCustomForm)) {
+                $note->save();
+            }
+            
+            // Atualizar lista de notas e limpar formulário
+            $this->loadShippingNotes();
             $this->resetShippingNote();
             
-            $this->dispatch('notify', type: $this->shippingNote['id'] ? 'warning' : 'success', message: __('messages.shipping_note_added'));
+            DB::commit();
             
-            Log::info('ShippingNote criada com sucesso');
+            $this->dispatch('notify', type: 'success', message: __('messages.shipping_note_added'));
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();

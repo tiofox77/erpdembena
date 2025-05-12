@@ -321,4 +321,132 @@
         </div>
     </div>
     @endif
+
+    <!-- Modal para criar/editar campo do formulário -->
+    @if($showFieldModal)
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg max-w-lg w-full mx-auto">
+            <div class="flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-lg">
+                <h3 class="text-lg font-medium text-white">
+                    {{ $currentFieldId ? 'Editar Campo' : 'Novo Campo' }}
+                </h3>
+                <button wire:click="closeModal" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form wire:submit.prevent="saveField">
+                    <div class="mb-4">
+                        <label for="field_label" class="block text-sm font-medium text-gray-700 mb-1">Rótulo do Campo *</label>
+                        <input wire:model="currentField.label" type="text" id="field_label" 
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50
+                                  @error('currentField.label') border-red-300 focus:border-red-500 focus:ring-red-500 @enderror">
+                        @error('currentField.label') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="field_name" class="block text-sm font-medium text-gray-700 mb-1">Nome do Campo *</label>
+                        <div class="relative">
+                            <input wire:model="currentField.name" type="text" id="field_name" 
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50
+                                      @error('currentField.name') border-red-300 focus:border-red-500 focus:ring-red-500 @enderror">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-code text-gray-400"></i>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Identificador único (apenas letras, números e sublinhados).</p>
+                        @error('currentField.name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="field_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Campo *</label>
+                        <select wire:model="currentField.type" id="field_type" 
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                            @foreach($fieldTypes as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="field_description" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                        <textarea wire:model="currentField.description" id="field_description" rows="2" 
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Texto de ajuda exibido abaixo do campo.</p>
+                    </div>
+                    
+                    <!-- Opções para select, checkbox, radio -->
+                    @if(in_array($currentField['type'], ['select', 'checkbox', 'radio']))
+                    <div class="mb-4 p-4 bg-gray-50 rounded-md">
+                        <h4 class="font-medium text-gray-700 mb-2">Opções do Campo</h4>
+                        
+                        <div class="space-y-2 mb-3">
+                            @foreach($currentField['options'] as $index => $option)
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs">{{ $option['label'] }}</span>
+                                <span class="text-gray-500 text-xs">({{ $option['value'] }})</span>
+                                <button type="button" wire:click="removeOption({{ $index }})" class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            @endforeach
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                            <div class="flex-1">
+                                <input wire:model="tempOptionLabel" type="text" placeholder="Rótulo da opção" 
+                                    class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                            </div>
+                            <div class="flex-1">
+                                <input wire:model="tempOptionValue" type="text" placeholder="Valor da opção" 
+                                    class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                            </div>
+                            <div>
+                                <button type="button" wire:click="addOption" 
+                                    class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700 focus:outline-none transition-colors">
+                                    <i class="fas fa-plus mr-1"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        @error('tempOptionLabel') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        @error('tempOptionValue') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    @endif
+                    
+                    <!-- Regras de validação -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Regras de Validação</label>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($commonValidationRules as $rule => $description)
+                            <label class="inline-flex items-center p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                                <input wire:click="toggleValidationRule('{{ $rule }}')" type="checkbox" 
+                                    class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
+                                    {{ $this->hasValidationRule($rule) ? 'checked' : '' }}>
+                                <span class="ml-2 text-sm text-gray-700">{{ $description }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 flex items-center">
+                        <input wire:model="currentField.is_required" type="checkbox" id="field_required" 
+                            class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                        <label for="field_required" class="ml-2 block text-sm text-gray-700">Campo Obrigatório</label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" wire:click="closeModal" 
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            {{ $currentFieldId ? 'Atualizar' : 'Adicionar' }} Campo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

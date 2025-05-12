@@ -208,6 +208,7 @@
                                         @elseif($note->status == 'delivered') bg-emerald-100 text-emerald-800
                                         @elseif($note->status == 'returned') bg-red-100 text-red-800
                                         @elseif($note->status == 'issue') bg-orange-100 text-orange-800
+                                        @elseif($note->status == 'custom_form') bg-blue-100 text-blue-800
                                         @endif border border-opacity-50
                                         @if($note->status == 'preparing') border-gray-300
                                         @elseif($note->status == 'ready_for_pickup') border-blue-300
@@ -218,6 +219,7 @@
                                         @elseif($note->status == 'delivered') border-emerald-300
                                         @elseif($note->status == 'returned') border-red-300
                                         @elseif($note->status == 'issue') border-orange-300
+                                        @elseif($note->status == 'custom_form') border-blue-300
                                         @endif">
                                         <i class="
                                             @if($note->status == 'preparing') fas fa-cog
@@ -229,8 +231,13 @@
                                             @elseif($note->status == 'delivered') fas fa-check-circle
                                             @elseif($note->status == 'returned') fas fa-undo-alt
                                             @elseif($note->status == 'issue') fas fa-exclamation-circle
+                                            @elseif($note->status == 'custom_form') fas fa-clipboard-list
                                             @endif mr-1 text-xs"></i>
-                                        {{ __('messages.shipping_status_'.$note->status) }}
+                                        @if($note->status == 'custom_form' && $note->customForm)
+                                            {{ $note->customForm->name }}
+                                        @else
+                                            {{ __('messages.shipping_status_'.$note->status) }}
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
@@ -298,4 +305,5 @@
 
     <!-- Modais -->
     @include('livewire.supply-chain.shipping-notes-modals')
+    @include('livewire.supply-chain.shipping-notes-view-modal')
 </div>

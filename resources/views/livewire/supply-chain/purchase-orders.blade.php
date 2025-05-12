@@ -194,38 +194,87 @@
                                     <div class="text-sm text-gray-900">{{ $order->supplier->name }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($order->shipping_status)
+                                    @if($order->status)
                                         <div class="flex items-center">
                                             <span wire:click="openShippingNotes({{ $order->id }})" 
                                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-105 
-                                                @if($order->shipping_status == 'order_placed') bg-gray-100 text-gray-800
-                                                @elseif($order->shipping_status == 'proforma_invoice_received') bg-blue-100 text-blue-800
-                                                @elseif($order->shipping_status == 'payment_completed') bg-indigo-100 text-indigo-800
-                                                @elseif($order->shipping_status == 'du_in_process') bg-purple-100 text-purple-800
-                                                @elseif($order->shipping_status == 'goods_acquired') bg-green-100 text-green-800
-                                                @elseif($order->shipping_status == 'shipped_to_port') bg-emerald-100 text-emerald-800
-                                                @elseif($order->shipping_status == 'shipping_line_booking_confirmed') bg-yellow-100 text-yellow-800
-                                                @elseif($order->shipping_status == 'container_loaded') bg-orange-100 text-orange-800
-                                                @elseif($order->shipping_status == 'on_board') bg-red-100 text-red-800
-                                                @elseif($order->shipping_status == 'arrived_at_port') bg-pink-100 text-pink-800
-                                                @elseif($order->shipping_status == 'customs_clearance') bg-teal-100 text-teal-800
-                                                @elseif($order->shipping_status == 'delivered') bg-cyan-100 text-cyan-800
+                                                @php
+                                                    // Verificar se o status é um dos valores padrão do sistema
+                                                    $standardStatuses = [
+                                                        'draft', 'pending_approval', 'approved', 'ordered', 
+                                                        'partially_received', 'completed', 'cancelled',
+                                                        'order_placed', 'proforma_invoice_received', 'payment_completed',
+                                                        'du_in_process', 'goods_acquired', 'shipped_to_port',
+                                                        'shipping_line_booking_confirmed', 'container_loaded',
+                                                        'on_board', 'arrived_at_port', 'customs_clearance', 'delivered'
+                                                    ];
+                                                    
+                                                    $isStandardStatus = in_array($order->status, $standardStatuses);
+                                                @endphp
+                                                
+                                                @if(!$isStandardStatus)
+                                                    bg-blue-100 text-blue-800 border border-blue-200
+                                                @elseif($order->status == 'draft') bg-gray-100 text-gray-800
+                                                @elseif($order->status == 'pending_approval') bg-yellow-100 text-yellow-800
+                                                @elseif($order->status == 'approved') bg-blue-100 text-blue-800
+                                                @elseif($order->status == 'ordered') bg-indigo-100 text-indigo-800
+                                                @elseif($order->status == 'partially_received') bg-purple-100 text-purple-800
+                                                @elseif($order->status == 'completed') bg-green-100 text-green-800
+                                                @elseif($order->status == 'cancelled') bg-red-100 text-red-800
+                                                @elseif($order->status == 'order_placed') bg-gray-100 text-gray-800
+                                                @elseif($order->status == 'proforma_invoice_received') bg-blue-100 text-blue-800
+                                                @elseif($order->status == 'payment_completed') bg-indigo-100 text-indigo-800
+                                                @elseif($order->status == 'du_in_process') bg-purple-100 text-purple-800
+                                                @elseif($order->status == 'goods_acquired') bg-green-100 text-green-800
+                                                @elseif($order->status == 'shipped_to_port') bg-emerald-100 text-emerald-800
+                                                @elseif($order->status == 'shipping_line_booking_confirmed') bg-yellow-100 text-yellow-800
+                                                @elseif($order->status == 'container_loaded') bg-orange-100 text-orange-800
+                                                @elseif($order->status == 'on_board') bg-red-100 text-red-800
+                                                @elseif($order->status == 'arrived_at_port') bg-pink-100 text-pink-800
+                                                @elseif($order->status == 'customs_clearance') bg-teal-100 text-teal-800
+                                                @elseif($order->status == 'delivered') bg-cyan-100 text-cyan-800
                                                 @endif">
-                                                <i class="fas 
-                                                @if($order->shipping_status == 'order_placed') fa-shopping-cart 
-                                                @elseif($order->shipping_status == 'proforma_invoice_received') fa-file-invoice-dollar
-                                                @elseif($order->shipping_status == 'payment_completed') fa-money-bill-wave
-                                                @elseif($order->shipping_status == 'du_in_process') fa-file-alt
-                                                @elseif($order->shipping_status == 'goods_acquired') fa-boxes
-                                                @elseif($order->shipping_status == 'shipped_to_port') fa-dolly
-                                                @elseif($order->shipping_status == 'shipping_line_booking_confirmed') fa-calendar-check
-                                                @elseif($order->shipping_status == 'container_loaded') fa-box
-                                                @elseif($order->shipping_status == 'on_board') fa-ship 
-                                                @elseif($order->shipping_status == 'arrived_at_port') fa-anchor
-                                                @elseif($order->shipping_status == 'customs_clearance') fa-clipboard-check
-                                                @elseif($order->shipping_status == 'delivered') fa-check-circle
-                                                @endif mr-1 text-xs"></i>
-                                                {{ __('messages.shipping_status_'.$order->shipping_status) }}
+                                                
+                                                @if(!$isStandardStatus)
+                                                    <!-- Ícone para formulários personalizados -->
+                                                    <i class="fas fa-clipboard-list mr-1 text-xs"></i>
+                                                    {{ $order->status }}
+                                                @else
+                                                    <!-- Ícones para status padrão -->
+                                                    <i class="fas 
+                                                    @if($order->status == 'draft') fa-pencil-alt
+                                                    @elseif($order->status == 'pending_approval') fa-clock
+                                                    @elseif($order->status == 'approved') fa-check
+                                                    @elseif($order->status == 'ordered') fa-shopping-cart
+                                                    @elseif($order->status == 'partially_received') fa-truck
+                                                    @elseif($order->status == 'completed') fa-check-circle
+                                                    @elseif($order->status == 'cancelled') fa-times-circle
+                                                    @elseif($order->status == 'order_placed') fa-shopping-cart 
+                                                    @elseif($order->status == 'proforma_invoice_received') fa-file-invoice-dollar
+                                                    @elseif($order->status == 'payment_completed') fa-money-bill-wave
+                                                    @elseif($order->status == 'du_in_process') fa-file-alt
+                                                    @elseif($order->status == 'goods_acquired') fa-boxes
+                                                    @elseif($order->status == 'shipped_to_port') fa-dolly
+                                                    @elseif($order->status == 'shipping_line_booking_confirmed') fa-calendar-check
+                                                    @elseif($order->status == 'container_loaded') fa-box
+                                                    @elseif($order->status == 'on_board') fa-ship 
+                                                    @elseif($order->status == 'arrived_at_port') fa-anchor
+                                                    @elseif($order->status == 'customs_clearance') fa-clipboard-check
+                                                    @elseif($order->status == 'delivered') fa-check-circle
+                                                    @endif mr-1 text-xs"></i>
+                                                    
+                                                    @php
+                                                        // Verificar se existe uma tradução para este status
+                                                        $translationKey = 'messages.shipping_status_'.$order->status;
+                                                        $translationExists = \Illuminate\Support\Facades\Lang::has($translationKey);
+                                                    @endphp
+                                                    
+                                                    @if($translationExists)
+                                                        {{ __($translationKey) }}
+                                                    @else
+                                                        {{ __("messages.status_{$order->status}") }}
+                                                    @endif
+                                                @endif
                                             </span>
                                             @if($order->shipping_status_date)
                                                 <span class="text-xs text-gray-500 ml-2">
@@ -235,25 +284,9 @@
                                         </div>
                                     @else
                                         <span wire:click="openShippingNotes({{ $order->id }})" 
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-105
-                                            @if($order->status == 'draft') bg-gray-100 text-gray-800
-                                            @elseif($order->status == 'pending_approval') bg-yellow-100 text-yellow-800
-                                            @elseif($order->status == 'approved') bg-blue-100 text-blue-800
-                                            @elseif($order->status == 'ordered') bg-indigo-100 text-indigo-800
-                                            @elseif($order->status == 'partially_received') bg-purple-100 text-purple-800
-                                            @elseif($order->status == 'completed') bg-green-100 text-green-800
-                                            @elseif($order->status == 'cancelled') bg-red-100 text-red-800
-                                            @endif">
-                                            <i class="fas 
-                                            @if($order->status == 'draft') fa-pencil-alt
-                                            @elseif($order->status == 'pending_approval') fa-clock 
-                                            @elseif($order->status == 'approved') fa-check
-                                            @elseif($order->status == 'ordered') fa-shopping-cart
-                                            @elseif($order->status == 'partially_received') fa-truck
-                                            @elseif($order->status == 'completed') fa-check-circle
-                                            @elseif($order->status == 'cancelled') fa-times-circle
-                                            @endif mr-1 text-xs"></i>
-                                            {{ __('messages.status_'.$order->status) }}
+                                              class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors duration-200 ease-in-out text-sm">
+                                            <i class="fas fa-plus-circle mr-1"></i>
+                                            {{ __('messages.add_shipping_status') }}
                                         </span>
                                     @endif
                                 </td>

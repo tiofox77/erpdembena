@@ -143,21 +143,22 @@ trait CompleteProductionTrait
             // Recuperamos o agendamento e o produto relacionado
             $schedule = ProductionSchedule::with(['product', 'dailyPlans'])->findOrFail($this->scheduleId);
             
-            // Calcular a quantidade real a partir dos planos diários, se não fornecida pelo usuário
+            // Verificar se a quantidade atual foi fornecida pelo usuário
             if (empty($this->schedule['actual_quantity'])) {
-                $actualQuantity = $schedule->dailyPlans()->sum('actual_quantity');
-                
-                // Se ainda for zero, use a quantidade planejada como fallback
-                if ($actualQuantity <= 0) {
-                    $actualQuantity = $schedule->dailyPlans()->sum('planned_quantity');
-                }
-                
-                // Atualizar o modelo para que a interface fique sincronizada
-                $this->schedule['actual_quantity'] = $actualQuantity;
-                
-                Log::info('Quantidade real calculada automaticamente dos planos diários', [
-                    'actual_quantity' => $actualQuantity
+                // Se não foi fornecida, validar para exigir uma quantidade
+                $this->validate([
+                    'schedule.actual_quantity' => 'required|numeric|min:0.01',  // Requer uma quantidade mínima
                 ]);
+                
+                // Como a validação falhou, o código não chegará aqui, mas definimos um valor padrão
+                $actualQuantity = 0;
+                
+                Log::warning('Tentativa de completar produção sem informar quantidade atual', [
+                    'schedule_id' => $this->scheduleId
+                ]);
+                
+                // Saímos do método, pois a validação falhará antes de chegar aqui
+                return;
             } else {
                 // Validar se o usuário forneceu uma quantidade válida
                 $this->validate([
@@ -166,12 +167,28 @@ trait CompleteProductionTrait
                 
                 // Definimos a quantidade produzida conforme informado pelo usuário
                 $actualQuantity = $this->schedule['actual_quantity'];
+                
+                Log::info('Quantidade atual informada pelo usuário', [
+                    'actual_quantity' => $actualQuantity
+                ]);
             }
             
             // Atualizar o status e registrar a data/hora de conclusão
             $schedule->status = 'completed';
             $schedule->actual_end_time = now();
             $schedule->actual_quantity = $actualQuantity;
+            
+            // IMPORTANTE: Salvar as alterações no banco de dados
+            $schedule->save();
+            
+            // Registrar que apenas essa quantidade foi produzida (mesmo que seja menor que o planejado)
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'success',
+                'message' => __('messages.production_completed_with_quantity', ['quantity' => $actualQuantity])
+            ]);
+            
+            // Fechar o modal após a conclusão e salvar
+            $this->closeViewModal();
             
             // Calcular o percentual de conclusão para log
             $completionPercentage = 0;

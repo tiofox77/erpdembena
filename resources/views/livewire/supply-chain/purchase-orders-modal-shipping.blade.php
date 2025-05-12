@@ -83,49 +83,156 @@
                             <form wire:submit.prevent="addShippingNote" class="grid grid-cols-1 gap-4" enctype="multipart/form-data">
                                 <div>
                                     <label for="shipping_status" class="block text-sm font-medium text-gray-700">{{ __('messages.status') }} <span class="text-red-500">*</span></label>
-                                    <select wire:model.defer="shippingNote.status" id="shipping_status" 
+                                    <select wire:model="shippingNote.status" id="shipping_status" wire:change="loadCustomFormFields"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white">
                                         <option value="">{{ __('messages.select_status') }}</option>
-                                        <option value="order_placed">{{ __('messages.shipping_status_order_placed') }}</option>
-                                        <option value="proforma_invoice_received">{{ __('messages.shipping_status_proforma_invoice_received') }}</option>
-                                        <option value="payment_completed">{{ __('messages.shipping_status_payment_completed') }}</option>
-                                        <option value="du_in_process">{{ __('messages.shipping_status_du_in_process') }}</option>
-                                        <option value="goods_acquired">{{ __('messages.shipping_status_goods_acquired') }}</option>
-                                        <option value="shipped_to_port">{{ __('messages.shipping_status_shipped_to_port') }}</option>
-                                        <option value="shipping_line_booking_confirmed">{{ __('messages.shipping_status_shipping_line_booking_confirmed') }}</option>
-                                        <option value="container_loaded">{{ __('messages.shipping_status_container_loaded') }}</option>
-                                        <option value="on_board">{{ __('messages.shipping_status_on_board') }}</option>
-                                        <option value="arrived_at_port">{{ __('messages.shipping_status_arrived_at_port') }}</option>
-                                        <option value="customs_clearance">{{ __('messages.shipping_status_customs_clearance') }}</option>
-                                        <option value="delivered">{{ __('messages.shipping_status_delivered') }}</option>
+                                        
+                                        <!-- Status padrão -->
+                                        <optgroup label="{{ __('messages.standard_status') }}">
+                                            <option value="order_placed">{{ __('messages.shipping_status_order_placed') }}</option>
+                                            <option value="delivered">{{ __('messages.shipping_status_delivered') }}</option>
+                                        </optgroup>
+                                        
+                                        <!-- Formulários personalizados -->
+                                        @if(isset($customForms) && $customForms->count() > 0)
+                                            <optgroup label="{{ __('messages.custom_forms') }}">
+                                                @foreach($customForms as $form)
+                                                    <option value="custom_form_{{ $form->id }}">{{ $form->name }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
                                     </select>
                                     @error('shippingNote.status')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 
-                                <div>
-                                    <label for="shipping_note" class="block text-sm font-medium text-gray-700">{{ __('messages.note') }} <span class="text-red-500">*</span></label>
-                                    <textarea wire:model.defer="shippingNote.note" id="shipping_note" rows="3"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white"
-                                        placeholder="{{ __('messages.enter_shipping_details') }}"></textarea>
-                                    @error('shippingNote.note')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                
-                                <div>
-                                    <label for="shipping_attachment" class="block text-sm font-medium text-gray-700">{{ __('messages.attachment') }}</label>
-                                    <input type="file" wire:model="shippingAttachment" id="shipping_attachment"
-                                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                                    @error('shippingAttachment')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                    <div wire:loading wire:target="shippingAttachment" class="mt-1 text-sm text-blue-600">
-                                        <i class="fas fa-spinner fa-spin mr-1"></i> {{ __('messages.uploading') }}
+                                <!-- Renderizar campos do formulário personalizado quando selecionado -->
+                                @if($renderCustomForm && $selectedCustomForm && !empty($customFormFields))
+                                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 my-2">
+                                        <h4 class="text-blue-700 font-semibold mb-3">{{ $selectedCustomForm->name }}</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            @foreach($customFormFields as $field)
+                                                <div class="@if($field['type'] == 'textarea') col-span-2 @endif">
+                                                    <label for="custom_form_field_{{ $field['id'] }}" 
+                                                           class="block text-sm font-medium text-gray-700">
+                                                        {{ $field['label'] }}
+                                                        @if($field['is_required'])<span class="text-red-500">*</span>@endif
+                                                    </label>
+                                                    
+                                                    @switch($field['type'])
+                                                        @case('text')
+                                                            <input type="text" 
+                                                                  id="custom_form_field_{{ $field['id'] }}" 
+                                                                  wire:model="formData.{{ $field['name'] }}" 
+                                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
+                                                            @break
+                                                        
+                                                        @case('textarea')
+                                                            <textarea id="custom_form_field_{{ $field['id'] }}" 
+                                                                     wire:model="formData.{{ $field['name'] }}" 
+                                                                     rows="3"
+                                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm"></textarea>
+                                                            @break
+                                                            
+                                                        @case('number')
+                                                            <input type="number" 
+                                                                  id="custom_form_field_{{ $field['id'] }}" 
+                                                                  wire:model="formData.{{ $field['name'] }}" 
+                                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
+                                                            @break
+                                                            
+                                                        @case('select')
+                                                            <select id="custom_form_field_{{ $field['id'] }}" 
+                                                                   wire:model="formData.{{ $field['name'] }}" 
+                                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
+                                                                <option value="">{{ __('messages.select_option') }}</option>
+                                                                @foreach($field['options'] as $option)
+                                                                    <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            @break
+                                                            
+                                                        @case('checkbox')
+                                                            <div class="mt-2 space-y-2">
+                                                                @foreach($field['options'] as $option)
+                                                                    <div class="flex items-center">
+                                                                        <input type="checkbox" 
+                                                                              id="custom_form_field_{{ $field['id'] }}_{{ $option['value'] }}" 
+                                                                              wire:model="formData.{{ $field['name'] }}.{{ $option['value'] }}" 
+                                                                              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                                                        <label for="custom_form_field_{{ $field['id'] }}_{{ $option['value'] }}" class="ml-2 text-sm text-gray-700">{{ $option['label'] }}</label>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                            @break
+                                                            
+                                                        @case('date')
+                                                            <input type="date" 
+                                                                  id="custom_form_field_{{ $field['id'] }}" 
+                                                                  wire:model="formData.{{ $field['name'] }}" 
+                                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
+                                                            @break
+                                                            
+                                                        @case('file')
+                                                            <div class="mt-1 flex flex-col">
+                                                                <div class="flex items-center">
+                                                                    <input type="file" 
+                                                                        id="custom_form_field_{{ $field['id'] }}" 
+                                                                        wire:model="formData.{{ $field['name'] }}" 
+                                                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none">
+                                                                    
+                                                                    <div wire:loading wire:target="formData.{{ $field['name'] }}" class="ml-3">
+                                                                        <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                @if(!empty($formData[$field['name']]) && !is_object($formData[$field['name']]))
+                                                                    <div class="mt-2 border border-blue-100 rounded-md p-2 bg-blue-50 flex items-center justify-between">
+                                                                        <div class="flex items-center">
+                                                                            <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                                                            <span class="text-sm text-gray-700 truncate max-w-xs">{{ basename($formData[$field['name']]) }}</span>
+                                                                        </div>
+                                                                        <a href="{{ asset('storage/' . $formData[$field['name']]) }}" target="_blank" class="text-blue-600 hover:text-blue-800 ml-2 px-2 py-1 bg-white rounded shadow-sm text-xs flex items-center">
+                                                                            <i class="fas fa-download mr-1"></i>
+                                                                            {{ __('messages.download') }}
+                                                                        </a>
+                                                                    </div>
+                                                                @elseif(is_object($formData[$field['name']]) && method_exists($formData[$field['name']], 'getClientOriginalName'))
+                                                                    <div class="mt-2 border border-blue-100 rounded-md p-2 bg-blue-50 flex items-center justify-between">
+                                                                        <div class="flex items-center">
+                                                                            <i class="fas fa-file-upload text-green-500 mr-2"></i>
+                                                                            <span class="text-sm text-gray-700 truncate max-w-xs">{{ $formData[$field['name']]->getClientOriginalName() }}</span>
+                                                                        </div>
+                                                                        <span class="text-xs text-gray-500 italic px-2 py-1 bg-white rounded shadow-sm">
+                                                                            <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                                                            {{ __('messages.selected_file') }}
+                                                                        </span>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                            @error('formData.' . $field['name'])
+                                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                            @enderror
+                                                            @break
+                                                            
+                                                        @default
+                                                            <input type="text" 
+                                                                  id="custom_form_field_{{ $field['id'] }}" 
+                                                                  wire:model="formData.{{ $field['name'] }}" 
+                                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
+                                                    @endswitch
+                                                    
+                                                    @if($field['description'])
+                                                        <p class="mt-1 text-xs text-gray-500">{{ $field['description'] }}</p>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
+                                
+                                <!-- Campo de anexo removido conforme solicitado -->
                                 
                                 <div class="flex justify-end">
                                     <button type="submit"
@@ -224,6 +331,72 @@
                                     
                                     <div class="mt-3 ml-2 text-sm text-gray-700 border-l-2 border-gray-200 pl-3">
                                         {{ $note->note }}
+                                        
+                                        @if($note->status == 'custom_form' && $note->custom_form_id)
+                                            @php
+                                                $customForm = \App\Models\SupplyChain\CustomForm::find($note->custom_form_id);
+                                                $submission = \App\Models\SupplyChain\CustomFormSubmission::where('entity_id', $note->id)
+                                                    ->where('form_id', $note->custom_form_id)
+                                                    ->latest()
+                                                    ->with('fieldValues.field')
+                                                    ->first();
+                                            @endphp
+                                            
+                                            @if($customForm && $submission)
+                                                <div class="mt-3 bg-blue-50 p-3 rounded-md border border-blue-100">
+                                                    <h5 class="text-blue-700 font-medium mb-2">{{ $customForm->name }}</h5>
+                                                    <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                                        @forelse($submission->fieldValues as $fieldValue)
+                                                            @if($fieldValue->field)
+                                                                <div class="col-span-1">
+                                                                    <dt class="font-medium text-gray-700">{{ $fieldValue->field->label }}:</dt>
+                                                                    <dd class="text-gray-600">
+                                                                        @if($fieldValue->field->type == 'checkbox')
+                                                                            {{ $fieldValue->value ? __('messages.yes') : __('messages.no') }}
+                                                                        @elseif($fieldValue->field->type == 'date' && !empty($fieldValue->value))
+                                                                            {{ \Carbon\Carbon::parse($fieldValue->value)->format('d/m/Y') }}
+                                                                        @elseif($fieldValue->field->type == 'select')
+                                                                            @php
+                                                                                $displayValue = $fieldValue->value;
+                                                                                $options = json_decode($fieldValue->field->options, true);
+                                                                                if (is_array($options)) {
+                                                                                    foreach ($options as $option) {
+                                                                                        if (isset($option['value']) && $option['value'] == $fieldValue->value) {
+                                                                                            $displayValue = $option['label'];
+                                                                                            break;
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            @endphp
+                                                                            {{ $displayValue }}
+                                                                        @elseif($fieldValue->field->type == 'file' && !empty($fieldValue->value))
+                                                                            <div class="flex items-center space-x-2">
+                                                                                <span class="inline-flex items-center bg-blue-50 text-xs rounded px-2 py-1 border border-blue-100">
+                                                                                    <i class="fas fa-file-alt text-blue-500 mr-1"></i>
+                                                                                    {{ Str::limit(basename($fieldValue->value), 15) }}
+                                                                                </span>
+                                                                                <a href="{{ asset('storage/'.$fieldValue->value) }}" 
+                                                                                   download
+                                                                                   class="text-blue-600 hover:text-blue-800 inline-flex items-center bg-white border border-blue-100 px-2 py-1 rounded text-xs shadow-sm hover:shadow transition-all">
+                                                                                    <i class="fas fa-download mr-1"></i>
+                                                                                    {{ __('messages.download') }}
+                                                                                </a>
+                                                                            </div>
+                                                                        @else
+                                                                            {{ $fieldValue->value }}
+                                                                        @endif
+                                                                    </dd>
+                                                                </div>
+                                                            @endif
+                                                        @empty
+                                                            <div class="col-span-2 text-gray-500 italic">
+                                                                {{ __('messages.no_data_available') }}
+                                                            </div>
+                                                        @endforelse
+                                                    </dl>
+                                                </div>
+                                            @endif
+                                        @endif
                                     </div>
                                     
                                     <div class="mt-2 text-xs text-gray-500 flex items-center">

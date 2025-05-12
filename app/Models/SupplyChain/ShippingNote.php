@@ -15,7 +15,13 @@ class ShippingNote extends Model
         'status',
         'note',
         'attachment_url',
-        'updated_by'
+        'updated_by',
+        'custom_form_id',
+        'form_data'
+    ];
+    
+    protected $casts = [
+        'form_data' => 'array',
     ];
 
     /**
@@ -33,7 +39,8 @@ class ShippingNote extends Model
         'on_board' => 'Em trânsito',
         'arrived_at_port' => 'Chegada ao porto de Luanda',
         'customs_clearance' => 'Desembaraço aduaneiro',
-        'delivered' => 'Entregue / Pronta para recolha'
+        'delivered' => 'Entregue / Pronta para recolha',
+        'custom_form' => 'Formulário Personalizado',
     ];
 
     /**
@@ -51,7 +58,8 @@ class ShippingNote extends Model
         'on_board' => 'blue',
         'arrived_at_port' => 'emerald',
         'customs_clearance' => 'amber',
-        'delivered' => 'green'
+        'delivered' => 'green',
+        'custom_form' => 'blue'
     ];
 
     /**
@@ -69,7 +77,8 @@ class ShippingNote extends Model
         'on_board' => 'fa-ship',
         'arrived_at_port' => 'fa-anchor',
         'customs_clearance' => 'fa-clipboard-check',
-        'delivered' => 'fa-check-circle'
+        'delivered' => 'fa-check-circle',
+        'custom_form' => 'fa-clipboard-list'
     ];
 
     /**
@@ -88,6 +97,10 @@ class ShippingNote extends Model
      */
     public function getStatusTextAttribute()
     {
+        if ($this->status === 'custom_form' && $this->customForm) {
+            return $this->customForm->name;
+        }
+        
         return self::$statusList[$this->status] ?? $this->status;
     }
 
@@ -129,5 +142,13 @@ class ShippingNote extends Model
     public function user()
     {
         return $this->updatedByUser();
+    }
+    
+    /**
+     * Relacionamento com o formulário personalizado
+     */
+    public function customForm()
+    {
+        return $this->belongsTo(CustomForm::class, 'custom_form_id');
     }
 }

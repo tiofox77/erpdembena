@@ -320,8 +320,6 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:supplychain.shipping.view'])->get('/shipping-notes', App\Livewire\SupplyChain\ShippingNotes::class)->name('shipping-notes');
         
         // Custom Forms Management
-        Route::middleware(['permission:supplychain.forms.manage'])->get('/custom-forms', function() {
-            return view('livewire.supply-chain.custom-forms-page');
-        })->name('custom-forms');
+        Route::middleware(['permission:supplychain.forms.manage'])->get('/custom-forms', App\Livewire\SupplyChain\CustomFormsPage::class)->name('custom-forms');
     });
 });

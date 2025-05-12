@@ -483,4 +483,6 @@ return [
     'daily_plans_info' => 'Planos diários permitem distribuir a produção em vários dias',
     'continue_despite_warning' => 'Você pode continuar com o planejamento apesar deste aviso',
     'empty_daily_plans_message' => 'Você pode criar planos de produção por dia para esta programação',
+    'production_completed_with_quantity' => 'Produção concluída! Quantidade registrada: :quantity',
+    'enter_produced_quantity' => 'Informe a quantidade produzida',
 ];

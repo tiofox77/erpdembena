@@ -359,12 +359,112 @@
                                                     </p>
                                                 </div>
                                                 <p class="text-sm text-gray-700 mt-1 whitespace-pre-line">{{ $note->note }}</p>
-                                                <div class="mt-2 flex items-center">
+                                                
+                                                <!-- Dados de Formulário Personalizado -->
+                                                @if($note->status == 'custom_form' && $note->custom_form_id)
+                                                    @php
+                                                        $customForm = \App\Models\SupplyChain\CustomForm::find($note->custom_form_id);
+                                                        $submission = \App\Models\SupplyChain\CustomFormSubmission::where('entity_id', $note->id)
+                                                            ->where('form_id', $note->custom_form_id)
+                                                            ->latest()
+                                                            ->with('fieldValues.field')
+                                                            ->first();
+                                                    @endphp
+                                                    
+                                                    @if($customForm && $submission)
+                                                        <div class="mt-3 mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-md border border-blue-100 p-3 relative overflow-hidden">
+                                                            <!-- Indicação visual de formulário -->
+                                                            <div class="absolute top-0 right-0 w-16 h-16 opacity-10">
+                                                                <i class="fas fa-clipboard-list text-5xl text-blue-500"></i>
+                                                            </div>
+                                                            
+                                                            <!-- Título do formulário -->
+                                                            <div class="flex items-center mb-3">
+                                                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full border border-blue-200 mr-2">
+                                                                    <i class="fas fa-file-alt mr-1"></i>
+                                                                    {{ __('messages.custom_form') }}
+                                                                </span>
+                                                                <h5 class="text-sm font-semibold text-blue-800">{{ $customForm->name }}</h5>
+                                                            </div>
+                                                            
+                                                            <!-- Campos do formulário -->
+                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                @forelse($submission->fieldValues as $fieldValue)
+                                                                    @if($fieldValue->field)
+                                                                        <div class="bg-white bg-opacity-60 p-2 rounded border border-blue-100 shadow-sm">
+                                                                            <p class="text-xs text-gray-500 font-medium">{{ $fieldValue->field->label }}</p>
+                                                                            <div class="text-sm text-gray-800">
+                                                                                @if($fieldValue->field->type == 'checkbox')
+                                                                                    <span class="inline-flex items-center {{ $fieldValue->value ? 'text-green-600' : 'text-red-600' }}">
+                                                                                        <i class="fas {{ $fieldValue->value ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
+                                                                                        {{ $fieldValue->value ? __('messages.yes') : __('messages.no') }}
+                                                                                    </span>
+                                                                                @elseif($fieldValue->field->type == 'date' && !empty($fieldValue->value))
+                                                                                    <span class="inline-flex items-center">
+                                                                                        <i class="far fa-calendar-alt mr-1 text-blue-500"></i>
+                                                                                        {{ \Carbon\Carbon::parse($fieldValue->value)->format('d/m/Y') }}
+                                                                                    </span>
+                                                                                @elseif($fieldValue->field->type == 'select')
+                                                                                    @php
+                                                                                        $displayValue = $fieldValue->value;
+                                                                                        $options = json_decode($fieldValue->field->options, true);
+                                                                                        if (is_array($options)) {
+                                                                                            foreach ($options as $option) {
+                                                                                                if (isset($option['value']) && $option['value'] == $fieldValue->value) {
+                                                                                                    $displayValue = $option['label'];
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    @endphp
+                                                                                    <span>
+                                                                                        <i class="fas fa-tag mr-1 text-blue-500"></i>
+                                                                                        {{ $displayValue }}
+                                                                                    </span>
+                                                                                @elseif($fieldValue->field->type == 'file' && !empty($fieldValue->value))
+                                                                                    <div class="flex flex-wrap items-center gap-2">
+                                                                                        <div class="inline-flex items-center max-w-xs bg-gray-100 text-gray-800 text-xs rounded-full px-3 py-1 border border-gray-200">
+                                                                                            <i class="fas fa-file mr-1 text-blue-500"></i>
+                                                                                            <span class="truncate">
+                                                                                                {{ basename($fieldValue->value) }}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <a href="{{ asset('storage/'.$fieldValue->value) }}" target="_blank" download 
+                                                                                            class="text-blue-600 hover:text-blue-800 inline-flex items-center bg-white shadow-sm px-2 py-1 rounded-md text-xs border border-blue-100 transition-all hover:shadow">
+                                                                                            <i class="fas fa-download mr-1"></i>
+                                                                                            {{ __('messages.download') }}
+                                                                                        </a>
+                                                                                        <a href="{{ asset('storage/'.$fieldValue->value) }}" target="_blank" 
+                                                                                            class="text-gray-600 hover:text-gray-800 inline-flex items-center bg-white shadow-sm px-2 py-1 rounded-md text-xs border border-gray-100 transition-all hover:shadow">
+                                                                                            <i class="fas fa-external-link-alt mr-1"></i>
+                                                                                            {{ __('messages.view') }}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                @else
+                                                                                    <span>{{ $fieldValue->value }}</span>
+                                                                                @endif
+                                                                            </div>
+                                                                        </div>
+                                                                    @endif
+                                                                @empty
+                                                                    <div class="col-span-2 text-center p-3 bg-white bg-opacity-60 rounded">
+                                                                        <p class="text-sm text-gray-500 italic">
+                                                                            <i class="fas fa-info-circle mr-1"></i>
+                                                                            {{ __('messages.no_data_available') }}
+                                                                        </p>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                                
+                                                <div class="mt-2 flex items-center flex-wrap gap-2">
                                                     @if($note->updated_by)
                                                         @php
                                                             $author = \App\Models\User::find($note->updated_by);
                                                         @endphp
-                                                        <p class="text-xs text-gray-500 mr-2">
+                                                        <p class="text-xs text-gray-500">
                                                             <i class="fas fa-user text-gray-400 mr-1"></i>
                                                             {{ $author ? $author->name : 'Usuário '.$note->updated_by }}
                                                         </p>

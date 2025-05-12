@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+{{-- Define o layout como um componente Blade com props --}}
+@props(['title' => config('app.name', 'Dembena ERP')])
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -1031,7 +1033,7 @@
 
         <!-- Content -->
         <main class="p-6">
-            {{ $slot }}
+            {{ $slot ?? '' }}
         </main>
     </div>
 
