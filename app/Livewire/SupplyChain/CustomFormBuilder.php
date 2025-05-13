@@ -6,6 +6,9 @@ use App\Models\SupplyChain\CustomForm;
 use App\Models\SupplyChain\CustomFormField;
 use App\Models\SupplyChain\ShippingNote;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -24,6 +27,11 @@ class CustomFormBuilder extends Component
     public $showDeleteModal = false;
     public $showFieldModal = false;
     public $showPreviewModal = false;
+    public $showImportModal = false;
+    
+    // Nova solução simplificada para importação/exportação
+    public $importFile = null;
+    public $exportUrl = null;
     
     public $currentFormId = null;
     public $currentForm = [
@@ -432,7 +440,172 @@ class CustomFormBuilder extends Component
         $this->showDeleteModal = false;
         $this->showFieldModal = false;
         $this->showPreviewModal = false;
+        $this->showImportModal = false;
+        
+        // Limpar dados de importação/exportação
+        $this->importFile = null;
+        $this->exportUrl = null;
+        
         $this->resetErrorBag();
+    }
+    
+    /**
+     * Exportar um formulário diretamente
+     * 
+     * @param int $id ID do formulário a ser exportado
+     */
+    public function exportForm($id)
+    {
+        try {
+            // Buscar o formulário com seus campos
+            $form = CustomForm::with('fields')->findOrFail($id);
+            
+            // Preparar os dados para exportação
+            $exportData = [
+                'form' => [
+                    'name' => $form->name,
+                    'description' => $form->description,
+                    'entity_type' => $form->entity_type,
+                    'is_active' => $form->is_active,
+                    'export_date' => now()->format('Y-m-d H:i:s'),
+                    'exporter' => auth()->user()->name,
+                ],
+                'fields' => [],
+            ];
+            
+            // Adicionar campos
+            foreach ($form->fields as $field) {
+                $exportData['fields'][] = [
+                    'label' => $field->label,
+                    'name' => $field->name,
+                    'type' => $field->type,
+                    'options' => $field->options,
+                    'validation_rules' => $field->validation_rules,
+                    'description' => $field->description,
+                    'is_required' => $field->is_required,
+                    'order' => $field->order,
+                ];
+            }
+            
+            // Gerar nome do arquivo
+            $fileName = Str::slug($form->name) . '-' . date('Ymd-His') . '.json';
+            
+            // Converter para JSON
+            $jsonContent = json_encode($exportData, JSON_PRETTY_PRINT);
+            
+            // Criar arquivo temporário
+            $tempFilePath = 'form-exports/' . $fileName;
+            Storage::put('public/' . $tempFilePath, $jsonContent);
+            
+            // Gerar URL para download
+            $url = Storage::url('public/' . $tempFilePath);
+            
+            // Disparar evento para download
+            $this->dispatch('download-file', url: $url);
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.form_exported_successfully')
+            );
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.form_export_error') . ': ' . $e->getMessage()
+            );
+        }
+    }
+    
+    /**
+     * Abrir modal de importação
+     */
+    public function openImportModal()
+    {
+        // Fechar outros modais primeiro
+        $this->showFormModal = false;
+        $this->showDeleteModal = false;
+        $this->showFieldModal = false;
+        $this->showPreviewModal = false;
+        $this->showExportModal = false;
+        
+        // Limpar arquivo e erros
+        $this->importFile = null;
+        $this->resetErrorBag();
+        
+        // Abrir modal
+        $this->showImportModal = true;
+        
+        // Log para debug
+        \Illuminate\Support\Facades\Log::info('Modal de importação aberto', [
+            'modal_state' => $this->showImportModal
+        ]);
+    }
+    
+    /**
+     * Importar um formulário de um arquivo JSON
+     */
+    public function importForm()
+    {
+        try {
+            $this->validate([
+                'importFile' => 'required|file|mimes:json|max:1024', // máximo 1MB
+            ]);
+            
+            // Ler o conteúdo do arquivo
+            $content = file_get_contents($this->importFile->getRealPath());
+            $importData = json_decode($content, true);
+            
+            // Validar estrutura do JSON
+            if (!isset($importData['form']) || !isset($importData['fields'])) {
+                throw new \Exception(__('messages.invalid_form_structure'));
+            }
+            
+            // Iniciar transação do banco de dados
+            DB::beginTransaction();
+            
+            // Criar o formulário
+            $form = new CustomForm();
+            $form->name = $importData['form']['name'];
+            $form->description = $importData['form']['description'] ?? null;
+            $form->entity_type = $importData['form']['entity_type'];
+            $form->is_active = $importData['form']['is_active'] ?? true;
+            $form->created_by = auth()->id();
+            $form->save();
+            
+            // Criar os campos
+            foreach ($importData['fields'] as $index => $fieldData) {
+                $field = new CustomFormField();
+                $field->form_id = $form->id;
+                $field->label = $fieldData['label'];
+                $field->name = $fieldData['name'];
+                $field->type = $fieldData['type'];
+                $field->options = $fieldData['options'] ?? [];
+                $field->validation_rules = $fieldData['validation_rules'] ?? [];
+                $field->description = $fieldData['description'] ?? null;
+                $field->is_required = $fieldData['is_required'] ?? false;
+                $field->order = $fieldData['order'] ?? $index; // Usar índice como ordem se não fornecido
+                $field->save();
+            }
+            
+            // Confirmar a transação
+            DB::commit();
+            
+            // Fechar modal e notificar sucesso
+            $this->closeModal();
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.form_imported_successfully')
+            );
+            
+        } catch (\Exception $e) {
+            // Reverter transação em caso de erro
+            DB::rollBack();
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.form_import_error') . ': ' . $e->getMessage()
+            );
+        }
     }
     
     public function render()

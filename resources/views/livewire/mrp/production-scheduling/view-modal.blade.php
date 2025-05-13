@@ -2,6 +2,7 @@
 <div x-cloak
     class="fixed inset-0 z-30 flex items-center justify-center bg-gray-800 bg-opacity-75 transition-opacity"
     x-show="$wire.showViewModal"
+    x-init="$nextTick(() => { if (typeof window.initBreakdownCharts === 'function') setTimeout(window.initBreakdownCharts, 500); })"
     @keydown.escape.window="$wire.closeViewModal()">
     <div class="relative w-full max-w-[90%] sm:max-w-[85%] lg:max-w-[80%] mx-auto h-[90vh] flex flex-col px-2 sm:px-4"
         x-show="$wire.showViewModal"
@@ -227,19 +228,37 @@
                                             {{ __('messages.priority_' . $viewingSchedule->priority) }}
                                         </span>
                                     </dd>
-                                </div>
-
-                                <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.planned_quantity') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
-                                        {{ number_format($viewingSchedule->planned_quantity, 2) }}
+                                        <span class="font-medium text-blue-700">{{ number_format($viewingSchedule->planned_quantity, 2) }}</span>
+                                        <span class="text-xs text-gray-500">{{ __('messages.units') }}</span>
+                                        @if(!empty($breakdownImpact) && isset($breakdownImpact['efficiency_percentage']))
+                                            <div class="mt-1 text-xs text-blue-600">
+                                                <i class="fas fa-info-circle mr-1"></i> {{ __('messages.efficiency') }}: {{ number_format($breakdownImpact['efficiency_percentage'] ?? 0, 2) }}%
+                                            </div>
+                                        @endif
                                     </dd>
                                 </div>
-
+                                
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.actual_quantity') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
-                                        {{ number_format($viewingSchedule->actual_quantity, 2) }}
+                                        @if($viewingSchedule->actual_quantity)
+                                            <span class="font-medium text-green-700">{{ number_format($viewingSchedule->actual_quantity, 2) }}</span>
+                                            <span class="text-xs text-gray-500">{{ __('messages.units') }}</span>
+                                            @if(!empty($breakdownImpact) && isset($breakdownImpact['total_defect_quantity']))
+                                                <div class="mt-1 flex flex-col">
+                                                    <span class="text-xs text-green-600">
+                                                        <i class="fas fa-check-circle mr-1"></i> {{ __('messages.good_units') }}: {{ number_format($breakdownImpact['good_units'] ?? 0, 2) }}
+                                                    </span>
+                                                    <span class="text-xs text-red-600">
+                                                        <i class="fas fa-exclamation-circle mr-1"></i> {{ __('messages.defect_quantity') }}: {{ number_format($breakdownImpact['total_defect_quantity'] ?? 0, 2) }}
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span>-</span>
+                                        @endif
                                     </dd>
                                 </div>
                                 
@@ -298,6 +317,254 @@
                                     </div>
                                 @endif
                             </dl>
+                        </div>
+                        
+                        <!-- Breakdown Impact Analysis -->
+                        <div class="bg-red-50 rounded-lg p-4 border border-red-200 mt-4">
+                            <h4 class="font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                                <div>
+                                    <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                                    {{ __('messages.breakdown_impact') }}
+                                </div>
+                                
+                                <!-- Resumo da eficiência -->
+                                <div class="text-xs text-gray-600 bg-gray-100 p-1.5 rounded-lg">
+                                    <span class="font-medium">
+                                        {{ __('messages.planned_vs_actual_with_breakdown') }}:
+                                    </span>
+                                    <span class="text-blue-600 font-medium mx-1">{{ number_format($viewingSchedule->planned_quantity, 0) }}</span> →
+                                    <span class="text-green-600 font-medium mx-1">{{ number_format($breakdownImpact['good_units'] ?? 0, 0) }}</span>
+                                    <span class="text-xs">(-{{ number_format($breakdownImpact['production_loss'] ?? 0, 0) }})</span>
+                                </div>
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+                                <!-- Impact on Production -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-red-100 md:col-span-1 lg:col-span-2">
+                                    <h5 class="text-sm font-medium text-red-700 mb-2">{{ __('messages.production_impact') }}</h5>
+                                    <div class="flex items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-industry text-red-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{{ number_format($breakdownImpact['production_loss'] ?? 0, 2) }} {{ __('messages.units') }}</p>
+                                            <p class="text-xs text-gray-500">{{ __('messages.estimated_production_loss') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Impact on Revenue -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-red-100 md:col-span-1 lg:col-span-2">
+                                    <h5 class="text-sm font-medium text-red-700 mb-2">{{ __('messages.revenue_impact') }}</h5>
+                                    <div class="flex items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-dollar-sign text-red-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">${{ number_format($breakdownImpact['revenue_loss'] ?? 0, 2) }}</p>
+                                            <p class="text-xs text-gray-500">{{ __('messages.estimated_revenue_loss') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recovery Time -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-red-100 md:col-span-1 lg:col-span-2">
+                                    <h5 class="text-sm font-medium text-red-700 mb-2">{{ __('messages.recovery_time') }}</h5>
+                                    <div class="flex items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-hourglass-half text-red-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{{ number_format($breakdownImpact['recovery_hours'] ?? 0, 2) }} {{ __('messages.hours') }}</p>
+                                            <p class="text-xs text-gray-500">{{ __('messages.estimated_recovery_time') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Defect Quantity -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-red-100 md:col-span-1 lg:col-span-2">
+                                    <h5 class="text-sm font-medium text-red-700 mb-2">{{ __('messages.defect_quantity') }}</h5>
+                                    <div class="flex items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{{ number_format($breakdownImpact['total_defect_quantity'] ?? 0, 2) }} {{ __('messages.units') }}</p>
+                                            <p class="text-xs text-gray-500">{{ number_format($breakdownImpact['defect_rate'] ?? 0, 2) }}% {{ __('messages.defect_rate') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Good Units -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-green-100 md:col-span-1 lg:col-span-2">
+                                    <h5 class="text-sm font-medium text-green-700 mb-2">{{ __('messages.good_units') }}</h5>
+                                    <div class="flex items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-check-circle text-green-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{{ number_format($breakdownImpact['good_units'] ?? 0, 2) }} {{ __('messages.units') }}</p>
+                                            <p class="text-xs text-gray-500">{{ number_format($breakdownImpact['quality_rate'] ?? 0, 2) }}% {{ __('messages.quality_rate') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Efficiency Percentage -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-blue-100 md:col-span-1 lg:col-span-2">
+                                    <h5 class="text-sm font-medium text-blue-700 mb-2">{{ __('messages.efficiency') }}</h5>
+                                    <div class="flex items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-tachometer-alt text-blue-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{{ number_format($breakdownImpact['efficiency_percentage'] ?? 0, 2) }}%</p>
+                                            <p class="text-xs text-gray-500">{{ __('messages.production_efficiency') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Impact Trend and Quality Charts -->
+                            @if(!empty($chartHistory))
+                            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- Impact Trend Chart -->
+                                <div class="bg-white p-3 rounded-lg border border-red-100">
+                                    <h5 class="text-sm font-medium text-red-700 mb-2">{{ __('messages.impact_trend') }}</h5>
+                                    <div class="h-48" style="position: relative;">
+                                        <canvas id="impactTrendCanvas"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quality Analysis Chart -->
+                                <div class="bg-white p-3 rounded-lg border border-green-100">
+                                    <h5 class="text-sm font-medium text-green-700 mb-2">{{ __('messages.quality_analysis') }}</h5>
+                                    <div class="h-48" style="position: relative;">
+                                        <canvas id="qualityAnalysisCanvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Direct initialization scripts for charts -->
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // Wait for the canvas elements to be in the DOM
+                                    setTimeout(function() {
+                                        try {
+                                            const historyData = @json($chartHistory);
+                                            
+                                            if (historyData && historyData.length > 0) {
+                                                // Initialize Impact Trend Chart
+                                                const impactCanvas = document.getElementById('impactTrendCanvas');
+                                                if (impactCanvas) {
+                                                    const impactCtx = impactCanvas.getContext('2d');
+                                                    new Chart(impactCtx, {
+                                                        type: 'bar',
+                                                        data: {
+                                                            labels: historyData.map(item => item.date),
+                                                            datasets: [
+                                                                {
+                                                                    label: '{{ __('messages.breakdown_hours') }}',
+                                                                    data: historyData.map(item => item.hours),
+                                                                    backgroundColor: 'rgba(234, 88, 12, 0.6)',
+                                                                    borderColor: 'rgba(234, 88, 12, 1)',
+                                                                    borderWidth: 1
+                                                                },
+                                                                {
+                                                                    label: '{{ __('messages.production_loss') }}',
+                                                                    data: historyData.map(item => item.loss),
+                                                                    backgroundColor: 'rgba(220, 38, 38, 0.6)',
+                                                                    borderColor: 'rgba(220, 38, 38, 1)',
+                                                                    borderWidth: 1
+                                                                }
+                                                            ]
+                                                        },
+                                                        options: {
+                                                            responsive: true,
+                                                            maintainAspectRatio: false,
+                                                            scales: {
+                                                                y: {
+                                                                    beginAtZero: true,
+                                                                    title: {
+                                                                        display: true,
+                                                                        text: '{{ __('messages.value') }}'
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    });
+                                                    console.log('{{ __('messages.impact_trend_chart_initialized') }}');
+                                                }
+                                                
+                                                // Initialize Quality Analysis Chart
+                                                const qualityCanvas = document.getElementById('qualityAnalysisCanvas');
+                                                if (qualityCanvas) {
+                                                    const qualityCtx = qualityCanvas.getContext('2d');
+                                                    new Chart(qualityCtx, {
+                                                        type: 'bar',
+                                                        data: {
+                                                            labels: historyData.map(item => item.date),
+                                                            datasets: [
+                                                                {
+                                                                    label: '{{ __('messages.defect_quantity') }}',
+                                                                    data: historyData.map(item => item.defects),
+                                                                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                                                                    borderColor: 'rgba(239, 68, 68, 1)',
+                                                                    borderWidth: 1,
+                                                                    type: 'bar'
+                                                                },
+                                                                {
+                                                                    label: '{{ __('messages.quality_rate') }}',
+                                                                    data: historyData.map(item => item.quality_rate),
+                                                                    borderColor: 'rgba(16, 185, 129, 1)',
+                                                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                                                    borderWidth: 2,
+                                                                    type: 'line',
+                                                                    yAxisID: 'y1'
+                                                                }
+                                                            ]
+                                                        },
+                                                        options: {
+                                                            responsive: true,
+                                                            maintainAspectRatio: false,
+                                                            scales: {
+                                                                y: {
+                                                                    beginAtZero: true,
+                                                                    title: {
+                                                                        display: true,
+                                                                        text: '{{ __('messages.units') }}'
+                                                                    }
+                                                                },
+                                                                y1: {
+                                                                    position: 'right',
+                                                                    beginAtZero: true,
+                                                                    max: 100,
+                                                                    title: {
+                                                                        display: true,
+                                                                        text: '%'
+                                                                    },
+                                                                    grid: {
+                                                                        drawOnChartArea: false
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    });
+                                                    console.log('{{ __('messages.quality_analysis_chart_initialized') }}');
+                                                }
+                                            }
+                                        } catch (error) {
+                                            console.error('{{ __('messages.error_initializing_charts') }}:', error);
+                                        }
+                                    }, 500);
+                                });
+                            </script>
+                            
+                            <div class="mt-2 text-center">
+                                <button type="button" onclick="location.reload()" class="text-xs text-blue-600 underline">
+                                    {{ __('messages.reload_charts') }}
+                                </button>
+                            </div>
+                            @endif
                         </div>
                         
                         <!-- Coluna 2: Informações de Datas -->
@@ -611,10 +878,36 @@
             @endif
         </div>
 
-<!-- Scripts para Toastr -->
+<!-- Scripts para Toastr e Charts -->
 <script>
+    // Embed breakdown data directly to avoid serialization issues
+    const breakdownData = @json($breakdownImpact ?? []);
+    
+    // Make history data available globally using the dedicated chartHistory property
+    window.chartHistoryData = @json($chartHistory ?? []);
+    console.log('Chart history data (from dedicated property):', window.chartHistoryData);
+    
     document.addEventListener('DOMContentLoaded', function() {
-        Livewire.on('showToast', function(data) {
+        // Log for debugging
+        console.log('DOM Content Loaded, breakdownData:', breakdownData);
+        
+        // Make sure Chart.js is available
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not loaded!');
+            // Dynamically load Chart.js if not available
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js';
+            script.onload = function() {
+                console.log('Chart.js loaded dynamically');
+                setTimeout(initializeBreakdownCharts, 300);
+            };
+            document.head.appendChild(script);
+        } else {
+            console.log('Chart.js is available');
+        }
+        // Set up toast notification listener for Livewire v3
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('showToast', function(data) {
             toastr.options = {
                 "closeButton": true,
                 "progressBar": true,
@@ -646,6 +939,243 @@
                     toastr.info(data.message, data.title);
             }
         });
+        
+        // Initialize Breakdown Impact Analysis Charts when modal opens
+        document.addEventListener('livewire:initialized', () => {
+            // Set up listeners for Livewire v3 events
+            Livewire.on('viewModalReady', () => {
+                console.log('viewModalReady event fired');
+                setTimeout(initializeBreakdownCharts, 100); // Short delay to ensure DOM elements are ready
+            });
+        });
+        
+        // Also initialize when component is updated
+        document.addEventListener('livewire:update', () => {
+            console.log('Livewire component updated');
+            if (document.getElementById('impactTrendChart')) {
+                setTimeout(initializeBreakdownCharts, 100);
+            }
+        });
+        
+        function initializeBreakdownCharts() {
+            console.log('Initializing breakdown charts');
+            
+            // Check if canvases exist
+            const impactCanvas = document.getElementById('impactTrendCanvas');
+            const qualityCanvas = document.getElementById('qualityAnalysisCanvas');
+            
+            if (!impactCanvas || !qualityCanvas) {
+                console.warn('Chart canvases not found in the DOM');
+                return;
+            }
+            
+            console.log('Chart canvases found');
+            
+            // Hard-coded static data if needed for testing
+            // let testData = [
+            //     {date: '2025-05-20', hours: 11.67, loss: 14.5, defects: 100.0, quality_rate: 100.0},
+            //     {date: '2025-05-15', hours: 6.67, loss: 14.5, defects: 100.0, quality_rate: 100.0},
+            //     {date: '2025-05-14', hours: 3.33, loss: 80.0, defects: 40.0, quality_rate: 33.33}
+            // ];
+            
+            // Use the globally available history data
+            let historyData = window.chartHistoryData || [];
+            
+            console.log('History data for charts:', historyData);
+            
+            if (historyData.length === 0) {
+                console.warn('No history data available for charts');
+                return;
+            }
+            
+            // Check if charts already exist and destroy them safely
+            try {
+                if (window.impactTrendChart instanceof Chart) {
+                    window.impactTrendChart.destroy();
+                }
+                
+                if (window.qualityAnalysisChart instanceof Chart) {
+                    window.qualityAnalysisChart.destroy();
+                }
+            } catch (e) {
+                console.warn('Error destroying existing charts:', e);
+                // Continue even if destroy fails
+            }
+            
+            // Get labels and datasets
+            const dates = historyData.map(item => item.date);
+            const hours = historyData.map(item => item.hours);
+            const losses = historyData.map(item => item.loss);
+            const defects = historyData.map(item => item.defects);
+            const qualityRates = historyData.map(item => item.quality_rate);
+            
+            // Initialize Impact Trend Chart
+            const impactCtx = impactCanvas.getContext('2d');
+            window.impactTrendChart = new Chart(impactCtx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Horas de Parada',
+                            data: hours,
+                            backgroundColor: 'rgba(234, 88, 12, 0.6)',
+                            borderColor: 'rgba(234, 88, 12, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-axis-1'
+                        },
+                        {
+                            label: 'Perda de Produção',
+                            data: losses,
+                            backgroundColor: 'rgba(220, 38, 38, 0.6)',
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-axis-2'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        'y-axis-1': {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Horas'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        'y-axis-2': {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Unidades'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 6
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Initialize Quality Analysis Chart
+            const qualityCtx = qualityCanvas.getContext('2d');
+            window.qualityAnalysisChart = new Chart(qualityCtx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Quantidade de Defeitos',
+                            data: defects,
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-axis-1'
+                        },
+                        {
+                            label: 'Taxa de Qualidade',
+                            data: qualityRates,
+                            type: 'line',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                            fill: false,
+                            yAxisID: 'y-axis-2'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        'y-axis-1': {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Unidades'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        'y-axis-2': {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '%'
+                            },
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 6
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('Charts initialized successfully');
+        }
+        
+        // Setup a global function to initialize charts that can be called from Alpine.js
+        window.initBreakdownCharts = function() {
+            console.log('Manual chart initialization triggered');
+            setTimeout(initializeBreakdownCharts, 500);
+        }
+        
+        // Initialize charts when view is loaded with a longer delay to ensure DOM is fully rendered
+        setTimeout(initializeBreakdownCharts, 1000);
+    });
     });
 </script>
 

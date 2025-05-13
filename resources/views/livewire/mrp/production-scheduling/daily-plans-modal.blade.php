@@ -4,7 +4,7 @@
     style="width: 100vw; height: 100vh;"
     x-show="$wire.showDailyPlansModal"
     @keydown.escape.window="$wire.closeDailyPlansModal()">
-    <div class="relative w-[95%] mx-auto my-4"
+    <div class="relative w-[95%] max-h-[90vh] mx-auto my-4"
         x-show="$wire.showDailyPlansModal"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0 transform scale-95"
@@ -14,11 +14,11 @@
         x-transition:leave-end="opacity-0 transform scale-95"
         @click.away="$wire.closeDailyPlansModal()">
 
-        <div class="relative bg-white rounded-lg shadow-xl overflow-hidden w-full" @click.stop>
+        <div class="relative bg-white rounded-lg shadow-xl overflow-hidden w-full flex flex-col max-h-[90vh]" @click.stop>
             
             <!-- Cabeçalho do Modal -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-4 sm:px-6 flex justify-between items-center shadow-lg">
-                <h3 class="text-lg font-medium text-white flex items-center animate__animated animate__fadeIn">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-3 py-3 sm:px-6 sm:py-4 flex justify-between items-center shadow-lg sticky top-0 z-10">
+                <h3 class="text-sm sm:text-base md:text-lg font-medium text-white flex items-center animate__animated animate__fadeIn truncate max-w-[75%]">
                     <i class="fas fa-calendar-alt mr-2 text-yellow-300"></i>
                     {{ __('messages.daily_production_plans') }}
                     @if($viewingSchedule)
@@ -31,7 +31,7 @@
             </div>
 
             <!-- Content -->
-            <div class="bg-white p-4 sm:p-6">
+            <div class="bg-white p-3 sm:p-6 overflow-y-auto flex-grow">
                 @if($viewingSchedule)
                 
                 <!-- Alerta de componentes insuficientes (apenas aviso, não bloqueante) -->
@@ -91,7 +91,7 @@
                     </div>
                 </div>
                 @endif
-                <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4 animate__animated animate__fadeIn">
+                <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 animate__animated animate__fadeIn">
                     <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
                         <span class="text-sm font-medium text-gray-500 flex items-center">
                             <i class="fas fa-hashtag text-blue-500 mr-2"></i> {{ __('messages.schedule_number') }}:
@@ -144,6 +144,20 @@
                     </div>
                     <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
                         <span class="text-sm font-medium text-gray-500 flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> {{ __('messages.defect_quantity') }}:
+                        </span>
+                        <p class="text-sm text-gray-900 mt-1 font-semibold">{{ number_format($breakdownImpact['total_defect_quantity'] ?? 0, 2) }}</p>
+                        <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                            @php
+                                $totalDefects = $breakdownImpact['total_defect_quantity'] ?? 0;
+                                $defectPercentage = $viewingSchedule->actual_quantity > 0 ? min(100, round(($totalDefects / $viewingSchedule->actual_quantity) * 100)) : 0;
+                            @endphp
+                            <div class="bg-red-500 h-1.5 rounded-full" style="width: {{ $defectPercentage }}%"></div>
+                        </div>
+                        <p class="text-xs text-right text-gray-500">{{ $defectPercentage }}%</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
+                        <span class="text-sm font-medium text-gray-500 flex items-center">
                             <i class="fas fa-info-circle text-blue-500 mr-2"></i> {{ __('messages.status') }}:
                         </span>
                         <p class="text-sm text-gray-900 mt-2">
@@ -165,6 +179,11 @@
                             </span>
                         </p>
                     </div>
+                    
+                    <!-- Seção de impacto das falhas na produção -->
+                    @if(isset($viewingSchedule) && $viewingSchedule)
+                    <!-- Breakdown impact section removed as requested -->
+                    @endif
                 @else
                 <div class="p-4 rounded-md bg-yellow-50 border border-yellow-100">
                     <p class="text-yellow-700">{{ __('messages.no_schedule_selected') }}</p>
@@ -179,8 +198,8 @@
                         {{ __('messages.daily_plans') }}
                     </h4>
                     
-                    <div class="mt-2 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg overflow-hidden">
+                    <div class="mt-2 overflow-x-auto -mx-3 sm:mx-0">
+                        <table class="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg overflow-hidden table-auto md:table-fixed">
                             <thead class="bg-gradient-to-r from-blue-50 to-blue-100">
                                 <tr>
                                     <th scope="col" class="px-4 py-3">
@@ -189,31 +208,49 @@
                                             {{ __('messages.date') }}
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-4 py-3">
+                                    <th scope="col" class="px-4 py-3 md:table-cell">
                                         <div class="flex items-center">
                                             <i class="fas fa-clock text-blue-500 mr-2"></i>
                                             {{ __('messages.time_period') }}
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-4 py-3">
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
                                         <div class="flex items-center">
                                             <i class="fas fa-clipboard-list text-blue-500 mr-2"></i>
                                             {{ __('messages.planned_quantity') }}
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-4 py-3">
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                            {{ __('messages.defect_quantity') }}
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
                                         <div class="flex items-center">
                                             <i class="fas fa-check-square text-blue-500 mr-2"></i>
                                             {{ __('messages.actual_quantity') }}
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-4 py-3">
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
                                         <div class="flex items-center">
                                             <i class="fas fa-flag text-blue-500 mr-2"></i>
                                             {{ __('messages.status') }}
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-4 py-3">
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                                            {{ __('messages.breakdown') }}
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-tag text-orange-500 mr-2"></i>
+                                            {{ __('messages.failure_details') }}
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-4 py-3 hidden md:table-cell">
                                         <div class="flex items-center">
                                             <i class="fas fa-cogs text-blue-500 mr-2"></i>
                                             {{ __('messages.actions') }}
@@ -224,7 +261,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @if(isset($dailyPlans) && count($dailyPlans) > 0)
                                 @foreach($dailyPlans as $index => $plan)
-                                <tr class="hover:bg-blue-50 transition-colors duration-150 animate__animated animate__fadeIn">
+                                <tr class="hover:bg-blue-50 transition-colors duration-150 animate__animated animate__fadeIn block md:table-row mb-4 md:mb-0 border rounded-lg md:border-none shadow-md md:shadow-none bg-white">
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="flex items-center">
                                             <i class="fas fa-calendar-day text-blue-400 mr-2"></i>
@@ -243,10 +280,21 @@
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-cubes text-blue-400"></i>
                                             </div>
-                                            <input type="number" step="0.001" min="0" 
+                                            <input type="number" step="0.01" min="0" 
                                                 class="pl-9 pr-8 border-gray-300 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
                                                 wire:model.defer="dailyPlans.{{ $index }}.planned_quantity"
-                                                placeholder="0.000">
+                                                placeholder="0.00">
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="relative rounded-md shadow-sm">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                                            </div>
+                                            <input type="number" step="0.01" min="0" 
+                                                class="pl-9 pr-8 border-gray-300 focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
+                                                wire:model.defer="dailyPlans.{{ $index }}.defect_quantity"
+                                                placeholder="0.00">
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
@@ -254,19 +302,19 @@
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-check-circle text-green-400"></i>
                                             </div>
-                                            <input type="number" step="0.001" min="0" 
+                                            <input type="number" step="0.01" min="0" 
                                                 class="pl-9 pr-8 border-gray-300 focus:ring-green-500 focus:border-green-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
                                                 wire:model.defer="dailyPlans.{{ $index }}.actual_quantity"
-                                                placeholder="0.000">
+                                                placeholder="0.00">
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    <td class="px-4 py-3 text-sm block md:table-cell before:content-['Status:'] md:before:content-none before:font-medium before:text-gray-700 before:block md:before:hidden">
                                         <div class="relative rounded-md shadow-sm">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-flag text-blue-400"></i>
                                             </div>
                                             <select wire:model.defer="dailyPlans.{{ $index }}.status" 
-                                                class="pl-9 block w-full py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg transition-all duration-200">
+                                                class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200">
                                                 <option value="pending">{{ __('messages.status_pending') }}</option>
                                                 <option value="in_progress">{{ __('messages.status_in_progress') }}</option>
                                                 <option value="completed">{{ __('messages.status_completed') }}</option>
@@ -274,18 +322,76 @@
                                             </select>
                                         </div>
                                     </td>
+                                    <td class="px-4 py-3 text-sm block md:table-cell before:content-['Breakdown:'] md:before:content-none before:font-medium before:text-gray-700 before:block md:before:hidden">
+                                        <div class="flex items-center space-x-2">
+                                            <label class="inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" wire:model.defer="dailyPlans.{{ $index }}.has_breakdown" class="form-checkbox h-5 w-5 text-red-600 transition duration-150 ease-in-out rounded">
+                                                <span class="ml-2 text-sm text-gray-700">{{ __('messages.yes') }}</span>
+                                            </label>
+                                            <div x-data="{ show: false }" x-show.transition.opacity="$wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown" class="relative rounded-md shadow-sm flex-1 ml-2">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <i class="fas fa-clock text-gray-400"></i>
+                                                </div>
+                                                <input type="number" wire:model.defer="dailyPlans.{{ $index }}.breakdown_minutes" 
+                                                    class="pl-9 block w-full py-2 text-sm border-gray-300 focus:ring-red-500 focus:border-red-500 rounded-md transition-all duration-200" 
+                                                    placeholder="{{ __('messages.minutes') }}">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm block md:table-cell before:content-['Failure_Details:'] md:before:content-none before:font-medium before:text-gray-700 before:block md:before:hidden">
+                                        <div x-data="{ show: false }" x-show.transition.opacity="$wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown">
+                                            <div class="mb-2 relative rounded-md shadow-sm">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <i class="fas fa-tag text-orange-400"></i>
+                                                </div>
+                                                <select wire:model.defer="dailyPlans.{{ $index }}.failure_category_id" 
+                                                    class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 rounded-md transition-all duration-200">
+                                                    <option value="">{{ __('messages.select_failure_category') }}</option>
+                                                    @foreach($failureCategories as $category)
+                                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="relative rounded-md shadow-sm">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <i class="fas fa-list text-blue-400"></i>
+                                                </div>
+                                                <select wire:model.defer="dailyPlans.{{ $index }}.failure_root_causes" 
+                                                    class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200"
+                                                    multiple size="2">
+                                                    @foreach($failureRootCauses as $rootCause)
+                                                        <option value="{{ $rootCause->id }}">{{ $rootCause->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <div class="text-xs text-gray-500 mt-1 italic">{{ __('messages.select_multiple') }}</div>
+                                            </div>
+                                        </div>
+                                        <div x-data="{ show: true }" x-show.transition.opacity="!($wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown)" class="text-sm text-gray-500 italic">
+                                            {{ __('messages.no_breakdown_reported') }}
+                                        </div>
+                                    </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                        <button type="button" wire:click="updateDailyPlan({{ $index }})" 
-                                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-sm">
-                                            <i class="fas fa-save mr-1 text-blue-200"></i>
-                                            {{ __('messages.save') }}
-                                        </button>
+                                        <div class="flex space-x-2">
+                                            <button type="button" wire:click="updateDailyPlan({{ $index }})" 
+                                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-sm"
+                                                    wire:loading.attr="disabled">
+                                                <i class="fas fa-save mr-1 text-blue-200"></i>
+                                                <span wire:loading.remove wire:target="updateDailyPlan({{ $index }})">{{ __('messages.save') }}</span>
+                                                <span wire:loading wire:target="updateDailyPlan({{ $index }})" class="inline-flex items-center">
+                                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    {{ __('messages.saving') }}...
+                                                </span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 @endforeach
                                 @else
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">
+                                    <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500 block w-full">
                                         <div class="flex flex-col items-center justify-center space-y-3 animate__animated animate__fadeIn">
                                             <i class="fas fa-calendar-times text-4xl text-gray-300"></i>
                                             <p>{{ __('messages.no_daily_plans_found') }}</p>
@@ -302,8 +408,8 @@
             </div>
             
             <!-- Rodapé do Modal -->
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 sm:px-6 flex justify-between items-center shadow-inner border-t border-gray-200">
-                <div class="text-xs text-gray-500 italic flex items-center">
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-3 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-2 shadow-inner border-t border-gray-200 sticky bottom-0 z-10">
+                <div class="text-xs text-gray-500 italic flex items-center text-center sm:text-left">
                     <i class="fas fa-info-circle mr-1 text-blue-400"></i>
                     <span>{{ __('messages.daily_plans_info') }}</span>
                 </div>
@@ -316,3 +422,174 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('livewire:initialized', function () {
+        Livewire.on('dailyPlansModalOpened', function() {
+            setTimeout(function() {
+                initBreakdownCharts();
+            }, 200);
+        });
+        
+        // Reinitialize charts whenever data changes
+        Livewire.on('breakdownDataUpdated', function() {
+            initBreakdownCharts();
+        });
+    });
+    
+    function initBreakdownCharts() {
+        // Clear previous charts if they exist
+        if (window.breakdownEfficiencyChart) {
+            window.breakdownEfficiencyChart.destroy();
+        }
+        if (window.productionComparisonChart) {
+            window.productionComparisonChart.destroy();
+        }
+        
+        const breakdownCtx = document.getElementById('breakdownEfficiencyChart');
+        const productionCtx = document.getElementById('productionComparisonChart');
+        
+        // Only proceed if chart elements exist
+        if (!breakdownCtx || !productionCtx) return;
+        
+        // Get data from blade variables
+        @if(isset($viewingSchedule) && $viewingSchedule && isset($viewingSchedule->breakdown_impact))
+            const breakdownMinutes = {{ $viewingSchedule->breakdown_impact['total_breakdown_minutes'] ?? 0 }};
+            const efficiencyPercentage = {{ $viewingSchedule->breakdown_impact['efficiency_percentage'] ?? 0 }};
+            const plannedProduction = {{ $viewingSchedule->breakdown_impact['total_planned_production'] ?? 0 }};
+            const actualProduction = {{ $viewingSchedule->breakdown_impact['total_actual_production'] ?? 0 }};
+            const efficiencyLoss = {{ $viewingSchedule->breakdown_impact['total_efficiency_loss'] ?? 0 }};
+            
+            // Create efficiency vs breakdown chart
+            window.breakdownEfficiencyChart = new Chart(breakdownCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['{{ __('messages.breakdown_and_efficiency') }}'],
+                    datasets: [
+                        {
+                            label: '{{ __('messages.breakdown_minutes') }}',
+                            data: [breakdownMinutes],
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-axis-1'
+                        },
+                        {
+                            label: '{{ __('messages.efficiency') }}',
+                            data: [efficiencyPercentage],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-axis-2'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 0
+                            }
+                        },
+                        'y-axis-1': {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '{{ __('messages.minutes') }}'
+                            },
+                            grid: {
+                                display: false
+                            },
+                            beginAtZero: true
+                        },
+                        'y-axis-2': {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '%'
+                            },
+                            grid: {
+                                display: false
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+            
+            // Create production comparison chart
+            window.productionComparisonChart = new Chart(productionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['{{ __('messages.production_quantities') }}'],
+                    datasets: [
+                        {
+                            label: '{{ __('messages.planned') }}',
+                            data: [plannedProduction],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '{{ __('messages.actual') }}',
+                            data: [actualProduction],
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '{{ __('messages.efficiency_loss') }}',
+                            data: [efficiencyLoss],
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '{{ __('messages.units') }}'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+        @endif
+    }
+</script>

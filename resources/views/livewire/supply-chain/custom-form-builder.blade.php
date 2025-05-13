@@ -20,11 +20,20 @@
                         placeholder="Buscar formulários...">
                 </div>
                 
-                <button wire:click="create" 
-                    class="w-full md:w-auto inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none transition-colors">
-                    <i class="fas fa-plus-circle mr-2"></i>
-                    Novo Formulário
-                </button>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <label for="import-form-input" 
+                        class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg cursor-pointer">
+                        <i class="fas fa-file-import mr-2"></i>
+                        Importar
+                    </label>
+                    <input id="import-form-input" type="file" wire:model.live="importFile" accept=".json" class="hidden" />
+                    
+                    <button wire:click="create" 
+                        class="w-full sm:w-auto inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                        <i class="fas fa-plus-circle mr-2"></i>
+                        Novo Formulário
+                    </button>
+                </div>
             </div>
             
             <!-- Tabela de formulários -->
@@ -95,14 +104,19 @@
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     
-                                    <button wire:click="createField({{ $form->id }})" 
-                                        class="text-blue-600 hover:text-blue-900 transition-colors">
-                                        <i class="fas fa-plus-circle"></i>
+                                    <button wire:click="previewForm({{ $form->id }})" 
+                                        class="text-blue-600 hover:text-blue-900 transition-colors transform hover:scale-110">
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                     
-                                    <button wire:click="previewForm({{ $form->id }})" 
-                                        class="text-green-600 hover:text-green-900 transition-colors">
-                                        <i class="fas fa-eye"></i>
+                                    <button wire:click="exportForm({{ $form->id }})" 
+                                        class="text-green-600 hover:text-green-900 transition-colors transform hover:scale-110">
+                                        <i class="fas fa-file-export"></i>
+                                    </button>
+                                    
+                                    <button wire:click="createField({{ $form->id }})" 
+                                        class="text-blue-600 hover:text-blue-900 transition-colors transform hover:scale-110">
+                                        <i class="fas fa-plus-circle"></i>
                                     </button>
                                     
                                     <button wire:click="confirmDelete({{ $form->id }})" 
@@ -449,4 +463,36 @@
         </div>
     </div>
     @endif
+    
+    <!-- Script para download automático quando exportando formulários -->
+    <script>
+        document.addEventListener('livewire:init', function () {
+            Livewire.on('download-file', (event) => {
+                const url = event.url;
+                // Criar link temporário e acionar download
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', '');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+        
+        // Processar importação automaticamente quando um arquivo é selecionado
+        document.addEventListener('DOMContentLoaded', function() {
+            const importInput = document.getElementById('import-form-input');
+            if (importInput) {
+                importInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        // Aguardar o upload do arquivo pelo Livewire
+                        setTimeout(() => {
+                            // Chamar o método importForm
+                            @this.importForm();
+                        }, 500);
+                    }
+                });
+            }
+        });
+    </script>
 </div>

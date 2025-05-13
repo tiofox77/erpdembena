@@ -516,39 +516,649 @@ class DatabaseHelper
 ## Padrões de UI/UX
 
 ### Estrutura de Interface
-Todos os componentes do módulo MRP seguem o padrão de UI/UX definido para o sistema ERPDEMBENA, com:
-### Estrutura dos arquivos views
-primeiro criar a pasta da do componente depois criar as modais dentro da pasta e fora da pasta ou dentro da pasta mrp cria o blade principal de listagem
-1. **Cabeçalho Principal**
-   - Título com ícone contextual em azul
-   - Botão de ação principal com animação
+Todos os componentes do módulo MRP seguem o padrão de UI/UX definido para o sistema ERPDEMBENA. A implementação exemplar desses padrões pode ser encontrada no módulo de Programação de Produção (ProductionScheduling).
 
-2. **Cartão de Filtros**
-   - Cabeçalho com gradiente azul suave
-   - Layout responsivo para filtros
-   - Campo de busca com ícone
+### Estrutura de Arquivos Views
+A organização dos arquivos segue este padrão:
 
-3. **Tabela de Dados**
-   - Cabeçalho com gradiente azul vibrante
-   - Colunas ordenáveis 
-   - Status coloridos com ícones
-   - Ações com efeito hover
-
-4. **Modais**
-   - Cabeçalhos com cores contextuais
-   - Animações de transição
-   - Validação em tempo real
-   - Botões com estados de carregamento
-
-### Sistema de Notificações
-O módulo utiliza o sistema de notificações padronizado:
-```php
-$this->dispatch('notify', [
-    'type' => 'success|warning|error|info',
-    'title' => 'Título da notificação',
-    'message' => 'Mensagem da notificação'
-]);
 ```
+resources/views/livewire/mrp/
+├── [componente-principal].blade.php         # View principal (ex: production-scheduling.blade.php)
+└── [componente-principal]/                  # Pasta de modais do componente
+    ├── create-edit-modal.blade.php          # Modal de criação/edição
+    ├── delete-modal.blade.php               # Modal de confirmação de exclusão
+    ├── view-modal.blade.php                 # Modal de visualização detalhada
+    └── [outras-modais-específicas].blade.php # Modais adicionais conforme necessidade
+```
+
+### Componentes de Interface Padrão
+
+1. **Cabeçalho Principal**
+   - Título com ícone contextual em gradiente azul-escuro
+   - Animação `animate__fadeIn` para elementos principais
+   - Botão de ação principal com `transform hover:scale-105` e `transition-all duration-200`
+   - Abas de navegação para alternar entre visualizações (lista/calendário)
+
+   ```html
+   <div class="flex justify-between items-center mb-4 animate__animated animate__fadeIn">
+       <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+           <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+           {{ __('messages.production_scheduling') }}
+       </h2>
+       <button wire:click="openCreateModal" 
+           class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent 
+           rounded-md font-semibold text-sm text-white hover:bg-blue-700 
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+           transition-all duration-200 transform hover:scale-105 shadow-sm">
+           <i class="fas fa-plus mr-2"></i>
+           {{ __('messages.add_new') }}
+       </button>
+   </div>
+   ```
+
+2. **Cartão de Filtros Responsivo**
+   - Layout em grid que se adapta a diferentes tamanhos de tela: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4`
+   - Animação sutil ao passar o mouse: `hover:shadow-md transition-all duration-300`
+   - Ícones contextuais para cada filtro
+   - Campo de busca com debounce para otimização de performance
+
+   ```html
+   <div class="bg-white rounded-lg shadow p-4 mb-4">
+       <h3 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+           <i class="fas fa-filter text-blue-500 mr-2"></i>
+           {{ __('messages.filters') }}
+       </h3>
+       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+           <!-- Campo de busca com debounce -->
+           <div class="relative">
+               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                   <i class="fas fa-search text-gray-400"></i>
+               </div>
+               <input wire:model.debounce.300ms="search" type="text" 
+                   class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                   placeholder="{{ __('messages.search') }}...">
+           </div>
+           <!-- Outros filtros adaptados ao componente -->
+       </div>
+   </div>
+   ```
+
+3. **Tabela de Dados Responsiva**
+   - Cabeçalho com gradiente: `bg-gradient-to-r from-blue-600 to-blue-800 text-white`
+   - Animação de linhas com `hover:bg-blue-50 transition-all duration-150`
+   - Ordenação interativa: `wire:click="sortBy('campo')"` com indicadores de direção
+   - Status coloridos com ícones animados
+   - Sistema responsivo para telas pequenas usando classes específicas
+
+4. **Modais de Planos Diários com Rastreamento de Falhas**
+   - Cabeçalho com gradiente azul e ícone de calendário
+   - Agrupamento de informações em cartões com animação ao passar o mouse
+   - Campos de breakdown com checkbox e inputs condicionais
+   - Seleção de categoria de falha com dropdown simples
+   - Seleção múltipla para causas raiz de falha
+   - Animações suaves para transições entre estados
+
+   ```html
+   <!-- Botão para acessar planos diários -->
+   <button wire:click="viewDailyPlans({{ $id }})" 
+       class="text-teal-600 hover:text-teal-900 transition-colors duration-200" 
+       title="{{ __('messages.view_daily_plans') }}">
+       <i class="fas fa-calendar-check"></i>
+   </button>
+   
+   <!-- Campo de breakdown no modal -->
+   <div class="flex items-center space-x-2">
+       <label class="inline-flex items-center cursor-pointer">
+           <input type="checkbox" wire:model.defer="dailyPlans.{{ $index }}.has_breakdown" 
+               class="form-checkbox h-5 w-5 text-red-600 transition duration-150 ease-in-out rounded">
+           <span class="ml-2 text-sm text-gray-700">{{ __('messages.yes') }}</span>
+       </label>
+       <!-- Campos condicionais que aparecem quando has_breakdown está marcado -->
+       <div x-data="{ show: false }" 
+           x-show.transition.opacity="$wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown" 
+           class="relative rounded-md shadow-sm flex-1 ml-2">
+           <!-- Campos relacionados a falhas aqui -->
+       </div>
+   </div>
+   ```
+
+   ```html
+   <div class="overflow-x-auto bg-white rounded-lg shadow overflow-hidden">
+       <table class="min-w-full divide-y divide-gray-200">
+           <thead class="bg-gradient-to-r from-blue-600 to-blue-800">
+               <tr>
+                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer" wire:click="sortBy('campo')">
+                       <div class="flex items-center space-x-1">
+                           <span>{{ __('messages.column_title') }}</span>
+                           @if($sortField === 'campo')
+                               <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
+                           @else
+                               <i class="fas fa-sort text-gray-300 ml-1"></i>
+                           @endif
+                       </div>
+                   </th>
+                   <!-- Outras colunas -->
+               </tr>
+           </thead>
+           <tbody class="bg-white divide-y divide-gray-200">
+               <!-- Linhas com hover e animações -->
+           </tbody>
+       </table>
+   </div>
+   ```
+
+4. **Modais Avançados**
+   - Transições suaves usando AlpineJS: 
+     ```
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0 transform scale-95"
+     x-transition:enter-end="opacity-100 transform scale-100"
+     ```
+   - Cabeçalhos com gradientes contextuais baseados no propósito
+   - Conteúdo com scroll interno: `max-h-[90vh] overflow-y-auto`
+   - Headers e footers fixos (sticky) para melhor usabilidade
+   - Responsividade aprimorada em dispositivos móveis
+   - Validação em tempo real com indicadores visuais
+
+   ```html
+   <div x-cloak
+       class="fixed inset-0 z-30 flex items-center justify-center overflow-auto bg-gray-800 bg-opacity-75 transition-opacity"
+       style="width: 100vw; height: 100vh;"
+       x-show="$wire.showModal"
+       @keydown.escape.window="$wire.closeModal()">
+       <div class="relative w-[95%] max-h-[90vh] mx-auto my-4"
+           x-show="$wire.showModal"
+           x-transition:enter="ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-95"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-95"
+           @click.away="$wire.closeModal()">
+
+           <div class="relative bg-white rounded-lg shadow-xl overflow-hidden w-full flex flex-col max-h-[90vh]" @click.stop>
+               <!-- Header fixo (sticky) -->
+               <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-3 py-3 sm:px-6 sm:py-4 flex justify-between items-center shadow-lg sticky top-0 z-10">
+                   <!-- Título e botão de fechar -->
+               </div>
+               
+               <!-- Conteúdo com scroll -->
+               <div class="bg-white p-3 sm:p-6 overflow-y-auto flex-grow">
+                   <!-- Conteúdo do modal -->
+               </div>
+               
+               <!-- Footer fixo com ações -->
+               <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-3 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-2 shadow-inner border-t border-gray-200 sticky bottom-0 z-10">
+                   <!-- Botões de ação -->
+               </div>
+           </div>
+       </div>
+   </div>
+   ```
+
+5. **Cards de Informação com Animações**
+   - Layout em grid com responsividade: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`
+   - Animações sutis de escala: `transform hover:scale-[1.02]`
+   - Sombras que aumentam no hover: `hover:shadow-md`
+   - Ícones contextuais coloridos para diferentes tipos de informação
+   - Progressbarars animadas para indicar percentuais
+
+   ```html
+   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate__animated animate__fadeIn">
+       <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
+           <span class="text-sm font-medium text-gray-500 flex items-center">
+               <i class="fas fa-box-open text-green-500 mr-2"></i> {{ __('messages.product') }}:
+           </span>
+           <p class="text-sm text-gray-900 mt-1 font-semibold">{{ $viewingSchedule->product->name }}</p>
+           <p class="text-xs text-gray-500 italic">{{ $viewingSchedule->product->sku }}</p>
+       </div>
+       <!-- Mais cards com diferentes indicadores -->
+   </div>
+   ```
+
+### Recursos de UI/UX Avançados
+
+1. **Visualizações Alternativas de Dados**
+   - Troca dinâmica entre visualização de tabela e calendário
+   - Sistema de abas com interfaces distintas: `currentTab === 'list' || 'calendar'`
+   - Persistência do estado de visualização entre sessões
+   - Animações de transição durante a troca de visualizações
+
+2. **Calendário Interativo para Agendamento**
+   - Visual por dia, semana ou mês com navegação intuitiva
+   - Indicadores visuais de eventos agendados com cores distintas por status
+   - Interatividade: clique para visualizar/editar agendamentos existentes
+   - Suporte para adicionar novos agendamentos diretamente no calendário
+
+3. **Indicadores Visuais de Status**
+   - Badges coloridos com ícones animados para status diferentes
+   - Cores contextuais: azul (confirmado), amarelo (em progresso), verde (completo), vermelho (cancelado)
+   - Ícones com animações para status ativos: `animate__pulse animate__infinite`
+
+   ```html
+   <span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full animate__animated animate__fadeIn
+       @if($status == 'draft') bg-gray-100 text-gray-800
+       @elseif($status == 'confirmed') bg-blue-100 text-blue-800
+       @elseif($status == 'in_progress') bg-yellow-100 text-yellow-800
+       @elseif($status == 'completed') bg-green-100 text-green-800
+       @elseif($status == 'cancelled') bg-red-100 text-red-800
+       @endif">
+       <i class="mr-1 fas 
+           @if($status == 'draft') fa-pencil-alt
+           @elseif($status == 'confirmed') fa-check
+           @elseif($status == 'in_progress') fa-spinner fa-spin
+           @elseif($status == 'completed') fa-check-double
+           @elseif($status == 'cancelled') fa-ban
+           @endif"></i>
+       {{ __('messages.status_' . $status) }}
+   </span>
+   ```
+
+4. **Alertas Interativos com Detalhes Expansíveis**
+   - Alertas contextuais para avisos e erros com animações de entrada: `animate__fadeIn`
+   - Seções de detalhes expansíveis usando Alpine.js: `x-data="{showDetails: false}"`
+   - Ícones pulsantes para alertas importantes: `animate__pulse animate__infinite`
+   - Ações contextuais dentro dos alertas
+
+   ```html
+   <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-md shadow-md animate__animated animate__fadeIn">
+       <div class="flex items-start">
+           <div class="flex-shrink-0 pt-0.5">
+               <i class="fas fa-exclamation-triangle text-yellow-500 text-xl animate__animated animate__pulse animate__infinite"></i>
+           </div>
+           <div class="ml-3 flex-1">
+               <p class="text-sm font-medium text-yellow-800">{{ __('messages.warning_message') }}</p>
+               
+               <div x-data="{showDetails: false}" class="mt-2">
+                   <button @click="showDetails = !showDetails" type="button" 
+                       class="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium flex items-center transition-all duration-200 hover:scale-105">
+                       <i class="fas" :class="showDetails ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                       <span class="ml-1">{{ __('messages.view_details') }}</span>
+                   </button>
+                   
+                   <div x-show="showDetails" x-transition:enter="transition ease-out duration-300" 
+                       x-transition:enter-start="opacity-0 transform -translate-y-4" 
+                       x-transition:enter-end="opacity-100 transform translate-y-0"
+                       class="mt-3 text-xs text-gray-700 bg-white p-3 rounded-md border border-gray-200 shadow-sm">
+                       <!-- Conteúdo detalhado expansível -->
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+   ```
+
+### Sistema de Notificações Toastr Aprimorado
+
+1. **Implementação com Named Parameters (PHP 8+)**
+
+Usando o novo padrão com named parameters para maior clareza e legibilidade:
+
+```php
+$this->dispatch('notify', 
+    type: 'success', // success, warning, error, info
+    title: __('messages.schedule_created_title'),
+    message: __('messages.schedule_created_message')
+);
+```
+
+2. **Tipos de Notificações e Usos Específicos**
+
+   - **Success**: Para operações bem-sucedidas (criação, atualização)
+     ```php
+     $this->dispatch('notify', 
+         type: 'success',
+         title: $this->editMode 
+             ? __('messages.schedule_updated_title') 
+             : __('messages.schedule_created_title'),
+         message: $this->editMode 
+             ? __('messages.schedule_updated_message') 
+             : __('messages.schedule_created_message')
+     );
+     ```
+
+   - **Error**: Para erros e exclusões
+     ```php
+     $this->dispatch('notify', 
+         type: 'error',
+         title: __('messages.schedule_deleted_title'),
+         message: __('messages.schedule_deleted_message')
+     );
+     ```
+
+   - **Warning**: Para avisos e alertas
+     ```php
+     $this->dispatch('notify', 
+         type: 'warning',
+         title: __('messages.insufficient_components_title'),
+         message: __('messages.insufficient_components_warning')
+     );
+     ```
+
+   - **Info**: Para informações e lembretes
+     ```php
+     $this->dispatch('notify', 
+         type: 'info',
+         title: __('messages.item_quantity_updated'),
+         message: __('messages.review_bom_components')
+     );
+     ```
+
+3. **Customizações Visuais do Toastr**
+
+   - Posicionamento personalizado (canto superior direito)
+    - Duração ajustável (5 segundos padrão)
+    - Animações de entrada e saída
+
+## Sistema de Rastreamento de Falhas na Produção
+
+### Visão Geral
+O sistema de rastreamento de falhas foi integrado aos planos diários de produção, permitindo o registro detalhado de paradas e falhas durante a execução de tarefas de produção. Esta funcionalidade permite:
+
+- Identificar quando ocorrem paradas (breakdowns) na produção
+- Registrar a duração exata das paradas em minutos
+- Categorizar as falhas usando um sistema padronizado
+- Associar múltiplas causas raiz para análises mais profundas
+
+### Estrutura de Dados
+
+#### Tabelas e Modelos
+
+1. **Planos Diários de Produção** (`mrp_production_daily_plans`):
+   - `has_breakdown`: Booleano indicando se houve parada
+   - `breakdown_minutes`: Inteiro com a duração da parada em minutos
+   - `failure_category_id`: Chave estrangeira para categoria de falha
+   - `failure_root_causes`: Campo JSON para armazenar múltiplas causas raiz
+
+2. **Categorias de Falha** (`mrp_failure_categories`):
+   - Mantidas no namespace `App\Models\Mrp`
+   - Propriedades principais: `name`, `description`, `color`, `is_active`
+
+3. **Causas Raiz de Falha** (`mrp_failure_root_causes`):
+   - Mantidas no namespace `App\Models\Mrp`
+   - Cada causa raiz é associada a uma categoria de falha
+
+> **Importante**: Observe que as tabelas seguem o padrão de nomenclatura do sistema onde as tabelas do módulo MRP não usam prefixo específico, ao contrário das tabelas de Supply Chain que usam o prefixo 'sc_'.
+
+#### Modelo de Dados e Relacionamentos
+
+O modelo `ProductionDailyPlan` foi atualizado para incluir os seguintes relacionamentos:
+
+```php
+// Relacionamento com categoria de falha (many-to-one)
+public function failureCategory()
+{
+    return $this->belongsTo(FailureCategory::class, 'failure_category_id');
+}
+
+// Método para acessar as causas raiz como objetos
+public function getFailureRootCausesObjectsAttribute()
+{
+    if (!$this->failure_root_causes) {
+        return collect([]);
+    }
+    
+    return FailureRootCause::whereIn('id', $this->failure_root_causes)
+        ->orderBy('name')
+        ->get();
+}
+```
+
+### Interface do Usuário
+
+#### Modal de Planos Diários
+
+O modal de planos diários foi aprimorado com componentes para rastreamento de falhas seguindo os padrões de UI/UX existentes:
+
+1. **Indicador de Parada**:
+   - Checkbox para marcar ocorrência de parada
+   - Layout responsivo com classes `flex items-center space-x-2`
+
+2. **Campos de Falha Condicionais**:
+   - Usando Alpine.js para exibição condicional
+   - Duração em minutos com validação numérica
+   - Exibidos apenas quando `has_breakdown` está ativo
+
+3. **Categorização de Falhas**:
+   - Dropdown para seleção da categoria principal
+   - Design consistente com outros componentes do sistema
+   - Destaque visual usando as cores definidas para cada categoria
+
+4. **Seleção de Causas Raiz**:
+   - Campo de seleção múltipla para escolha de causas raiz
+   - Filtragem automática baseada na categoria selecionada
+   - Instruções claras para o usuário
+
+#### Exemplo de Implementação
+
+```html
+<!-- Campo para indicar parada -->
+<div class="flex items-center space-x-2">
+    <label class="inline-flex items-center cursor-pointer">
+        <input type="checkbox" wire:model.defer="dailyPlans.{{ $index }}.has_breakdown" 
+            class="form-checkbox h-5 w-5 text-red-600 transition duration-150 ease-in-out rounded">
+        <span class="ml-2 text-sm text-gray-700">{{ __('messages.yes') }}</span>
+    </label>
+</div>
+
+<!-- Campos para detalhes da falha (exibidos condicionalmente) -->
+<div x-show.transition.opacity="$wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown">
+    <!-- Campo para duração da parada -->
+    <div class="relative rounded-md shadow-sm mb-2">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-clock text-gray-400"></i>
+        </div>
+        <input type="number" wire:model.defer="dailyPlans.{{ $index }}.breakdown_minutes" 
+            class="pl-9 block w-full py-2 text-sm border-gray-300 focus:ring-red-500 focus:border-red-500 rounded-md" 
+            placeholder="{{ __('messages.minutes') }}">
+    </div>
+    
+    <!-- Seleção de categoria de falha -->
+    <div class="relative rounded-md shadow-sm mb-2">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-tag text-orange-400"></i>
+        </div>
+        <select wire:model.defer="dailyPlans.{{ $index }}.failure_category_id" 
+            class="pl-9 block w-full py-2 text-sm border-gray-300 focus:ring-orange-500 focus:border-orange-500 rounded-md">
+            <option value="">{{ __('messages.select_failure_category') }}</option>
+            @foreach($failureCategories as $category)
+                <option value="{{ $category->id }}">{{ $category->name }}</option>
+            @endforeach
+        </select>
+    </div>
+    
+    <!-- Seleção múltipla de causas raiz -->
+    <div class="relative rounded-md shadow-sm">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-list text-blue-400"></i>
+        </div>
+        <select wire:model.defer="dailyPlans.{{ $index }}.failure_root_causes" 
+            class="pl-9 block w-full py-2 text-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-md"
+            multiple size="2">
+            @foreach($failureRootCauses as $rootCause)
+                <option value="{{ $rootCause->id }}">{{ $rootCause->name }}</option>
+            @endforeach
+        </select>
+        <div class="text-xs text-gray-500 mt-1 italic">{{ __('messages.select_multiple') }}</div>
+    </div>
+</div>
+```
+
+### Implementação no Controller
+
+O controller `ProductionScheduling` foi atualizado para gerenciar o rastreamento de falhas:
+
+1. **Carregamento de Dados para a View**:
+   ```php
+   // No método render()
+   $failureCategories = FailureCategory::where('is_active', true)
+       ->orderBy('name')
+       ->get();
+       
+   $failureRootCauses = FailureRootCause::where('is_active', true)
+       ->orderBy('name')
+       ->get();
+   ```
+
+2. **Validação para Campos de Falha**:
+   ```php
+   // No método updateDailyPlan()
+   $this->validateOnly("dailyPlans.{$index}", [
+       "dailyPlans.{$index}.planned_quantity" => 'required|numeric|min:0',
+       // ... outros campos ...
+       "dailyPlans.{$index}.breakdown_minutes" => 'nullable|numeric|min:0',
+       "dailyPlans.{$index}.failure_category_id" => 'nullable|exists:mrp_failure_categories,id',
+       "dailyPlans.{$index}.failure_root_causes" => 'nullable|array',
+   ]);
+   ```
+
+3. **Lógica de Salvamento Condicional**:
+   ```php
+   // Campos de breakdown e falhas
+   $plan->has_breakdown = $this->dailyPlans[$index]['has_breakdown'] ?? false;
+   
+   // Só atualizar esses campos se houver breakdown
+   if ($plan->has_breakdown) {
+       $plan->breakdown_minutes = $this->dailyPlans[$index]['breakdown_minutes'] ?? null;
+       $plan->failure_category_id = $this->dailyPlans[$index]['failure_category_id'] ?? null;
+       $plan->failure_root_causes = $this->dailyPlans[$index]['failure_root_causes'] ?? null;
+   } else {
+       // Limpar os campos de falha se não houver breakdown
+       $plan->breakdown_minutes = null;
+       $plan->failure_category_id = null;
+       $plan->failure_root_causes = null;
+   }
+   ```
+
+4. **Notificações ao Usuário**:
+   Seguindo o padrão estabelecido para notificações do sistema:
+   ```php
+   $this->dispatch('notify',
+       type: 'success',
+       title: __('messages.success'),
+       message: __('messages.daily_plan_updated')
+   );
+   ```
+
+### Análise e Relatórios
+
+As informações de falhas podem ser utilizadas para:
+
+1. **Cálculo de Indicadores**:
+   - OEE (Overall Equipment Effectiveness)
+   - MTBF (Mean Time Between Failures)
+   - MTTR (Mean Time To Repair)
+
+2. **Análise de Pareto**:
+   - Identificação das causas mais frequentes de falhas
+   - Priorização de ações corretivas
+
+3. **Integração com Manutenção**:
+   - Possibilidade de integração com módulos de manutenção preventiva
+   - Alertas automatizados baseados em padrões de falha
+
+### Boas Práticas
+
+1. **Confiabilidade dos Dados**:
+   - Mantenha categorias e causas raiz bem definidas
+   - Estabeleça processos claros para registro de paradas
+   - Treine os operadores para uso consistente do sistema
+
+2. **Revisão Periódica das Categorias**:
+   - Avalie periodicamente se as categorias e causas raiz cobrem todos os cenários
+   - Evite criar categorias muito genéricas ou excessivamente específicas
+
+3. **Visualização de Dados**:
+   - Implemente gráficos para visualização de tendências
+   - Use cores consistentes para categorias em toda a interface
+
+### Futuras Melhorias
+
+1. **Integração com Equipamentos**:
+   - Associação direta entre falhas e equipamentos específicos
+   - Histórico de falhas por equipamento
+
+2. **Dashboard de Falhas**:
+   - Visão consolidada das principais falhas por período
+   - Métricas de impacto na produção
+
+3. **Ações Corretivas**:
+   - Registro e acompanhamento de ações corretivas
+   - Vinculação com sistema de tickets
+   - Opção de fechar manualmente
+   - Ícones contextuais por tipo de notificação
+
+4. **Implementação JavaScript para Dispatch em Livewire**
+
+{{ ... }}
+document.addEventListener('livewire:init', () => {
+    Livewire.on('notify', (params) => {
+        toastr[params.type](params.message, params.title, {
+            positionClass: "toast-top-right",
+            timeOut: 5000,
+            closeButton: true,
+            newestOnTop: true,
+            progressBar: true,
+            preventDuplicates: true,
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut"
+        });
+    });
+});
+```
+
+### Recursos de UX Avançados para Forms
+
+1. **Verificação Inteligente de Disponibilidade de Componentes**
+   - Verificação automática de disponibilidade de materiais ao editar quantidade
+   - Alertas visuais com detalhes expandíveis sobre componentes insuficientes
+   - Cálculo da quantidade máxima possível baseada no inventário disponível
+   - Sistema não bloqueante: permite continuar apesar dos avisos
+
+2. **Validação em Tempo Real**
+   - Feedback imediato de validação usando `wire:model.live`
+   - Indicadores visuais de campos válidos/inválidos
+   - Mensagens de erro contextuais
+   - Desabilitação condicional do botão de envio
+
+3. **Campos de Input Aprimorados**
+   - Prefixos visuais com ícones: `<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">`
+   - Formatação automática de datas e números
+   - States visuais (focus, error, disabled)
+   - Tooltips de ajuda para campos complexos
+
+4. **Estados de Carregamento**
+   - Indicadores de carregamento específicos por botão: `wire:loading.attr="disabled"`
+   - Texto alternativo durante carregamento: `wire:loading.class.remove="hidden"`
+   - Spinners visuais: `<i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="save"></i>`
+   - Desabilitação de interação durante processamento
+
+5. **Animações e Transições**
+
+O sistema utiliza duas bibliotecas principais para animações:
+
+- **Animate.css**: Animações predefinidas como `animate__fadeIn`, `animate__pulse`
+   ```html
+   <div class="animate__animated animate__fadeIn">Conteúdo animado</div>
+   ```
+
+- **Alpine.js Transitions**: Transições customizadas para elementos dinâmicos
+   ```html
+   <div x-show="open"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform scale-90"
+        x-transition:enter-end="opacity-100 transform scale-100"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100 transform scale-100"
+        x-transition:leave-end="opacity-0 transform scale-90">
+        Conteúdo com transição
+   </div>
+   ```
+
+- **Tailwind Transitions**: Transições nativas do Tailwind
+   ```html
+   <button class="transition-all duration-200 transform hover:scale-105">Botão com transição</button>
+   ```
 
 ## Navegação do Sistema
 

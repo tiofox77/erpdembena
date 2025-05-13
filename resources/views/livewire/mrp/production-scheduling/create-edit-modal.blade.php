@@ -25,7 +25,7 @@
                 </button>
             </div>
 
-            <form wire:submit.prevent="{{ $editMode ? 'update' : 'store' }}">
+            <form wire:submit.prevent="{{ $editMode ? 'update' : 'store' }}" class="space-y-6">
                 <div class="p-6 bg-gray-50">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
                         <!-- Número da Programação -->
@@ -38,7 +38,7 @@
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-barcode"></i></span>
                                 </div>
                                 <input type="text" id="schedule_number" 
-                                    wire:model="schedule.schedule_number"
+                                    wire:model.live="schedule.schedule_number"
                                     readonly
                                     class="block w-full pl-10 py-2 bg-gray-100 border-gray-300 rounded-md shadow-sm focus:ring-0 focus:border-gray-300 sm:text-sm">
                             </div>
@@ -56,8 +56,8 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-industry"></i></span>
                                 </div>
-                                <select id="product_id" wire:model="schedule.product_id"
-                                    class="block w-full pl-10 pr-10 py-2 bg-white border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+                                <select id="product_id" wire:model.live="schedule.product_id"
+                                    class="block w-full pl-10 pr-10 py-2 bg-white border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm @error('schedule.product_id') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
                                     <option value="">{{ __('messages.select_product') }}</option>
                                 @foreach($products as $product)
                                     <option value="{{ $product->id }}">
@@ -65,10 +65,14 @@
                                     </option>
                                 @endforeach
                                 </select>
+                                @error('schedule.product_id')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
                             </div>
-                            <p class="mt-1 text-xs text-blue-600 italic flex items-center">
-                                <i class="fas fa-filter mr-1"></i> {{ __('messages.only_finished_products') }}
-                            </p>
                             @error('schedule.product_id')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
                                     <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
@@ -81,10 +85,24 @@
                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.start_date') }} <span class="text-red-500">*</span>
                             </label>
-                            <input type="date" id="start_date" wire:model="schedule.start_date"
-                                class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-calendar-alt"></i></span>
+                                </div>
+                                <input type="date" id="start_date" wire:model.live="schedule.start_date"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.start_date') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                @error('schedule.start_date')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
+                            </div>
                             @error('schedule.start_date')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
                             @enderror
                         </div>
                         
@@ -93,10 +111,24 @@
                             <label for="start_time" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.start_time') }} <span class="text-red-500">*</span>
                             </label>
-                            <input type="time" id="start_time" wire:model="schedule.start_time"
-                                class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-hourglass-start"></i></span>
+                                </div>
+                                <input type="time" id="start_time" wire:model.live="schedule.start_time"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.start_time') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                @error('schedule.start_time')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
+                            </div>
                             @error('schedule.start_time')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -109,8 +141,15 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-calendar-check"></i></span>
                                 </div>
-                                <input type="date" id="end_date" wire:model="schedule.end_date"
-                                    class="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+                                <input type="date" id="end_date" wire:model.live="schedule.end_date"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.end_date') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                @error('schedule.end_date')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
                             </div>
                             @error('schedule.end_date')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
@@ -128,8 +167,15 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-hourglass-end"></i></span>
                                 </div>
-                                <input type="time" id="end_time" wire:model="schedule.end_time"
-                                    class="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+                                <input type="time" id="end_time" wire:model.live="schedule.end_time"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.end_time') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                @error('schedule.end_time')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
                             </div>
                             @error('schedule.end_time')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
@@ -150,8 +196,15 @@
                                 <input type="number" id="planned_quantity" 
                                     wire:model.live="schedule.planned_quantity" 
                                     wire:input.debounce.300ms="checkComponentAvailability"
-                                    class="block w-full pl-10 pr-12 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
-                                    placeholder="100" step="0.01" min="0" max="999999">
+                                    class="block w-full pl-10 pr-12 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.planned_quantity') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror"
+                                    placeholder="100" step="1" min="1" max="999999">
+                                @error('schedule.planned_quantity')
+                                    <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm font-medium">unid</span>
                                 </div>
@@ -172,10 +225,10 @@
                                             </div>
                                             <div class="ml-3 flex-1">
                                                 <p class="text-sm font-medium text-green-800">
-                                                    Componentes suficientes para produzir a quantidade planejada!
+                                                    {{ __('messages.sufficient_components') }}
                                                 </p>
                                                 <p class="text-xs text-green-700 mt-1">
-                                                    Capacidade máxima: <span class="font-bold">{{ number_format($maxQuantityPossible, 0) }}</span> unidades
+                                                    {{ __('messages.maximum_capacity') }}: <span class="font-bold">{{ number_format($maxQuantityPossible, 0) }}</span> {{ __('messages.units') }}
                                                 </p>
                                             </div>
                                         </div>
@@ -190,7 +243,7 @@
                                             </div>
                                             <div class="ml-3 flex-1">
                                                 <p class="text-sm font-medium text-blue-800">
-                                                    Verificando disponibilidade de componentes...
+                                                    {{ __('messages.checking_component_availability') }}...
                                                 </p>
                                             </div>
                                         </div>
@@ -256,16 +309,30 @@
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.status') }} <span class="text-red-500">*</span>
                             </label>
-                            <select id="status" wire:model="schedule.status"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                <option value="draft">{{ __('messages.draft') }}</option>
-                                <option value="confirmed">{{ __('messages.confirmed') }}</option>
-                                <option value="in_progress">{{ __('messages.in_progress') }}</option>
-                                <option value="completed">{{ __('messages.completed') }}</option>
-                                <option value="cancelled">{{ __('messages.cancelled') }}</option>
-                            </select>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-circle"></i></span>
+                                </div>
+                                <select id="status" wire:model.live="schedule.status"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.status') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                    <option value="draft">{{ __('messages.draft') }}</option>
+                                    <option value="confirmed">{{ __('messages.confirmed') }}</option>
+                                    <option value="in_progress">{{ __('messages.in_progress') }}</option>
+                                    <option value="completed">{{ __('messages.completed') }}</option>
+                                    <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                                </select>
+                                @error('schedule.status')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
+                            </div>
                             @error('schedule.status')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -274,15 +341,29 @@
                             <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.priority') }} <span class="text-red-500">*</span>
                             </label>
-                            <select id="priority" wire:model="schedule.priority"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                <option value="low">{{ __('messages.priority_low') }}</option>
-                                <option value="medium">{{ __('messages.priority_medium') }}</option>
-                                <option value="high">{{ __('messages.priority_high') }}</option>
-                                <option value="urgent">{{ __('messages.priority_urgent') }}</option>
-                            </select>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-exclamation"></i></span>
+                                </div>
+                                <select id="priority" wire:model.live="schedule.priority"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.priority') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                    <option value="low">{{ __('messages.priority_low') }}</option>
+                                    <option value="medium">{{ __('messages.priority_medium') }}</option>
+                                    <option value="high">{{ __('messages.priority_high') }}</option>
+                                    <option value="urgent">{{ __('messages.priority_urgent') }}</option>
+                                </select>
+                                @error('schedule.priority')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
+                            </div>
                             @error('schedule.priority')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -291,11 +372,73 @@
                             <label for="responsible" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.responsible') }}
                             </label>
-                            <input type="text" id="responsible" wire:model="schedule.responsible" maxlength="100"
+                            <input type="text" id="responsible" wire:model.live="schedule.responsible" maxlength="100"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" 
                                 placeholder="{{ __('messages.responsible_placeholder') }}">
                             @error('schedule.responsible')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <!-- Linha de Produção -->
+                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
+                            <label for="line_id" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-industry text-blue-500 mr-2"></i> {{ __('messages.production_line') }} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-cogs"></i></span>
+                                </div>
+                                <select id="line_id" wire:model.live="schedule.line_id"
+                                    class="block w-full pl-10 pr-10 py-2 bg-white border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm @error('schedule.line_id') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                    <option value="">{{ __('messages.select_production_line') }}</option>
+                                    @foreach($productionLines as $line)
+                                        <option value="{{ $line->id }}">{{ $line->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('schedule.line_id')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
+                            </div>
+                            @error('schedule.line_id')
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        <!-- Turno -->
+                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
+                            <label for="shift_id" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-clock text-blue-500 mr-2"></i> {{ __('messages.shift') }} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-users"></i></span>
+                                </div>
+                                <select id="shift_id" wire:model.live="schedule.shift_id"
+                                    class="block w-full pl-10 pr-10 py-2 bg-white border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm @error('schedule.shift_id') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                    <option value="">{{ __('messages.select_shift') }}</option>
+                                    @foreach($shifts as $shift)
+                                        <option value="{{ $shift->id }}">{{ $shift->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('schedule.shift_id')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                @enderror
+                            </div>
+                            @error('schedule.shift_id')
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -308,7 +451,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-warehouse"></i></span>
                                 </div>
-                                <select id="location_id" wire:model="schedule.location_id"
+                                <select id="location_id" wire:model.live="schedule.location_id"
                                     class="block w-full pl-10 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
                                     <option value="">{{ __('messages.select_location') }}</option>
                                     @foreach($locations as $location)
@@ -332,7 +475,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-clock"></i></span>
                                 </div>
-                                <input type="number" id="working_hours_per_day" wire:model="schedule.working_hours_per_day" 
+                                <input type="number" id="working_hours_per_day" wire:model.live="schedule.working_hours_per_day" 
                                     step="0.5" min="0.5" max="24"
                                     class="block w-full pl-10 pr-12 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
                                     placeholder="8">
@@ -359,7 +502,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-rocket"></i></span>
                                 </div>
-                                <input type="number" id="hourly_production_rate" wire:model="schedule.hourly_production_rate" 
+                                <input type="number" id="hourly_production_rate" wire:model.live="schedule.hourly_production_rate" 
                                     step="0.01" min="0.01"
                                     class="block w-full pl-10 pr-14 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
                                     placeholder="10.00">
@@ -398,7 +541,7 @@
                                 @foreach($days as $key => $day)
                                     <div class="relative">
                                         <input id="working_day_{{ $key }}" name="working_days[]" type="checkbox" 
-                                            wire:model="schedule.working_days.{{ $key }}"
+                                            wire:model.live="schedule.working_days.{{ $key }}"
                                             class="sr-only peer">
                                         <label for="working_day_{{ $key }}" 
                                             class="flex flex-col items-center justify-center px-2 py-3 bg-white border-2 border-gray-300 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 transition-all duration-200">
@@ -478,12 +621,12 @@
                                 <div class="absolute top-3 left-3 pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-pen"></i></span>
                                 </div>
-                                <textarea id="notes" wire:model="schedule.notes" rows="3"
+                                <textarea id="notes" wire:model.live="schedule.notes" rows="3"
                                     class="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
                                     placeholder="{{ __('messages.schedule_notes_placeholder') }}"></textarea>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 italic flex items-center">
-                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> Adicione observações relevantes para a programação
+                                <i class="fas fa-info-circle mr-1"></i> {{ __('messages.notes_help') }}
                             </p>
                             @error('schedule.notes')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">

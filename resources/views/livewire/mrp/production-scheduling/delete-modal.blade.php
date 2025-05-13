@@ -1,44 +1,47 @@
 <!-- Modal para Confirmar Exclusão de Programação de Produção -->
-<div x-cloak
-    class="fixed inset-0 z-30 flex items-center justify-center overflow-auto bg-gray-800 bg-opacity-75 transition-opacity"
-    x-show="$wire.showDeleteModal"
-    @keydown.escape.window="$wire.closeDeleteModal()">
-    <div class="relative w-full max-w-md mx-auto my-8 px-4 sm:px-0"
-        x-show="$wire.showDeleteModal"
-        x-transition:enter="ease-out duration-300"
-        x-transition:enter-start="opacity-0 transform scale-95"
-        x-transition:enter-end="opacity-100 transform scale-100"
-        x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100 transform scale-100"
-        x-transition:leave-end="opacity-0 transform scale-95"
-        @click.away="$wire.closeDeleteModal()">
-        <div class="relative bg-white rounded-lg shadow-xl overflow-hidden" @click.stop>
-            <!-- Cabeçalho do Modal -->
-            <div class="bg-gradient-to-r from-red-600 to-red-700 px-4 py-4 sm:px-6 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-white">
-                    <i class="fas fa-trash-alt mr-2 animate-pulse"></i>
-                    {{ __('messages.confirm_delete') }}
+<div x-data="{ show: @entangle('showDeleteModal') }"
+     x-show="show"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 transform scale-90"
+     x-transition:enter-end="opacity-100 transform scale-100"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 transform scale-100"
+     x-transition:leave-end="opacity-0 transform scale-90"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     style="display:none">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <!-- Cabeçalho do Modal com gradiente -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 px-4 py-3">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    {{ __('messages.confirm_deletion') }}
                 </h3>
-                <button @click="$wire.closeDeleteModal()" class="text-white hover:text-gray-200 focus:outline-none">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
             </div>
 
             <div class="p-6">
-                <div class="text-center mb-6">
-                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">{{ __('messages.delete_schedule_confirmation') }}</h3>
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fas fa-trash text-red-600 text-xl animate-pulse"></i>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
+                        {{ __('messages.are_you_sure') }}
+                    </h3>
                     <div class="mt-2">
                         <p class="text-sm text-gray-500">
                             {{ __('messages.delete_schedule_warning') }}
                         </p>
                     </div>
                 </div>
-
+                
                 @if($scheduleToDelete)
-                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <dl class="space-y-2">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
                                 <dt class="text-sm font-medium text-gray-500">{{ __('messages.schedule_number') }}:</dt>
@@ -99,40 +102,33 @@
                         </div>
                     @endif
                 @endif
-
-                <!-- Checkbox de confirmação -->
-                <div class="mt-4">
-                    <div class="flex items-center">
-                        <input id="confirm-delete" wire:model="confirmDelete" type="checkbox" 
-                            class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
-                        <label for="confirm-delete" class="ml-2 block text-sm text-gray-900">
-                            {{ __('messages.confirm_permanent_delete') }}
-                        </label>
+                
+                <!-- Aviso importante sobre exclusão -->
+                <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-yellow-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700 text-left">
+                                {{ __('messages.delete_warning_permanent') }}
+                            </p>
+                        </div>
                     </div>
-                    @error('confirmDelete')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
                 </div>
             </div>
             
-            <!-- Rodapé do Modal -->
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                <button type="button" wire:click="delete" wire:loading.attr="disabled" 
-                    class="inline-flex justify-center w-full sm:w-auto items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-                    {{ $confirmDelete ? '' : 'disabled' }}>
-                    <span wire:loading.remove wire:target="delete">
-                        <i class="fas fa-trash-alt mr-2"></i>
-                        {{ __('messages.delete_permanently') }}
-                    </span>
-                    <span wire:loading wire:target="delete">
-                        <i class="fas fa-spinner fa-spin mr-2"></i>
-                        {{ __('messages.deleting') }}...
-                    </span>
-                </button>
-                <button type="button" wire:click="closeDeleteModal" wire:loading.attr="disabled" 
-                    class="inline-flex justify-center w-full sm:w-auto items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out">
-                    <i class="fas fa-times mr-2"></i>
+            <!-- Botões de Ação -->
+            <div class="px-4 py-3 bg-gray-50 sm:px-6 flex justify-end space-x-2">
+                <button type="button" wire:click="closeDeleteModal" 
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-times-circle mr-2"></i>
                     {{ __('messages.cancel') }}
+                </button>
+                <button type="button" wire:click="delete" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    {{ __('messages.delete') }}
                 </button>
             </div>
         </div>

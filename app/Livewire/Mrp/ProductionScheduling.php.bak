@@ -8,6 +8,11 @@ use App\Models\Mrp\ProductionSchedule;
 use App\Models\Mrp\ProductionOrder;
 use App\Models\Mrp\BomHeader;
 use App\Models\Mrp\BomDetail;
+use App\Models\Mrp\Line;
+use App\Models\Mrp\Shift;
+use App\Models\Mrp\FailureCategory;
+use App\Models\Mrp\FailureRootCause;
+use App\Models\Mrp\ProductionDailyPlan;
 use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation as Location;
 use Illuminate\Support\Facades\Auth;
@@ -57,7 +62,11 @@ class ProductionScheduling extends Component
         'completeProduction' => 'completeProduction',
         'updateWipInventory' => 'updateWipInventory',
         'updated:schedule.product_id' => 'checkComponentAvailability',
-        'updated:schedule.planned_quantity' => 'checkComponentAvailability'
+        'updated:schedule.planned_quantity' => 'checkComponentAvailability',
+        'openDeleteModal' => 'openDeleteModal',  // Renomeado para evitar conflitos
+        'viewDailyPlans' => 'viewDailyPlans',
+        'updateDailyPlan' => 'updateDailyPlan',
+        'closeDailyPlansModal' => 'closeDailyPlansModal'
     ];
     
     /**
@@ -66,205 +75,171 @@ class ProductionScheduling extends Component
      */
     public function checkComponentAvailability()
     {
-        try {
-            // Log de início da verificação com ID único para rastreamento
-            $checkId = uniqid('check_');
-            \Illuminate\Support\Facades\Log::info("[{$checkId}] INÍCIO: Verificação de componentes", [
-                'product_id' => $this->schedule['product_id'] ?? 'nenhum',
-                'planned_quantity' => $this->schedule['planned_quantity'] ?? 'nenhuma',
-                'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB'
+        // Inicializar variáveis com valores padrão
+        $this->showComponentWarning = false;
+        $this->insufficientComponents = [];
+        $this->maxQuantityPossible = 0;
+        
+        // Define um tempo limite para prevenir loops infinitos
+        $startTime = microtime(true);
+        $timeLimit = 2.0; // limite de 2 segundos para execução
+        
+        // Registrar o início da verificação para debug
+        \Illuminate\Support\Facades\Log::info('Iniciando verificação de componentes', [
+            'product_id' => $this->schedule['product_id'] ?? 'nenhum',
+            'planned_quantity' => $this->schedule['planned_quantity'] ?? 'nenhuma'
+        ]);
+        
+        // Se não há produto selecionado, não há o que verificar
+        if (empty($this->schedule['product_id'])) {
+            return;
+        }
+        
+        // Garantir que a quantidade seja numérica, mesmo que seja zero
+        $planned_quantity = isset($this->schedule['planned_quantity']) && is_numeric($this->schedule['planned_quantity']) 
+            ? (float)$this->schedule['planned_quantity'] 
+            : 0;
+            
+        // Verifica se a quantidade é muito grande (acima de 1 milhão)
+        if ($planned_quantity > 1000000) {
+            $this->showComponentWarning = true;
+            $this->insufficientComponents = [[
+                'name' => __('messages.excessive_quantity'),
+                'sku' => 'N/A',
+                'required' => $planned_quantity,
+                'available' => 'N/A',
+                'missing' => 'N/A'
+            ]];
+            \Illuminate\Support\Facades\Log::warning('Verificação de componentes cancelada: quantidade muito grande', [
+                'planned_quantity' => $planned_quantity
             ]);
+            return;
+        }
+        
+        // Primeiro, verificar se existe alguma BOM para o produto, independente do status
+        $anyBom = BomHeader::where('product_id', $this->schedule['product_id'])->first();
+        
+        if (!$anyBom) {
+            // Produto não tem BOM cadastrada, não há como verificar componentes
+            return;
+        }
+        
+        // Verificar se a BOM encontrada está com status ativo
+        if ($anyBom->status !== 'active') {
+            // BOM existe mas não está ativa
+            $this->showComponentWarning = true;
+            $this->insufficientComponents = [[
+                'name' => __('messages.invalid_bom_status'),
+                'sku' => $anyBom->bom_number,
+                'required' => __('messages.bom_status_must_be_active'),
+                'available' => $anyBom->status,
+                'missing' => __('messages.activate_bom_to_continue')
+            ]];
+            return;
+        }
+        
+        // Usar a BOM ativa encontrada
+        $bomHeader = $anyBom;
+        
+        // Buscar todos os componentes da BOM
+        $components = BomDetail::where('bom_header_id', $bomHeader->id)
+            ->with(['component' => function($query) {
+                $query->with('inventoryItems');
+            }])
+            ->get();
             
-            // Inicializar variáveis com valores padrão
-            $this->showComponentWarning = false;
-            $this->insufficientComponents = [];
-            $this->maxQuantityPossible = 0;
-            
-            // Define um tempo limite para prevenir loops infinitos
-            $startTime = microtime(true);
-            $timeLimit = 3.0; // limite de 3 segundos para execução
-            
-            // Registrar o estado da verificação
-            \Illuminate\Support\Facades\Log::debug("[{$checkId}] ESTADO: Início da verificação");
-            
-            // Se não há produto selecionado, não há o que verificar
-            if (empty($this->schedule['product_id'])) {
-                \Illuminate\Support\Facades\Log::info("[{$checkId}] FINALIZADO: Produto não selecionado");
-                return;
-            }
-            
-            // Garantir que a quantidade seja numérica, mesmo que seja zero
-            $planned_quantity = isset($this->schedule['planned_quantity']) && is_numeric($this->schedule['planned_quantity']) 
-                ? (float)$this->schedule['planned_quantity'] 
-                : 0;
-                
-            \Illuminate\Support\Facades\Log::info("[{$checkId}] PASSO 1: Validando quantidade planejada: {$planned_quantity}");
-                
-            // Verifica se a quantidade é muito grande (acima de 1 milhão)
-            if ($planned_quantity > 1000000) {
-                $this->showComponentWarning = true;
-                $this->insufficientComponents = [[
-                    'name' => 'Quantidade excessiva',
-                    'sku' => 'N/A',
-                    'required' => $planned_quantity,
-                    'available' => 'N/A',
-                    'missing' => 'N/A'
-                ]];
-                \Illuminate\Support\Facades\Log::warning("[{$checkId}] FINALIZADO: Quantidade muito grande ({$planned_quantity})");
-                return;
-            }
-            
-            \Illuminate\Support\Facades\Log::info("[{$checkId}] PASSO 2: Buscando BOM para produto ID {$this->schedule['product_id']}");
-            
-            // Verificar se o produto tem BOM cadastrada
-            $bomHeader = BomHeader::where('product_id', $this->schedule['product_id'])
-                ->where('status', 'active')
-                ->first();
-                
-            if (!$bomHeader) {
-                // Produto não tem BOM cadastrada, não há como verificar componentes
-                \Illuminate\Support\Facades\Log::info("[{$checkId}] FINALIZADO: Produto não tem BOM cadastrada");
-                return;
-            }
-            
-            \Illuminate\Support\Facades\Log::info("[{$checkId}] PASSO 3: BOM encontrada ID {$bomHeader->id}, buscando componentes");
-            
-            // Buscar todos os componentes da BOM
-            $components = BomDetail::where('bom_header_id', $bomHeader->id)
-                ->with(['component' => function($query) {
-                    $query->with('inventoryItems');
-                }])
-                ->get();
-                
-            if ($components->isEmpty()) {
-                // BOM existe mas não tem componentes cadastrados
-                \Illuminate\Support\Facades\Log::info("[{$checkId}] FINALIZADO: BOM não tem componentes cadastrados");
-                return;
-            }
-            
-            \Illuminate\Support\Facades\Log::info("[{$checkId}] PASSO 4: {$components->count()} componentes encontrados. Iniciando verificação");
-            
-            // Usar a variável planned_quantity já definida acima
-            $this->componentAvailability = [];
-            $insufficientFound = false;
-            $maxPossible = PHP_INT_MAX;
-            $processedCount = 0;
-            
-            foreach ($components as $index => $bomComponent) {
-                $processedCount++;
-                
-                // Verificar se o tempo limite foi atingido a cada iteração
-                $currentTime = microtime(true);
-                $executionTime = $currentTime - $startTime;
-                
-                if ($executionTime > $timeLimit) {
-                    \Illuminate\Support\Facades\Log::warning("[{$checkId}] INTERROMPIDO: Tempo limite excedido após {$executionTime} segundos", [
-                        'product_id' => $this->schedule['product_id'],
-                        'processed_components' => $processedCount,
-                        'total_components' => $components->count()
-                    ]);
-                    
-                    $this->showComponentWarning = true;
-                    $this->insufficientComponents[] = [
-                        'name' => 'Tempo de verificação excedido',
-                        'sku' => 'N/A',
-                        'required' => 'N/A',
-                        'available' => 'N/A',
-                        'missing' => "Processados {$processedCount} de {$components->count()} componentes"
-                    ];
-                    
-                    $this->maxQuantityPossible = $maxPossible != PHP_INT_MAX ? $maxPossible : 0;
-                    return;
-                }
-                
-                // Log de progresso a cada 5 componentes
-                if ($processedCount % 5 == 0) {
-                    \Illuminate\Support\Facades\Log::info("[{$checkId}] PROGRESSO: Verificando componente {$processedCount}/{$components->count()}");
-                }
-                
-                // Pular componentes inválidos
-                if (!$bomComponent->component) {
-                    \Illuminate\Support\Facades\Log::warning("[{$checkId}] AVISO: Componente ID {$bomComponent->id} não tem produto associado");
-                    continue;
-                }
-                
-                // Calcular quantidade necessária do componente
-                $required_quantity = $bomComponent->quantity * $planned_quantity;
-                
-                // Calcular quantidade disponível (somar todos os locais de inventário)
-                $available_quantity = 0;
-                if ($bomComponent->component->inventoryItems) {
-                    $available_quantity = $bomComponent->component->inventoryItems->sum('quantity_on_hand');
-                }
-                
-                // Verificar se há quantidade suficiente
-                $sufficient = $available_quantity >= $required_quantity;
-                
-                // Calcular quantas unidades do produto final podem ser produzidas com esse componente
-                $maxProducible = $bomComponent->quantity > 0 
-                    ? floor($available_quantity / $bomComponent->quantity) 
-                    : 0;
-                    
-                // Atualizar a quantidade máxima possível (o mínimo entre todos os componentes)
-                if ($maxProducible < $maxPossible) {
-                    $maxPossible = $maxProducible;
-                }
-                
-                // Armazenar informações sobre esse componente
-                $this->componentAvailability[] = [
-                    'component_id' => $bomComponent->component_id,
-                    'name' => $bomComponent->component->name,
-                    'sku' => $bomComponent->component->sku,
-                    'required_quantity' => $required_quantity,
-                    'available_quantity' => $available_quantity,
-                    'sufficient' => $sufficient,
-                    'max_producible' => $maxProducible
-                ];
-                
-                // Se não há quantidade suficiente, registrar para alerta
-                if (!$sufficient) {
-                    $insufficientFound = true;
-                    $this->insufficientComponents[] = [
-                        'name' => $bomComponent->component->name,
-                        'sku' => $bomComponent->component->sku,
-                        'required' => $required_quantity,
-                        'available' => $available_quantity,
-                        'missing' => $required_quantity - $available_quantity
-                    ];
-                    
-                    \Illuminate\Support\Facades\Log::info("[{$checkId}] COMPONENTE INSUFICIENTE: {$bomComponent->component->name}, faltam {$required_quantity - $available_quantity} unidades");
-                }
-            }
-            
-            // Atualizar flags e valores para usar na UI
-            $this->showComponentWarning = $insufficientFound;
-            $this->maxQuantityPossible = $maxPossible != PHP_INT_MAX ? $maxPossible : 0;
-            
-            $executionTime = microtime(true) - $startTime;
-            \Illuminate\Support\Facades\Log::info("[{$checkId}] FINALIZADO: Verificação concluída em {$executionTime} segundos", [
-                'insufficient_found' => $insufficientFound,
-                'max_possible' => $this->maxQuantityPossible,
-                'component_count' => count($this->componentAvailability),
-                'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB'
-            ]);
-            
-        } catch (\Exception $e) {
-            // Em caso de exceção, registrar o erro e definir uma mensagem amigável
-            \Illuminate\Support\Facades\Log::error('ERRO na verificação de componentes: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+        if ($components->isEmpty()) {
+            // BOM existe mas não tem componentes cadastrados
+            return;
+        }
+        
+        // Usar a variável planned_quantity já definida acima
+        $this->componentAvailability = [];
+        $insufficientFound = false;
+        $maxPossible = PHP_INT_MAX;
+        
+        // Registrar a quantidade para debug
+        \Illuminate\Support\Facades\Log::info('Verificando quantidade:', [
+            'planned_quantity' => $planned_quantity,
+            'product_id' => $this->schedule['product_id']
+        ]);
+        
+        foreach ($components as $bomComponent) {
+        // Verificar se o tempo limite foi atingido
+        if ((microtime(true) - $startTime) > $timeLimit) {
+            \Illuminate\Support\Facades\Log::warning('Verificação de componentes interrompida: tempo limite excedido', [
+                'product_id' => $this->schedule['product_id'],
+                'planned_quantity' => $planned_quantity,
+                'processed_components' => count($this->componentAvailability)
             ]);
             
             $this->showComponentWarning = true;
-            $this->insufficientComponents = [[
-                'name' => 'Erro na verificação',
+            $this->insufficientComponents[] = [
+                'name' => __('messages.verification_time_exceeded'),
                 'sku' => 'N/A',
                 'required' => 'N/A',
                 'available' => 'N/A',
-                'missing' => 'Erro técnico: ' . $e->getMessage()
-            ]];
+                'missing' => __('messages.too_many_components_or_quantity')
+            ];
+            
+            // Atualizar flags e valores para usar na UI
+            return;
         }
+        
+        // Pular componentes inválidos
+        if (!$bomComponent->component) {
+            continue;
+        }
+        
+        // Calcular quantidade necessária do componente
+        $required_quantity = $bomComponent->quantity * $planned_quantity;
+        
+        // Calcular quantidade disponível (somar todos os locais de inventário)
+        $available_quantity = 0;
+        if ($bomComponent->component->inventoryItems) {
+            $available_quantity = $bomComponent->component->inventoryItems->sum('quantity_on_hand');
+        }
+        
+        // Verificar se há quantidade suficiente
+        $sufficient = $available_quantity >= $required_quantity;
+        
+        // Calcular quantas unidades do produto final podem ser produzidas com esse componente
+        $maxProducible = $bomComponent->quantity > 0 
+            ? floor($available_quantity / $bomComponent->quantity) 
+            : 0;
+            
+        // Atualizar a quantidade máxima possível (o mínimo entre todos os componentes)
+        if ($maxProducible < $maxPossible) {
+            $maxPossible = $maxProducible;
+        }
+        
+        // Armazenar informações sobre esse componente
+        $this->componentAvailability[] = [
+            'component_id' => $bomComponent->component_id,
+            'name' => $bomComponent->component->name,
+            'sku' => $bomComponent->component->sku,
+            'required_quantity' => $required_quantity,
+            'available_quantity' => $available_quantity,
+            'sufficient' => $sufficient,
+            'max_producible' => $maxProducible
+        ];
+        
+        // Se não há quantidade suficiente, registrar para alerta
+        if (!$sufficient) {
+            $insufficientFound = true;
+            $this->insufficientComponents[] = [
+                'name' => $bomComponent->component->name,
+                'sku' => $bomComponent->component->sku,
+                'required' => $required_quantity,
+                'available' => $available_quantity,
+                'missing' => $required_quantity - $available_quantity
+            ];
+        }
+    }
+        
+        // Atualizar flags e valores para usar na UI
+        $this->showComponentWarning = $insufficientFound;
+        $this->maxQuantityPossible = $maxPossible;
     }
     
     // Propriedades do formulário
@@ -797,13 +772,33 @@ class ProductionScheduling extends Component
                 'product_id' => '',
                 'schedule_number' => $this->generateScheduleNumber(),
                 'start_date' => date('Y-m-d'),
+                'start_time' => '08:00',
                 'end_date' => date('Y-m-d', strtotime('+7 days')),
+                'end_time' => '17:00',
                 'planned_quantity' => '',
+                'actual_quantity' => 0,
+                'is_delayed' => false,
+                'delay_reason' => '',
                 'status' => 'draft',
                 'priority' => 'medium',
                 'responsible' => '',
                 'location_id' => '',
-                'notes' => ''
+                'working_hours_per_day' => 8,
+                'hourly_production_rate' => 10,
+                'setup_time' => 0,
+                'cleanup_time' => 0,
+                'line_id' => '',
+                'shift_id' => '',
+                'notes' => '',
+                'working_days' => [
+                    'mon' => true,
+                    'tue' => true,
+                    'wed' => true,
+                    'thu' => true,
+                    'fri' => true,
+                    'sat' => false,
+                    'sun' => false
+                ]
             ];
             $this->schedule = $schedule;
             $this->editMode = false;
@@ -830,13 +825,17 @@ class ProductionScheduling extends Component
         \Illuminate\Support\Facades\Log::info('openCreateModal called');
         
         try {
-            // Verificar se existem produtos e localizações
+            // Verificar se existem produtos, localizações, linhas de produção e turnos
             $firstProduct = \App\Models\SupplyChain\Product::first();
             $firstLocation = \App\Models\SupplyChain\InventoryLocation::first();
+            $firstProductionLine = Line::first();
+            $firstShift = Shift::first();
             
             \Illuminate\Support\Facades\Log::info('Valores para inicialização', [
                 'produto' => $firstProduct ? $firstProduct->id : 'Nenhum produto encontrado',
-                'localização' => $firstLocation ? $firstLocation->id : 'Nenhuma localização encontrada'
+                'localização' => $firstLocation ? $firstLocation->id : 'Nenhuma localização encontrada',
+                'linha_producao' => $firstProductionLine ? $firstProductionLine->id : 'Nenhuma linha encontrada',
+                'turno' => $firstShift ? $firstShift->id : 'Nenhum turno encontrado'
             ]);
             
             $this->resetValidation();
@@ -859,6 +858,8 @@ class ProductionScheduling extends Component
                 'status' => 'draft',
                 'priority' => 'medium',
                 'location_id' => $firstLocation ? $firstLocation->id : '',
+                'line_id' => $firstProductionLine ? $firstProductionLine->id : '',
+                'shift_id' => $firstShift ? $firstShift->id : '',
                 'responsible' => '',
                 'notes' => ''
             ]);
@@ -1139,104 +1140,702 @@ public function view($id)
 }
 
 /**
- * Confirmar exclusão de programação
+ * Abrir modal de exclusão (renomeado de confirmDelete para evitar conflitos)
  */
-public function confirmDelete($id)
+public function openDeleteModal($id)
 {
-    $this->scheduleId = $id;
-    $this->scheduleToDelete = ProductionSchedule::with(['product'])->findOrFail($id);
-    $this->confirmDelete = false; // Resetar confirmação a cada nova solicitação de exclusão
-    $this->showDeleteModal = true;
+    try {
+        // Log para debug
+        \Illuminate\Support\Facades\Log::debug('Método openDeleteModal chamado', ['id' => $id]);
+        
+        // Verificar se o agendamento existe
+        $schedule = ProductionSchedule::with(['product'])->findOrFail($id);
+        
+        // Definir propriedades necessárias
+        $this->scheduleId = $id;
+        $this->scheduleToDelete = $schedule;
+        
+        // Ativar o modal
+        $this->showDeleteModal = true;
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Erro ao abrir modal de exclusão', [
+            'id' => $id,
+            'error' => $e->getMessage()
+        ]);
+        
+        $this->dispatch('notify', 
+            type: 'error', 
+            message: 'Erro ao carregar o agendamento: ' . $e->getMessage()
+        );
+    }
 }
-    
-    /**
-     * Excluir programação
-     */
-    public function delete()
-    {
-        // Validar confirmação
-        if (!$this->confirmDelete) {
-            $this->dispatch('notify',
-                type: 'error',
-                title: __('messages.confirmation_required'),
-                message: __('messages.please_confirm_deletion')
-            );
-            return;
-        }
-        
-        if (!$this->scheduleToDelete) {
-            $this->scheduleToDelete = ProductionSchedule::findOrFail($this->scheduleId);
-        }
-        
-        try {
-            // Verificar se existem ordens relacionadas
-            $relatedOrdersCount = ProductionOrder::where('schedule_id', $this->scheduleId)->count();
-            
-            if ($relatedOrdersCount > 0) {
-                $this->dispatch('notify',
-                    type: 'error',
-                    title: __('messages.delete_error'),
-                    message: __('messages.cannot_delete_schedule_with_orders', ['count' => $relatedOrdersCount])
-                );
-                
-                $this->closeCreateEditModal();
-                return;
-            }
-            
-            // Excluir programação
-            $this->scheduleToDelete->delete();
-            
-            $this->dispatch('notify',
-                type: 'success',
-                title: __('messages.success'),
-                message: __('messages.production_schedule_deleted')
-            );
-            
-            $this->scheduleToDelete = null;
-            $this->closeCreateEditModal();
-            
-            // Recarregar dados do calendário se estiver na visualização de calendário
-            if ($this->currentTab === 'calendar') {
-                $this->loadCalendarEvents();
-            }
-        } catch (\Exception $e) {
+
+/**
+ * Fechar o modal de exclusão
+ */
+public function closeDeleteModal()
+{
+    // Simplificado como em BomManagement
+    $this->showDeleteModal = false;
+    $this->scheduleToDelete = null;
+    $this->scheduleId = null;
+}
+
+/**
+ * Excluir programação
+ */
+public function delete()
+{
+    try {
+        // Verificar se temos um ID válido para exclusão
+        if (!$this->scheduleId) {
             $this->dispatch('notify',
                 type: 'error',
                 title: __('messages.error'),
-                message: __('messages.error_deleting_schedule', ['error' => $e->getMessage()])
+                message: __('messages.invalid_schedule_id')
             );
+            $this->closeDeleteModal();
+            return;
         }
+        
+        // Carregar programação se ainda não estiver carregada
+        if (!$this->scheduleToDelete) {
+            $this->scheduleToDelete = ProductionSchedule::findOrFail($this->scheduleId);
+        }
+    } catch (\Exception $e) {
+        $this->dispatch('notify',
+            type: 'error',
+            title: __('messages.error'),
+            message: __('messages.schedule_not_found')
+        );
+        $this->closeDeleteModal();
+        return;
     }
+    
+    try {
+        // Verificar se existem ordens relacionadas
+        $relatedOrdersCount = ProductionOrder::where('schedule_id', $this->scheduleId)->count();
+        
+        if ($relatedOrdersCount > 0) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.delete_error'),
+                message: __('messages.cannot_delete_schedule_with_orders', ['count' => $relatedOrdersCount])
+            );
+            
+            return; // Não feche o modal para que o usuário possa ver o alerta e ter a opção de cancelar
+        }
+        
+        // Confirmar exclusão com logs
+        \Illuminate\Support\Facades\Log::info('Excluindo programação de produção', [
+            'id' => $this->scheduleId,
+            'schedule_number' => $this->scheduleToDelete->schedule_number
+        ]);
+        
+        // Excluir programação
+        $this->scheduleToDelete->delete();
+        
+        $this->dispatch('notify',
+            type: 'success',
+            title: __('messages.success'),
+            message: __('messages.production_schedule_deleted')
+        );
+        
+        $this->closeDeleteModal();
+        
+        // Recarregar dados do calendário se estiver na visualização de calendário
+        if ($this->currentTab === 'calendar') {
+            $this->loadCalendarEvents();
+        }
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Erro ao excluir programação', [
+            'id' => $this->scheduleId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        $this->dispatch('notify',
+            type: 'error',
+            title: __('messages.error'),
+            message: __('messages.error_deleting_schedule', ['error' => $e->getMessage()])
+        );
+    }
+}
 
     /**
      * Fechar modal de criação/edição
      */
-    public function closeCreateEditModal()
+    public function closeCreateModal()
     {
-        \Illuminate\Support\Facades\Log::info('closeCreateEditModal called');
-        
         $this->showModal = false;
         $this->editMode = false;
+        $this->resetErrorBag();
         
         \Illuminate\Support\Facades\Log::info('Create/Edit modal closed', [
             'showModal' => $this->showModal,
             'editMode' => $this->editMode
         ]);
     }
-
+    
     /**
-     * Fechar modal de exclusão
+     * Visualizar planos diários de produção com informações de falhas
+     * 
+     * @param int $id ID da programação de produção
      */
-    public function closeDeleteModal()
+    public function viewDailyPlans($id)
     {
-        \Illuminate\Support\Facades\Log::info('closeDeleteModal called');
-        
-        $this->showDeleteModal = false;
-        $this->scheduleToDelete = null;
-        $this->confirmDelete = false;
-        
-        \Illuminate\Support\Facades\Log::info('Delete modal closed');
+        try {
+            \Illuminate\Support\Facades\Log::info('Visualizando planos diários com informações de falhas', ['id' => $id]);
+            
+            // Carregar a programação com relacionamentos
+            $this->viewingSchedule = ProductionSchedule::with(['product', 'location'])
+                ->findOrFail($id);
+                
+            // Inicializar a propriedade breakdown_impact se não existir
+            if (!isset($this->viewingSchedule->breakdown_impact) || !is_array($this->viewingSchedule->breakdown_impact)) {
+                $this->viewingSchedule->breakdown_impact = [
+                    'total_breakdown_minutes' => 0,
+                    'total_planned_production' => 0,
+                    'total_actual_production' => 0,
+                    'total_efficiency_loss' => 0.00,
+                    'efficiency_percentage' => 0
+                ];
+            }
+                
+            // Carregar os planos diários existentes
+            $this->dailyPlans = [];
+            $existingPlans = ProductionDailyPlan::where('schedule_id', $id)
+                ->orderBy('production_date')
+                ->orderBy('start_time')
+                ->get();
+            \Illuminate\Support\Facades\Log::info('Starting failure impact calculation', [
+                'daily_plans_count' => $existingPlans->count(),
+                'viewing_schedule_id' => $id
+            ]);
+            
+            // Se não existem planos diários, criar planos com base nos dias de trabalho marcados
+            if ($existingPlans->isEmpty()) {
+                $this->createDailyPlansForWorkingDays($id);
+                
+                // Recarregar os planos após a criação
+                $existingPlans = ProductionDailyPlan::where('schedule_id', $id)
+                    ->orderBy('production_date')
+                    ->orderBy('start_time')
+                    ->get();
+            }
+            
+            // Processar planos existentes
+            $hasBreakdowns = false;
+            $totalBreakdownMinutes = 0;
+            
+            foreach ($existingPlans as $index => $plan) {
+                // Adicionar aos dailyPlans do componente
+                $this->dailyPlans[$index] = [
+                    'id' => $plan->id,
+                    'production_date' => $plan->production_date->format('Y-m-d'),
+                    'start_time' => $plan->start_time,
+                    'end_time' => $plan->end_time,
+                    'planned_quantity' => $plan->planned_quantity,
+                    'actual_quantity' => $plan->actual_quantity,
+                    'has_breakdown' => $plan->has_breakdown,
+                    'breakdown_minutes' => $plan->breakdown_minutes,
+                    'failure_category_id' => $plan->failure_category_id,
+                    'failure_root_causes' => $plan->failure_root_causes,
+                    'status' => $plan->status,
+                    'notes' => $plan->notes,
+                ];
+                
+                // Verificar se há falhas/paradas
+                if ($plan->has_breakdown && $plan->breakdown_minutes > 0) {
+                    $hasBreakdowns = true;
+                    $totalBreakdownMinutes += $plan->breakdown_minutes;
+                }
+            }
+            
+            // Registrar informações mais detalhadas para ajudar no debug
+            \Illuminate\Support\Facades\Log::info('Dados de planos diários carregados', [
+                'quantidade_planos' => count($this->dailyPlans),
+                'tem_paradas' => $hasBreakdowns ? 'sim' : 'não',
+                'minutos_parada_total' => $totalBreakdownMinutes
+            ]);
+            
+            // Calcular o impacto das falhas na produção
+            $this->calculateFailureImpact();
+            
+            // Verificar disponibilidade de componentes (se aplicável)
+            if (method_exists($this, 'checkComponentAvailability')) {
+                $this->checkComponentAvailability();
+            }
+            
+            // Ativar o modal após toda a preparação estar concluída
+            $this->showDailyPlansModal = true;
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erro ao carregar planos diários', [
+                'id' => $id,
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.failed_to_load_daily_plans') . ": {$e->getMessage()}"
+            );
+        }
     }
+    
+    /**
+     * Cria planos diários para uma programação, considerando apenas os dias da semana marcados como trabalho
+     * 
+     * @param int $scheduleId ID da programação
+     */
+    private function createDailyPlansForWorkingDays($scheduleId)
+    {
+        $schedule = ProductionSchedule::findOrFail($scheduleId);
+        
+        // Decodificar os dias de trabalho (armazenados como JSON no banco)
+        $workingDays = json_decode($schedule->working_days, true) ?? [
+            'mon' => true,
+            'tue' => true,
+            'wed' => true,
+            'thu' => true,
+            'fri' => true,
+            'sat' => false,
+            'sun' => false
+        ];
+        
+        // Mapeamento de dias da semana em inglês para números (0 = domingo, 1 = segunda, etc.)
+        $dayMapping = [
+            'sun' => 0,
+            'mon' => 1,
+            'tue' => 2,
+            'wed' => 3,
+            'thu' => 4,
+            'fri' => 5,
+            'sat' => 6,
+        ];
+        
+        // Converter para array numérico (0-6) dos dias marcados como trabalho
+        $workingDayNumbers = [];
+        foreach ($workingDays as $day => $isWorking) {
+            if ($isWorking) {
+                $workingDayNumbers[] = $dayMapping[$day];
+            }
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Dias de trabalho marcados', [
+            'dias' => $workingDayNumbers
+        ]);
+        
+        // Período da programação
+        $startDate = \Carbon\Carbon::parse($schedule->start_date);
+        $endDate = \Carbon\Carbon::parse($schedule->end_date);
+        
+        // Calcular o número de dias úteis no período
+        $currentDate = $startDate->copy();
+        $workingDatesInPeriod = [];
+        
+        while ($currentDate->lte($endDate)) {
+            // Verificar se o dia da semana está marcado como dia de trabalho
+            if (in_array($currentDate->dayOfWeek, $workingDayNumbers)) {
+                $workingDatesInPeriod[] = $currentDate->format('Y-m-d');
+            }
+            $currentDate->addDay();
+        }
+    
+        $totalWorkingDays = count($workingDatesInPeriod);
+        
+        if ($totalWorkingDays == 0) {
+            \Illuminate\Support\Facades\Log::warning('Nenhum dia útil encontrado no período da programação');
+            $this->dispatch('notify',
+                type: 'warning',
+                title: __('messages.warning'),
+                message: __('messages.no_working_days_in_period')
+            );
+            return;
+        }
+        
+        // Calcular a quantidade planejada por dia
+        $plannedQuantityPerDay = $schedule->planned_quantity / $totalWorkingDays;
+        
+        \Illuminate\Support\Facades\Log::info('Criando planos diários', [
+            'total_dias' => $totalWorkingDays,
+            'quantidade_por_dia' => $plannedQuantityPerDay
+        ]);
+        
+        // Criar planos diários para cada dia útil
+        $index = 0;
+        foreach ($workingDatesInPeriod as $workDate) {
+            // Criar plano no banco de dados
+            $plan = new ProductionDailyPlan();
+            $plan->schedule_id = $scheduleId;
+            $plan->production_date = $workDate;
+            $plan->planned_quantity = round($plannedQuantityPerDay, 2);
+            $plan->actual_quantity = 0;
+            $plan->start_time = $schedule->start_time;
+            $plan->end_time = $schedule->end_time;
+            $plan->status = 'pending';
+            $plan->has_breakdown = false;
+            $plan->created_by = Auth::id();
+            $plan->save();
+            
+            // Adicionar ao array de planos para a view
+            $this->dailyPlans[$index] = [
+                'id' => $plan->id,
+                'production_date' => $workDate,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
+                'planned_quantity' => round($plannedQuantityPerDay, 2),
+                'actual_quantity' => 0,
+                'has_breakdown' => false,
+                'breakdown_minutes' => null,
+                'failure_category_id' => null,
+                'failure_root_causes' => null,
+                'status' => 'pending',
+                'notes' => ''
+            ];
+            
+            $index++;
+        }
+    }
+}
+
+/**
+ * Calcula o impacto das falhas na produção
+ * Analisa todos os planos diários para determinar o tempo total de parada
+ * e seu impacto na eficiência da produção
+ */
+private function calculateFailureImpact()
+{
+    // Verificar se existem dados para calcular
+    if (empty($this->dailyPlans)) {
+        // Se não temos planos diários no array, buscamos diretamente do banco de dados
+        if ($this->viewingSchedule) {
+            $existingPlans = ProductionDailyPlan::where('schedule_id', $this->viewingSchedule->id)
+                ->orderBy('production_date')
+                ->orderBy('start_time')
+                ->get();
+            
+            if ($existingPlans->isNotEmpty()) {
+                // Processamos os planos existentes para o formato usado no componente
+                foreach ($existingPlans as $index => $plan) {
+                    $this->dailyPlans[$index] = [
+                        'id' => $plan->id,
+                        'production_date' => $plan->production_date->format('Y-m-d'),
+                        'start_time' => $plan->start_time,
+                        'end_time' => $plan->end_time,
+                        'planned_quantity' => $plan->planned_quantity,
+                        'actual_quantity' => $plan->actual_quantity,
+                        'has_breakdown' => $plan->has_breakdown,
+                        'breakdown_minutes' => $plan->breakdown_minutes,
+                        'failure_category_id' => $plan->failure_category_id,
+                        'failure_root_causes' => $plan->failure_root_causes,
+                        'status' => $plan->status,
+                        'notes' => $plan->notes,
+                    ];
+                }
+        
+        // Decodificar os dias de trabalho (armazenados como JSON no banco)
+        $workingDays = json_decode($schedule->working_days, true) ?? [
+            'mon' => true,
+            'tue' => true,
+            'wed' => true,
+            'thu' => true,
+            'fri' => true,
+            'sat' => false,
+            'sun' => false
+        ];
+        
+        // Mapeamento de dias da semana em inglês para números (0 = domingo, 1 = segunda, etc.)
+        $dayMapping = [
+            'sun' => 0,
+            'mon' => 1,
+            'tue' => 2,
+            'wed' => 3,
+            'thu' => 4,
+            'fri' => 5,
+            'sat' => 6,
+        ];
+        
+        // Converter para array numérico (0-6) dos dias marcados como trabalho
+        $workingDayNumbers = [];
+        foreach ($workingDays as $day => $isWorking) {
+            if ($isWorking) {
+                $workingDayNumbers[] = $dayMapping[$day];
+            }
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Dias de trabalho marcados', [
+            'dias' => $workingDayNumbers
+        ]);
+        
+        // Período da programação
+        $startDate = Carbon::parse($schedule->start_date);
+        $endDate = Carbon::parse($schedule->end_date);
+        
+        // Calcular o número de dias úteis no período
+        $currentDate = $startDate->copy();
+        $workingDatesInPeriod = [];
+        
+        while ($currentDate->lte($endDate)) {
+            // Verificar se o dia da semana está marcado como dia de trabalho
+            if (in_array($currentDate->dayOfWeek, $workingDayNumbers)) {
+                $workingDatesInPeriod[] = $currentDate->format('Y-m-d');
+            }
+            $currentDate->addDay();
+        }
+        
+        $totalWorkingDays = count($workingDatesInPeriod);
+        
+        if ($totalWorkingDays == 0) {
+            \Illuminate\Support\Facades\Log::warning('Nenhum dia útil encontrado no período da programação');
+            $this->dispatch('notify',
+                type: 'warning',
+                title: __('messages.warning'),
+                message: __('messages.no_working_days_in_period')
+            );
+            return;
+        }
+        
+        // Calcular a quantidade planejada por dia
+        $plannedQuantityPerDay = $schedule->planned_quantity / $totalWorkingDays;
+        
+        \Illuminate\Support\Facades\Log::info('Criando planos diários', [
+            'total_dias' => $totalWorkingDays,
+            'quantidade_por_dia' => $plannedQuantityPerDay
+        ]);
+        
+        // Criar planos diários para cada dia útil
+        $index = 0;
+        foreach ($workingDatesInPeriod as $workDate) {
+            // Criar plano no banco de dados
+            $plan = new ProductionDailyPlan();
+            $plan->schedule_id = $scheduleId;
+            $plan->production_date = $workDate;
+            $plan->planned_quantity = round($plannedQuantityPerDay, 2);
+            $plan->actual_quantity = 0;
+            $plan->start_time = $schedule->start_time;
+            $plan->end_time = $schedule->end_time;
+            $plan->status = 'pending';
+            $plan->has_breakdown = false;
+            $plan->created_by = Auth::id();
+            $plan->save();
+            
+            // Adicionar ao array de planos para a view
+            $this->dailyPlans[$index] = [
+                'id' => $plan->id,
+                'production_date' => $workDate,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
+                'planned_quantity' => round($plannedQuantityPerDay, 2),
+                'actual_quantity' => 0,
+                'has_breakdown' => false,
+                'breakdown_minutes' => null,
+                'failure_category_id' => null,
+                'failure_root_causes' => null,
+                'status' => 'pending',
+                'notes' => ''
+            ];
+            
+            $index++;
+        }
+    }
+    
+    /**
+     * Calcula o impacto das falhas na produção
+     * Analisa todos os planos diários para determinar o tempo total de parada
+     * e seu impacto na eficiência da produção
+     */
+    private function calculateFailureImpact()
+    {
+        // Verificar se existem dados para calcular
+        if (empty($this->dailyPlans)) {
+            // Se não temos planos diários no array, buscamos diretamente do banco de dados
+            if ($this->viewingSchedule) {
+                $existingPlans = ProductionDailyPlan::where('schedule_id', $this->viewingSchedule->id)
+                    ->orderBy('production_date')
+                    ->orderBy('start_time')
+                    ->get();
+                
+                if ($existingPlans->isNotEmpty()) {
+                    // Processamos os planos existentes para o formato usado no componente
+                    foreach ($existingPlans as $index => $plan) {
+                        $this->dailyPlans[$index] = [
+                            'id' => $plan->id,
+                            'production_date' => $plan->production_date->format('Y-m-d'),
+                            'start_time' => $plan->start_time,
+                            'end_time' => $plan->end_time,
+                            'planned_quantity' => $plan->planned_quantity,
+                            'actual_quantity' => $plan->actual_quantity,
+                            'has_breakdown' => $plan->has_breakdown,
+                            'breakdown_minutes' => $plan->breakdown_minutes,
+                            'failure_category_id' => $plan->failure_category_id,
+                            'failure_root_causes' => $plan->failure_root_causes,
+                            'status' => $plan->status,
+                            'notes' => $plan->notes,
+                        ];
+                    }
+                } else {
+                    \Illuminate\Support\Facades\Log::warning('No daily plans available for failure impact calculation');
+                    return;
+                }
+            } else {
+                \Illuminate\Support\Facades\Log::warning('No viewing schedule available for failure impact calculation');
+                return;
+            }
+        }
+        
+        if (!$this->viewingSchedule) {
+            \Illuminate\Support\Facades\Log::warning('No viewing schedule available for failure impact calculation');
+            return;
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Starting failure impact calculation', [
+            'daily_plans_count' => count($this->dailyPlans),
+            'viewing_schedule_id' => $this->viewingSchedule->id
+        ]);
+        
+        // Inicializar variáveis para cálculos
+        $totalBreakdownMinutes = 0;
+        $totalPlannedProduction = 0;
+        $totalActualProduction = 0;
+        $totalEfficiencyLoss = 0;
+        
+        foreach ($this->dailyPlans as $plan) {
+            $totalPlannedProduction += $plan['planned_quantity'];
+            $totalActualProduction += $plan['actual_quantity'] ?? 0;
+            
+            if (isset($plan['has_breakdown']) && $plan['has_breakdown'] && isset($plan['breakdown_minutes'])) {
+                $totalBreakdownMinutes += $plan['breakdown_minutes'];
+                
+                // Calcular perda de eficiência
+                // Assumindo uma relação linear entre tempo e produção
+                $workingMinutesPerDay = 8 * 60; // Assume 8 horas de trabalho por dia em minutos
+                $plannedQuantity = $plan['planned_quantity'];
+                $breakdownMinutes = $plan['breakdown_minutes'];
+                
+                // Perda estimada devido à parada
+                $estimatedLoss = ($breakdownMinutes / $workingMinutesPerDay) * $plannedQuantity;
+                $totalEfficiencyLoss += $estimatedLoss;
+            }
+        }
+        
+        // Calcular eficiência (certifique-se de que não haja divisão por zero)
+        $efficiencyPercentage = $totalPlannedProduction > 0 
+            ? round(($totalActualProduction / $totalPlannedProduction) * 100, 1) 
+            : 0;
+        
+        // Armazenar como uma propriedade direta da objeto viewingSchedule
+        // Certifique-se de que o objeto tem este array inicializado
+        if (!isset($this->viewingSchedule->breakdown_impact) || !is_array($this->viewingSchedule->breakdown_impact)) {
+            $this->viewingSchedule->breakdown_impact = [];
+        }
+        
+        // Atribuir valores diretamente ao array
+        $this->viewingSchedule->breakdown_impact['total_breakdown_minutes'] = $totalBreakdownMinutes;
+        $this->viewingSchedule->breakdown_impact['total_planned_production'] = $totalPlannedProduction;
+        $this->viewingSchedule->breakdown_impact['total_actual_production'] = $totalActualProduction;
+        $this->viewingSchedule->breakdown_impact['total_efficiency_loss'] = round($totalEfficiencyLoss, 2);
+        $this->viewingSchedule->breakdown_impact['efficiency_percentage'] = $efficiencyPercentage;
+        
+        \Illuminate\Support\Facades\Log::info('Impacto das falhas calculado', [
+            'total_minutos_parada' => $totalBreakdownMinutes,
+            'perda_estimada' => round($totalEfficiencyLoss, 2),
+            'efficiency_percentage' => $efficiencyPercentage
+        ]);
+    }
+    
+
+    
+    /**
+     * Atualizar plano diário com informações de falhas
+     * 
+     * @param int $index Índice do plano no array
+     */
+    public function updateDailyPlan($index)
+    {
+        try {
+            // Validar os dados
+            $this->validateOnly("dailyPlans.{$index}", [
+                "dailyPlans.{$index}.planned_quantity" => 'required|numeric|min:0',
+                "dailyPlans.{$index}.actual_quantity" => 'nullable|numeric|min:0',
+                "dailyPlans.{$index}.status" => 'required|in:pending,in_progress,completed,cancelled',
+                "dailyPlans.{$index}.breakdown_minutes" => 'nullable|numeric|min:0',
+                "dailyPlans.{$index}.failure_category_id" => 'nullable|exists:mrp_failure_categories,id',
+                "dailyPlans.{$index}.failure_root_causes" => 'nullable|array',
+            ]);
+            
+            // Obter o ID do plano
+            $planId = $this->dailyPlans[$index]['id'];
+            
+            // Buscar o plano no banco de dados
+            $plan = ProductionDailyPlan::findOrFail($planId);
+            
+            // Atualizar campos básicos
+            $plan->planned_quantity = $this->dailyPlans[$index]['planned_quantity'];
+            $plan->actual_quantity = $this->dailyPlans[$index]['actual_quantity'] ?? 0;
+            $plan->status = $this->dailyPlans[$index]['status'];
+            $plan->notes = $this->dailyPlans[$index]['notes'] ?? null;
+            
+            // Campos de breakdown e falhas
+            $plan->has_breakdown = $this->dailyPlans[$index]['has_breakdown'] ?? false;
+            
+            // Só atualizar esses campos se houver breakdown
+            if ($plan->has_breakdown) {
+                $plan->breakdown_minutes = $this->dailyPlans[$index]['breakdown_minutes'] ?? null;
+                $plan->failure_category_id = $this->dailyPlans[$index]['failure_category_id'] ?? null;
+                $plan->failure_root_causes = $this->dailyPlans[$index]['failure_root_causes'] ?? null;
+            } else {
+                // Limpar os campos de falha se não houver breakdown
+                $plan->breakdown_minutes = null;
+                $plan->failure_category_id = null;
+                $plan->failure_root_causes = null;
+            }
+            
+            $plan->updated_by = Auth::id();
+            $plan->save();
+            
+            // Atualizar a quantidade atual na programação
+            $this->updateScheduleActualQuantity($plan->schedule_id);
+            
+            $this->dispatch('notify',
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.daily_plan_updated')
+            );
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.failed_to_update_daily_plan') . ": {$e->getMessage()}"
+            );
+        }
+    }
+    
+    /**
+     * Atualizar a quantidade atual total na programação
+     * 
+     * @param int $scheduleId ID da programação
+     */
+    private function updateScheduleActualQuantity($scheduleId)
+    {
+        $totalActual = ProductionDailyPlan::where('schedule_id', $scheduleId)
+            ->sum('actual_quantity');
+            
+        $schedule = ProductionSchedule::find($scheduleId);
+        if ($schedule) {
+            $schedule->actual_quantity = $totalActual;
+            $schedule->save();
+            
+            // Atualizar a visualização
+            $this->viewingSchedule = $schedule->fresh(['product', 'location']);
+        }
+    }
+
+
 
     /**
      * Criar uma nova ordem de produção associada ao agendamento atual
@@ -1348,10 +1947,13 @@ public function confirmDelete($id)
         
         $this->showDailyPlansModal = false;
         $this->viewingDailyPlans = false;
+        $this->viewingSchedule = null;
         $this->dailyPlans = [];
         
         \Illuminate\Support\Facades\Log::info('Daily plans modal closed');
     }
+    
+
 
     /**
      * Salvar programação (criar ou atualizar)
@@ -1414,106 +2016,9 @@ public function confirmDelete($id)
         }
     }
 
-    /**
-     * Visualizar planos diários
-     */
-    public function viewDailyPlans($id)
-    {
-        try {
-            \Illuminate\Support\Facades\Log::info('Visualizando planos diários', ['id' => $id]);
-            
-            $this->scheduleId = $id;
-            $schedule = ProductionSchedule::with(['product', 'dailyPlans' => function($query) {
-                $query->orderBy('production_date');
-            }])->findOrFail($id);
-            
-            // Carregar planos diários para a programação
-            $this->dailyPlans = $schedule->dailyPlans->toArray();
-            $this->viewingSchedule = $schedule;
-            $this->viewingDailyPlans = true;
-            $this->showDailyPlansModal = true;
-            
-            \Illuminate\Support\Facades\Log::info('Planos diários carregados com sucesso', 
-                ['id' => $id, 'número' => $schedule->schedule_number, 'produto' => $schedule->product->name]
-            );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Erro ao carregar planos diários', [
-                'id' => $id,
-                'erro' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            $this->dispatch('toast', 
-                type: 'error',
-                title: __('messages.error'),
-                message: __('messages.load_daily_plans_error', ['error' => $e->getMessage()])
-            );
-        }
-    }
+
     
-    /**
-     * Método para atualizar um plano diário de produção
-     */
-    public function updateDailyPlan($index)
-    {
-        try {
-            $planData = $this->dailyPlans[$index];
-            $plan = \App\Models\Mrp\ProductionDailyPlan::findOrFail($planData['id']);
-            
-            \Illuminate\Support\Facades\Log::info('Atualizando plano diário de produção', [
-                'id' => $planData['id'],
-                'data_producao' => $planData['production_date'] ?? 'N/A',
-                'agendamento_id' => $this->scheduleId
-            ]);
-            
-            // Atualizar dados do plano
-            $plan->planned_quantity = $planData['planned_quantity'];
-            $plan->actual_quantity = $planData['actual_quantity'];
-            $plan->start_time = $planData['start_time'];
-            $plan->end_time = $planData['end_time'];
-            $plan->status = $planData['status'];
-            $plan->notes = $planData['notes'];
-            $plan->updated_by = auth()->id();
-            $plan->save();
-            
-            // Recalcular totais do agendamento principal
-            $schedule = $plan->schedule;
-            $schedule->actual_quantity = $schedule->dailyPlans()->sum('actual_quantity');
-            $schedule->save();
-            
-            // Atualizar dados na interface
-            $this->dailyPlans = $schedule->dailyPlans()->orderBy('production_date')->get()->toArray();
-            
-            \Illuminate\Support\Facades\Log::info('Plano diário atualizado com sucesso', [
-                'id' => $planData['id'],
-                'agendamento_id' => $this->scheduleId,
-                'usuario' => auth()->user()->name
-            ]);
-            
-            $this->dispatch('toast', 
-                type: 'success',
-                title: __('messages.success'),
-                message: __('messages.daily_plan_updated')
-            );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Erro ao atualizar plano diário', [
-                'id' => $planData['id'] ?? 'N/A',
-                'index' => $index,
-                'erro' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            $this->dispatch('toast', 
-                type: 'error',
-                title: __('messages.error'),
-                message: __('messages.daily_plan_update_error', ['error' => $e->getMessage()])
-            );
-        }
-    }
+
 
 /**
  * Atualizar programação existente
@@ -1606,11 +2111,13 @@ public function update()
  */
 public function store()
 {
+    \Illuminate\Support\Facades\Log::info('=== INÍCIO DO MÉTODO STORE ===');
+    
+    // Remover try-catch para permitir que os erros de validação 
+    // sejam processados automaticamente pelo Livewire
+    $this->validate($this->rules());
+    
     try {
-        \Illuminate\Support\Facades\Log::info('=== INÍCIO DO MÉTODO STORE ===');
-        
-        $this->validate();
-        
         // Preparar dados para salvar
         $data = $this->schedule;
         $data['created_by'] = auth()->id();
@@ -1660,6 +2167,10 @@ public function store()
     /**
      * Carregar dados para a view
      */
+
+
+
+
     public function render()
     {
         // Se estiver na aba de calendário, carregar eventos
@@ -1702,6 +2213,10 @@ public function store()
         // Carregar localizações de inventário da supply chain
         $locations = Location::orderBy('name')->get();
         
+        // Carregar linhas de produção e turnos
+        $productionLines = Line::where('is_active', true)->orderBy('name')->get();
+        $shifts = Shift::where('is_active', true)->orderBy('name')->get();
+        
         // Carregar ordens de produção se estiver visualizando
         $relatedOrders = [];
         $selectedSchedule = null;
@@ -1738,15 +2253,28 @@ public function store()
             'urgent' => 'Urgente'
         ];
         
+        // Carregar categorias de falha e causas raiz para o modal de planos diários
+        $failureCategories = FailureCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+            
+        $failureRootCauses = FailureRootCause::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+            
         return view('livewire.mrp.production-scheduling', [
             'schedules' => $schedules,
             'products' => $products,
             'locations' => $locations,
+            'productionLines' => $productionLines,
+            'shifts' => $shifts,
             'statuses' => $statuses,
             'priorities' => $priorities,
             'relatedOrders' => $relatedOrders,
             'selectedSchedule' => $selectedSchedule,
-            'viewingSchedule' => $viewingSchedule
+            'viewingSchedule' => $viewingSchedule,
+            'failureCategories' => $failureCategories,
+            'failureRootCauses' => $failureRootCauses
         ])->layout('layouts.livewire', [
             'title' => 'Programação de Produção'
         ]);

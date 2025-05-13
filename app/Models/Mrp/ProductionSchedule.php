@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\User;
 use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation as Location;
+use App\Models\Mrp\Line;
+use App\Models\Mrp\Shift;
 use Carbon\Carbon;
 
 class ProductionSchedule extends Model
@@ -111,6 +113,22 @@ class ProductionSchedule extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+    
+    /**
+     * Get the production line for this schedule.
+     */
+    public function line()
+    {
+        return $this->belongsTo(Line::class);
+    }
+    
+    /**
+     * Get the shift for this production schedule.
+     */
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
     }
     
     /**

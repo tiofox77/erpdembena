@@ -286,8 +286,18 @@ Route::middleware(['auth'])->group(function () {
         // Resources Management
         Route::middleware(['permission:mrp.resources.view'])->get('/resources-management', App\Livewire\Mrp\ResourcesManagement::class)->name('resources-management');
         
+        // Shifts Management
+        Route::middleware(['permission:mrp.shifts.view'])->get('/shifts', App\Livewire\Mrp\Shifts::class)->name('shifts');
+        
+        // Lines Management
+        Route::middleware(['permission:mrp.lines.view'])->get('/lines', App\Livewire\Mrp\Lines::class)->name('lines');
+        
         // Financial Reporting
         Route::middleware(['permission:mrp.financial_reporting.view'])->get('/financial-reporting', App\Livewire\Mrp\FinancialReporting::class)->name('financial-reporting');
+        
+        // Failure Root Cause Analysis
+        Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-categories', App\Livewire\Mrp\FailureCategories::class)->name('failure-categories');
+        Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-root-causes', App\Livewire\Mrp\FailureRootCauses::class)->name('failure-root-causes');
     });
 
     // Supply Chain Module Routes

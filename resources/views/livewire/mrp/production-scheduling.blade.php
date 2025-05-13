@@ -265,14 +265,20 @@
                                         {{ __('messages.' . $schedule->status) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    <button wire:click="view({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button wire:click="viewOrders({{ $schedule->id }})" class="text-green-600 hover:text-green-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_orders') }}">
+                                        <i class="fas fa-list-alt"></i>
+                                    </button>
+                                    <button wire:click="view({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_details') }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button wire:click="edit({{ $schedule->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors duration-200">
+                                    <button wire:click="viewDailyPlans({{ $schedule->id }})" class="text-teal-600 hover:text-teal-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_daily_plans') }}">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </button>
+                                    <button wire:click="edit({{ $schedule->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors duration-200" title="{{ __('messages.edit') }}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button wire:click="openDeleteModal({{ $schedule->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200">
+                                    <button wire:click="openDeleteModal({{ $schedule->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200 transform hover:scale-110" title="{{ __('messages.delete') }}">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </td>

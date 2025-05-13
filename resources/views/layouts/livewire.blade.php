@@ -694,10 +694,36 @@
             </a>
             @endcan
 
+            @can('mrp.shifts.view')
+            <a href="{{ route('mrp.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-clock text-gray-500"></i>
+                <span>{{ trans('messages.shifts') }}</span>
+            </a>
+            @endcan
+
+            @can('mrp.lines.view')
+            <a href="{{ route('mrp.lines') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.lines') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-project-diagram text-gray-500"></i>
+                <span>{{ trans('messages.lines') }}</span>
+            </a>
+            @endcan
+
             @can('mrp.financial_reporting.view')
             <a href="{{ route('mrp.financial-reporting') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.financial-reporting') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-chart-pie text-gray-500"></i>
                 <span>{{ trans('messages.financial_reporting') }}</span>
+            </a>
+            @endcan
+            
+            @can('mrp.failure_analysis.view')
+            <a href="{{ route('mrp.failure-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.failure-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-exclamation-triangle text-gray-500"></i>
+                <span>{{ trans('messages.failure_categories') }}</span>
+            </a>
+            
+            <a href="{{ route('mrp.failure-root-causes') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.failure-root-causes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-search-plus text-gray-500"></i>
+                <span>{{ trans('messages.failure_root_causes') }}</span>
             </a>
             @endcan
         </div>

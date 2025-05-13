@@ -1836,4 +1836,18 @@ return [
     'from' => 'de',
     'schedule_not_found' => 'Programação não encontrada. Ela pode ter sido excluída ou não está mais disponível.',
     'production_schedule_details' => 'Detalhes da Programação de Produção',
+    
+    // Análise de Impacto das Paradas - Gráficos
+    'breakdown_hours' => 'Horas de Parada',
+    'production_loss' => 'Perda de Produção',
+    'defect_quantity' => 'Quantidade de Defeitos',
+    'quality_rate' => 'Taxa de Qualidade',
+    'impact_trend' => 'Tendência de Impacto',
+    'quality_analysis' => 'Análise de Qualidade',
+    'reload_charts' => 'Recarregar Gráficos',
+    'error_initializing_charts' => 'Erro ao inicializar gráficos',
+    'impact_trend_chart_initialized' => 'Gráfico de Tendência de Impacto inicializado',
+    'quality_analysis_chart_initialized' => 'Gráfico de Análise de Qualidade inicializado',
+    'value' => 'Valor',
+    'hours' => 'Horas',
 ];
