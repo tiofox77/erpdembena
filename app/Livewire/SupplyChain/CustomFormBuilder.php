@@ -356,6 +356,11 @@ class CustomFormBuilder extends Component
             return;
         }
         
+        // Inicializar o array de opções se necessário
+        if (!isset($this->currentField['options']) || !is_array($this->currentField['options'])) {
+            $this->currentField['options'] = [];
+        }
+        
         // Verificar se o valor já existe
         foreach ($this->currentField['options'] as $option) {
             if ($option['value'] == $this->tempOptionValue) {
@@ -371,6 +376,12 @@ class CustomFormBuilder extends Component
         
         $this->tempOptionLabel = '';
         $this->tempOptionValue = '';
+        
+        // Mostrar confirmação visual
+        $this->dispatch('notify', 
+            type: 'success', 
+            message: 'Opção "' . $this->currentField['options'][count($this->currentField['options'])-1]['label'] . '" adicionada com sucesso!'
+        );
     }
     
     public function removeOption($index)
@@ -605,6 +616,26 @@ class CustomFormBuilder extends Component
                 type: 'error', 
                 message: __('messages.form_import_error') . ': ' . $e->getMessage()
             );
+        }
+    }
+    
+    // Método chamado quando o valor de currentField.type é alterado
+    public function updatedCurrentFieldType($value)
+    {
+        // Se o tipo de campo mudar para select, checkbox ou radio, inicializar opções automaticamente
+        if (in_array($value, ['select', 'checkbox', 'radio'])) {
+            if (!isset($this->currentField['options']) || !is_array($this->currentField['options']) || empty($this->currentField['options'])) {
+                // Adicionar opções padrão para facilitar
+                $this->currentField['options'] = [
+                    ['label' => 'Opção 1', 'value' => 'opcao_1'],
+                    ['label' => 'Opção 2', 'value' => 'opcao_2'],
+                ];
+                
+                $this->dispatch('notify', 
+                    type: 'info', 
+                    message: 'Opções padrão foram adicionadas. Você pode modificar ou adicionar mais opções abaixo.'
+                );
+            }
         }
     }
     

@@ -9,6 +9,7 @@ use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\ProductCategory;
 use App\Models\SupplyChain\Supplier;
 use App\Models\SupplyChain\InventoryItem;
+use App\Models\UnitType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -48,6 +49,7 @@ class Products extends Component
     public $supplier_filter = '';
     public $status_filter = '';
     public $stock_filter = '';
+    public $product_type_filter = '';
     
     public $sortField = 'name';
     public $sortDirection = 'asc';
@@ -56,6 +58,9 @@ class Products extends Component
     public $showConfirmDelete = false;
     public $itemToDelete = null;
     public $editMode = false;
+    
+    // Unidades de medida disponíveis
+    public $unitTypes = [];
 
     public $currentTab = 'general';
     public $tabList = ['general', 'inventory', 'dimensions', 'suppliers'];
@@ -108,7 +113,7 @@ class Products extends Component
 
     public function resetFilters()
     {
-        $this->reset(['search', 'category_filter', 'supplier_filter', 'status_filter', 'stock_filter']);
+        $this->reset(['search', 'category_filter', 'supplier_filter', 'status_filter', 'stock_filter', 'product_type_filter']);
     }
 
     public function setTab($tab)
@@ -129,6 +134,10 @@ class Products extends Component
     {
         $this->editMode = false;
         $this->resetForm();
+        
+        // Carregar unidades de tipo disponíveis
+        $this->unitTypes = UnitType::getActive();
+        
         $this->showModal = true;
         $this->generateSku();
     }
@@ -136,7 +145,11 @@ class Products extends Component
     public function openEditModal($id)
     {
         $this->editMode = true;
-        $this->resetForm();
+        $this->product_id = $id;
+        
+        // Carregar unidades de tipo disponíveis
+        $this->unitTypes = UnitType::getActive();
+        
         $this->edit($id);
     }
     
@@ -460,6 +473,11 @@ class Products extends Component
         // Apply status filter
         if ($this->status_filter !== '') {
             $query->where('is_active', $this->status_filter === 'active');
+        }
+        
+        // Apply product type filter
+        if (!empty($this->product_type_filter)) {
+            $query->where('product_type', $this->product_type_filter);
         }
         
         // Apply stock filter

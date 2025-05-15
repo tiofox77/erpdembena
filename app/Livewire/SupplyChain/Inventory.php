@@ -19,9 +19,10 @@ class Inventory extends Component
     
     public $search = '';
     public $perPage = 10;
-    public $locationFilter = '';
-    public $categoryFilter = '';
-    public $stockFilter = '';
+    public $location_filter = '';
+    public $category_filter = '';
+    public $stock_filter = '';
+    public $product_type_filter = '';
     
     // For adjustment modal
     public $showAdjustmentModal = false;
@@ -99,18 +100,24 @@ class Inventory extends Component
             });
         }
         
-        if ($this->locationFilter) {
-            $inventoryItemsQuery->where('location_id', $this->locationFilter);
+        if ($this->location_filter) {
+            $inventoryItemsQuery->where('location_id', $this->location_filter);
         }
         
-        if ($this->categoryFilter) {
+        if ($this->category_filter) {
             $inventoryItemsQuery->whereHas('product', function($q) {
-                $q->where('category_id', $this->categoryFilter);
+                $q->where('category_id', $this->category_filter);
             });
         }
         
-        if ($this->stockFilter) {
-            if ($this->stockFilter === 'low') {
+        if ($this->product_type_filter) {
+            $inventoryItemsQuery->whereHas('product', function($q) {
+                $q->where('product_type', $this->product_type_filter);
+            });
+        }
+        
+        if ($this->stock_filter) {
+            if ($this->stock_filter === 'low') {
                 $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand <= sc_products.reorder_point')
                                    ->whereRaw('sc_inventory_items.quantity_on_hand > 0');
             } elseif ($this->stockFilter === 'out') {
@@ -145,10 +152,13 @@ class Inventory extends Component
     
     public function resetFilters()
     {
-        $this->search = '';
-        $this->locationFilter = '';
-        $this->categoryFilter = '';
-        $this->stockFilter = '';
+        $this->reset([
+            'search',
+            'location_filter',
+            'category_filter',
+            'stock_filter',
+            'product_type_filter'
+        ]);
     }
     
     public function openAdjustmentModal($inventoryItemId = null)

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Maintenance\EquipmentType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EquipmentPart extends Model
 {
@@ -25,6 +27,7 @@ class EquipmentPart extends Model
         'last_restock_date',
         'minimum_stock_level',
         'maintenance_equipment_id',
+        'equipment_type_id',
         'bar_code',
         'category'
     ];
@@ -59,5 +62,13 @@ class EquipmentPart extends Model
     public function stockOuts()
     {
         return $this->stockTransactions()->where('type', 'stock_out');
+    }
+    
+    /**
+     * Get the equipment type that this part belongs to
+     */
+    public function equipmentType(): BelongsTo
+    {
+        return $this->belongsTo(EquipmentType::class, 'equipment_type_id');
     }
 }

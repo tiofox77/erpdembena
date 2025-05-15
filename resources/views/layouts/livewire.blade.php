@@ -420,10 +420,14 @@
                     <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('equipment.parts') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') || request()->routeIs('stocks.part-requests') ? 'active' : '' }}"></i>
                 </div>
 
-                <div class="sidebar-nested-submenu {{ request()->routeIs('equipment.parts') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') || request()->routeIs('stocks.part-requests') ? 'active' : '' }}" id="partsSubmenu">
+                <div class="sidebar-nested-submenu {{ request()->routeIs('equipment.parts') || request()->routeIs('equipment.types') || request()->routeIs('stocks.stockin') || request()->routeIs('stocks.stockout') || request()->routeIs('stocks.history') || request()->routeIs('stocks.part-requests') ? 'active' : '' }}" id="partsSubmenu">
                     <a href="{{ route('equipment.parts') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('equipment.parts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-cogs text-gray-500"></i>
                         <span class="font-semibold">{{ trans('messages.parts_list') }}</span>
+                    </a>
+                    <a href="{{ route('equipment.types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('equipment.types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-tags text-gray-500"></i>
+                        <span class="font-semibold">{{ trans('messages.equipment_types') }}</span>
                     </a>
                     <a href="{{ route('stocks.part-requests') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('stocks.part-requests') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                         <i class="fas fa-clipboard-list text-gray-500"></i>

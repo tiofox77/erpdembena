@@ -199,9 +199,9 @@
                                     <div class="text-sm text-gray-500">{{ $supplier->phone }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $supplier->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        <i class="fas {{ $supplier->is_active ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
-                                        {{ $supplier->is_active ? __('livewire/suppliers.active') : __('livewire/suppliers.inactive') }}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $supplier->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        <i class="fas {{ $supplier->status === 'active' ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
+                                        {{ $supplier->status === 'active' ? __('livewire/suppliers.active') : __('livewire/suppliers.inactive') }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

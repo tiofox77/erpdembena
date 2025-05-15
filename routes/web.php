@@ -145,6 +145,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:equipment.view'])->group(function() {
         Route::get('/equipment/parts', EquipmentParts::class)->name('equipment.parts');
         Route::get('/equipment/parts/{equipmentId}', EquipmentParts::class)->name('equipment.parts.filtered');
+        Route::get('/equipment/types', App\Livewire\Maintenance\EquipmentTypes::class)->name('equipment.types');
     });
 
     // Rotas de Relatórios - Requer permissão reports.view

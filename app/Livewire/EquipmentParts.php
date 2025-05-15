@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\EquipmentPart;
 use App\Models\MaintenanceEquipment;
+use App\Models\Maintenance\EquipmentType;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Log;
@@ -41,8 +42,12 @@ class EquipmentParts extends Component
         'stock_quantity' => 0,
         'unit_cost' => null,
         'minimum_stock_level' => 1,
-        'maintenance_equipment_id' => null
+        'maintenance_equipment_id' => null,
+        'equipment_type_id' => null
     ];
+    
+    // Lista de tipos de equipamentos para o dropdown
+    public $equipmentTypes = [];
 
     /**
      * Validation rules
@@ -60,6 +65,7 @@ class EquipmentParts extends Component
             'part.unit_cost' => 'nullable|numeric|min:0',
             'part.minimum_stock_level' => 'required|integer|min:0',
             'part.maintenance_equipment_id' => 'required|exists:maintenance_equipment,id',
+            'part.equipment_type_id' => 'required|exists:equipment_types,id',
         ];
     }
 
@@ -74,6 +80,8 @@ class EquipmentParts extends Component
             'part.stock_quantity.min' => 'The stock quantity cannot be negative.',
             'part.minimum_stock_level.required' => 'The minimum stock level is required.',
             'part.maintenance_equipment_id.required' => 'Please select an equipment.',
+            'part.equipment_type_id.required' => 'Please select an equipment type.',
+            'part.equipment_type_id.exists' => 'The selected equipment type is invalid.',
             'part.part_number.unique' => 'A part with this part number already exists.',
             'part.bar_code.unique' => 'A part with this barcode already exists.',
         ];
@@ -99,6 +107,15 @@ class EquipmentParts extends Component
     public function getEquipmentListProperty()
     {
         return MaintenanceEquipment::orderBy('name')->get();
+    }
+    
+    /**
+     * Get all equipment types for dropdown selection
+     */
+    #[Computed]
+    public function getEquipmentTypesProperty()
+    {
+        return EquipmentType::where('is_active', true)->orderBy('name')->get();
     }
 
     /**
@@ -135,11 +152,20 @@ class EquipmentParts extends Component
         if ($this->equipmentId) {
             $this->part['maintenance_equipment_id'] = $this->equipmentId;
         }
+        
+        // Load equipment types for the dropdown
+        $this->equipmentTypes = EquipmentType::where('is_active', true)->orderBy('name')->get();
+        
+        // Log for debugging purposes
+        Log::info('Opening create modal with equipment types:', [
+            'types_count' => $this->equipmentTypes->count(),
+            'first_type' => $this->equipmentTypes->first() ? $this->equipmentTypes->first()->name : 'None'
+        ]);
 
         $this->isEditing = false;
         $this->showModal = true;
     }
-
+    
     /**
      * Open the modal for editing a part
      */
@@ -148,6 +174,18 @@ class EquipmentParts extends Component
         try {
             $part = EquipmentPart::findOrFail($id);
             $this->part = $part->toArray();
+            
+            // Load equipment types for the dropdown
+            $this->equipmentTypes = EquipmentType::where('is_active', true)->orderBy('name')->get();
+            
+            // Log for debugging purposes
+            Log::info('Opening edit modal for part:', [
+                'part_id' => $id,
+                'part_name' => $part->name,
+                'equipment_type_id' => $part->equipment_type_id ?? null,
+                'types_count' => $this->equipmentTypes->count()
+            ]);
+            
             $this->isEditing = true;
             $this->showModal = true;
         } catch (\Exception $e) {
@@ -157,6 +195,8 @@ class EquipmentParts extends Component
             $this->dispatch('notify', type: $notificationType, message: $message);
         }
     }
+
+    // O método editPart foi implementado corretamente acima
 
     /**
      * Save the part (create or update)
@@ -221,6 +261,7 @@ class EquipmentParts extends Component
                     'unit_cost' => $this->part['unit_cost'],
                     'minimum_stock_level' => $this->part['minimum_stock_level'],
                     'maintenance_equipment_id' => $this->part['maintenance_equipment_id'],
+                    'equipment_type_id' => $this->part['equipment_type_id'],
                     'last_restock_date' => now(),
                     'created_at' => now(),
                     'updated_at' => now()

@@ -209,19 +209,9 @@
                                                 <select wire:model="unit_of_measure" id="unit_of_measure" 
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
                                                     <option value="">{{ __('livewire/products.select_unit') }}</option>
-                                                    <option value="un">Unidade (un)</option>
-                                                    <option value="kg">Quilograma (kg)</option>
-                                                    <option value="g">Grama (g)</option>
-                                                    <option value="l">Litro (l)</option>
-                                                    <option value="ml">Mililitro (ml)</option>
-                                                    <option value="m">Metro (m)</option>
-                                                    <option value="cm">Centímetro (cm)</option>
-                                                    <option value="m²">Metro quadrado (m²)</option>
-                                                    <option value="m³">Metro cúbico (m³)</option>
-                                                    <option value="pc">Peça (pc)</option>
-                                                    <option value="cx">Caixa (cx)</option>
-                                                    <option value="dz">Dúzia (dz)</option>
-                                                    <option value="pct">Pacote (pct)</option>
+                                                    @foreach($unitTypes as $unitType)
+                                                        <option value="{{ $unitType->symbol }}">{{ $unitType->formattedName }}</option>
+                                                    @endforeach
                                                 </select>
                                                 @error('unit_of_measure') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                                             </div>

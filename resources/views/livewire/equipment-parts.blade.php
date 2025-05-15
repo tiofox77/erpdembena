@@ -548,6 +548,42 @@
                                     </div>
                                     @error('part.maintenance_equipment_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>
+
+                                <div>
+                                    <label for="equipment-type-id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                        <i class="fas fa-tags mr-1 text-blue-500"></i> Equipment Type <span class="text-blue-500">*</span>
+                                    </label>
+                                    <div class="relative rounded-md shadow-sm">
+                                        <select
+                                            id="equipment-type-id"
+                                            wire:model.live="part.equipment_type_id"
+                                            class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('part.equipment_type_id') border-red-300 text-red-900 @enderror"
+                                        >
+                                            <option value="">Select Equipment Type</option>
+                                            @foreach($this->equipmentTypes as $type)
+                                                <option value="{{ $type->id }}" class="flex items-center">
+                                                    {{ $type->name }}
+                                                    @if($type->description)
+                                                    <span class="text-xs text-gray-500 ml-2">({{ Str::limit($type->description, 30) }})</span>
+                                                    @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                        </div>
+                                        
+                                        @error('part.equipment_type_id')
+                                            <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            </div>
+                                        @enderror
+                                    </div>
+                                    <p class="mt-1 text-xs text-blue-500">
+                                        <i class="fas fa-info-circle mr-1"></i> {{ __('messages.equipment_type_required_info') }}
+                                    </p>
+                                    @error('part.equipment_type_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
                             </div>
                         </div>
 

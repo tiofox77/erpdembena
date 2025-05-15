@@ -50,14 +50,14 @@
                     </div>
                     
                     <!-- Linha de filtros -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <!-- Filtro de localização -->
                         <div>
                             <label for="locationFilter" class="block text-sm font-medium text-gray-700 mb-1">
                                 <i class="fas fa-warehouse text-gray-500 mr-1"></i>
                                 {{ __('messages.location') }}
                             </label>
-                            <select wire:model="locationFilter" id="locationFilter" 
+                            <select wire:model.live="location_filter" id="locationFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_locations') }}</option>
                                 @foreach($locations as $location)
@@ -72,7 +72,7 @@
                                 <i class="fas fa-tags text-gray-500 mr-1"></i>
                                 {{ __('messages.category') }}
                             </label>
-                            <select wire:model="categoryFilter" id="categoryFilter" 
+                            <select wire:model.live="category_filter" id="categoryFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_categories') }}</option>
                                 @foreach($categories as $category)
@@ -87,12 +87,26 @@
                                 <i class="fas fa-cubes text-gray-500 mr-1"></i>
                                 {{ __('messages.stock_level') }}
                             </label>
-                            <select wire:model="stockFilter" id="stockFilter" 
+                            <select wire:model.live="stock_filter" id="stockFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_stock_levels') }}</option>
                                 <option value="low">{{ __('messages.low_stock') }}</option>
                                 <option value="out">{{ __('messages.out_of_stock') }}</option>
                                 <option value="in">{{ __('messages.in_stock') }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro de tipo de produto -->
+                        <div>
+                            <label for="productTypeFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-box-open text-gray-500 mr-1"></i>
+                                {{ __('messages.product_type') }}
+                            </label>
+                            <select wire:model.live="product_type_filter" id="productTypeFilter" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="">{{ __('messages.all_types') }}</option>
+                                <option value="finished_product">{{ __('messages.finished_product') }}</option>
+                                <option value="raw_material">{{ __('messages.raw_material') }}</option>
                             </select>
                         </div>
                     </div>
@@ -507,18 +521,74 @@
                             <h2 class="text-base font-medium text-gray-700">{{ __('messages.product_information') }}</h2>
                         </div>
                         <div class="p-4 space-y-4">
-                            <!-- Select Products -->
+                            <!-- Product Search -->
                             <div>
-                                <label for="selectedProducts" class="block text-sm font-medium text-gray-700">
-                                    {{ __('messages.select_products') }} <span class="text-red-500">*</span>
+                                <label for="productSearch" class="block text-sm font-medium text-gray-700 flex items-center">
+                                    <i class="fas fa-search mr-1 text-blue-500"></i>
+                                    {{ __('messages.search_products') }}
                                 </label>
-                                <div class="mt-1">
-                                    <select wire:model.live="selectedProducts" id="selectedProducts" multiple 
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white">
-                                        @foreach($availableProducts as $product)
-                                            <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
-                                        @endforeach
-                                    </select>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <input type="text" wire:model.live.debounce.300ms="productSearchQuery" id="productSearch"
+                                        class="pl-10 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        placeholder="{{ __('messages.type_product_name_or_sku') }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Select Products -->
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2 flex justify-between">
+                                    <div>
+                                        <i class="fas fa-box-open mr-1 text-blue-500"></i>
+                                        {{ __('messages.select_products') }} <span class="text-red-500">*</span>
+                                    </div>
+                                    @if(count($selectedProducts) > 0)
+                                        <span class="text-blue-600 text-xs font-semibold bg-blue-100 px-2 py-1 rounded-full">
+                                            {{ count($selectedProducts) }} {{ __('messages.selected') }}
+                                        </span>
+                                    @endif
+                                </label>
+                                <div class="mt-1 overflow-y-auto max-h-48 border border-gray-200 rounded-md">
+                                    @if(count($availableProducts) === 0)
+                                        <div class="p-4 text-center text-gray-500">
+                                            <i class="fas fa-box-open text-gray-300 text-2xl mb-2"></i>
+                                            <p>{{ __('messages.no_products_found') }}</p>
+                                        </div>
+                                    @else
+                                        <div class="grid grid-cols-1 divide-y divide-gray-200">
+                                            @foreach($availableProducts->filter(function($product) {
+                                                return empty($this->productSearchQuery) || 
+                                                    stripos($product->name, $this->productSearchQuery) !== false ||
+                                                    stripos($product->sku, $this->productSearchQuery) !== false;
+                                            }) as $product)
+                                                <label class="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer transition-colors duration-150 @if(in_array($product->id, $selectedProducts)) bg-blue-50 @endif">
+                                                    <input type="checkbox" 
+                                                        wire:model.live="selectedProducts" 
+                                                        value="{{ $product->id }}" 
+                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                    <div class="ml-3 flex-1">
+                                                        <div class="text-sm font-medium text-gray-900 flex items-center">
+                                                            {{ $product->name }}
+                                                            <span class="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{{ $product->sku }}</span>
+                                                        </div>
+                                                        @php
+                                                            $stockInfo = $product->inventoryItems->firstWhere('location_id', $selectedLocationId);
+                                                            $stockQty = $stockInfo ? $stockInfo->quantity_on_hand : 0;
+                                                        @endphp
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            @if($selectedLocationId)
+                                                                <span class="@if($stockQty <= 0) text-red-500 @elseif($stockQty < 10) text-yellow-500 @else text-green-600 @endif">
+                                                                    <i class="fas fa-cubes mr-1"></i> {{ __('messages.current_stock') }}: {{ $stockQty }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                                 @error('selectedProducts') 
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -706,18 +776,78 @@
                             <h2 class="text-base font-medium text-gray-700">{{ __('messages.product_information') }}</h2>
                         </div>
                         <div class="p-4 space-y-4">
-                            <!-- Select Products -->
+                            <!-- Product Search -->
                             <div>
-                                <label for="selectedTransferProducts" class="block text-sm font-medium text-gray-700">
-                                    {{ __('messages.select_products') }} <span class="text-red-500">*</span>
+                                <label for="transferProductSearch" class="block text-sm font-medium text-gray-700 flex items-center">
+                                    <i class="fas fa-search mr-1 text-blue-500"></i>
+                                    {{ __('messages.search_products') }}
                                 </label>
-                                <div class="mt-1">
-                                    <select wire:model="selectedTransferProducts" id="selectedTransferProducts" multiple 
-                                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
-                                        @foreach($availableProducts as $product)
-                                            <option value="{{ $product->id }}">{{ $product->name }}</option>
-                                        @endforeach
-                                    </select>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <input type="text" wire:model.live.debounce.300ms="transferProductSearchQuery" id="transferProductSearch"
+                                        class="pl-10 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        placeholder="{{ __('messages.type_product_name_or_sku') }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Select Products for Transfer -->
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2 flex justify-between">
+                                    <div>
+                                        <i class="fas fa-box-open mr-1 text-blue-500"></i>
+                                        {{ __('messages.select_products') }} <span class="text-red-500">*</span>
+                                    </div>
+                                    @if(count($selectedTransferProducts) > 0)
+                                        <span class="text-blue-600 text-xs font-semibold bg-blue-100 px-2 py-1 rounded-full">
+                                            {{ count($selectedTransferProducts) }} {{ __('messages.selected') }}
+                                        </span>
+                                    @endif
+                                </label>
+                                
+                                <div class="mt-1 overflow-y-auto max-h-48 border border-gray-200 rounded-md">
+                                    @if(count($availableProducts) === 0)
+                                        <div class="p-4 text-center text-gray-500">
+                                            <i class="fas fa-box-open text-gray-300 text-2xl mb-2"></i>
+                                            <p>{{ __('messages.no_products_found') }}</p>
+                                        </div>
+                                    @else
+                                        <div class="grid grid-cols-1 divide-y divide-gray-200">
+                                            @foreach($availableProducts->filter(function($product) {
+                                                return empty($this->transferProductSearchQuery) || 
+                                                    stripos($product->name, $this->transferProductSearchQuery) !== false ||
+                                                    stripos($product->sku, $this->transferProductSearchQuery) !== false;
+                                            }) as $product)
+                                                @php
+                                                    $sourceStock = $transferSourceId ? 
+                                                        $product->inventoryItems->where('location_id', $transferSourceId)->first()?->quantity_on_hand ?? 0 : 0;
+                                                @endphp
+                                                <label class="flex items-center py-2 px-3 hover:bg-gray-50 @if($sourceStock <= 0) opacity-60 @endif cursor-pointer transition-colors duration-150 @if(in_array($product->id, $selectedTransferProducts)) bg-blue-50 @endif">
+                                                    <input type="checkbox" 
+                                                        wire:model.live="selectedTransferProducts" 
+                                                        value="{{ $product->id }}" 
+                                                        @if($sourceStock <= 0) disabled @endif
+                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                    <div class="ml-3 flex-1">
+                                                        <div class="text-sm font-medium text-gray-900 flex items-center">
+                                                            {{ $product->name }}
+                                                            <span class="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{{ $product->sku }}</span>
+                                                        </div>
+                                                        <div class="text-xs @if($sourceStock <= 0) text-red-500 font-medium @elseif($sourceStock < 10) text-yellow-500 @else text-green-600 @endif mt-1">
+                                                            @if($transferSourceId)
+                                                                <i class="fas fa-cubes mr-1"></i> 
+                                                                {{ __('messages.available_stock') }}: {{ $sourceStock }}
+                                                            @else
+                                                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                                                                {{ __('messages.select_source_to_see_stock') }}
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                                 @error('selectedTransferProducts') 
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
