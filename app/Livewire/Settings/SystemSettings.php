@@ -57,6 +57,20 @@ class SystemSettings extends Component
         'failed' => 0
     ];
 
+    // Logs Section
+    public $logTypes = ['all', 'error', 'info', 'debug', 'warning'];
+    public $selectedLogType = 'error';
+    public $systemLogs = [];
+    public $isLoadingLogs = false;
+    
+    // Database Analysis
+    public $databaseInfo = null;
+    public $isAnalyzingDatabase = false;
+    
+    // Disk Space Check
+    public $diskUsage = [];
+    public $isCheckingDiskSpace = false;
+
     // Modal states
     public $showConfirmModal = false;
     public $confirmAction = '';
@@ -1885,6 +1899,218 @@ class SystemSettings extends Component
     /**
      * Extract migration class name from file
      */
+    /**
+     * Analyze database and collect useful information
+     */
+    public function analyzeDatabaseSQL()
+    {
+        $this->isAnalyzingDatabase = true;
+
+        try {
+            // Get database name
+            $dbName = config('database.connections.mysql.database');
+            $dbHost = config('database.connections.mysql.host');
+            $dbPort = config('database.connections.mysql.port');
+            
+            // Get database size
+            $dbSizeQuery = DB::select("SELECT 
+                SUM(data_length + index_length) AS 'size',
+                SUM(data_length) AS 'data_size',
+                SUM(index_length) AS 'index_size'
+                FROM information_schema.TABLES 
+                WHERE table_schema = ?", [$dbName]);
+            
+            $dbSize = $dbSizeQuery[0]->size ?? 0;
+            $dataSize = $dbSizeQuery[0]->data_size ?? 0;
+            $indexSize = $dbSizeQuery[0]->index_size ?? 0;
+            
+            // Get table information
+            $tables = DB::select("SELECT 
+                table_name AS 'name', 
+                engine AS 'engine',
+                table_rows AS 'rows',
+                data_length AS 'data_size',
+                index_length AS 'index_size',
+                data_free AS 'free_space',
+                create_time AS 'created_at',
+                update_time AS 'updated_at'
+                FROM information_schema.TABLES 
+                WHERE table_schema = ?
+                ORDER BY data_length DESC", [$dbName]);
+            
+            // Format table data
+            foreach ($tables as &$table) {
+                $table->total_size = $table->data_size + $table->index_size;
+                
+                // Size formatting
+                $table->data_size_formatted = $this->formatBytes($table->data_size);
+                $table->index_size_formatted = $this->formatBytes($table->index_size);
+                $table->total_size_formatted = $this->formatBytes($table->total_size);
+                $table->free_space_formatted = $this->formatBytes($table->free_space);
+                
+                // Get indexes for this table
+                $table->indexes = DB::select("SHOW INDEX FROM {$table->name}");
+            }
+            
+            // Get MySQL variables
+            $variables = DB::select("SHOW VARIABLES WHERE Variable_name IN ('version', 'max_connections', 'wait_timeout', 'innodb_buffer_pool_size', 'max_allowed_packet')");
+            $variablesMap = [];
+            foreach ($variables as $var) {
+                $variablesMap[$var->Variable_name] = $var->Value;
+            }
+            
+            // Get MySQL status
+            $status = DB::select("SHOW STATUS WHERE Variable_name IN ('Threads_connected', 'Uptime', 'Questions', 'Slow_queries', 'Innodb_buffer_pool_reads', 'Innodb_buffer_pool_read_requests')");
+            $statusMap = [];
+            foreach ($status as $stat) {
+                $statusMap[$stat->Variable_name] = $stat->Value;
+            }
+            
+            // Store all information
+            $this->databaseInfo = [
+                'name' => $dbName,
+                'host' => $dbHost,
+                'port' => $dbPort,
+                'size' => $dbSize,
+                'size_formatted' => $this->formatBytes($dbSize),
+                'data_size' => $dataSize,
+                'data_size_formatted' => $this->formatBytes($dataSize),
+                'index_size' => $indexSize,
+                'index_size_formatted' => $this->formatBytes($indexSize),
+                'tables' => $tables,
+                'tables_count' => count($tables),
+                'variables' => $variablesMap,
+                'status' => $statusMap,
+                'analyzed_at' => now()->format('Y-m-d H:i:s')
+            ];
+
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => 'Análise do banco de dados concluída com sucesso!'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao analisar banco de dados: ' . $e->getMessage());
+            
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Erro ao analisar banco de dados: ' . $e->getMessage()
+            ]);
+        } finally {
+            $this->isAnalyzingDatabase = false;
+        }
+    }
+    
+    /**
+     * Format bytes to human readable format
+     */
+    protected function formatBytes($bytes, $precision = 2)
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        
+        $bytes /= (1 << (10 * $pow));
+        
+        return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Load system logs based on selected type
+     */
+    public function loadSystemLogs()
+    {
+        $this->isLoadingLogs = true;
+        
+        try {
+            $logPath = storage_path('logs/laravel.log');
+            
+            if (!file_exists($logPath)) {
+                $this->systemLogs = [];
+                $this->dispatch('notify', [
+                    'type' => 'warning',
+                    'message' => 'No log file found'
+                ]);
+                return;
+            }
+            
+            // Get last 100 lines of the log file
+            $logContent = $this->getTailOfFile($logPath, 100);
+            
+            // Parse logs and filter by selected type
+            $logs = $this->parseLogs($logContent);
+            
+            // Filter logs by selected type if not 'all'
+            if ($this->selectedLogType !== 'all') {
+                $logs = array_filter($logs, function($log) {
+                    return strtolower($log['level']) === strtolower($this->selectedLogType);
+                });
+            }
+            
+            $this->systemLogs = array_values($logs);
+            
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => 'Logs refreshed successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Failed to load logs: ' . $e->getMessage()
+            ]);
+        } finally {
+            $this->isLoadingLogs = false;
+        }
+    }
+    
+    /**
+     * Get the last N lines of a file
+     */
+    protected function getTailOfFile($filePath, $lines = 100)
+    {
+        $file = fopen($filePath, 'r');
+        $total_lines = count(file($filePath));
+        $lineCounter = 0;
+        $tailLines = [];
+        
+        while (!feof($file)) {
+            $line = fgets($file);
+            $lineCounter++;
+            
+            if ($lineCounter > ($total_lines - $lines)) {
+                $tailLines[] = $line;
+            }
+        }
+        
+        fclose($file);
+        return implode('', $tailLines);
+    }
+    
+    /**
+     * Parse log content into structured array
+     */
+    protected function parseLogs($content)
+    {
+        $pattern = '/\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\].*?(\w+)\.(\w+): (.+?)(?=\[\d{4}-\d{2}-\d{2} |$)/s';
+        
+        $logs = [];
+        preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+        
+        foreach ($matches as $match) {
+            $logs[] = [
+                'time' => substr($match[0], 1, 19),
+                'level' => strtolower($match[1]),
+                'environment' => $match[2],
+                'message' => trim($match[3]),
+            ];
+        }
+        
+        return $logs;
+    }
+
     protected function getMigrationClass($migrationFile)
     {
         // Read the file content
@@ -1911,5 +2137,132 @@ class SystemSettings extends Component
         }
 
         return $className;
+    }
+    
+    /**
+     * Check disk space usage
+     */
+    public function checkDiskSpace()
+    {
+        $this->isCheckingDiskSpace = true;
+        
+        try {
+            $diskUsage = [];
+            
+            // Check root directory
+            $totalSpace = disk_total_space('/');
+            $freeSpace = disk_free_space('/');
+            $usedSpace = $totalSpace - $freeSpace;
+            $usedPercent = round(($usedSpace / $totalSpace) * 100, 2);
+            
+            $diskUsage[] = [
+                'path' => '/',
+                'total' => $this->formatBytes($totalSpace),
+                'used' => $this->formatBytes($usedSpace),
+                'free' => $this->formatBytes($freeSpace),
+                'percent' => $usedPercent,
+                'status' => $usedPercent > 90 ? 'critical' : ($usedPercent > 70 ? 'warning' : 'normal')
+            ];
+            
+            // Check storage directory
+            $storagePath = storage_path();
+            if (is_dir($storagePath)) {
+                $storageSize = $this->getDirSize($storagePath);
+                $diskUsage[] = [
+                    'path' => 'storage',
+                    'total' => $this->formatBytes($storageSize),
+                    'used' => $this->formatBytes($storageSize),
+                    'free' => 'N/A',
+                    'percent' => 100,
+                    'status' => $storageSize > 1073741824 ? 'warning' : 'normal' // 1GB threshold
+                ];
+            }
+            
+            // Check database directory if applicable
+            // This is MySQL-specific, might need adjustment for other databases
+            $databaseSize = 0;
+            try {
+                $result = DB::select('SELECT SUM(data_length + index_length) as size FROM information_schema.TABLES WHERE table_schema = ?', [
+                    config('database.connections.mysql.database')
+                ]);
+                if (!empty($result)) {
+                    $databaseSize = $result[0]->size;
+                }
+            } catch (\Exception $e) {
+                // Just continue if this fails
+            }
+            
+            if ($databaseSize > 0) {
+                $diskUsage[] = [
+                    'path' => 'database',
+                    'total' => $this->formatBytes($databaseSize),
+                    'used' => $this->formatBytes($databaseSize),
+                    'free' => 'N/A',
+                    'percent' => 100,
+                    'status' => $databaseSize > 536870912 ? 'warning' : 'normal' // 512MB threshold
+                ];
+            }
+            
+            // Check uploads directory if it exists
+            $uploadsPath = public_path('uploads');
+            if (is_dir($uploadsPath)) {
+                $uploadsSize = $this->getDirSize($uploadsPath);
+                $diskUsage[] = [
+                    'path' => 'uploads',
+                    'total' => $this->formatBytes($uploadsSize),
+                    'used' => $this->formatBytes($uploadsSize),
+                    'free' => 'N/A',
+                    'percent' => 100,
+                    'status' => $uploadsSize > 1073741824 ? 'warning' : 'normal' // 1GB threshold
+                ];
+            }
+            
+            // Check logs directory
+            $logsPath = storage_path('logs');
+            if (is_dir($logsPath)) {
+                $logsSize = $this->getDirSize($logsPath);
+                $diskUsage[] = [
+                    'path' => 'logs',
+                    'total' => $this->formatBytes($logsSize),
+                    'used' => $this->formatBytes($logsSize),
+                    'free' => 'N/A',
+                    'percent' => 100,
+                    'status' => $logsSize > 104857600 ? 'warning' : 'normal' // 100MB threshold
+                ];
+            }
+            
+            $this->diskUsage = $diskUsage;
+            
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => __('messages.disk_info_refreshed')
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => __('messages.disk_check_failed') . ': ' . $e->getMessage()
+            ]);
+        } finally {
+            $this->isCheckingDiskSpace = false;
+        }
+    }
+    
+    /**
+     * Get directory size recursively
+     */
+    protected function getDirSize($dir)
+    {
+        $size = 0;
+        
+        try {
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS)) as $file) {
+                $size += $file->getSize();
+            }
+        } catch (\Exception $e) {
+            // Just continue if access denied or other issues
+        }
+        
+        return $size;
     }
 }

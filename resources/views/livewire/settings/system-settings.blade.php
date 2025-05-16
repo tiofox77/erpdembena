@@ -1509,42 +1509,43 @@
                                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">Actions</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody class="bg-white divide-y divide-gray-200">
-                                                    @foreach($commandHistory as $cmd)
+                                                <tbody class="bg-white divide-y divide-gray-200" x-show="$store.globals.commandHistory && $store.globals.commandHistory.length > 0">
+                                                    <template x-for="cmd in $store.globals.commandHistory" :key="cmd.id">
                                                     <tr class="hover:bg-gray-50 transition-colors duration-150">
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                             <div class="flex items-center">
                                                                 <i class="fas fa-terminal text-gray-500 mr-2"></i>
-                                                                {{ $cmd['command'] }}
+                                                                <span x-text="cmd.command"></span>
                                                             </div>
                                                         </td>
                                                         <td class="px-6 py-4 whitespace-nowrap">
-                                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $cmd['status'] === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200' }}">
-                                                                <i class="fas {{ $cmd['status'] === 'success' ? 'fa-check-circle mr-1' : 'fa-times-circle mr-1' }}"></i>
-                                                                {{ ucfirst($cmd['status']) }}
+                                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full" :class="cmd.status === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'">
+                                                                <i class="fas mr-1" :class="cmd.status === 'success' ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                                                <span x-text="cmd.status.charAt(0).toUpperCase() + cmd.status.slice(1)"></span>
                                                             </span>
                                                         </td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                             <div class="flex items-center">
                                                                 <i class="far fa-clock text-gray-400 mr-2"></i>
-                                                                {{ $cmd['executed_at'] }}
+                                                                <span x-text="cmd.executed_at"></span>
                                                             </div>
                                                         </td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                             <span class="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                                                                {{ $cmd['execution_time'] }}
+                                                                <span x-text="cmd.execution_time"></span>
                                                             </span>
                                                         </td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                             <button
                                                                 type="button"
-                                                                wire:click="viewCommandOutput('{{ $cmd['id'] ?? '' }}')"
-                                                                class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200">
-                                                                <i class="fas fa-eye mr-1"></i> View
+                                                                @click="$wire.viewCommandOutput(cmd.id)"
+                                                                class="text-blue-600 hover:text-blue-800 hover:underline">
+                                                                <i class="fas fa-eye mr-1"></i>
+                                                                {{ __('View Output') }}
                                                             </button>
                                                         </td>
                                                     </tr>
-                                                    @endforeach
+                                                    </template>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -2028,6 +2029,82 @@
                                 </div>
                             @endif
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div x-data="{ show: @entangle('showConfirmModal').live }">
+        <div
+            x-show="show"
+            x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto"
+            aria-labelledby="modal-title"
+            role="dialog"
+            aria-modal="true"
+        >
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Overlay de fundo -->
+                <div
+                    x-show="show"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                    aria-hidden="true"
+                ></div>
+
+                <!-- Centralização do modal -->
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Conteúdo do Modal -->
+                <div
+                    x-show="show"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+                >
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fas fa-question-circle text-blue-600"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                    {{ __('messages.confirmation') }}
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500">
+                                        {{ $confirmMessage }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button 
+                            type="button" 
+                            wire:click="startUpdate" 
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                        >
+                            {{ __('messages.confirm') }}
+                        </button>
+                        <button 
+                            type="button" 
+                            wire:click="$set('showConfirmModal', false)" 
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                        >
+                            {{ __('messages.cancel') }}
+                        </button>
                     </div>
                 </div>
             </div>
