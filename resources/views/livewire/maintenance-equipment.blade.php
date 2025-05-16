@@ -152,7 +152,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6 cursor-pointer" wire:click="sortBy('serial_number')">
                                     <div class="flex items-center space-x-1">
                                         <i class="fas fa-hashtag text-gray-400 mr-1"></i>
-                                        <span>Serial Number</span>
+                                        <span>SERIAL.No./ITEM NAME:</span>
                                         @if ($sortField === 'serial_number')
                                             <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
                                         @else
@@ -340,7 +340,7 @@
                         <div class="flex items-center mb-3 md:mb-0">
                             <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
                                 <i class="fas fa-hashtag mr-1"></i>
-                                S/N: {{ $viewingEquipment->serial_number }}
+                                SERIAL.No./ITEM NAME: {{ $viewingEquipment->serial_number }}
                             </span>
                         </div>
                         <div class="flex items-center">
@@ -534,14 +534,14 @@
 
                                 <div>
                                     <label for="serial_number" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                        <i class="fas fa-hashtag mr-1 text-gray-500"></i> Serial Number <span class="text-red-500">*</span>
+                                        <i class="fas fa-hashtag mr-1 text-gray-500"></i>  SERIAL.No./ITEM NAME: <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative rounded-md shadow-sm">
                                         <input
                                             type="text"
                                             id="serial_number"
                                             wire:model="serial_number"
-                                            placeholder="Enter serial number"
+                                            placeholder="SERIAL.No./ITEM NAME:"
                                             class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out @error('serial_number') border-red-300 text-red-900 placeholder-red-300 @enderror"
                                         >
                                         @error('serial_number')
