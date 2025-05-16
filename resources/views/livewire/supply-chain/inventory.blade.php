@@ -263,7 +263,7 @@
                                     <p class="text-gray-400 text-sm max-w-md">
                                         {{ __('messages.try_adjusting_filters') }}
                                     </p>
-                                    @if(!empty($search) || $locationFilter || $stockFilter)
+                                    @if(!empty($search) || $location_filter || $category_filter || $stock_filter || $product_type_filter)
                                     <button wire:click="resetFilters" class="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                                         <i class="fas fa-redo-alt mr-2"></i>
                                         {{ __('messages.clear_filters') }}

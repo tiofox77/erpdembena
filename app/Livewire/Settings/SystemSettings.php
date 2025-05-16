@@ -47,14 +47,6 @@ class SystemSettings extends Component
     // Maintenance & Debug Settings
     public $maintenance_mode = false;
     public $debug_mode = false;
-    public $systemLogs = [];
-    public $logTypes = ['all', 'info', 'warning', 'error', 'notice', 'debug'];
-    public $selectedLogType = 'all';
-    public $logLimit = 50;
-    public $commandHistory = [];
-    public $diskUsage = [];
-    public $isLoadingLogs = false;
-    public $isCheckingDiskSpace = false;
 
     // System Requirements
     public $systemRequirements = [];
@@ -64,31 +56,12 @@ class SystemSettings extends Component
         'warnings' => 0,
         'failed' => 0
     ];
-    
-    // Database Analysis
-    public $databaseInfo = null;
-    public $databaseTables = [];
-    public $databaseSize = 0;
-    public $databaseStats = [];
-    public $isAnalyzingDatabase = false;
-    
-    // Alpine.js state variables
-    public $formState = null;
-    public $activeSection = 'tools';
-    public $auto_check_updates = false;
 
     // Modal states
     public $showConfirmModal = false;
     public $confirmAction = '';
     public $confirmMessage = '';
     public $confirmData = null;
-    
-    // Seeder modal
-    public $showSeederModal = false;
-    public $selectedSeeder = '';
-    public $availableSeeders = [];
-    public $runningSeeder = false;
-    public $seederOutput = '';
 
     // Active tab
     #[Url(history: true)]
@@ -146,14 +119,9 @@ class SystemSettings extends Component
         $this->loadSettings();
         $this->current_version = config('app.version', '1.0.0');
 
-        // Acionar ações específicas baseadas na aba selecionada
+        // Auto check system requirements if that tab is active
         if ($this->activeTab === 'requirements') {
             $this->checkSystemRequirements();
-        } else if ($this->activeTab === 'database') {
-            $this->analyzeDatabaseSQL();
-        } else if ($this->activeTab === 'maintenance') {
-            $this->loadSystemLogs();
-            $this->checkDiskSpace();
         }
     }
 
@@ -203,22 +171,11 @@ class SystemSettings extends Component
      */
     public function setActiveTab($tab)
     {
-        // Garantir que o tab seja um valor válido
-        $validTabs = ['general', 'updates', 'maintenance', 'requirements', 'database'];
-        
-        if (in_array($tab, $validTabs)) {
-            // Registrar a mudança para depuração
-            Log::info("Mudando aba para: {$tab}");
-            
-            // Atualizar o valor
-            $this->activeTab = $tab;
-            
-            // Acionar ações específicas baseadas na aba selecionada
-            if ($tab === 'requirements') {
-                $this->checkSystemRequirements();
-            } else if ($tab === 'database') {
-                $this->analyzeDatabaseSQL();
-            }
+        $this->activeTab = $tab;
+
+        // Auto check system requirements when switching to that tab
+        if ($tab === 'requirements') {
+            $this->checkSystemRequirements();
         }
     }
 
@@ -1477,15 +1434,13 @@ class SystemSettings extends Component
         $this->confirmData = $command;
         $this->showConfirmModal = true;
     }
+
     /**
      * Run Artisan command
      */
     public function runArtisanCommand($command)
     {
         $this->showConfirmModal = false;
-        $startTime = microtime(true);
-        $status = 'success';
-        $output = '';
 
         try {
             // List of allowed commands
@@ -1497,12 +1452,6 @@ class SystemSettings extends Component
                 'route:clear',
                 'migrate',
                 'storage:link',
-                'queue:work --once',
-                'schedule:run',
-                'key:generate',
-                'route:cache',
-                'view:cache',
-                'config:cache',
             ];
 
             if (!in_array($command, $allowedCommands)) {
@@ -1519,349 +1468,14 @@ class SystemSettings extends Component
 
             Log::info("Artisan command executed: {$command}", ['output' => $output]);
         } catch (\Exception $e) {
-            $status = 'error';
-            $output = $e->getMessage();
             Log::error("Error executing Artisan command: {$e->getMessage()}");
             $this->dispatch('notify', type: 'error', message: "Failed to execute command: {$e->getMessage()}");
         }
-        
-        // Registrar no histórico de comandos
-        $executionTime = round(microtime(true) - $startTime, 2);
-        $this->addCommandToHistory($command, $status === 'success', $output, $executionTime);
-        
-        // Atualizar logs após executar um comando
-        if (in_array($command, ['optimize:clear', 'cache:clear', 'config:clear', 'view:clear', 'route:clear'])) {
-            // Verificar uso de disco após limpar caches
-            $this->checkDiskSpace();
-        }
-    }
-    
-    /**
-     * Carregar logs do sistema
-     */
-    public function loadSystemLogs()
-    {
-        $this->isLoadingLogs = true;
-        $this->systemLogs = [];
-        
-        try {
-            $logFile = storage_path('logs/laravel.log');
-            
-            if (file_exists($logFile)) {
-                // Ler as últimas X linhas do arquivo de log
-                $logs = $this->tailCustom($logFile, $this->logLimit * 10); // Pegamos mais linhas para filtrar depois
-                
-                // Processar linhas de log
-                $parsedLogs = $this->parseLogLines($logs);
-                
-                // Filtrar por tipo se necessário
-                if ($this->selectedLogType !== 'all') {
-                    $parsedLogs = array_filter($parsedLogs, function($log) {
-                        return strtolower($log['level']) === strtolower($this->selectedLogType);
-                    });
-                }
-                
-                // Limitar ao número definido em $logLimit
-                $this->systemLogs = array_slice($parsedLogs, 0, $this->logLimit);
-                
-                $logCount = count($this->systemLogs);
-                $message = $logCount > 0 
-                    ? "Loaded {$logCount} system log entries successfully." 
-                    : "No log entries found matching your criteria.";
-                
-                $this->dispatch('notify', 
-                    type: 'success', 
-                    message: $message
-                );
-            } else {
-                $this->systemLogs = [];
-                $this->dispatch('notify', 
-                    type: 'info', 
-                    message: 'Log file not found. The system may not have generated any logs yet.'
-                );
-            }
-        } catch (\Exception $e) {
-            $this->dispatch('notify', 
-                type: 'error', 
-                message: 'Error loading system logs: ' . $e->getMessage()
-            );
-            
-            // Log the exception
-            \Illuminate\Support\Facades\Log::error('Error loading system logs', [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-        
-        $this->isLoadingLogs = false;
-    }
-    
-    /**
-     * Clear the system log file
-     */
-    public function clearSystemLogs()
-    {
-        try {
-            $logFile = storage_path('logs/laravel.log');
-            
-            if (file_exists($logFile)) {
-                // Save a backup of the log file before clearing it
-                $backupFile = storage_path('logs/laravel_' . date('Y-m-d_H-i-s') . '.log.backup');
-                copy($logFile, $backupFile);
-                
-                // Clear the log file
-                file_put_contents($logFile, '');
-                
-                // Reset the logs array
-                $this->systemLogs = [];
-                
-                // Add a command to history
-                $this->addToCommandHistory('clear:logs', true, 'Log file cleared successfully');
-                
-                $this->dispatch('notify', 
-                    type: 'success', 
-                    message: 'System logs have been cleared successfully. A backup was created.'
-                );
-            } else {
-                $this->dispatch('notify', 
-                    type: 'info', 
-                    message: 'No log file found to clear.'
-                );
-            }
-        } catch (\Exception $e) {
-            $this->dispatch('notify', 
-                type: 'error', 
-                message: 'Error clearing system logs: ' . $e->getMessage()
-            );
-            
-            // Log the exception
-            \Illuminate\Support\Facades\Log::error('Error clearing system logs', [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-    
-    /**
-     * Parse log file content into structured array
-     *
-     * @param string $logContent The log content to parse
-     * @return array Parsed log entries
-     */
-    private function parseLogLines($logContent)
-    {
-        $pattern = '/\[(?<date>\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}\.?\d*)\]\s(?<env>\w+)\.(?<level>\w+):\s(?<message>.*)/m';
-        $logs = [];
-        
-        // Split the log content into lines
-        $lines = explode("\n", $logContent);
-        
-        foreach ($lines as $line) {
-            if (empty(trim($line))) continue;
-            
-            if (preg_match($pattern, $line, $matches)) {
-                $logs[] = [
-                    'date' => $matches['date'],
-                    'environment' => $matches['env'],
-                    'level' => strtolower($matches['level']),
-                    'message' => $matches['message'],
-                    'full_text' => $line
-                ];
-            } else {
-                // Se não corresponder ao padrão, pode ser uma continuação da mensagem anterior
-                if (!empty($logs)) {
-                    $lastIndex = count($logs) - 1;
-                    $logs[$lastIndex]['message'] .= "\n" . $line;
-                    $logs[$lastIndex]['full_text'] .= "\n" . $line;
-                }
-            }
-        }
-        
-        return $logs;
     }
 
     /**
-     * Custom implementation of tail function to get last n lines of a file
+     * Close confirmation modal
      */
-    private function tailCustom($filepath, $lines = 100, $adaptive = true) 
-    {
-        $f = @fopen($filepath, "rb");
-        if ($f === false) return false;
-        
-        // Jump to the end of the file
-        fseek($f, 0, SEEK_END);
-        
-        // Initial buffer size
-        $buffer = ($adaptive) ? min(64, $lines) : $lines;
-        
-        // Start reading
-        $output = '';
-        $chunk = '';
-        
-        // While we need to get more lines
-        while (ftell($f) > 0 && $lines > 0) {
-            // Figure out how far back we need to jump
-            $seek = min(ftell($f), 4096);
-            
-            // Jump backwards
-            fseek($f, -$seek, SEEK_CUR);
-            
-            // Read a chunk
-            $chunk = fread($f, $seek);
-            
-            // Jump back to where we started reading
-            fseek($f, -mb_strlen($chunk, '8bit'), SEEK_CUR);
-            
-            // Count the number of lines in the chunk
-            $lines -= substr_count($chunk, "\n");
-            
-            // Add the chunk to our output
-            $output = $chunk . $output;
-            
-            if ($lines <= 0) {
-                // We have enough lines, break the chunk at the proper line
-                $output = implode("\n", array_slice(explode("\n", $output), $lines));
-                break;
-            }
-        }
-        
-        // Close the file
-        fclose($f);
-        
-        return $output;
-    }
-
-    /**
-     * Verificar uso de disco
-     */
-    public function checkDiskSpace()
-    {
-        $this->isCheckingDiskSpace = true;
-        $this->diskUsage = [];
-        
-        try {
-            // Tamanho total do diretório de armazenamento
-            $storagePath = storage_path();
-            $storageTotalSize = $this->getDirectorySize($storagePath);
-            
-            // Tamanho do diretório de logs
-            $logsPath = storage_path('logs');
-            $logsTotalSize = $this->getDirectorySize($logsPath);
-            
-            // Tamanho do diretório de cache
-            $cachePath = storage_path('framework/cache');
-            $cacheTotalSize = $this->getDirectorySize($cachePath);
-            
-            // Tamanho do diretório de sessões
-            $sessionsPath = storage_path('framework/sessions');
-            $sessionsTotalSize = $this->getDirectorySize($sessionsPath);
-            
-            // Tamanho do diretório de views compiladas
-            $viewsPath = storage_path('framework/views');
-            $viewsTotalSize = $this->getDirectorySize($viewsPath);
-            
-            // Tamanho do arquivo de log principal
-            $mainLogFile = storage_path('logs/laravel.log');
-            $mainLogSize = file_exists($mainLogFile) ? filesize($mainLogFile) : 0;
-            
-            // Espaço livre no disco
-            $diskFreeSpace = disk_free_space(base_path());
-            $diskTotalSpace = disk_total_space(base_path());
-            
-            $this->diskUsage = [
-                'storage' => [
-                    'path' => $storagePath,
-                    'size' => $storageTotalSize,
-                    'size_formatted' => $this->formatBytes($storageTotalSize)
-                ],
-                'logs' => [
-                    'path' => $logsPath,
-                    'size' => $logsTotalSize,
-                    'size_formatted' => $this->formatBytes($logsTotalSize),
-                    'main_log_size' => $mainLogSize,
-                    'main_log_size_formatted' => $this->formatBytes($mainLogSize)
-                ],
-                'cache' => [
-                    'path' => $cachePath,
-                    'size' => $cacheTotalSize,
-                    'size_formatted' => $this->formatBytes($cacheTotalSize)
-                ],
-                'sessions' => [
-                    'path' => $sessionsPath,
-                    'size' => $sessionsTotalSize,
-                    'size_formatted' => $this->formatBytes($sessionsTotalSize)
-                ],
-                'views' => [
-                    'path' => $viewsPath,
-                    'size' => $viewsTotalSize,
-                    'size_formatted' => $this->formatBytes($viewsTotalSize)
-                ],
-                'disk' => [
-                    'free' => $diskFreeSpace,
-                    'free_formatted' => $this->formatBytes($diskFreeSpace),
-                    'total' => $diskTotalSpace,
-                    'total_formatted' => $this->formatBytes($diskTotalSpace),
-                    'usage_percent' => round(($diskTotalSpace - $diskFreeSpace) / $diskTotalSpace * 100, 2)
-                ]
-            ];
-        } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: "Error checking disk space: {$e->getMessage()}");
-        }
-        
-        $this->isCheckingDiskSpace = false;
-    }
-
-    /**
-     * Get directory size recursively
-     */
-    private function getDirectorySize($path) 
-    {
-        $size = 0;
-        $path = realpath($path);
-        
-        if ($path !== false && file_exists($path) && is_dir($path)) {
-            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS)) as $file) {
-                $size += $file->getSize();
-            }
-        }
-        
-        return $size;
-    }
-
-    /**
-     * Format bytes to human readable format
-     */
-    private function formatBytes($bytes, $precision = 2) 
-    { 
-        $units = ['B', 'KB', 'MB', 'GB', 'TB']; 
-       
-        $bytes = max($bytes, 0); 
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
-        $pow = min($pow, count($units) - 1); 
-       
-        $bytes /= pow(1024, $pow);
-       
-        return round($bytes, $precision) . ' ' . $units[$pow]; 
-    }
-    
-    /**
-     * Limpar arquivo de log
-     */
-    public function clearLogFile()
-    {
-        try {
-            $logFile = storage_path('logs/laravel.log');
-            if (file_exists($logFile)) {
-                file_put_contents($logFile, '');
-                $this->dispatch('notify', type: 'success', message: 'Log file has been cleared successfully');
-                $this->loadSystemLogs();
-                $this->checkDiskSpace();
-            }
-        } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: "Failed to clear log file: {$e->getMessage()}");
-        }
-    }
-
     public function closeConfirmModal()
     {
         $this->showConfirmModal = false;
@@ -1921,113 +1535,6 @@ class SystemSettings extends Component
     /**
      * Check system requirements
      */
-    /**
-     * Analyze database structure and size
-     */
-    public function analyzeDatabaseSQL()
-    {
-        $this->isAnalyzingDatabase = true;
-        $connection = DB::connection();
-        $databaseName = $connection->getDatabaseName();
-        
-        try {
-            // Get basic database information
-            $this->databaseInfo = [
-                'name' => $databaseName,
-                'driver' => $connection->getDriverName(),
-                'version' => $connection->select('SELECT version() as version')[0]->version ?? 'Unknown',
-                'charset' => config('database.connections.' . config('database.default') . '.charset'),
-                'collation' => config('database.connections.' . config('database.default') . '.collation'),
-            ];
-            
-            // List all tables and their sizes
-            $this->databaseTables = [];
-            $this->databaseSize = 0;
-            $tablesWithIssues = 0;
-            
-            $tables = $connection->select('SHOW TABLE STATUS');
-            
-            foreach ($tables as $table) {
-                // Calculate size in MB (Data + Indexes)
-                $dataSize = ($table->Data_length ?? 0) / 1024 / 1024;
-                $indexSize = ($table->Index_length ?? 0) / 1024 / 1024;
-                $totalSize = $dataSize + $indexSize;
-                $this->databaseSize += $totalSize;
-                
-                // Count records
-                $recordCount = $connection->table($table->Name)->count();
-                
-                // Check if table is in good state
-                $status = 'healthy';
-                $issues = [];
-                
-                // Check tables that need optimization
-                if (isset($table->Data_free) && $table->Data_free > 0) {
-                    $fragmentationPercent = ($table->Data_free / ($table->Data_length + 0.001)) * 100;
-                    if ($fragmentationPercent > 20) {
-                        $status = 'warning';
-                        $tablesWithIssues++;
-                        $issues[] = __('messages.high_fragmentation') . ': ' . number_format($fragmentationPercent, 2) . '%';
-                    }
-                }
-                
-                // Check tables without primary keys (except junction tables)
-                $hasPrimaryKey = false;
-                $indexes = $connection->select("SHOW INDEXES FROM `{$table->Name}` WHERE Key_name = 'PRIMARY'");
-                if (count($indexes) > 0) {
-                    $hasPrimaryKey = true;
-                } else if (strpos($table->Name, '_') !== false && strpos($table->Name, '_has_') === false) {
-                    // Tables that are not junction tables should have primary key
-                    $status = 'warning';
-                    $tablesWithIssues++;
-                    $issues[] = __('messages.no_primary_key');
-                }
-                
-                // Add table information
-                $this->databaseTables[] = [
-                    'name' => $table->Name,
-                    'engine' => $table->Engine,
-                    'rows' => $recordCount,
-                    'data_size' => $dataSize,
-                    'index_size' => $indexSize,
-                    'total_size' => $totalSize,
-                    'formatted_size' => $this->formatBytes($totalSize * 1024 * 1024),
-                    'created_at' => $table->Create_time,
-                    'updated_at' => $table->Update_time,
-                    'collation' => $table->Collation,
-                    'status' => $status,
-                    'issues' => $issues,
-                    'has_primary_key' => $hasPrimaryKey,
-                ];
-            }
-            
-            // Sort tables by size (largest first)
-            usort($this->databaseTables, function($a, $b) {
-                return $b['total_size'] <=> $a['total_size'];
-            });
-            
-            // Update database stats
-            $this->databaseStats = [
-                'tables' => count($this->databaseTables),
-                'size' => $this->formatBytes($this->databaseSize * 1024 * 1024),
-                'size_raw' => $this->databaseSize * 1024 * 1024,
-                'tables_with_issues' => $tablesWithIssues
-            ];
-            
-            $this->dispatch('notify', 
-                type: 'success', 
-                message: __('messages.database_analysis_completed')
-            );
-        } catch (\Exception $e) {
-            $this->dispatch('notify', 
-                type: 'error', 
-                message: __('messages.database_analysis_error') . ': ' . $e->getMessage()
-            );
-        }
-        
-        $this->isAnalyzingDatabase = false;
-    }
-    
     public function checkSystemRequirements()
     {
         $this->isCheckingRequirements = true;
@@ -2405,78 +1912,4 @@ class SystemSettings extends Component
 
         return $className;
     }
-    
-    /**
-     * Open the database seeder modal
-     */
-    public function openSeederModal()
-    {
-        // Get available seeders
-        $this->availableSeeders = [
-            'DatabaseSeeder',
-            'UserSeeder',
-            'PermissionSeeder',
-            'SettingsSeeder',
-            'MaintenanceSeeder',
-            'SupplyChainSeeder'
-        ];
-        
-        $this->showSeederModal = true;
-        $this->runningSeeder = false;
-        $this->seederOutput = '';
-        $this->selectedSeeder = '';
-    }
-    
-    /**
-     * Close the database seeder modal
-     */
-    public function closeSeederModal()
-    {
-        $this->showSeederModal = false;
-        $this->runningSeeder = false;
-        $this->selectedSeeder = '';
-    }
-    
-    /**
-     * Run the selected database seeder
-     */
-    public function runSeeder()
-    {
-        if (empty($this->selectedSeeder)) {
-            $this->dispatch('notify', type: 'error', message: 'Please select a seeder first.');
-            return;
-        }
-        
-        $this->runningSeeder = true;
-        $this->seederOutput = "Running seeder: {$this->selectedSeeder}...\n";
-        
-        try {
-            // Make sure the seeder class is valid (basic validation)
-            if (!preg_match('/^[A-Za-z0-9_]+$/', $this->selectedSeeder)) {
-                throw new \Exception('Invalid seeder class name');
-            }
-            
-            // Run the seeder
-            Artisan::call('db:seed', [
-                '--class' => $this->selectedSeeder
-            ]);
-            
-            // Get output
-            $output = Artisan::output();
-            $this->seederOutput .= $output;
-            
-            $this->dispatch('notify', type: 'success', message: "Seeder {$this->selectedSeeder} executed successfully.");
-        } catch (\Exception $e) {
-            $this->seederOutput .= "Error: {$e->getMessage()}\n";
-            $this->dispatch('notify', type: 'error', message: "Error running seeder: {$e->getMessage()}");
-            Log::error("Seeder execution failed: {$e->getMessage()}", [
-                'seeder' => $this->selectedSeeder,
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
-        } finally {
-            $this->runningSeeder = false;
-        }
-    }
-
 }
