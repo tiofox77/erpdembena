@@ -21,12 +21,18 @@ class CustomFormField extends Model
         'description',
         'is_required',
         'order',
+        'relationship_config',
     ];
 
     protected $casts = [
         'is_required' => 'boolean',
         'options' => 'array',
         'validation_rules' => 'array',
+        'relationship_config' => 'array',
+    ];
+    
+    protected $attributes = [
+        'relationship_config' => '{"model":null,"display_field":"name","relationship_type":"belongsTo"}',
     ];
 
     /**
@@ -51,6 +57,45 @@ class CustomFormField extends Model
     public function isFileUpload()
     {
         return $this->type === 'file';
+    }
+    
+    /**
+     * Get the relationship configuration as an array
+     *
+     * @return array
+     */
+    public function getRelationshipConfigAttribute($value)
+    {
+        if (is_null($value)) {
+            return [
+                'model' => null,
+                'display_field' => 'name',
+                'relationship_type' => 'belongsTo',
+            ];
+        }
+        
+        if (is_string($value)) {
+            return json_decode($value, true) ?? [];
+        }
+        
+        return $value;
+    }
+    
+    /**
+     * Set the relationship configuration
+     *
+     * @param  mixed  $value
+     * @return void
+     */
+    public function setRelationshipConfigAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['relationship_config'] = json_encode($value);
+        } elseif (is_string($value)) {
+            $this->attributes['relationship_config'] = $value;
+        } else {
+            $this->attributes['relationship_config'] = json_encode([]);
+        }
     }
 
     /**

@@ -1,3 +1,7 @@
+@php
+use Illuminate\Support\Str;
+@endphp
+
 <div>
     <!-- Lista de Formulários -->
     <div class="mb-6 bg-white rounded-lg shadow-md">
@@ -338,16 +342,38 @@
 
     <!-- Modal para criar/editar campo do formulário -->
     @if($showFieldModal)
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg max-w-lg w-full mx-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-6xl mx-auto my-8" style="width: 80%;">
             <div class="flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-lg">
                 <h3 class="text-lg font-medium text-white">
+                    <i class="fas fa-plus-circle mr-2"></i>
                     {{ $currentFieldId ? 'Editar Campo' : 'Novo Campo' }}
                 </h3>
-                <button wire:click="closeModal" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times"></i>
+                <button wire:click="closeModal" class="text-white hover:text-gray-200 focus:outline-none" @click="console.log('Fechando modal de campo')">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
+            <script>
+                document.addEventListener('livewire:initialized', () => {
+                    console.log('Modal de campo inicializado');
+                    @this.on('field-added', () => {
+                        console.log('Campo adicionado com sucesso');
+                        // Fecha o modal após adicionar o campo
+                        @this.set('showFieldModal', false);
+                    });
+                    
+                    @this.on('field-updated', () => {
+                        console.log('Campo atualizado com sucesso');
+                        // Fecha o modal após atualizar o campo
+                        @this.set('showFieldModal', false);
+                    });
+                    
+                    @this.on('error', (message) => {
+                        console.error('Erro no Livewire:', message);
+                        alert('Ocorreu um erro: ' + message);
+                    });
+                });
+            </script>
             <div class="p-6">
                 <form wire:submit.prevent="saveField">
                     <div class="mb-4">
@@ -374,7 +400,7 @@
                     
                     <div class="mb-4">
                         <label for="field_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Campo *</label>
-                        <select wire:model="currentField.type" id="field_type" 
+                        <select wire:model.live="currentField.type" id="field_type" 
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
                             @foreach($fieldTypes as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -427,6 +453,277 @@
                     </div>
                     @endif
                     
+                    <!-- Configuração de relacionamento -->
+                    @if($currentField['type'] === 'relationship')
+                    <div class="mb-4 p-4 bg-gray-50 rounded-md">
+                        <h4 class="font-medium text-gray-700 mb-3">Configuração de Relacionamento</h4>
+                        
+                        <div class="space-y-4">
+                            <!-- Model Selection -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-sm font-medium text-gray-700">Modelo Relacionado</label>
+                                    @if($relationshipConfig['model'] && $availableColumns === null)
+                                        <span class="flex items-center text-xs text-yellow-600">
+                                            <svg class="animate-spin -ml-1 mr-1 h-3 w-3 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Carregando campos...
+                                        </span>
+                                    @endif
+                                </div>
+                                <select wire:model.live="relationshipConfig.model" 
+                                    wire:change="$set('relationshipConfig.display_field', '')"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 {{ $errors->has('relationshipConfig.model') ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500' : '' }}"
+                                    @if($relationshipConfig['model'] && $availableColumns === null) disabled @endif>
+                                    <option value="">Selecione um modelo</option>
+                                    @foreach($relationshipModels as $modelClass => $modelLabel)
+                                        <option value="{{ $modelClass }}" {{ $modelClass === $relationshipConfig['model'] ? 'selected' : '' }}>
+                                            {{ $modelLabel }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('relationshipConfig.model')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
+                            
+                            @if($relationshipConfig['model'])
+                                <!-- Display Field Selection -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-sm font-medium text-gray-700">Campo de Exibição</label>
+                                        @if(!empty($relationshipSampleData) && $relationshipConfig['display_field'])
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                {{ count($relationshipSampleData) }} itens carregados
+                                            </span>
+                                        @endif
+                                    </div>
+                                    
+                                    @if($availableColumns === null && $relationshipConfig['model'])
+                                        <div class="flex items-center justify-center p-4 bg-gray-50 rounded-md">
+                                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span class="text-sm text-gray-600">Carregando campos disponíveis...</span>
+                                        </div>
+                                    @elseif(!empty($availableColumns))
+                                        <select wire:model.live="relationshipConfig.display_field" 
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 {{ $errors->has('relationshipConfig.display_field') ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500' : '' }}">
+                                            <option value="">Selecione um campo</option>
+                                            @foreach($availableColumns as $column)
+                                                <option value="{{ $column }}" {{ $column === $relationshipConfig['display_field'] ? 'selected' : '' }}>
+                                                    {{ $column }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <div class="p-3 rounded-md bg-yellow-50">
+                                            <div class="flex">
+                                                <div class="flex-shrink-0">
+                                                    <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <h3 class="text-sm font-medium text-yellow-800">Não foi possível carregar os campos</h3>
+                                                    <div class="mt-2 text-sm text-yellow-700">
+                                                        <p>Verifique se o modelo está correto e se você tem permissão para acessá-lo.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
+                                    @error('relationshipConfig.display_field')
+                                        <p class="mt-1 text-sm text-red-600">
+                                            <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                        </p>
+                                    @enderror
+                                    
+                                    @if(!empty($errors->get('relationship_sample_data')))
+                                        <p class="mt-1 text-sm text-red-600">
+                                            <i class="fas fa-exclamation-circle mr-1"></i> {{ $errors->first('relationship_sample_data') }}
+                                        </p>
+                                    @endif
+                                </div>
+                                
+                                <!-- Relationship Type -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Relacionamento</label>
+                                    <select wire:model.live="relationshipConfig.relationship_type" 
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                                        <option value="belongsTo" {{ ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'belongsTo' ? 'selected' : '' }}>
+                                            Pertence a (Seleção Única)
+                                        </option>
+                                        <option value="hasMany" {{ ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'hasMany' ? 'selected' : '' }}>
+                                            Tem Muitos (Seleção Múltipla)
+                                        </option>
+                                    </select>
+                                    @error('relationshipConfig.relationship_type')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                
+                                <!-- Preview of how the field will look -->
+                                <div class="mt-4 p-4 bg-white border border-gray-200 rounded-md shadow-sm">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-sm font-medium text-gray-800">
+                                            <i class="fas fa-eye mr-1.5 text-blue-500"></i>
+                                            Prévia do Campo de Seleção
+                                        </h4>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $relationshipConfig['relationship_type'] === 'belongsTo' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                                {{ $relationshipConfig['relationship_type'] === 'belongsTo' ? 'Seleção Única' : 'Seleção Múltipla' }}
+                                            </span>
+                                            @if(!empty($relationshipSampleData) && count($relationshipSampleData) > 0)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                    <svg class="h-3 w-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    {{ count($relationshipSampleData) }} itens carregados
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        @if(empty($relationshipSampleData) || empty($relationshipConfig['display_field']))
+                                            <div class="p-3 rounded-md bg-yellow-50 border border-yellow-100">
+                                                <div class="flex">
+                                                    <div class="flex-shrink-0">
+                                                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <h3 class="text-sm font-medium text-yellow-800">Nenhum dado de amostra disponível</h3>
+                                                        <div class="mt-1 text-sm text-yellow-700">
+                                                            <p>Selecione um modelo e um campo de exibição válido para visualizar uma prévia.</p>
+                                                            @if($relationshipConfig['model'] && empty($relationshipSampleData) && $availableColumns !== null)
+                                                                <p class="mt-1">Nenhum registro encontrado no modelo selecionado.</p>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="relative rounded-md shadow-sm
+                                                @if($relationshipConfig['relationship_type'] === 'hasMany') 
+                                                    border-2 border-dashed border-gray-200 rounded-md p-2 bg-gray-50 min-h-[60px]
+                                                @endif">
+                                                <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out" 
+                                                    @if($relationshipConfig['relationship_type'] === 'hasMany') multiple @endif
+                                                    disabled>
+                                                    <option value="" disabled {{ empty($relationshipSampleData) ? 'selected' : '' }}>Selecione {{ $relationshipModels[$relationshipConfig['model']] ?? 'um item' }}</option>
+                                                    @foreach($relationshipSampleData as $item)
+                                                        @php
+                                                            $displayField = $relationshipConfig['display_field'];
+                                                            $displayValue = $item[$displayField] ?? '';
+                                                            $displayValue = is_scalar($displayValue) ? $displayValue : json_encode($displayValue);
+                                                            $truncatedValue = Str::limit($displayValue, 50);
+                                                        @endphp
+                                                        <option value="{{ $item['id'] }}" title="{{ $displayValue }}">
+                                                            {{ $truncatedValue }}
+                                                            @if(strlen($displayValue) > 50) ... @endif
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                
+                                                <!-- Dica sobre como o campo será exibido -->
+                                                <div class="mt-2 text-xs text-gray-500 flex items-start">
+                                                    <svg class="h-4 w-4 mr-1 text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    <span>
+                                                        @if($relationshipConfig['relationship_type'] === 'belongsTo')
+                                                            Os usuários verão uma lista suspensa com os itens acima.
+                                                        @else
+                                                            Os usuários poderão selecionar múltiplos itens da lista acima.
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Mostrar os primeiros 3 itens como exemplo -->
+                                            @if(count($relationshipSampleData) > 0)
+                                                <div class="mt-2">
+                                                    <p class="text-xs font-medium text-gray-500 mb-1">Exemplo de itens ({{ count($relationshipSampleData) }} no total):</p>
+                                                    <ul class="text-xs text-gray-600 space-y-1 max-h-40 overflow-y-auto border border-gray-100 rounded p-2 bg-gray-50">
+                                                        @foreach(array_slice($relationshipSampleData, 0, 5) as $item)
+                                                            @php
+                                                                $displayField = $relationshipConfig['display_field'];
+                                                                $displayValue = $item[$displayField] ?? '';
+                                                                $displayValue = is_scalar($displayValue) ? $displayValue : json_encode($displayValue);
+                                                                $truncatedValue = Str::limit($displayValue, 60);
+                                                            @endphp
+                                                            <li class="flex items-start">
+                                                                <span class="text-gray-400 mr-2">#{{ $item['id'] ?? '?' }}</span>
+                                                                <span title="{{ $displayValue }}">
+                                                                    {{ $truncatedValue }}
+                                                                    @if(strlen($displayValue) > 60) ... @endif
+                                                                </span>
+                                                            </li>
+                                                        @endforeach
+                                                        @if(count($relationshipSampleData) > 5)
+                                                            <li class="text-gray-400 text-xs italic">
+                                                                +{{ count($relationshipSampleData) - 5 }} mais itens...
+                                                            </li>
+                                                        @endif
+                                                    </ul>
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </div>
+
+                                    <div class="mt-3 pt-3 border-t border-gray-100">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                                            </div>
+                                            <div class="ml-2">
+                                                @if($relationshipConfig['display_field'])
+                                                    <p class="text-xs text-gray-600">
+                                                        <span class="font-medium">Campo de exibição:</span> 
+                                                        <code class="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">{{ $relationshipConfig['display_field'] }}</code>
+                                                    </p>
+                                                    @if(empty($relationshipSampleData))
+                                                        <p class="text-xs text-yellow-600 mt-1 flex items-center">
+                                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                            Nenhum dado de exemplo encontrado. Verifique se existem registros no modelo selecionado.
+                                                        </p>
+                                                    @else
+                                                        <p class="text-xs text-green-600 mt-1 flex items-center">
+                                                            <i class="fas fa-check-circle mr-1"></i>
+                                                            {{ count($relationshipSampleData) }} itens de exemplo carregados
+                                                        </p>
+                                                    @endif
+                                                @else
+                                                    <p class="text-xs text-red-600 flex items-center">
+                                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                        Selecione um campo para exibição
+                                                    </p>
+                                                @endif
+                                                
+                                                @if($relationshipConfig['relationship_type'] === 'hasMany')
+                                                    <p class="text-xs text-purple-600 mt-1 flex items-center">
+                                                        <i class="fas fa-mouse-pointer mr-1"></i>
+                                                        Use Ctrl+Clique para seleção múltipla
+                                                    </p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+                    
                     <!-- Regras de validação -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Regras de Validação</label>
@@ -466,31 +763,82 @@
     
     <!-- Script para download automático quando exportando formulários -->
     <script>
+        // Adiciona logs de debug para o Livewire
+        document.addEventListener('livewire:initialized', () => {
+            console.log('Componente Livewire inicializado');
+            
+            // Log para eventos de sucesso/erro
+            @this.on('saved', (message) => {
+                console.log('Sucesso:', message);
+                // Fecha o modal após salvar
+                @this.set('showFieldModal', false);
+            });
+            
+            @this.on('error', (message) => {
+                console.error('Erro no Livewire:', message);
+                alert('Ocorreu um erro: ' + message);
+            });
+            
+            // Log para eventos de campo
+            @this.on('field-added', () => {
+                console.log('Campo adicionado com sucesso');
+                @this.set('showFieldModal', false);
+            });
+            
+            @this.on('field-updated', () => {
+                console.log('Campo atualizado com sucesso');
+                @this.set('showFieldModal', false);
+            });
+        });
+        
+        // Configuração do download de arquivos
         document.addEventListener('livewire:init', function () {
             Livewire.on('download-file', (event) => {
+                console.log('Iniciando download do arquivo:', event.filename || 'formulario.json');
                 const url = event.url;
                 // Criar link temporário e acionar download
                 const link = document.createElement('a');
                 link.href = url;
-                link.setAttribute('download', '');
+                link.setAttribute('download', event.filename || 'formulario.json');
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                console.log('Download concluído');
             });
         });
         
         // Processar importação automaticamente quando um arquivo é selecionado
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado, configurando listeners');
+            
             const importInput = document.getElementById('import-form-input');
             if (importInput) {
                 importInput.addEventListener('change', function() {
+                    console.log('Arquivo selecionado para importação:', this.files[0]?.name);
                     if (this.files.length > 0) {
                         // Aguardar o upload do arquivo pelo Livewire
                         setTimeout(() => {
-                            // Chamar o método importForm
+                            console.log('Chamando método importForm');
                             @this.importForm();
                         }, 500);
                     }
+                });
+            }
+            
+            // Adiciona listener para o botão de adicionar campo
+            document.querySelectorAll('[wire\\:click*="createField"]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    console.log('Botão de criar campo clicado');
+                    console.log('Form ID:', this.getAttribute('wire:click'));
+                });
+            });
+            
+            // Adiciona listener para o formulário de campo
+            const fieldForm = document.querySelector('form[wire\\:submit\\.prevent="saveField"]');
+            if (fieldForm) {
+                fieldForm.addEventListener('submit', function(e) {
+                    console.log('Formulário de campo submetido');
+                    console.log('Dados do formulário:', new FormData(this));
                 });
             }
         });

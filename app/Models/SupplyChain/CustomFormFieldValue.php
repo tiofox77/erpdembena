@@ -15,6 +15,17 @@ class CustomFormFieldValue extends Model
         'submission_id',
         'field_id',
         'value',
+        'related_id',
+        'related_type',
+    ];
+    
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'related_id' => 'integer',
     ];
 
     /**
@@ -47,6 +58,27 @@ class CustomFormFieldValue extends Model
     public function hasAttachments()
     {
         return $this->attachments()->exists();
+    }
+    
+    /**
+     * Get the related model instance.
+     */
+    public function related()
+    {
+        if (!$this->related_type || !$this->related_id) {
+            return null;
+        }
+        
+        try {
+            return $this->related_type::find($this->related_id);
+        } catch (\Exception $e) {
+            \Log::error('Error loading related model', [
+                'related_type' => $this->related_type,
+                'related_id' => $this->related_id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 
     /**

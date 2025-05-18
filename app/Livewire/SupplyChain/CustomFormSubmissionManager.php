@@ -26,11 +26,19 @@ class CustomFormSubmissionManager extends Component
     public $showFormModal = false;
     public $showSubmissionDetailModal = false;
     public $submissionId = null;
+    public $formField = [];
     
     protected $listeners = ['openFormSubmission', 'viewFormSubmission'];
     
     public function openFormSubmission($shippingNoteId, $customFormId)
     {
+        // Log de criação do modal de shipping note
+        logger()->info('Criando modal de shipping note', [
+            'shippingNoteId' => $shippingNoteId,
+            'customFormId' => $customFormId,
+            'user_id' => auth()->id() ?? 'não autenticado'
+        ]);
+        
         $this->reset('formData', 'fileUploads');
         
         $this->shippingNoteId = $shippingNoteId;
@@ -41,13 +49,34 @@ class CustomFormSubmissionManager extends Component
         
         // Inicializar os campos do formulário
         foreach ($form->fields as $field) {
-            $this->formData[$field->name] = '';
-            if ($field->type === 'file') {
+            // Verificar se o campo tem configuração de relacionamento, independente do tipo declarado
+            $hasRelationshipConfig = !empty($field->relationship_config['model']);
+            $isRelationshipField = $field->type === 'relationship' || $hasRelationshipConfig;
+            
+            if ($isRelationshipField) {
+                // Se tem configuração de relacionamento mas não é do tipo relationship, logamos a conversão
+                if ($hasRelationshipConfig && $field->type !== 'relationship') {
+                    logger()->info('Campo ' . $field->name . ' tem configuração de relacionamento mas não é do tipo relationship. Tratando como relacionamento.');
+                }
+                
+                // Determinar se é um relacionamento de múltiplos valores ou valor único
+                $isHasMany = ($field->relationship_config['relationship_type'] ?? 'belongsTo') === 'hasMany';
+                $this->formData[$field->name] = $isHasMany ? [] : '';
+            } else if ($field->type === 'file') {
+                $this->formData[$field->name] = '';
                 $this->fileUploads[$field->name] = null;
+            } else {
+                $this->formData[$field->name] = '';
             }
         }
         
         $this->showFormModal = true;
+    
+        // Log quando o modal é exibido
+        logger()->info('Modal de shipping note foi criado com sucesso', [
+            'shippingNoteId' => $this->shippingNoteId,
+            'customFormId' => $this->customFormId
+        ]);
     }
     
     public function viewFormSubmission($submissionId)
@@ -56,156 +85,134 @@ class CustomFormSubmissionManager extends Component
         $this->showSubmissionDetailModal = true;
     }
     
-    public function submitForm()
+    /**
+     * Carrega os dados relacionados para um campo de formulário
+     */
+    public function loadRelatedData()
     {
-        $form = CustomForm::findOrFail($this->customFormId);
-        $fields = $form->fields;
-        
-        // Construir regras de validação com base nos campos do formulário
-        $rules = [];
-        $messages = [];
-        
-        foreach ($fields as $field) {
-            $fieldRules = [];
+        try {
+            $this->relatedData = [];
             
-            // Regra básica com base no tipo do campo
-            if ($field->is_required) {
-                if ($field->type === 'file') {
-                    $fieldRules[] = 'required';
-                } else {
-                    $fieldRules[] = 'required';
+            if ($this->formField['relationship'] ?? false) {
+                $model = app($this->formField['model']);
+                $query = $model->query();
+                
+                // Apply filters
+                if (!empty($this->formField['filter_field']) && !empty($this->formField['filter_value'])) {
+                    if ($this->formField['filter_value'] === 'auth_user') {
+                        $query->where($this->formField['filter_field'], auth()->id());
+                    } else {
+                        $query->where($this->formField['filter_field'], $this->formField['filter_value']);
+                    }
                 }
-            } else {
-                if ($field->type === 'file') {
-                    $fieldRules[] = 'nullable';
-                } else {
-                    $fieldRules[] = 'nullable';
+                
+                // Query related data
+                if (method_exists($model, 'scopeActive')) {
+                    $query->active();
                 }
+                
+                $this->relatedData = $query->get()->mapWithKeys(function ($item) {
+                    return [$item->id => $item->{$this->formField['display_field']}];
+                })->toArray();
             }
-            
-            // Regras adicionais com base no tipo
-            if ($field->type === 'email') {
-                $fieldRules[] = 'email';
-            } elseif ($field->type === 'number') {
-                $fieldRules[] = 'numeric';
-            } elseif ($field->type === 'date') {
-                $fieldRules[] = 'date';
-            } elseif ($field->type === 'file') {
-                $fieldRules[] = 'file';
-                $fieldRules[] = 'max:10240'; // 10MB max por padrão
-            }
-            
-            // Adicionar regras de validação personalizadas
-            if (!empty($field->validation_rules)) {
-                $fieldRules = array_merge($fieldRules, $field->validation_rules);
-            }
-            
-            if ($field->type === 'file') {
-                $rules['fileUploads.' . $field->name] = $fieldRules;
-                $messages['fileUploads.' . $field->name . '.required'] = 'O campo ' . $field->label . ' é obrigatório.';
-            } else {
-                $rules['formData.' . $field->name] = $fieldRules;
-                $messages['formData.' . $field->name . '.required'] = 'O campo ' . $field->label . ' é obrigatório.';
-            }
+        } catch (\Exception $e) {
+            logger('Error loading related data: ' . $e->getMessage());
         }
-        
-        // Validar dados
-        $this->validate($rules, $messages);
-        
-        // Criar a submissão
-        $submission = CustomFormSubmission::create([
-            'form_id' => $this->customFormId,
-            'entity_id' => $this->shippingNoteId,
-            'created_by' => Auth::id(),
-        ]);
-        
-        // Salvar os valores dos campos
-        foreach ($fields as $field) {
-            if ($field->type === 'file') {
-                if (isset($this->fileUploads[$field->name]) && $this->fileUploads[$field->name]) {
-                    // Criar o valor do campo
-                    $fieldValue = CustomFormFieldValue::create([
-                        'submission_id' => $submission->id,
-                        'field_id' => $field->id,
-                        'value' => 'file_upload', // Valor padrão para uploads
-                    ]);
-                    
-                    // Processar o upload do arquivo
-                    $file = $this->fileUploads[$field->name];
-                    $filename = md5($file->getClientOriginalName() . time()) . '.' . $file->getClientOriginalExtension();
-                    $path = $file->storeAs('form-attachments', $filename, 'public');
-                    
-                    // Criar o registro de anexo
-                    CustomFormAttachment::create([
-                        'field_value_id' => $fieldValue->id,
-                        'filename' => $filename,
-                        'original_filename' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                        'path' => $path,
-                        'size' => $file->getSize(),
-                    ]);
-                }
-            } else {
-                if (isset($this->formData[$field->name])) {
-                    CustomFormFieldValue::create([
-                        'submission_id' => $submission->id,
-                        'field_id' => $field->id,
-                        'value' => $this->formData[$field->name],
-                    ]);
-                }
-            }
-        }
-        
-        // Atualizar a nota de envio com o ID do formulário personalizado
-        $shippingNote = ShippingNote::findOrFail($this->shippingNoteId);
-        $shippingNote->update([
-            'custom_form_id' => $this->customFormId,
-        ]);
-        
-        $this->dispatch('notify', 
-            type: 'success', 
-            message: __('messages.form_submitted_successfully')
-        );
-        
-        // Limpar formulário e fechar modal
-        $this->reset('formData', 'fileUploads');
-        $this->showFormModal = false;
-        
-        // Atualizar a lista de notas de envio
-        $this->dispatch('refreshComponent');
     }
     
-    public function closeModal()
+    /**
+     * Carrega dados relacionados para todos os campos de relacionamento no formulário
+     */
+    public function loadRelatedDataForForm($form)
     {
-        $this->showFormModal = false;
-        $this->showSubmissionDetailModal = false;
-    }
-    
-    public function downloadAttachment($attachmentId)
-    {
-        $attachment = CustomFormAttachment::findOrFail($attachmentId);
-        return Storage::disk('public')->download($attachment->path, $attachment->original_filename);
+        $relatedData = [];
+        
+        try {
+            // Percorre todos os campos do formulário
+            foreach ($form->fields as $field) {
+                // Verifica se é um campo de relacionamento
+                if ($field->type === 'relationship' && !empty($field->relationship_config['model'])) {
+                    logger()->debug('Carregando dados relacionados para o campo: ' . $field->name);
+                    
+                    $model = app($field->relationship_config['model']);
+                    $query = $model->query();
+                    
+                    // Aplicar filtros se existirem
+                    if (!empty($field->relationship_config['filter_field']) && !empty($field->relationship_config['filter_value'])) {
+                        if ($field->relationship_config['filter_value'] === 'auth_user') {
+                            $query->where($field->relationship_config['filter_field'], auth()->id());
+                        } else {
+                            $query->where($field->relationship_config['filter_field'], $field->relationship_config['filter_value']);
+                        }
+                    }
+                    
+                    // Usar o método scopeActive se existir
+                    if (method_exists($model, 'scopeActive')) {
+                        $query->active();
+                    }
+                    
+                    // Campo a ser usado para exibição
+                    $displayField = $field->relationship_config['display_field'] ?? 'name';
+                    
+                    // Obter os resultados e transformar em array id => valor
+                    $relatedData[$field->name] = $query->get()->mapWithKeys(function ($item) use ($displayField) {
+                        return [$item->id => $item->{$displayField}];
+                    })->toArray();
+                    
+                    logger()->debug('Dados carregados para ' . $field->name . ': ' . count($relatedData[$field->name]) . ' itens');
+                }
+            }
+        } catch (\Exception $e) {
+            logger()->error('Erro ao carregar dados relacionados: ' . $e->getMessage());
+        }
+        
+        return $relatedData;
     }
     
     public function render()
     {
-        $form = null;
-        $fields = [];
-        $submission = null;
-        $fieldValues = [];
+        logger()->debug('======== RENDERIZANDO FORMULÁRIO ========');
         
-        if ($this->customFormId) {
-            $form = CustomForm::with('fields')->find($this->customFormId);
-            if ($form) {
-                $fields = $form->fields;
+        // Log quando o componente é renderizado com status do modal
+        logger()->info('Renderizando componente CustomFormSubmissionManager', [
+            'showFormModal' => $this->showFormModal ? 'Aberto' : 'Fechado',
+            'showSubmissionDetailModal' => $this->showSubmissionDetailModal ? 'Aberto' : 'Fechado',
+            'shippingNoteId' => $this->shippingNoteId,
+            'customFormId' => $this->customFormId,
+            'submissionId' => $this->submissionId
+        ]);
+
+        $form = $this->customFormId ? CustomForm::find($this->customFormId) : null;
+        $fields = $form ? $form->fields()->orderBy('order', 'asc')->get() : collect();
+        $submission = $this->submissionId ? CustomFormSubmission::find($this->submissionId) : null;
+        
+        // Verificando se há campos com problemas no formulário
+        foreach ($fields as $field) {
+            // Debug para campos específicos se necessário
+            if ($field->type === 'relationship') {
+                logger()->debug('Campo de relacionamento encontrado na renderização: ' . json_encode([
+                    'id' => $field->id,
+                    'name' => $field->name,
+                    'label' => $field->label,
+                    'type' => $field->type,
+                    'relationship_config' => $field->relationship_config,
+                    'formData' => $this->formData[$field->name] ?? 'não definido'
+                ]));
             }
         }
         
-        if ($this->submissionId) {
-            $submission = CustomFormSubmission::with(['fieldValues.field', 'fieldValues.attachments'])->find($this->submissionId);
-            if ($submission) {
-                foreach ($submission->fieldValues as $value) {
-                    $fieldValues[$value->field->name] = $value;
+        // Carregar dados relacionados para campos do tipo relationship
+        $relatedData = [];
+        if ($form) {
+            $relatedData = $this->loadRelatedDataForForm($form);
+            
+            // Log para debug
+            foreach ($fields as $field) {
+                logger()->debug('Verificando campo no render: ' . $field->name . ', Tipo: ' . $field->type);
+                if ($field->type === 'relationship') {
+                    logger()->debug('Campo de relacionamento encontrado: ' . $field->name);
+                    logger()->debug('Configuração: ' . json_encode($field->relationship_config));
+                    logger()->debug('Dados relacionados: ' . json_encode($relatedData[$field->name] ?? []));
                 }
             }
         }
@@ -214,7 +221,7 @@ class CustomFormSubmissionManager extends Component
             'form' => $form,
             'fields' => $fields,
             'submission' => $submission,
-            'fieldValues' => $fieldValues,
+            'relatedData' => $relatedData,
         ]);
     }
 }

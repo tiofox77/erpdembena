@@ -12,6 +12,7 @@ class Suppliers extends Component
 {
     use WithPagination;
 
+    public $perPage = 10;
     public $supplier_id;
     public $name;
     public $code;
@@ -24,13 +25,15 @@ class Suppliers extends Component
     public $country;
     public $postal_code;
     public $notes;
-    public $status = 'active';
+    public $status = '';
     public $tax_id;
     public $website;
     public $payment_terms = 30;
     public $credit_limit;
     public $bank_name;
     public $bank_account;
+    public $category_id = '';
+    public $position;
 
     public $search = '';
     public $sortField = 'name';
@@ -54,12 +57,17 @@ class Suppliers extends Component
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => ['required', 'string', 'max:50', 
-                Rule::unique('sc_suppliers', 'code')->ignore($this->supplier_id)],
+            'code' => [
+                'required', 
+                'string', 
+                'max:50',
+                Rule::unique('sc_suppliers', 'code')->ignore($this->supplier_id)
+            ],
+            'category_id' => 'nullable|exists:sc_supplier_categories,id',
             'contact_person' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
@@ -67,11 +75,26 @@ class Suppliers extends Component
             'notes' => 'nullable|string',
             'status' => 'required|in:active,inactive',
             'tax_id' => 'nullable|string|max:50',
-            'website' => 'nullable|url|max:255',
-            'payment_terms' => 'nullable|integer|min:0|max:365',
+            'website' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+(\/[^\s]*)?$/',
+            ],
+            'payment_terms' => 'nullable|integer|min:0',
             'credit_limit' => 'nullable|numeric|min:0',
             'bank_name' => 'nullable|string|max:255',
-            'bank_account' => 'nullable|string|max:255',
+            'bank_account' => 'nullable|string|max:100',
+            'position' => 'nullable|string|max:100',
+        ];
+    }
+
+    protected function messages()
+    {
+        return [
+            'website.regex' => __('validation.website_format', [
+                'format' => 'exemplo.com, www.exemplo.com, http://exemplo.com ou https://www.exemplo.com'
+            ]),
         ];
     }
 
@@ -109,11 +132,12 @@ class Suppliers extends Component
     public function edit($id)
     {
         $this->resetForm();
-        $this->supplier_id = $id;
         $supplier = Supplier::findOrFail($id);
         
+        $this->supplier_id = $supplier->id;
         $this->name = $supplier->name;
         $this->code = $supplier->code;
+        $this->category_id = $supplier->category_id;
         $this->contact_person = $supplier->contact_person;
         $this->email = $supplier->email;
         $this->phone = $supplier->phone;
@@ -130,21 +154,20 @@ class Suppliers extends Component
         $this->credit_limit = $supplier->credit_limit;
         $this->bank_name = $supplier->bank_name;
         $this->bank_account = $supplier->bank_account;
+        $this->position = $supplier->position;
         
         $this->showModal = true;
-        
-        // Emitir evento para abrir o modal
-        $this->dispatch('showModal');
+        $this->editMode = true;
     }
 
     public function view($id)
     {
-        $supplier = Supplier::findOrFail($id);
-        
+        $supplier = Supplier::with('category')->findOrFail($id);
         $this->viewingSupplier = [
             'id' => $supplier->id,
             'name' => $supplier->name,
-            'supplier_code' => $supplier->code, // Atualizado para supplier_code para compatibilidade com o novo modal
+            'code' => $supplier->code,
+            'category' => $supplier->category ? $supplier->category->name : '--',
             'contact_person' => $supplier->contact_person,
             'email' => $supplier->email,
             'phone' => $supplier->phone,
@@ -154,7 +177,7 @@ class Suppliers extends Component
             'country' => $supplier->country,
             'postal_code' => $supplier->postal_code,
             'notes' => $supplier->notes,
-            'is_active' => $supplier->status === 'active',
+            'status' => $supplier->status,
             'tax_id' => $supplier->tax_id,
             'website' => $supplier->website,
             'payment_terms' => $supplier->payment_terms,
@@ -168,7 +191,7 @@ class Suppliers extends Component
         $this->viewSupplier = (object) $this->viewingSupplier;
         $this->showViewModal = true;
     }
-    
+
     public function closeViewModal()
     {
         $this->showViewModal = false;
@@ -176,62 +199,97 @@ class Suppliers extends Component
         $this->viewSupplier = null;
     }
 
+    public function clearFilters()
+    {
+        $this->reset(['search', 'sortField', 'sortDirection', 'status', 'category_id', 'perPage']);
+        $this->sortField = 'name';
+        $this->sortDirection = 'asc';
+        $this->perPage = 10;
+        $this->resetPage();
+    }
+
     public function save()
     {
-        $this->validate();
-        
-        DB::beginTransaction();
         try {
-            $supplier = $this->supplier_id ? 
-                Supplier::findOrFail($this->supplier_id) : 
-                new Supplier();
+            // Validate the form data
+            $validatedData = $this->validate();
             
-            $supplier->name = $this->name;
-            $supplier->code = $this->code;
-            $supplier->contact_person = $this->contact_person;
-            $supplier->email = $this->email;
-            $supplier->phone = $this->phone;
-            $supplier->address = $this->address;
-            $supplier->city = $this->city;
-            $supplier->state = $this->state;
-            $supplier->country = $this->country;
-            $supplier->postal_code = $this->postal_code;
-            $supplier->notes = $this->notes;
-            $supplier->status = $this->status;
-            $supplier->tax_id = $this->tax_id;
-            $supplier->website = $this->website;
-            $supplier->payment_terms = $this->payment_terms;
-            $supplier->credit_limit = $this->credit_limit;
-            $supplier->bank_name = $this->bank_name;
-            $supplier->bank_account = $this->bank_account;
+            DB::beginTransaction();
             
-            $supplier->save();
+            // Prepare the data for saving
+            $data = [
+                'name' => $this->name,
+                'code' => $this->code,
+                'category_id' => $this->category_id,
+                'contact_person' => $this->contact_person,
+                'email' => $this->email,
+                'phone' => $this->phone,
+                'address' => $this->address,
+                'city' => $this->city,
+                'state' => $this->state,
+                'country' => $this->country,
+                'postal_code' => $this->postal_code,
+                'notes' => $this->notes,
+                'status' => $this->status,
+                'tax_id' => $this->tax_id,
+                'website' => $this->website,
+                'payment_terms' => $this->payment_terms,
+                'credit_limit' => $this->credit_limit,
+                'bank_name' => $this->bank_name,
+                'bank_account' => $this->bank_account,
+                'position' => $this->position,
+                'updated_by' => auth()->id(),
+            ];
+            
+            if (!$this->editMode) {
+                // Create new supplier
+                $data['created_by'] = auth()->id();
+                $supplier = Supplier::create($data);
+                $this->dispatch('notify', 
+                    type: 'success',
+                    message: __('messages.supplier_created_successfully')
+                );
+            } else {
+                // Update existing supplier
+                $supplier = Supplier::findOrFail($this->supplier_id);
+                $supplier->update($data);
+                $this->dispatch('notify', 
+                    type: 'warning',
+                    message: __('messages.supplier_updated_successfully')
+                );
+            }
             
             DB::commit();
             
+            // Close modal and reset form
+            $this->closeModal();
             $this->resetForm();
-            $this->showModal = false;
+            $this->dispatch('refresh');
             
-            // Fechar o modal
-            $this->dispatch('hideModal');
+            return;
             
-            // Notificação toast
-            $this->dispatch('notify', 
-                type: 'success', 
-                title: __('livewire/suppliers.success'), 
-                message: $this->supplier_id ? 
-                    __('livewire/suppliers.supplier_updated') : 
-                    __('livewire/suppliers.supplier_created')
-            );
-
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Validation error in save method', [
+                'errors' => $e->errors(),
+                'input' => $this->all()
+            ]);
+            throw $e;
+            
         } catch (\Exception $e) {
             DB::rollBack();
-            // Notificação toast de erro
+            \Log::error('Error saving supplier', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             $this->dispatch('notify', 
-                type: 'error', 
-                title: __('livewire/suppliers.error'), 
-                message: $e->getMessage()
+                type: 'error',
+                message: __('messages.error_saving_supplier', ['error' => $e->getMessage()])
             );
+            
+            // Re-throw the exception to see it in the browser console
+            throw $e;
         }
     }
 
@@ -239,10 +297,10 @@ class Suppliers extends Component
     {
         $supplier = Supplier::findOrFail($id);
         $this->deleteSupplierName = $supplier->name;
-        $this->deleteSupplier = $supplier; // Adicionado para compatibilidade com o novo modal
+        $this->deleteSupplier = $supplier; 
         $this->showConfirmDelete = true;
         $this->itemToDelete = $id;
-        $this->showDeleteModal = true; // Adicionado para compatibilidade com o novo modal
+        $this->showDeleteModal = true; 
     }
 
     public function delete()
@@ -251,30 +309,27 @@ class Suppliers extends Component
             $supplier = Supplier::findOrFail($this->itemToDelete);
             $supplier->delete();
             
-            // Notificação toast
             $this->dispatch('notify', 
-                type: 'success', 
-                title: __('livewire/suppliers.success'), 
-                message: __('livewire/suppliers.supplier_deleted')
+                type: 'success',
+                message: __('messages.supplier_deleted_successfully')
             );
             
+            // Emit event to refresh the table
+            $this->dispatch('supplierDeleted');
         } catch (\Exception $e) {
-            // Notificação toast de erro
             $this->dispatch('notify', 
-                type: 'error', 
-                title: __('livewire/suppliers.error'), 
-                message: $e->getMessage()
+                type: 'error',
+                message: __('messages.error_deleting_supplier', ['error' => $e->getMessage()])
             );
         }
         
-        // Limpar propriedades e fechar o modal
         $this->closeDeleteModal();
     }
 
     public function resetForm()
     {
         $this->reset([
-            'supplier_id', 'name', 'code', 'contact_person', 'email',
+            'supplier_id', 'name', 'code', 'category_id', 'contact_person', 'email',
             'phone', 'address', 'city', 'state', 'country',
             'postal_code', 'notes', 'tax_id', 'website',
             'bank_name', 'bank_account', 'credit_limit'
@@ -290,7 +345,6 @@ class Suppliers extends Component
         $this->showViewModal = false;
         $this->resetForm();
         
-        // Emitir eventos para fechar os modais
         $this->dispatch('hideModal');
         $this->dispatch('hideViewModal');
     }
@@ -299,7 +353,7 @@ class Suppliers extends Component
     {
         $this->closeDeleteModal();
     }
-    
+
     public function closeDeleteModal()
     {
         $this->showConfirmDelete = false;
@@ -329,27 +383,53 @@ class Suppliers extends Component
         $this->code = $prefix . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Get the view / contents that represent the component.
+     *
+     * @return \Illuminate\View\View|\Closure|string
+     */
     public function render()
     {
-        $query = Supplier::query();
+        $query = Supplier::with('category');
         
+        // Apply search filter
         if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('code', 'like', '%' . $this->search . '%')
-                  ->orWhere('contact_person', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%')
-                  ->orWhere('phone', 'like', '%' . $this->search . '%')
-                  ->orWhere('city', 'like', '%' . $this->search . '%')
-                  ->orWhere('country', 'like', '%' . $this->search . '%');
+            $search = '%' . $this->search . '%';
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', $search)
+                  ->orWhere('code', 'like', $search)
+                  ->orWhere('contact_person', 'like', $search)
+                  ->orWhere('email', 'like', $search)
+                  ->orWhere('phone', 'like', $search)
+                  ->orWhere('tax_id', 'like', $search)
+                  ->orWhereHas('category', function($q) use ($search) {
+                      $q->where('name', 'like', $search);
+                  });
             });
         }
         
-        $suppliers = $query->orderBy($this->sortField, $this->sortDirection)
-                           ->paginate(10);
+        // Apply status filter
+        if (!empty($this->status)) {
+            $query->where('status', $this->status);
+        }
         
+        // Apply category filter
+        if (!empty($this->category_id)) {
+            $query->where('category_id', $this->category_id);
+        }
+        
+        // Apply sorting and pagination
+        $suppliers = $query->orderBy($this->sortField, $this->sortDirection)
+                         ->paginate($this->perPage);
+
+        $categories = \App\Models\SupplyChain\SupplierCategory::query()
+            ->active()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('livewire.supply-chain.suppliers', [
-            'suppliers' => $suppliers
+            'suppliers' => $suppliers,
+            'categories' => $categories,
         ]);
     }
 }

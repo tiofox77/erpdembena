@@ -291,6 +291,16 @@ return [
     'maintenance_notes' => 'Notas de Manutenção',
     'minutes' => 'minutos',
     'generated_at' => 'Gerado em',
+    
+    // Mensagens de Fornecedores
+    'supplier_created_successfully' => 'Fornecedor criado com sucesso!',
+    'supplier_updated_successfully' => 'Fornecedor atualizado com sucesso!',
+    'supplier_deleted_successfully' => 'Fornecedor excluído com sucesso!',
+    'error_deleting_supplier' => 'Erro ao excluir fornecedor: :error',
+    'error_saving_supplier' => 'Erro ao salvar fornecedor: :error',
+    'error_loading_supplier' => 'Erro ao carregar dados do fornecedor: :error',
+    'supplier_not_found' => 'Fornecedor não encontrado',
+    'supplier_in_use' => 'Este fornecedor não pode ser excluído pois está sendo utilizado em um ou mais registros',
     'report_generated_by' => 'Relatório gerado por',
     'total_records' => 'Total de registros',
     'no_maintenance_plans_found' => 'Nenhum plano de manutenção encontrado',

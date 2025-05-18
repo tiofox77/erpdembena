@@ -998,6 +998,16 @@ return [
     'livewire/supply-chain/locations.add_location' => 'Add Location',
     'livewire/supply-chain/locations.edit_location' => 'Edit Location',
     'livewire/supply-chain/locations.delete_location' => 'Delete Location',
+    // Supplier messages
+    // Supplier messages
+    'supplier_created_successfully' => 'Supplier created successfully!',
+    'supplier_updated_successfully' => 'Supplier updated successfully!',
+    'supplier_deleted_successfully' => 'Supplier deleted successfully!',
+    'error_deleting_supplier' => 'Error deleting supplier: :error',
+    'error_saving_supplier' => 'Error saving supplier: :error',
+    'error_loading_supplier' => 'Error loading supplier data: :error',
+    'supplier_not_found' => 'Supplier not found',
+    'supplier_in_use' => 'This supplier cannot be deleted because it is being used in one or more records',
     'livewire/supply-chain/locations.location_name' => 'Location Name',
     'livewire/supply-chain/locations.location_code' => 'Location Code',
     'livewire/supply-chain/locations.address' => 'Address',
@@ -2154,6 +2164,11 @@ return [
     'breakdown' => 'Breakdown',
     'failure_details' => 'Failure Details',
     'no_breakdown_reported' => 'No breakdown reported',
+    'supplier_categories' => 'Supplier Categories',
+    'all' => 'All',
+    'saving...' => 'Saving...',   
+    'livewire/layout.items_per_page' => 'Items per page',
+    
     
     // Custom Forms for Shipping Notes
     'custom_forms' => 'Custom Forms',

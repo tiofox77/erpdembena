@@ -34,6 +34,39 @@ return [
     'bank_account' => 'Bank Account',
     'notes' => 'Notes',
     'status' => 'Status',
+    'contact_email' => 'Contact Email', 
+    'all_categories' => 'All Categories',
+    'layout.items_per_page' => 'Items per page',
+    'search_by_name_code_tax_id' => 'Search by name, code, tax id',
+    'supplier_name_placeholder' => 'Supplier name',
+    'supplier_code_placeholder' => 'Supplier code',
+    'tax_id_placeholder' => 'Tax ID',
+    'contact_person_placeholder' => 'Contact person',
+    'position_placeholder' => 'Position',
+    'email_placeholder' => 'Email',
+    'phone_placeholder' => 'Phone',
+    'website_placeholder' => 'Website',
+    'address_placeholder' => 'Address',
+    'notes_placeholder' => 'Notes',
+    'category' => 'Category',
+    'select_category' => 'Select Category',
+    'layout.items_per_page' => 'Items per page',
+    'name' => 'Name',
+    'address_information' => 'Address Information',
+    'additional_information' => 'Additional Information',
+    'days' => 'Days',
+    'all_statuses' => 'All Statuses',
+    'layout.clearing...' => 'Clearing...',
+    'suppliers_list' => 'Suppliers List',
+
+
+
+
+
+
+
+    
+    
     
     // Actions
     'add_supplier' => 'Add Supplier',

@@ -27,8 +27,72 @@
                                         <p class="text-xs text-gray-500 mb-1">{{ $field->description }}</p>
                                     @endif
                                     
-                                    @switch($field->type)
-                                        @case('text')
+                                    {{-- Debug info para ajudar na identificação do problema --}}
+                                    @if($field->type === 'relationship')
+                                        <p class="text-xs text-gray-500 mb-1">{{ json_encode(['fieldType' => $field->type, 'fieldName' => $field->name, 'config' => $field->relationship_config]) }}</p>
+                                    @endif
+                                    
+                                    @php
+                                        // Verificação adicional para forçar o tipo correto
+                                        $fieldType = $field->type;
+                                        $hasRelationshipConfig = isset($field->relationship_config) && !empty($field->relationship_config['model']);
+                                        
+                                        // Se tem configuração de relacionamento, sempre tratamos como relationship
+                                        if ($hasRelationshipConfig) {
+                                            $fieldType = 'relationship';
+                                            // Se o campo não foi declarado como relationship, mas tem configuração, forçamos o tipo
+                                            if ($field->type !== 'relationship') {
+                                                // Isto é apenas para visualização, não altera o banco de dados
+                                                $field->type = 'relationship';
+                                            }
+                                        }
+                                    @endphp
+                                    
+                                    {{-- Verificamos primeiro se o campo é do tipo relationship, independente do switch/case --}}
+                                    @if($field->type === 'relationship' || (isset($field->relationship_config) && !empty($field->relationship_config['model'])))
+                                        @php
+                                            $relationshipConfig = $field->relationship_config ?? [];
+                                            $modelClass = $relationshipConfig['model'] ?? null;
+                                            $displayField = $relationshipConfig['display_field'] ?? 'name';
+                                            $isMultiple = ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'hasMany';
+                                            
+                                            // Usar os dados relacionados carregados pelo componente
+                                            $relatedItems = isset($relatedData[$field->name]) ? $relatedData[$field->name] : [];
+                                            $selectedValue = $formData[$field->name] ?? null;
+                                        @endphp
+                                        
+                                        <select 
+                                            wire:model="formData.{{ $field->name }}" 
+                                            id="{{ $field->name }}"
+                                            @if($isMultiple) multiple @endif
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
+                                                  @error('formData.' . $field->name) border-red-300 @enderror">
+                                            <option value="">Selecione {{ $field->label }}</option>
+                                            @forelse($relatedItems as $value => $label)
+                                                <option value="{{ $value }}" @if($selectedValue == $value) selected @endif>
+                                                    {{ $label }}
+                                                </option>
+                                            @empty
+                                                <option disabled>Nenhum registro encontrado</option>
+                                            @endforelse
+                                        </select>
+                                        
+                                        @if(empty($relatedItems))
+                                            <p class="mt-1 text-xs text-red-500">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                                Não foi possível carregar os dados relacionados. Verifique a configuração do campo.
+                                            </p>
+                                        @endif
+                                        
+                                        @if($isMultiple)
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Mantenha pressionada a tecla Ctrl (ou Cmd no Mac) para selecionar múltiplos itens.
+                                            </p>
+                                        @endif
+                                    @else
+                                        @switch($fieldType)
+                                            @case('text')
                                             <input 
                                                 wire:model="formData.{{ $field->name }}" 
                                                 type="text" 
@@ -121,28 +185,83 @@
                                                 x-on:livewire-upload-start="uploading = true"
                                                 x-on:livewire-upload-finish="uploading = false"
                                                 x-on:livewire-upload-error="uploading = false"
-                                                x-on:livewire-upload-progress="progress = $event.detail.progress"
-                                            >
-                                                <input 
-                                                    wire:model="fileUploads.{{ $field->name }}" 
-                                                    type="file" 
-                                                    id="{{ $field->name }}"
-                                                    class="w-full border border-gray-300 px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500
-                                                          @error('fileUploads.' . $field->name) border-red-300 @enderror">
-                                                
-                                                <div x-show="uploading">
-                                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                                                        <div class="bg-blue-600 h-2.5 rounded-full" x-bind:style="'width: ' + progress + '%'"></div>
-                                                    </div>
+                                                x-on:livewire-upload-progress="progress = $event.detail.progress">
+                                                <div class="mt-1 flex items-center">
+                                                    <input 
+                                                        type="file" 
+                                                        id="{{ $field->name }}" 
+                                                        wire:model.live="formData.{{ $field->name }}"
+                                                        class="block w-full text-sm text-gray-500
+                                                               file:mr-4 file:py-2 file:px-4
+                                                               file:rounded-md file:border-0
+                                                               file:text-sm file:font-semibold
+                                                               file:bg-blue-50 file:text-blue-700
+                                                               hover:file:bg-blue-100">
                                                 </div>
                                                 
-                                                @if(isset($fileUploads[$field->name]))
-                                                    <div class="mt-2 flex items-center space-x-2">
-                                                        <i class="fas fa-check-circle text-green-500"></i>
-                                                        <span class="text-sm text-gray-700">Arquivo selecionado: {{ $fileUploads[$field->name]->getClientOriginalName() }}</span>
+                                                <div x-show="uploading" class="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                                                    <div class="bg-blue-600 h-2.5 rounded-full" 
+                                                         x-bind:style="`width: ${progress}%`"></div>
+                                                </div>
+                                                
+                                                <div x-show="uploading" class="mt-1 text-xs text-gray-500">
+                                                    Enviando... <span x-text="progress"></span>%
+                                                </div>
+                                                
+                                                <div x-show="uploading" class="mt-1 text-xs text-gray-500">
+                                                    Enviando... <span x-text="progress"></span>%
+                                                </div>
+                                                
+                                                @if(isset($formData[$field->name]) && is_string($formData[$field->name]) && str_starts_with($formData[$field->name], 'storage/'))
+                                                    <div class="mt-2 flex items-center">
+                                                        <i class="fas fa-file-alt text-gray-400 mr-2"></i>
+                                                        <span class="text-sm text-gray-600">{{ basename($formData[$field->name]) }}</span>
                                                     </div>
                                                 @endif
                                             </div>
+                                            @break
+                                            
+                                        @case('relationship')
+                                            @php
+                                                $relationshipConfig = $field->relationship_config ?? [];
+                                                $modelClass = $relationshipConfig['model'] ?? null;
+                                                $displayField = $relationshipConfig['display_field'] ?? 'name';
+                                                $isMultiple = ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'hasMany';
+                                                
+                                                // Usar os dados relacionados carregados pelo componente
+                                                $relatedItems = isset($relatedData[$field->name]) ? $relatedData[$field->name] : [];
+                                                $selectedValue = $formData[$field->name] ?? null;
+                                            @endphp
+                                            
+                                            <select 
+                                                wire:model="formData.{{ $field->name }}" 
+                                                id="{{ $field->name }}"
+                                                @if($isMultiple) multiple @endif
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
+                                                      @error('formData.' . $field->name) border-red-300 @enderror">
+                                                <option value="">Selecione {{ $field->label }}</option>
+                                                @forelse($relatedItems as $value => $label)
+                                                    <option value="{{ $value }}" @if($selectedValue == $value) selected @endif>
+                                                        {{ $label }}
+                                                    </option>
+                                                @empty
+                                                    <option disabled>Nenhum registro encontrado</option>
+                                                @endforelse
+                                            </select>
+                                            
+                                            @if(empty($relatedItems))
+                                                <p class="mt-1 text-xs text-red-500">
+                                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                                    Não foi possível carregar os dados relacionados. Verifique a configuração do campo.
+                                                </p>
+                                            @endif
+                                            
+                                            @if($isMultiple)
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    <i class="fas fa-info-circle mr-1"></i>
+                                                    Mantenha pressionada a tecla Ctrl (ou Cmd no Mac) para selecionar múltiplos itens.
+                                                </p>
+                                            @endif
                                             @break
                                         
                                         @default
@@ -152,7 +271,8 @@
                                                 id="{{ $field->name }}"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
                                                       @error('formData.' . $field->name) border-red-300 @enderror">
-                                    @endswitch
+                                        @endswitch
+                                    @endif
                                     
                                     @error('formData.' . $field->name) 
                                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -230,6 +350,33 @@
                                             </button>
                                         </div>
                                     @endforeach
+                                </div>
+                            @elseif($value->field->type === 'relationship' && $value->related)
+                                @php
+                                    $relationshipConfig = $value->field->relationship_config ?? [];
+                                    $displayField = $relationshipConfig['display_field'] ?? 'name';
+                                    $isMultiple = ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'hasMany';
+                                    $relatedValues = $isMultiple 
+                                        ? $value->field->values->where('submission_id', $value->submission_id)
+                                        : collect([$value]);
+                                @endphp
+                                
+                                <div class="mt-1">
+                                    @if($isMultiple)
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            @foreach($relatedValues as $relatedValue)
+                                                @if($relatedValue->related)
+                                                    <li class="text-sm text-gray-700">
+                                                        {{ $relatedValue->related->{$displayField} ?? 'Item #' . $relatedValue->related_id }}
+                                                    </li>
+                                                @endif
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        <p class="text-sm text-gray-700">
+                                            {{ $value->related->{$displayField} ?? 'Item #' . $value->related_id }}
+                                        </p>
+                                    @endif
                                 </div>
                             @else
                                 <p class="mt-1 text-sm break-words">

@@ -24,6 +24,10 @@ return [
     'to' => 'to',
     'of' => 'of',
     'results' => 'results',
+    'items_per_page' => 'Items per page',
+    'clearing...' => 'Clearing...',
+    'saving...' => 'Saving...',
+
     
     // Menu Items
     'dashboard' => 'Dashboard',

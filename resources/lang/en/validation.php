@@ -17,4 +17,5 @@ return [
     'efficiency_factor_numeric' => 'The efficiency factor must be a number.',
     'efficiency_factor_min' => 'The efficiency factor must be at least 1.',
     'efficiency_factor_max' => 'The efficiency factor may not be greater than 200.',
+    'website_format' => 'The website format is invalid. Valid formats: :format',
 ];

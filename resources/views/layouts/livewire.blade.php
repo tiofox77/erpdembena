@@ -757,6 +757,13 @@
             </a>
             @endcan
 
+            @can('supplychain.suppliers.manage')
+            <a href="{{ route('supply-chain.supplier-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.supplier-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tags text-gray-500"></i>
+                <span>{{ trans('messages.supplier_categories') }}</span>
+            </a>
+            @endcan
+
             @can('supplychain.products.view')
             <a href="{{ route('supply-chain.product-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.product-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-tags text-gray-500"></i>

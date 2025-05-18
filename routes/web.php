@@ -309,6 +309,9 @@ Route::middleware(['auth'])->group(function () {
         // Suppliers Management
         Route::middleware(['permission:supplychain.suppliers.view'])->get('/suppliers', App\Livewire\SupplyChain\Suppliers::class)->name('suppliers');
         
+        // Supplier Categories Management
+        Route::middleware(['permission:supplychain.suppliers.manage'])->get('/supplier-categories', App\Livewire\SupplyChain\SupplierCategories::class)->name('supplier-categories');
+        
         // Product Categories Management
         Route::middleware(['permission:supplychain.products.view'])->get('/product-categories', App\Livewire\SupplyChain\ProductCategories::class)->name('product-categories');
         

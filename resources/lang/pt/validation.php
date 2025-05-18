@@ -17,4 +17,5 @@ return [
     'efficiency_factor_numeric' => 'O fator de eficiência deve ser um número.',
     'efficiency_factor_min' => 'O fator de eficiência deve ser pelo menos 1.',
     'efficiency_factor_max' => 'O fator de eficiência não pode ser maior que 200.',
+    'website_format' => 'O formato do site é inválido. Formatos válidos: :format',
 ];
