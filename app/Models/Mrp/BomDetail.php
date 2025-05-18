@@ -20,13 +20,6 @@ class BomDetail extends Model
     protected $table = 'mrp_bom_details';
 
     /**
-     * NOTA: Discrepancias entre modelo e banco de dados
-     * - Coluna 'position': Presente no modelo, possivelmente ausente na tabela
-     * - Coluna 'level': Presente no modelo, possivelmente ausente na tabela 
-     * - Coluna 'scrap_percentage': Presente no modelo, possivelmente ausente na tabela
-     * - Coluna 'created_by': Presente no modelo, possivelmente ausente na tabela
-     * - Coluna 'updated_by': Presente no modelo, possivelmente ausente na tabela
-     *
      * Os atributos que podem ser atribuídos em massa.
      *
      * @var array<int, string>
@@ -35,10 +28,6 @@ class BomDetail extends Model
         'bom_header_id',
         'component_id',
         'quantity',
-        'uom',
-        'position',
-        'level',
-        'scrap_percentage',
         'is_critical',
         'notes',
         'created_by',

@@ -54,46 +54,7 @@
                             @error('bomDetail.quantity') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                         </div>
 
-                        <!-- Unidade de Medida -->
-                        <div>
-                            <label for="component_uom" class="block text-sm font-medium text-gray-700">{{ __('messages.component_uom') }} <span class="text-red-500">*</span></label>
-                            <select id="component_uom" wire:model.live="bomDetail.uom" 
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                @foreach($unitTypes as $value => $label)
-                                    <option value="{{ $value }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            @error('bomDetail.uom') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Nível -->
-                        <div>
-                            <label for="level" class="block text-sm font-medium text-gray-700">{{ __('messages.component_level') }} <span class="text-red-500">*</span></label>
-                            <input type="number" id="level" wire:model="bomDetail.level" min="1" step="1"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            @error('bomDetail.level') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Posição -->
-                        <div>
-                            <label for="position" class="block text-sm font-medium text-gray-700">{{ __('messages.component_position') }}</label>
-                            <input type="text" id="position" wire:model="bomDetail.position"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            @error('bomDetail.position') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Percentual de Perda -->
-                        <div>
-                            <label for="scrap_percentage" class="block text-sm font-medium text-gray-700">{{ __('messages.component_scrap') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <input type="number" id="scrap_percentage" wire:model.live="bomDetail.scrap_percentage" min="0" max="100" step="0.01"
-                                    class="block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm">%</span>
-                                </div>
-                            </div>
-                            @error('bomDetail.scrap_percentage') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
+                        <!-- Removed fields: level, position, scrap_percentage, uom -->
 
                         <!-- É Crítico -->
                         <div class="flex items-center space-x-2 md:col-span-2">

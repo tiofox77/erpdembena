@@ -277,13 +277,15 @@
                                                         <div>
                                                             <label for="is_active" class="flex items-center cursor-pointer">
                                                                 <div class="relative">
-                                                                    <!-- Input escondido -->
-                                                                    <input type="checkbox" wire:model="is_active" id="is_active" class="sr-only">
-                                                                    <!-- Track (fundo do toggle) -->
+                                                                    <!-- Hidden checkbox -->
+                                                                    <input type="checkbox" id="is_active" 
+                                                                        {{ $is_active ? 'checked' : '' }}
+                                                                        wire:click="$toggle('is_active')"
+                                                                        class="sr-only">
+                                                                    <!-- Track (toggle background) -->
                                                                     <div class="w-12 h-6 bg-gray-300 rounded-full shadow-inner transition-all duration-300 ease-in-out"></div>
-                                                                    <!-- Dot (bolinha do toggle) -->
-                                                                    <div class="dot absolute w-6 h-6 bg-white rounded-full shadow left-0 top-0 transition-transform duration-300 ease-in-out transform" 
-                                                                        :class="{'translate-x-6 bg-green-500': $wire.is_active, 'bg-white': !$wire.is_active}"></div>
+                                                                    <!-- Dot (toggle handle) -->
+                                                                    <div class="dot absolute w-6 h-6 bg-white rounded-full shadow left-0 top-0 transition-transform duration-300 ease-in-out transform {{ $is_active ? 'translate-x-6 bg-green-500' : 'bg-white' }}"></div>
                                                                 </div>
                                                             </label>
                                                         </div>

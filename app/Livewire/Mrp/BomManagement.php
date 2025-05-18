@@ -59,10 +59,6 @@ class BomManagement extends Component
         'bom_header_id' => '',
         'component_id' => '',
         'quantity' => '',
-        'uom' => 'unit',
-        'position' => 0,
-        'level' => 1,
-        'scrap_percentage' => 0,
         'is_critical' => false,
         'notes' => ''
     ];
@@ -108,10 +104,7 @@ class BomManagement extends Component
      */
     protected function bomDetailRules()
     {
-        // Obter as colunas reais da tabela para validação dinâmica
-        $existingColumns = Schema::getColumnListing('mrp_bom_details');
-        
-        $rules = [
+        return [
             'bomDetail.component_id' => [
                 'required',
                 'exists:sc_products,id',
@@ -150,25 +143,9 @@ class BomManagement extends Component
                 },
             ],
             'bomDetail.quantity' => 'required|numeric|min:0.001',
-            'bomDetail.uom' => ['required', Rule::in(['unit', 'kg', 'l', 'g', 'ml', 'pcs'])],
             'bomDetail.is_critical' => 'boolean',
             'bomDetail.notes' => 'nullable|string|max:1000',
         ];
-        
-        // Adicionar regras para campos opcionais somente se existirem na tabela
-        if (in_array('position', $existingColumns)) {
-            $rules['bomDetail.position'] = 'nullable|integer|min:0';
-        }
-        
-        if (in_array('level', $existingColumns)) {
-            $rules['bomDetail.level'] = 'nullable|integer|min:0';
-        }
-        
-        if (in_array('scrap_percentage', $existingColumns)) {
-            $rules['bomDetail.scrap_percentage'] = 'nullable|numeric|min:0|max:100';
-        }
-        
-        return $rules;
     }
     
     /**

@@ -741,35 +741,56 @@
                                 </div>
 
                                 @if($update_available)
-                                <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
+                                <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg shadow-sm">
                                     <div class="flex">
                                         <div class="flex-shrink-0">
-                                            <i class="fas fa-check-circle text-green-400 h-5 w-5"></i>
+                                            <i class="fas fa-arrow-circle-up text-green-500 text-2xl"></i>
                                         </div>
-                                        <div class="ml-3">
-                                            <h3 class="text-sm font-medium text-green-800">Update Available: v{{ $latest_version }}</h3>
-                                            <div class="mt-2 text-sm text-green-700">
-                                                <p>{{ $update_notes['title'] ?? 'New Version Available' }}</p>
-                                                <div class="mt-1 whitespace-pre-line">{{ $update_notes['body'] ?? '' }}</div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <h3 class="text-lg font-semibold text-green-800">Update Available: v{{ $latest_version }}</h3>
+                                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    New Version
+                                                </span>
                                             </div>
-                                            <div class="mt-4">
-                                                <div class="flex items-center mb-2">
-                                                    <input
-                                                        id="backup_before_update"
-                                                        wire:model.live="backup_before_update"
-                                                        type="checkbox"
-                                                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                                    <label for="backup_before_update" class="ml-2 block text-sm text-gray-700">Create backup before updating</label>
+                                            <div class="mt-2 text-sm text-green-700">
+                                                <p class="font-medium">{{ $update_notes['title'] ?? 'A new version is available' }}</p>
+                                                @if(!empty($update_notes['body']))
+                                                <div class="mt-2 p-3 bg-white rounded border border-green-100 text-gray-700 text-sm">
+                                                    {!! nl2br(e($update_notes['body'])) !!}
                                                 </div>
-                                                <button
-                                                    wire:click="confirmStartUpdate"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="startUpdate"
-                                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                    <i class="fas fa-download mr-2"></i>
-                                                    <span wire:loading.remove wire:target="startUpdate">Install Update</span>
-                                                    <span wire:loading wire:target="startUpdate">Installing...</span>
-                                                </button>
+                                                @endif
+                                            </div>
+                                            <div class="mt-4 pt-4 border-t border-green-200">
+                                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                                    <div class="flex items-center">
+                                                        <input
+                                                            id="backup_before_update"
+                                                            wire:model.live="backup_before_update"
+                                                            type="checkbox"
+                                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                        >
+                                                        <label for="backup_before_update" class="ml-2 block text-sm font-medium text-gray-700">
+                                                            {{ __('Create backup before updating') }}
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex-shrink-0">
+                                                        <button
+                                                            wire:click="confirmStartUpdate"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="startUpdate,confirmStartUpdate"
+                                                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                                                        >
+                                                            <i class="fas fa-download mr-2" wire:loading.class="hidden" wire:target="startUpdate,confirmStartUpdate"></i>
+                                                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" wire:loading.class.remove="hidden" wire:target="startUpdate,confirmStartUpdate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span wire:loading.remove wire:target="startUpdate,confirmStartUpdate">{{ __('Install Update') }}</span>
+                                                            <span wire:loading wire:target="startUpdate,confirmStartUpdate">{{ __('Installing...') }}</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

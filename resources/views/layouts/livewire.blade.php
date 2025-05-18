@@ -642,12 +642,12 @@
             </a>
             @endcan
 
-            @can('mrp.demand_forecasting.view')
-            <a href="{{ route('mrp.demand-forecasting') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.demand-forecasting') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+            {{-- @can('mrp.demand_forecasting.view') --}}
+            {{-- <a href="{{ route('mrp.demand-forecasting') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.demand-forecasting') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-chart-line text-gray-500"></i>
                 <span>{{ trans('messages.demand_forecasting') }}</span>
-            </a>
-            @endcan
+            </a> --}}
+            {{-- @endcan --}}
 
             @can('mrp.bom_management.view')
             <a href="{{ route('mrp.bom-management') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.bom-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -677,12 +677,12 @@
             </a>
             @endcan
 
-            @can('mrp.purchase_planning.view')
-            <a href="{{ route('mrp.purchase-planning') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.purchase-planning') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+            {{-- @can('mrp.purchase_planning.view') --}}
+            {{-- <a href="{{ route('mrp.purchase-planning') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.purchase-planning') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-shopping-cart text-gray-500"></i>
                 <span>{{ trans('messages.purchase_planning') }}</span>
-            </a>
-            @endcan
+            </a> --}}
+            {{-- @endcan --}}
 
             @can('mrp.capacity_planning.view')
             <a href="{{ route('mrp.capacity-planning') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.capacity-planning') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -691,12 +691,12 @@
             </a>
             @endcan
 
-            @can('mrp.resources.view')
-            <a href="{{ route('mrp.resources-management') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.resources-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+            {{-- @can('mrp.resources.view') --}}
+            {{-- <a href="{{ route('mrp.resources-management') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.resources-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-tools text-gray-500"></i>
                 <span>{{ trans('messages.resources_management') }}</span>
-            </a>
-            @endcan
+            </a> --}}
+            {{-- @endcan --}}
 
             @can('mrp.shifts.view')
             <a href="{{ route('mrp.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
