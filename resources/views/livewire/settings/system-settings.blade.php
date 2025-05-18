@@ -2036,7 +2036,7 @@
     </div>
 
     <!-- Modal de Confirmação -->
-    <div x-data="{ show: @entangle('showConfirmModal').live }">
+    <div x-data="{ show: @entangle('$showConfirmModal').live }">
         <div
             x-show="show"
             x-cloak

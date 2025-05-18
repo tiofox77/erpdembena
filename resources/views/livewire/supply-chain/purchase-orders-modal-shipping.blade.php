@@ -358,7 +358,13 @@
                                                                         @elseif($fieldValue->field->type == 'select')
                                                                             @php
                                                                                 $displayValue = $fieldValue->value;
-                                                                                $options = json_decode($fieldValue->field->options, true);
+                                                                                $options = $fieldValue->field->options;
+                                                                                
+                                                                                // Verifica se options é uma string e tenta decodificar
+                                                                                if (is_string($options)) {
+                                                                                    $options = json_decode($options, true);
+                                                                                }
+                                                                                
                                                                                 if (is_array($options)) {
                                                                                     foreach ($options as $option) {
                                                                                         if (isset($option['value']) && $option['value'] == $fieldValue->value) {

@@ -267,6 +267,7 @@
 
     <!-- Modais -->
     @include('livewire.supply-chain.suppliers-modals')
+    @include('livewire.supply-chain.delete-supplier-modal')
     
     <!-- Modal de Visualização -->
     <div x-data="{ show: @entangle('showViewModal') }" x-show="show" x-cloak
