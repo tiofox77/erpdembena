@@ -32,7 +32,8 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
                             </div>
-                            <input wire:model.debounce.300ms="search" id="search" 
+                            <input wire:model.live="search" id="search" 
+                                wire:keydown.enter="$refresh"
                                 class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out" 
                                 placeholder="{{ __('livewire/products.search_products') }}" 
                                 type="search">
@@ -48,8 +49,7 @@
                                 <i class="fas fa-tags text-gray-500 mr-1"></i>
                                 {{ __('livewire/products.category') }}
                             </label>
-                            <select wire:model.live="category_filter" id="categoryFilter" 
-                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                            <select wire:model.live="category_filter" id="categoryFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
                                 <option value="">{{ __('livewire/products.all_categories') }}</option>
                                 @foreach($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -63,8 +63,7 @@
                                 <i class="fas fa-truck-loading text-gray-500 mr-1"></i>
                                 {{ __('livewire/products.supplier') }}
                             </label>
-                            <select wire:model.live="supplier_filter" id="supplierFilter" 
-                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                            <select wire:model.live="supplier_filter" id="supplierFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
                                 <option value="">{{ __('livewire/products.all_suppliers') }}</option>
                                 @foreach($suppliers as $supplier)
                                 <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
@@ -78,8 +77,7 @@
                                 <i class="fas fa-toggle-on text-gray-500 mr-1"></i>
                                 {{ __('livewire/products.status') }}
                             </label>
-                            <select wire:model.live="status_filter" id="statusFilter" 
-                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                            <select wire:model.live="status_filter" id="statusFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
                                 <option value="">{{ __('livewire/products.all_statuses') }}</option>
                                 <option value="active">{{ __('livewire/products.active') }}</option>
                                 <option value="inactive">{{ __('livewire/products.inactive') }}</option>
@@ -92,8 +90,7 @@
                                 <i class="fas fa-box-open text-gray-500 mr-1"></i>
                                 {{ __('livewire/products.product_type') }}
                             </label>
-                            <select wire:model.live="product_type_filter" id="productTypeFilter" 
-                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                            <select wire:model.live="product_type_filter" id="productTypeFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
                                 <option value="">{{ __('livewire/products.all_types') }}</option>
                                 <option value="finished_product">{{ __('livewire/products.finished_product') }}</option>
                                 <option value="raw_material">{{ __('livewire/products.raw_material') }}</option>
@@ -106,7 +103,7 @@
                                 <i class="fas fa-list-ol text-gray-500 mr-1"></i>
                                 {{ __('livewire/layout.per_page') }}
                             </label>
-                            <select wire:model="perPage" id="perPage" 
+                            <select wire:model.live="perPage" id="perPage" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
@@ -267,10 +264,10 @@
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-100 flex items-center">
                         <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                        {{ __('livewire/layout.showing') }} <span class="font-medium mx-1">{{ $products->firstItem() ?? 0 }}</span> {{ __('livewire/layout.to') }} <span class="font-medium mx-1">{{ $products->lastItem() ?? 0 }}</span> {{ __('livewire/layout.of') }} <span class="font-medium mx-1">{{ $products->total() }}</span> {{ __('livewire/layout.results') }}
+                        {{ __('livewire/layout.showing') }} <span class="font-medium">{{ $products->firstItem() }}</span> {{ __('livewire/layout.to') }} <span class="font-medium">{{ $products->lastItem() }}</span> {{ __('livewire/layout.of') }} <span class="font-medium">{{ $products->total() }}</span> {{ __('livewire/layout.results') }}
                     </div>
-                    <div class="pagination-container">
-                        {{ $products->links() }}
+                    <div class="mt-2 sm:mt-0">
+                        {{ $products->onEachSide(1)->links() }}
                     </div>
                 </div>
             </div>

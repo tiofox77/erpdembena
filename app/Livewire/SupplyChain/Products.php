@@ -50,6 +50,7 @@ class Products extends Component
     public $status_filter = '';
     public $stock_filter = '';
     public $product_type_filter = '';
+    public $perPage = 10;
     
     public $sortField = 'name';
     public $sortDirection = 'asc';
@@ -66,8 +67,28 @@ class Products extends Component
     public $tabList = ['general', 'inventory', 'dimensions', 'suppliers'];
 
     protected $paginationTheme = 'tailwind';
+    
+    // Add query string parameters for all filters
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'category_filter' => ['except' => ''],
+        'supplier_filter' => ['except' => ''],
+        'status_filter' => ['except' => ''],
+        'stock_filter' => ['except' => ''],
+        'product_type_filter' => ['except' => ''],
+        'perPage' => ['except' => 10],
+        'page' => ['except' => 1]
+    ];
 
     protected $listeners = ['refresh' => '$refresh'];
+    
+    // Reset pagination when filters change
+    public function updating($name, $value)
+    {
+        if (in_array($name, ['search', 'category_filter', 'supplier_filter', 'status_filter', 'stock_filter', 'product_type_filter', 'perPage'])) {
+            $this->resetPage();
+        }
+    }
 
     protected function rules()
     {
@@ -99,10 +120,7 @@ class Products extends Component
         ];
     }
 
-    public function updated($propertyName)
-    {
-        $this->validateOnly($propertyName);
-    }
+    // Moved to before the render method to include pagination reset functionality
 
     public function updatedTempImage()
     {
@@ -494,7 +512,7 @@ class Products extends Component
         $products = $query->with(['category', 'primarySupplier'])
                            ->withCount('inventoryItems')
                            ->orderBy($this->sortField, $this->sortDirection)
-                           ->paginate(10);
+                           ->paginate($this->perPage);
         
         // Get inventory summary for each product
         foreach ($products as $product) {
