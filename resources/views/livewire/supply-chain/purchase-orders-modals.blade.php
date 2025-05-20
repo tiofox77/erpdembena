@@ -65,7 +65,10 @@
                         <!-- Data da Ordem -->
                         <div>
                             <label for="order_date" class="block text-sm font-medium text-gray-700">{{ __('messages.order_date') }}</label>
-                            <input type="date" wire:model.defer="purchaseOrder.order_date" id="order_date" 
+                            <input type="date" 
+                                wire:model.defer="purchaseOrder.order_date" 
+                                id="order_date" 
+                                value="{{ $purchaseOrder['order_date'] ?? '' }}"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             @error('purchaseOrder.order_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -75,7 +78,10 @@
                         <!-- Data de Entrega Prevista -->
                         <div>
                             <label for="expected_delivery_date" class="block text-sm font-medium text-gray-700">{{ __('messages.expected_delivery') }}</label>
-                            <input type="date" wire:model.defer="purchaseOrder.expected_delivery_date" id="expected_delivery_date" 
+                            <input type="date" 
+                                wire:model.defer="purchaseOrder.expected_delivery_date" 
+                                id="expected_delivery_date" 
+                                value="{{ $purchaseOrder['expected_delivery_date'] ?? '' }}"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             @error('purchaseOrder.expected_delivery_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -181,16 +187,48 @@
                                 </tbody>
                                 <!-- Rodapé com total -->
                                 <tfoot class="bg-gray-50">
+                                    <!-- Subtotal -->
                                     <tr>
-                                        <td colspan="4" class="px-4 py-3 text-right font-medium">
+                                        <td colspan="4" class="px-4 py-2 text-right font-medium">
+                                            {{ __('messages.subtotal') }}:
+                                        </td>
+                                        <td class="px-4 py-2 text-right">
+                                            {{ number_format(collect($orderItems)->sum('line_total'), 2) }}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    <!-- Shipping Cost -->
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-2 text-right font-medium">
+                                            {{ __('messages.shipping_cost') }}:
+                                        </td>
+                                        <td class="px-4 py-2 text-right">
+                                            <div class="relative">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <span class="text-gray-500 sm:text-sm">{{ config('default.currency_symbol', '$') }}</span>
+                                                </div>
+                                                <input type="number" 
+                                                    wire:model.defer="purchaseOrder.shipping_amount" 
+                                                    wire:change="calculateOrderTotal"
+                                                    step="0.01" 
+                                                    min="0"
+                                                    class="pl-7 block w-full text-right border-0 bg-transparent focus:ring-0 focus:border-blue-500 p-0 text-sm"
+                                                    placeholder="0.00">
+                                            </div>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    <!-- Order Total -->
+                                    <tr class="border-t border-gray-200">
+                                        <td colspan="4" class="px-4 py-3 text-right font-bold">
                                             {{ __('messages.order_total') }}:
                                         </td>
-                                        <td class="px-4 py-3 text-right font-bold">
+                                        <td class="px-4 py-3 text-right font-bold text-gray-900">
                                             {{ number_format($orderTotal, 2) }}
                                         </td>
                                         <td></td>
                                     </tr>
-                                    <!-- Linha para adicionar item -->
+                                    <!-- Add Item Button -->
                                     <tr>
                                         <td colspan="6" class="px-4 py-3">
                                             <button type="button" wire:click="openProductSelector" 
@@ -249,8 +287,82 @@
 
 <!-- Modal de Seleção de Produtos -->
 <div
-    x-data="{ open: false }"
-    x-init="$wire.on('openProductSelectorModal', () => { open = true })"
+    x-data="{
+        open: false,
+        observer: null,
+        searchTimeout: null,
+        init() {
+            // Initialize Intersection Observer for infinite scroll
+            this.observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !@this.isLoadingProducts && @this.hasMoreProducts) {
+                            @this.call('loadMoreProducts');
+                        }
+                    });
+                },
+                {
+                    root: this.$refs.productsContainer,
+                    rootMargin: '100px',
+                    threshold: 0.1
+                }
+            );
+            
+            // Listen for modal open event
+            this.$wire.on('openProductSelectorModal', () => { 
+                this.open = true;
+                // Reset scroll position when modal opens
+                this.$nextTick(() => {
+                    if (this.$refs.productsContainer) {
+                        this.$refs.productsContainer.scrollTop = 0;
+                    }
+                    this.setupObserver();
+                });
+            });
+            
+            // Listen for products loaded event
+            this.$wire.on('productsLoaded', () => {
+                this.setupObserver();
+            });
+            
+            // Clean up observer when component is destroyed
+            this.$watch('open', (value) => {
+                if (!value && this.observer) {
+                    this.observer.disconnect();
+                }
+            });
+        },
+        setupObserver() {
+            // Clean up previous observer
+            if (this.observer) {
+                this.observer.disconnect();
+            }
+            
+            // Set up observer on the last product row
+            this.$nextTick(() => {
+                const lastRow = this.$refs.lastProductRow;
+                if (lastRow) {
+                    this.observer.observe(lastRow);
+                }
+            });
+        },
+        closeModal() {
+            this.open = false;
+            @this.set('productSearch', '', false);
+        },
+        handleSearch(value) {
+            // Clear previous timeout
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+            
+            // Set new timeout
+            this.searchTimeout = setTimeout(() => {
+                @this.set('productSearch', value);
+                @this.call('loadProducts');
+            }, 500);
+        }
+    }"
     x-show="open"
     x-cloak
     class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50"
@@ -272,102 +384,181 @@
              x-transition:leave-end="transform opacity-0 scale-95">
             <!-- Cabeçalho com gradiente -->
             <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg px-4 py-3 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-white flex items-center">
-                    <i class="fas fa-box mr-2"></i>
-                    {{ __('messages.select_product') }}
+                <h3 class="text-lg font-medium text-white">
+                    <i class="fas fa-boxes mr-2"></i>
+                    {{ __('messages.select_products') }}
                 </h3>
-                <button type="button" @click="open = false" class="text-white hover:text-gray-200 focus:outline-none transition-all duration-200 ease-in-out transform hover:scale-110 hover:rotate-90">
+                <button type="button" @click="closeModal" class="text-white hover:text-gray-200 focus:outline-none transition-all duration-200 ease-in-out transform hover:scale-110 hover:rotate-90">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-
+            
             <!-- Conteúdo da Modal -->
             <div class="p-6">
                 <!-- Busca de produtos -->
                 <div class="mb-4">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                        <input wire:model.debounce.300ms="productSearch" type="text" 
-                            class="pl-10 block w-full pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="{{ __('messages.search_products') }}">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" 
+                                   x-model="searchTerm"
+                                   x-init="searchTerm = '{{ $productSearch }}'"
+                                   x-on:input.debounce.500ms="
+                                       if (searchTerm.trim() !== '{{ $productSearch }}') {
+                                           $wire.set('productSearch', searchTerm, false)
+                                               .then(() => $wire.call('loadProducts'));
+                                       }
+                                   "
+                                   class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="{{ __('messages.search_products_placeholder') }}">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <template x-if="$wire.productSearch">
+                                    <button type="button" 
+                                            @click="
+                                                searchTerm = '';
+                                                $wire.set('productSearch', '', false)
+                                                    .then(() => $wire.call('loadProducts'));
+                                            " 
+                                            class="text-gray-400 hover:text-gray-500">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </template>
+                                <div x-show="$wire.isLoadingProducts" class="ml-2">
+                                    <i class="fas fa-circle-notch fa-spin text-blue-500"></i>
+                                </div>
+                            </div>
                     </div>
                 </div>
-
-                <!-- Lista de produtos -->
+                
+                <!-- Lista de Produtos -->
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                    <div class="overflow-x-auto max-h-64">
+                    <div class="overflow-x-auto max-h-96" x-ref="productsContainer">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
                                     <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.product_code') }}
+                                        {{ __('messages.product') }}
                                     </th>
                                     <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.product_name') }}
+                                        {{ __('messages.code') }}
                                     </th>
                                     <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         {{ __('messages.price') }}
                                     </th>
-                                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.stock') }}
-                                    </th>
-                                    <th scope="col" class="relative px-4 py-3">
+                                    <th scope="col" class="relative px-4 py-3 w-16">
                                         <span class="sr-only">{{ __('messages.actions') }}</span>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($products ?? [] as $product)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                @forelse($products as $index => $product)
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150" 
+                                        @if($loop->last) x-ref="lastProductRow" @endif>
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $product->product_code }}</div>
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ $product->name }}
+                                                @if($product->unit_of_measure)
+                                                    <span class="text-xs text-gray-500 ml-1">({{ $product->unit_of_measure }})</span>
+                                                @endif
+                                            </div>
+                                            @if($product->description)
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    {{ Str::limit($product->description, 60) }}
+                                                </div>
+                                            @endif
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $product->product_code }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <div class="text-sm text-gray-900">{{ number_format($product->cost_price, 2) }}</div>
+                                        <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium text-gray-900">
+                                            {{ number_format($product->price, 2) }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <div class="text-sm text-gray-900">{{ $product->current_stock ?? 0 }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                        <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                             <button wire:click="addProduct({{ $product->id }})" 
-                                                @click="open = false"
-                                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                <i class="fas fa-plus mr-1"></i>
-                                                {{ __('messages.add') }}
+                                                class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.add_to_order') }}">
+                                                <i class="fas fa-plus-circle"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">
-                                            {{ __('messages.no_products_found') }}
+                                        <td colspan="4" class="px-4 py-12 text-center text-gray-500">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
+                                                @if($productSearch)
+                                                    <p class="text-gray-600">{{ __('messages.no_products_found_for') }} "{{ $productSearch }}"</p>
+                                                    <p class="text-sm text-gray-500 mt-1">{{ __('messages.try_different_search') }}</p>
+                                                @else
+                                                    <p class="text-gray-600">{{ __('messages.no_products_available') }}</p>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforelse
+
+                                <!-- Loading Animation -->
+                                <tr x-show="$wire.isLoadingProducts" x-transition.opacity.duration.300ms>
+                                    <td colspan="4" class="px-4 py-6 text-center">
+                                        <div class="flex flex-col items-center justify-center space-y-2">
+                                            <div class="relative">
+                                                <div class="w-10 h-10 border-4 border-indigo-200 rounded-full"></div>
+                                                <div class="absolute top-0 left-0 w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                            <p class="text-sm font-medium text-gray-600">{{ __('messages.loading_products') }}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- End of list message -->
+                                <tr x-show="!$wire.isLoadingProducts && $wire.products.length > 0 && !$wire.hasMoreProducts" x-transition.opacity.duration.300ms>
+                                    <td colspan="4" class="px-4 py-4 text-center">
+                                        <div class="flex items-center justify-center space-x-2 text-gray-500">
+                                            <i class="fas fa-check-circle text-green-500"></i>
+                                            <span>{{ __('messages.all_products_loaded') }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
+                
+                <!-- Selected products counter -->
+                @if(count($orderItems) > 0)
+                    <div class="mt-3 text-sm text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                        {{ trans_choice('messages.products_selected', count($orderItems), ['count' => count($orderItems)]) }}
+                    </div>
+                @endif
             </div>
             
             <!-- Rodapé -->
-            <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200">
-                <button type="button" @click="open = false" 
-                    class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                    <i class="fas fa-times mr-2"></i>
-                    {{ __('messages.close') }}
-                </button>
+            <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-between items-center border-t border-gray-200">
+                <div class="text-sm text-gray-600">
+                    @if(count($products) > 0)
+                        {{ trans_choice('messages.showing_products', min(count($products), $productPerPage), [
+                            'from' => ($productPage - 1) * $productPerPage + 1,
+                            'to' => min($productPage * $productPerPage, $totalProducts),
+                            'total' => $totalProducts
+                        ]) }}
+                    @endif
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" @click="closeModal" 
+                        class="inline-flex justify-center items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 ease-in-out">
+                        {{ __('messages.cancel') }}
+                    </button>
+                    <button type="button" @click="closeModal" 
+                        class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out">
+                        {{ __('messages.done') }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-
 
 <!-- Modal de Exclusão de Ordem -->
 <div x-data="{ show: @entangle('showDeleteModal') }"

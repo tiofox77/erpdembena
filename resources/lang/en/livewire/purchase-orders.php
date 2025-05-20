@@ -68,4 +68,18 @@ return [
     'cannot_edit_completed_cancelled_order' => 'Cannot edit a completed or cancelled purchase order',
     'select_product' => 'Please select a product',
     'select_supplier' => 'Please select a supplier',
+    
+    // Product Selection Modal
+    'select_products' => 'Select Products',
+    'search_products_placeholder' => 'Search products by name, code or description...',
+    'code' => 'Code',
+    'price' => 'Price',
+    'add_to_order' => 'Add to order',
+    'no_products_found_for' => 'No products found for',
+    'no_products_available' => 'No products available',
+    'try_different_search' => 'Try a different search term',
+    'all_products_loaded' => 'All products loaded',
+    'products_selected' => '{0} No products selected|{1} 1 product selected|[2,*] :count products selected',
+    'showing_products' => 'Showing :from to :to of :total products',
+    'done' => 'Done',
 ];

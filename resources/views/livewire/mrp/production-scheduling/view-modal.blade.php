@@ -275,21 +275,6 @@
                                         {{ $viewingSchedule->end_date ? $viewingSchedule->end_date->format('d/m/Y') : __('messages.not_completed') }}
                                     </dd>
                                 </div>
-                                
-                                <div class="sm:col-span-3 bg-blue-50 p-2 rounded-md border border-blue-100">
-                                    <dt class="text-sm font-medium text-blue-700">{{ __('messages.shifts') }}:</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 flex flex-wrap gap-2">
-                                        @if($viewingSchedule->shifts && $viewingSchedule->shifts->count() > 0)
-                                            @foreach($viewingSchedule->shifts as $shift)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    <i class="fas fa-clock mr-1"></i> {{ $shift->name }}
-                                                </span>
-                                            @endforeach
-                                        @else
-                                            <span class="text-gray-500">{{ __('messages.no_shifts_assigned') }}</span>
-                                        @endif
-                                    </dd>
-                                </div>
 
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.responsible') }}:</dt>

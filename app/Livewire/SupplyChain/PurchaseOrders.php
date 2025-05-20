@@ -191,15 +191,122 @@ class PurchaseOrders extends Component
         ]);
     }
     
+    public $productPage = 1;
+    public $productPerPage = 15;
+    public $hasMoreProducts = true;
+    public $isLoadingProducts = false;
+
     public function updatedProductSearch($value)
     {
-        if (strlen($value) >= 2) {
-            $this->products = Product::where('name', 'like', "%{$value}%")
-                ->orWhere('product_code', 'like', "%{$value}%")
-                ->orWhere('description', 'like', "%{$value}%")
-                ->get();
+        $this->productPage = 1;
+        $this->hasMoreProducts = true;
+        $this->loadProducts();
+    }
+    
+    public $totalProducts = 0;
+    
+    public function loadProducts($loadMore = false)
+    {
+        if ($loadMore) {
+            $this->productPage++;
         } else {
+            $this->productPage = 1;
             $this->products = [];
+        }
+
+        $this->isLoadingProducts = true;
+        $this->dispatch('loading', loading: true);
+
+        try {
+            $query = Product::query()
+                ->when($this->productSearch, function($query) {
+                    $search = strtolower($this->productSearch);
+                    return $query->where(function($q) use ($search) {
+                        $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                          ->orWhereRaw('LOWER(sku) LIKE ?', ["%{$search}%"])
+                          ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"]);
+                    });
+                });
+                
+            $products = $query->paginate(
+                $this->productPerPage,
+                ['*'],
+                'page',
+                $this->productPage
+            );
+
+            $this->products = $loadMore 
+                ? array_merge($this->products, $products->items())
+                : $products->items();
+
+            $this->hasMoreProducts = $products->hasMorePages();
+            
+            // Reset to first page if no results and we have a search term
+            if (empty($this->products) && $this->productSearch && $this->productPage > 1) {
+                $this->productPage = 1;
+                $this->loadProducts();
+                return;
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error loading products: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error',
+                message: __('messages.error_loading_products')
+            );
+            session()->flash('error', 'Error loading products. Please try again.');
+        } finally {
+            $this->isLoadingProducts = false;
+        }
+    }
+    
+    public function loadMoreProducts()
+    {
+        // Prevent multiple simultaneous loads and check if there are more products to load
+        if ($this->isLoadingProducts || !$this->hasMoreProducts) {
+            return;
+        }
+        
+        $this->isLoadingProducts = true;
+        
+        try {
+            // Load the next page of products
+            $this->productPage++;
+            
+            $query = Product::query()
+                ->when($this->productSearch, function($query) {
+                    $search = strtolower($this->productSearch);
+                    return $query->where(function($q) use ($search) {
+                        $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                          ->orWhereRaw('LOWER(product_code) LIKE ?', ["%{$search}%"])
+                          ->orWhereRaw('LOWER(barcode) LIKE ?', ["%{$search}%"])
+                          ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"]);
+                    });
+                });
+                
+            // Get paginated results
+            $products = $query->orderBy('name')
+                ->paginate($this->productPerPage, ['*'], 'page', $this->productPage);
+                
+            $this->hasMoreProducts = $products->hasMorePages();
+            
+            // Merge new products with existing ones
+            $this->products = array_merge($this->products, $products->items());
+            
+            // Update total count if this is the first load
+            if ($this->productPage === 1) {
+                $this->totalProducts = $products->total();
+            }
+            
+            // Let the view know we've loaded products
+            $this->dispatch('productsLoaded');
+            
+        } catch (\Exception $e) {
+            // Log the error and reset loading state
+            \Log::error('Error loading more products: ' . $e->getMessage());
+            $this->productPage = max(1, $this->productPage - 1);
+        } finally {
+            $this->isLoadingProducts = false;
         }
     }
     
@@ -215,6 +322,7 @@ class PurchaseOrders extends Component
             'expected_delivery_date' => now()->addDays(7)->format('Y-m-d'),
             'status' => 'draft',
             'notes' => '',
+            'shipping_amount' => 0.00,
         ];
         
         $this->orderItems = [];
@@ -273,6 +381,7 @@ class PurchaseOrders extends Component
             'expected_delivery_date' => $order->expected_delivery_date,
             'status' => $order->status,
             'notes' => $order->notes,
+            'shipping_amount' => $order->shipping_amount ?? 0.00,
         ];
         
         $this->orderItems = $order->items->map(function($item) {
@@ -376,26 +485,44 @@ class PurchaseOrders extends Component
     
     public function addProduct($productId)
     {
-        $product = Product::findOrFail($productId);
-        
-        $this->orderItems[] = [
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-            'description' => $product->description,
-            'quantity' => 1,
-            'unit_price' => $product->price,
-            'unit_of_measure' => $product->unit_of_measure ?? 'und', // Adicionando o campo unit_of_measure
-            'line_total' => $product->price
-        ];
-        
-        $this->calculateOrderTotal();
-        $this->closeProductSelector();
+        try {
+            $product = Product::findOrFail($productId);
+            
+            $this->orderItems[] = [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'description' => $product->description,
+                'quantity' => 1,
+                'unit_price' => $product->price,
+                'unit_of_measure' => $product->unit_of_measure ?? 'und',
+                'line_total' => $product->price
+            ];
+            
+            $this->calculateOrderTotal();
+            $this->closeProductSelector();
+            
+            // Show success notification
+            $this->dispatch('notify', 
+                type: 'success',
+                title: __('messages.success'),
+                message: __('Product added to order: :product', ['product' => $product->name])
+            );
+            
+        } catch (\Exception $e) {
+            Log::error('Error adding product to order: ' . $e->getMessage());
+            
+            $this->dispatch('notify', 
+                type: 'error',
+                title: __('messages.error'),
+                message: __('Failed to add product to order')
+            );
+        }
     }
     
     public function openProductSelector()
     {
-        $this->productSearch = '';
-        $this->products = Product::orderBy('name')->limit(10)->get();
+        $this->reset(['productSearch', 'productPage']);
+        $this->loadProducts();
         $this->dispatch('openProductSelectorModal');
     }
 
@@ -426,11 +553,13 @@ class PurchaseOrders extends Component
     
     public function calculateOrderTotal()
     {
-        $total = 0;
+        $subtotal = 0;
         foreach ($this->orderItems as $item) {
-            $total += floatval($item['line_total'] ?? 0);
+            $subtotal += floatval($item['line_total'] ?? 0);
         }
-        $this->orderTotal = $total;
+        
+        $shipping = floatval($this->purchaseOrder['shipping_amount'] ?? 0);
+        $this->orderTotal = $subtotal + $shipping;
     }
     
     public function savePurchaseOrder()
@@ -498,11 +627,10 @@ class PurchaseOrders extends Component
                 $order->supplier_id = $this->purchaseOrder['supplier_id'];
                 $order->order_date = $this->purchaseOrder['order_date'];
                 $order->expected_delivery_date = $this->purchaseOrder['expected_delivery_date'];
+                $order->shipping_amount = floatval($this->purchaseOrder['shipping_amount'] ?? 0);
                 
                 // Removendo campos que não existem na tabela
-                // $order->shipping_address = $this->purchaseOrder['shipping_address'] ?? null;
                 $order->notes = $this->purchaseOrder['notes'] ?? null;
-                // $order->terms_conditions = $this->purchaseOrder['terms_conditions'] ?? null;
                 
                 if (!$this->editMode) {
                     $order->status = 'ordered'; // Alterando para 'ordered' em vez de 'draft'
