@@ -106,32 +106,6 @@
                                 </p>
                             @enderror
                         </div>
-                        
-                        <!-- Hora Inicial -->
-                        <div>
-                            <label for="start_time" class="block text-sm font-medium text-gray-700 mb-1">
-                                {{ __('messages.start_time') }} <span class="text-red-500">*</span>
-                            </label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-hourglass-start"></i></span>
-                                </div>
-                                <input type="time" id="start_time" wire:model.live="schedule.start_time"
-                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.start_time') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
-                                @error('schedule.start_time')
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                    </div>
-                                @enderror
-                            </div>
-                            @error('schedule.start_time')
-                                <p class="mt-1 text-sm text-red-600 flex items-center">
-                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
-                                </p>
-                            @enderror
-                        </div>
 
                         <!-- Data Final -->
                         <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
@@ -153,32 +127,6 @@
                                 @enderror
                             </div>
                             @error('schedule.end_date')
-                                <p class="mt-1 text-sm text-red-600 flex items-center">
-                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
-                                </p>
-                            @enderror
-                        </div>
-                        
-                        <!-- Hora Final -->
-                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
-                            <label for="end_time" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                <i class="fas fa-clock text-blue-500 mr-2"></i> {{ __('messages.end_time') }} <span class="text-red-500">*</span>
-                            </label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-hourglass-end"></i></span>
-                                </div>
-                                <input type="time" id="end_time" wire:model.live="schedule.end_time"
-                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md @error('schedule.end_time') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
-                                @error('schedule.end_time')
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                    </div>
-                                @enderror
-                            </div>
-                            @error('schedule.end_time')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
                                     <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
                                 </p>
