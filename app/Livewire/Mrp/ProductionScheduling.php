@@ -250,150 +250,133 @@ class ProductionScheduling extends Component
     }
         
         // Atualizar flags e valores para usar na UI
-        $this->showComponentWarning = $insufficientFound;
-        $this->maxQuantityPossible = $maxPossible;
-    }
     
-    // Propriedades do formulário
-    public $schedule = [
-        'product_id' => '',
-        'schedule_number' => '',
-        'start_date' => '',
-        'start_time' => '08:00',
-        'end_date' => '',
-        'end_time' => '17:00',
-        'planned_quantity' => '',
-        'actual_quantity' => 0,
-        'actual_start_time' => null,
-        'actual_end_time' => null,
-        'is_delayed' => false,
-        'delay_reason' => '',
-        'status' => 'draft',
-        'priority' => 'medium',
-        'responsible' => '',
-        'location_id' => '',  // ID da localização de inventário da supply chain
-        'working_hours_per_day' => 8, // Horas de trabalho por dia
-        'hourly_production_rate' => 0, // Taxa de produção por hora
-        'working_days' => [ // Dias de trabalho na semana
-            'mon' => true,
-            'tue' => true,
-            'wed' => true,
-            'thu' => true,
-            'fri' => true,
-            'sat' => false,
-            'sun' => false
-        ],
-        'setup_time' => 30, // Tempo de setup em minutos
-        'cleanup_time' => 15, // Tempo de limpeza em minutos
-        'notes' => ''
-    ];
-    
-    // Planos diários de produção
-    public $dailyPlans = [];
-    public $showDailyPlansModal = false;
-    public $shifts = []; // Turnos associados ao planejamento atual
-    public $selectedShiftId = null;
-    public $selectedShiftName = null;
-    public $filteredDailyPlans = [];
-    public $editingDailyPlan = null;
-    public $viewingDailyPlans = false;
+    // Atualizar flags e valores para usar na UI
+    $this->showComponentWarning = $insufficientFound;
+    $this->maxQuantityPossible = $maxPossible;
+}
 
-    // Propriedades de filtro
-    public $statusFilter = null;
-    public $priorityFilter = null;
-    public $dateFilter = null;
-    public $productFilter = null;
+// Propriedades do formulário
+public $schedule = [
+    'product_id' => '',
+    'schedule_number' => '',
+    'start_date' => '',
+    'end_date' => '',
+    'planned_quantity' => '',
+    'actual_quantity' => 0,
+    'actual_start_time' => null,
+    'actual_end_time' => null,
+    'is_delayed' => false,
+    'delay_reason' => '',
+    'status' => 'draft',
+    'priority' => 'medium',
+    'responsible' => '',
+    'location_id' => '',  // ID da localização de inventário da supply chain
+    'working_hours_per_day' => 8, // Horas de trabalho por dia
+    'hourly_production_rate' => 0, // Taxa de produção por hora
+    'working_days' => [ // Dias de trabalho na semana
+        'mon' => true,
+        'tue' => true,
+        'wed' => true,
+        'thu' => true,
+        'fri' => true,
+        'sat' => false,
+        'sun' => false
+    ],
+    'setup_time' => 30, // Tempo de setup em minutos
+    'cleanup_time' => 15, // Tempo de limpeza em minutos
+    'notes' => ''
+];
+
+// Planos diários de produção
+public $dailyPlans = [];
+public $showDailyPlansModal = false;
+public $shifts = []; // Turnos associados ao planejamento atual
+public $selectedShiftId = null;
+public $selectedShiftName = null;
+public $filteredDailyPlans = [];
+public $editingDailyPlan = null;
+public $viewingDailyPlans = false;
+
+// Propriedades de filtro
+public $statusFilter = null;
+public $priorityFilter = null;
+public $dateFilter = null;
+public $productFilter = null;
+
+// Propriedades do calendário
+public $calendarView = 'month';
+public $calendarDate = null;
+public $calendarEvents = [];
+public $calendarTitle = '';
+public $calendarDayNames = [];
+public $calendarWeeks = [];
+public $calendarDays = [];
+
+/**
+ * Mount component
+ */
+public function mount()
+{
+    // Inicializar datas do calendário
+    $this->calendarDate = date('Y-m-d');
+    $this->updateCalendarTitle();
+    $this->setupCalendarDayNames();
+    $this->loadCalendarEvents();
     
-    // Propriedades do calendário
-    public $calendarView = 'month';
-    public $calendarDate = null;
-    public $calendarEvents = [];
-    public $calendarTitle = '';
-    public $calendarDayNames = [];
-    public $calendarWeeks = [];
-    public $calendarDays = [];
+    // Carregar todos os turnos disponíveis no sistema
+    $allShifts = Shift::orderBy('name')->get();
+    \Illuminate\Support\Facades\Log::info('Turnos carregados no mount', [
+        'total' => $allShifts->count(),
+        'ids' => $allShifts->pluck('id')->toArray(),
+        'names' => $allShifts->pluck('name')->toArray()
+    ]);
     
-    /**
-     * Mount component
-     */
-    public function mount()
-    {
-        // Inicializar datas do calendário
-        $this->calendarDate = date('Y-m-d');
-        $this->updateCalendarTitle();
-        $this->setupCalendarDayNames();
-        $this->loadCalendarEvents();
-        
-        // Carregar todos os turnos disponíveis no sistema
-        $allShifts = Shift::orderBy('name')->get();
-        \Illuminate\Support\Facades\Log::info('Turnos carregados no mount', [
-            'total' => $allShifts->count(),
-            'ids' => $allShifts->pluck('id')->toArray(),
-            'names' => $allShifts->pluck('name')->toArray()
-        ]);
-        
-        // Disponibilizar os turnos como propriedade pública para todas as views
-        $this->shifts = $allShifts;
-    }
+    // Disponibilizar os turnos como propriedade pública para todas as views
+    $this->shifts = $allShifts;
+}
+
+/**
+ * Regras de validação
+ */
+protected function rules()
+{
+    return [
+        'schedule.product_id' => 'required|exists:sc_products,id',
+        'schedule.schedule_number' => [
+            'required',
+            'string',
+            'max:50',
+            $this->editMode
+                ? Rule::unique('mrp_production_schedules', 'schedule_number')->ignore($this->scheduleId)
+                : Rule::unique('mrp_production_schedules', 'schedule_number'),
+        ],
+        'schedule.start_date' => 'required|date',
+        'schedule.end_date' => 'required|date|after_or_equal:schedule.start_date',
+        'schedule.planned_quantity' => 'required|numeric|min:0.001',
+        'schedule.location_id' => 'required|exists:sc_inventory_locations,id',
+        'schedule.status' => 'required|in:draft,confirmed,in_progress,completed,cancelled',
+        'schedule.priority' => 'required|in:low,medium,high,urgent',
+        'schedule.line_id' => 'nullable|exists:mrp_lines,id',
+        'schedule.working_hours_per_day' => 'required|numeric|min:0.5|max:24',
+        'schedule.hourly_production_rate' => 'required|numeric|min:0.1',
+        'schedule.setup_time' => 'nullable|integer|min:0',
+        'schedule.cleanup_time' => 'nullable|integer|min:0',
+    ];
+}
     
-    /**
-     * Regras de validação
-     */
-    protected function rules()
-    {
-        return [
-            'schedule.product_id' => 'required|exists:sc_products,id',
-            'schedule.schedule_number' => [
-                'required',
-                'string',
-                'max:50',
-                $this->editMode
-                    ? Rule::unique('mrp_production_schedules', 'schedule_number')->ignore($this->scheduleId)
-                    : Rule::unique('mrp_production_schedules', 'schedule_number'),
-            ],
-            'schedule.start_date' => 'required|date',
-            'schedule.start_time' => 'required',
-            'schedule.end_date' => 'required|date|after_or_equal:schedule.start_date',
-            'schedule.end_time' => 'required',
-            'schedule.planned_quantity' => 'required|numeric|min:0.001',
-            'schedule.actual_quantity' => 'nullable|numeric|min:0',
-            'schedule.actual_start_time' => 'nullable|date',
-            'schedule.actual_end_time' => 'nullable|date',
-            'schedule.is_delayed' => 'boolean',
-            'schedule.delay_reason' => 'nullable|string|max:1000',
-            'schedule.status' => ['required', Rule::in(['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'])],
-            'schedule.priority' => ['required', Rule::in(['low', 'medium', 'high', 'urgent'])],
-            'schedule.responsible' => 'nullable|string|max:100',
-            'schedule.working_hours_per_day' => 'required|numeric|min:0.5|max:24',
-            'schedule.hourly_production_rate' => 'required|numeric|min:0.01',
-            'schedule.working_days' => 'required|array',
-            'schedule.working_days.mon' => 'boolean',
-            'schedule.working_days.tue' => 'boolean',
-            'schedule.working_days.wed' => 'boolean',
-            'schedule.working_days.thu' => 'boolean',
-            'schedule.working_days.fri' => 'boolean',
-            'schedule.working_days.sat' => 'boolean',
-            'schedule.working_days.sun' => 'boolean',
-            'schedule.setup_time' => 'nullable|numeric|min:0',
-            'schedule.cleanup_time' => 'nullable|numeric|min:0',
-            'schedule.location_id' => 'required|exists:sc_inventory_locations,id',
-            'schedule.line_id' => 'required|exists:mrp_lines,id',
-            'schedule.notes' => 'nullable|string|max:1000',
-        ];
-    }
-    
-    /**
-     * Resetar paginação quando a busca mudar
-     */
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-    
-    /**
-     * Ordenar por coluna
-     */
-    public function sortBy($field)
+/**
+ * Resetar paginação quando a busca mudar
+ */
+public function updatingSearch()
+{
+    $this->resetPage();
+}
+
+/**
+ * Ordenar por coluna
+ */
+public function sortBy($field)
     {
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
@@ -801,9 +784,7 @@ class ProductionScheduling extends Component
                 'product_id' => '',
                 'schedule_number' => $this->generateScheduleNumber(),
                 'start_date' => date('Y-m-d'),
-                'start_time' => '08:00',
                 'end_date' => date('Y-m-d', strtotime('+7 days')),
-                'end_time' => '17:00',
                 'planned_quantity' => '',
                 'actual_quantity' => 0,
                 'is_delayed' => false,
@@ -989,7 +970,7 @@ public function openCreateModalForDate($date)
         ]);
             
         $this->resetValidation();
-        $this->reset('schedule');
+        $this->reset(['schedule', 'selectedShifts']);
             
         // Inicializa primeiro com o product_id para que o generateScheduleNumber funcione
         $this->schedule = [
@@ -1009,7 +990,20 @@ public function openCreateModalForDate($date)
             'priority' => 'medium',
             'location_id' => $firstLocation ? $firstLocation->id : '',
             'responsible' => '',
-            'notes' => ''
+            'notes' => '',
+            'working_hours_per_day' => 8,
+            'hourly_production_rate' => 10,
+            'setup_time' => 30,
+            'cleanup_time' => 15,
+            'working_days' => [
+                'mon' => true,
+                'tue' => true,
+                'wed' => true,
+                'thu' => true,
+                'fri' => true,
+                'sat' => false,
+                'sun' => false
+            ]
         ]);
             
         // Garantir que o schedule_number existe
@@ -1051,27 +1045,26 @@ public function edit($id)
         // Garantindo que estamos usando os relacionamentos corretos
         $schedule = ProductionSchedule::with(['product', 'location', 'shifts'])->findOrFail($id);
         
-        \Illuminate\Support\Facades\Log::info('Agendamento encontrado para edição', [
-            'id' => $id,
-            'número' => $schedule->schedule_number,
-            'produto_id' => $schedule->product_id,
-            'produto' => $schedule->product ? $schedule->product->name : 'Não definido'
-        ]);
-        
+        // Preencher array schedule com todos os campos do modelo
         $this->schedule = [
             'product_id' => $schedule->product_id,
             'schedule_number' => $schedule->schedule_number,
             'start_date' => $schedule->start_date->format('Y-m-d'),
-            'start_time' => $schedule->start_time,
             'end_date' => $schedule->end_date->format('Y-m-d'),
-            'end_time' => $schedule->end_time,
             'planned_quantity' => $schedule->planned_quantity,
+            'actual_quantity' => $schedule->actual_quantity,
+            'is_delayed' => $schedule->is_delayed,
+            'delay_reason' => $schedule->delay_reason,
             'status' => $schedule->status,
             'priority' => $schedule->priority,
-            'responsible' => $schedule->responsible,
+            'responsible' => $schedule->responsible ?? '',
             'location_id' => $schedule->location_id,
             'working_hours_per_day' => $schedule->working_hours_per_day,
             'hourly_production_rate' => $schedule->hourly_production_rate,
+            'setup_time' => $schedule->setup_time,
+            'cleanup_time' => $schedule->cleanup_time,
+            'notes' => $schedule->notes,
+            'line_id' => $schedule->line_id,
             'working_days' => $schedule->working_days ?? [
                 'mon' => true,
                 'tue' => true,
@@ -1080,11 +1073,15 @@ public function edit($id)
                 'fri' => true,
                 'sat' => false,
                 'sun' => false
-            ],
-            'setup_time' => $schedule->setup_time,
-            'cleanup_time' => $schedule->cleanup_time,
-            'notes' => $schedule->notes
+            ]
         ];
+        
+        \Illuminate\Support\Facades\Log::info('Agendamento encontrado para edição', [
+            'id' => $id,
+            'produto' => $schedule->product_id,
+            'linha' => $schedule->line_id,
+            'status' => $schedule->status
+        ]);
         
         // Resetar os turnos selecionados para evitar resíduos de edições anteriores
         $this->selectedShifts = [];
@@ -1109,9 +1106,6 @@ public function edit($id)
         
         // Re-renderizar o componente para garantir que os valores sejam atualizados
         $this->dispatch('$refresh');
-        
-        // Adicionar o line_id à programação
-        $this->schedule['line_id'] = $schedule->line_id;
         
         // Registrar em log os valores que foram atribuídos ao formulário
         \Illuminate\Support\Facades\Log::info('Dados carregados para o formulário de edição', [
@@ -2003,16 +1997,10 @@ private function createDailyPlansForSelectedShift()
                 continue;
             }
             
-            // Ajustar o horário de acordo com o turno
-            $startTime = $selectedShift->start_time ?? $this->viewingSchedule->start_time;
-            $endTime = $selectedShift->end_time ?? $this->viewingSchedule->end_time;
-            
             // Criar um novo plano para este dia e turno
             $this->filteredDailyPlans[] = [
                 'id' => null,
                 'production_date' => $date,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
                 'planned_quantity' => $dailyQuantity,
                 'actual_quantity' => 0,
                 'defect_quantity' => 0,
@@ -3140,8 +3128,14 @@ public function store()
         
         $schedules = $query->paginate($this->perPage);
         
-        // Carregar dados para selects - apenas produtos do tipo finished_product
-        $products = Product::where('product_type', 'finished_product')->orderBy('name')->get();
+        // Carregar dados para selects - apenas produtos do tipo finished_product que têm componentes no BOM
+        $products = Product::where('product_type', 'finished_product')
+            ->whereHas('bomHeaders', function($query) {
+                $query->where('status', 'active')
+                      ->whereHas('details'); // Garante que o produto tem componentes cadastrados
+            })
+            ->orderBy('name')
+            ->get();
         
         // Carregar localizações de inventário da supply chain
         $locations = Location::orderBy('name')->get();

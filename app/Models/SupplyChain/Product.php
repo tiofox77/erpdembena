@@ -126,4 +126,12 @@ class Product extends Model
     {
         return $this->inventoryItems->sum('quantity_on_hand');
     }
+    
+    /**
+     * Get all BOM headers for this product
+     */
+    public function bomHeaders()
+    {
+        return $this->hasMany(\App\Models\Mrp\BomHeader::class);
+    }
 }

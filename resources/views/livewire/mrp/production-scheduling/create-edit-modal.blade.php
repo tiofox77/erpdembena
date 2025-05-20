@@ -79,6 +79,9 @@
                                     <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
                                 </p>
                             @enderror
+                            <p class="mt-1 text-xs text-gray-600 italic flex items-center">
+                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('messages.bom_products_only') }}
+                            </p>
                         </div>
 
                         <!-- Data Inicial -->

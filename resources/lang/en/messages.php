@@ -7,7 +7,8 @@ return [
     'resource_type_help' => 'Select the appropriate type for this resource.',
     'capacity_help' => 'Enter the resource capacity with the appropriate unit of measure.',
     'efficiency_factor_help' => 'Enter the efficiency percentage (1-200%). The standard is 100%.',
-    'resource_description_help' => 'Provide a brief description of the resource (optional).', 
+    'resource_description_help' => 'Provide a brief description of the resource (optional).',
+    'bom_products_only' => 'Only products with components registered in BOM Management are displayed.', 
     // MRP - Component Availability Messages
     'sufficient_components' => 'Sufficient components to produce the planned quantity!',
     'maximum_capacity' => 'Maximum capacity',

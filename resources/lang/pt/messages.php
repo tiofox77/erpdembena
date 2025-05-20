@@ -7,7 +7,8 @@ return [
     'resource_type_help' => 'Selecione o tipo apropriado para este recurso.',
     'capacity_help' => 'Insira a capacidade do recurso com a unidade de medida adequada.',
     'efficiency_factor_help' => 'Insira a porcentagem de eficiência (1-200%). O padrão é 100%.',
-    'resource_description_help' => 'Forneça uma breve descrição do recurso (opcional).', 
+    'resource_description_help' => 'Forneça uma breve descrição do recurso (opcional).',
+    'bom_products_only' => 'Apenas produtos com componentes cadastrados no BOM Management são exibidos.', 
     // Mensagens de Disponibilidade de Componentes
     'sufficient_components' => 'Componentes suficientes para produzir a quantidade planejada!',
     'maximum_capacity' => 'Capacidade máxima',
