@@ -473,7 +473,7 @@
                             @enderror
                         </div>
 
-                        <!-- Horas de Trabalho Diárias -->
+                        <!-- Horas de Trabalho Diárias (calculadas automaticamente) -->
                         <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
                             <label for="working_hours_per_day" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                                 <i class="fas fa-business-time text-blue-500 mr-2"></i> {{ __('messages.working_hours_per_day') }} <span class="text-red-500">*</span>
@@ -491,7 +491,7 @@
                                 </div>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 italic flex items-center">
-                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('messages.hours_per_day_help') }}
+                                <i class="fas fa-calculator mr-1 text-blue-400"></i> {{ __('Sugestão baseada nos turnos selecionados, mas ajustável manualmente') }}
                             </p>
                             @error('schedule.working_hours_per_day')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
@@ -500,7 +500,7 @@
                             @enderror
                         </div>
 
-                        <!-- Capacidade de Produção por Hora -->
+                        <!-- Capacidade de Produção por Hora (calculada automaticamente) -->
                         <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
                             <label for="hourly_production_rate" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                                 <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i> {{ __('messages.hourly_production_rate') }} <span class="text-red-500">*</span>
@@ -518,7 +518,7 @@
                                 </div>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 italic flex items-center">
-                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('messages.production_rate_help') }}
+                                <i class="fas fa-calculator mr-1 text-blue-400"></i> {{ __('Sugestão baseada na quantidade, período e turnos, mas ajustável manualmente') }}
                             </p>
                             @error('schedule.hourly_production_rate')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
@@ -559,7 +559,9 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">{{ __('messages.working_days_help') }}</p>
+                            <p class="mt-1 text-xs text-gray-500 italic flex items-center">
+                                <i class="fas fa-calculator mr-1 text-blue-400"></i> {{ __('Dias selecionados automaticamente com base nos turnos escolhidos') }}
+                            </p>
                             @error('schedule.working_days')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -583,7 +585,7 @@
                                 </div>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 italic flex items-center">
-                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('messages.setup_time_help') }}
+                                <i class="fas fa-calculator mr-1 text-blue-400"></i> {{ __('Valor sugerido baseado na complexidade da produção e quantidade') }}
                             </p>
                             @error('schedule.setup_time')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
@@ -610,7 +612,7 @@
                                 </div>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 italic flex items-center">
-                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('messages.cleanup_time_help') }}
+                                <i class="fas fa-calculator mr-1 text-blue-400"></i> {{ __('Valor sugerido baseado no tipo de produção e quantidade planejada') }}
                             </p>
                             @error('schedule.cleanup_time')
                                 <p class="mt-1 text-sm text-red-600 flex items-center">
@@ -644,10 +646,6 @@
                                 </p>
                             @enderror
                         </div>
-                        
-                      
-                        
-                       
                     </div>
                 </div>
                 
@@ -664,7 +662,7 @@
                             {{ __('messages.saving') }}...
                         </div>
                     </button>
-                    <button type="button" wire:click.live="closeCreateEditModal()" wire:loading.attr="disabled" 
+                    <button type="button" wire:click="closeCreateEditModal()" wire:loading.attr="disabled" 
                         class="inline-flex justify-center items-center w-full sm:w-auto px-5 py-2.5 border border-gray-300 shadow-md text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all duration-200 ease-in-out transform hover:scale-105">
                         <i class="fas fa-times-circle mr-2 text-gray-500"></i>
                         {{ __('messages.cancel') }}

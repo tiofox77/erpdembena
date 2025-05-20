@@ -842,6 +842,9 @@ class ProductionScheduling extends Component
             // Inicializar o array de turnos selecionados
             $this->selectedShifts = $allShifts->pluck('id')->toArray();
             
+            // Calcular as horas de trabalho e taxa de produção com base nos turnos selecionados
+            $this->calculateWorkingHoursAndRate();
+            
             // Debug - verificar o array de turnos após inicialização
             \Illuminate\Support\Facades\Log::info('Array de turnos inicializado', [
                 'shifts_array' => $schedule['shifts'],
@@ -1089,6 +1092,9 @@ public function edit($id)
         // Carregar turnos associados a esta programação a partir da tabela pivot mrp_production_schedule_shift
         $this->selectedShifts = $schedule->shifts()->pluck('id')->toArray();
         
+        // Calcular as horas de trabalho e taxa de produção com base nos turnos selecionados
+        $this->calculateWorkingHoursAndRate();
+        
         // Log detalhado dos turnos encontrados no banco de dados
         \Illuminate\Support\Facades\Log::debug('Turnos encontrados no banco para esta programação:', [
             'schedule_id' => $schedule->id,
@@ -1175,9 +1181,6 @@ public function closeCreateEditModal()
 
 /**
  * Método para alternar a seleção de um turno
- * @param int $shiftId ID do turno a ser alternado
- */
-/**
  * Método para alternar a seleção de um turno
  * @param int $shiftId ID do turno a ser alternado
  */
@@ -1194,8 +1197,136 @@ public function toggleShift($shiftId)
     // O input checkbox com wire:model já vai atualizar o array selectedShifts
     // Este método é chamado pelo wire:change e podemos realizar ações adicionais aqui se necessário
     
+    // Calcular as horas de trabalho e taxa de produção com base nos turnos selecionados
+    $this->calculateWorkingHoursAndRate();
+    
     // Forçar nova renderização do componente
     $this->dispatch('$refresh');
+}
+
+/**
+ * Calcular as horas de trabalho por dia com base nos turnos selecionados,
+ * estimar a taxa de produção horária, definir dias de trabalho e sugerir tempos de setup/cleanup
+ */
+public function calculateWorkingHoursAndRate()
+{
+    // Se não houver turnos selecionados, definir valores padrão
+    if (empty($this->selectedShifts)) {
+        $this->schedule['working_hours_per_day'] = 8; // valor padrão
+        $this->schedule['hourly_production_rate'] = 10; // valor padrão
+        $this->schedule['setup_time'] = 30; // valor padrão em minutos
+        $this->schedule['cleanup_time'] = 15; // valor padrão em minutos
+        
+        // Dias úteis padrão (segunda a sexta)
+        $this->schedule['working_days'] = [
+            'mon' => true,
+            'tue' => true,
+            'wed' => true,
+            'thu' => true,
+            'fri' => true,
+            'sat' => false,
+            'sun' => false
+        ];
+        
+        return;
+    }
+    
+    // Buscar os turnos selecionados do banco de dados
+    $shifts = Shift::whereIn('id', $this->selectedShifts)->get();
+    
+    // Calcular as horas de trabalho totais por dia com base nos turnos selecionados
+    $totalHours = 0;
+    
+    // Inicializar dias de trabalho (todos como false)
+    $workingDays = [
+        'mon' => false,
+        'tue' => false,
+        'wed' => false,
+        'thu' => false,
+        'fri' => false,
+        'sat' => false,
+        'sun' => false
+    ];
+    
+    // Para cada turno, extrair os dias da semana em que opera
+    foreach ($shifts as $shift) {
+        // Converter os horários de início e fim para objetos Carbon
+        $startTime = \Carbon\Carbon::parse($shift->start_time);
+        $endTime = \Carbon\Carbon::parse($shift->end_time);
+        
+        // Se o horário de término for anterior ao horário de início, assumir que cruza a meia-noite
+        if ($endTime < $startTime) {
+            $endTime->addDay();
+        }
+        
+        // Calcular a duração do turno em horas
+        $shiftHours = $endTime->diffInMinutes($startTime) / 60;
+        $totalHours += $shiftHours;
+        
+        // Se o turno tem dias de operação especificados, usar esses dados
+        if (isset($shift->working_days) && is_array($shift->working_days)) {
+            foreach ($shift->working_days as $day => $active) {
+                if ($active) {
+                    $workingDays[$day] = true;
+                }
+            }
+        } else {
+            // Se não tiver informação específica, assumir dias úteis (segunda a sexta)
+            $workingDays['mon'] = true;
+            $workingDays['tue'] = true;
+            $workingDays['wed'] = true;
+            $workingDays['thu'] = true;
+            $workingDays['fri'] = true;
+        }
+    }
+    
+    // Arredondar para o 0.5 mais próximo
+    $totalHours = round($totalHours * 2) / 2;
+    
+    // Definir as horas de trabalho por dia
+    $this->schedule['working_hours_per_day'] = $totalHours;
+    
+    // Definir os dias de trabalho
+    $this->schedule['working_days'] = $workingDays;
+    
+    // Estimar a taxa de produção horária
+    // Se a quantidade planejada estiver definida, calcular uma estimativa baseada nos dias
+    if (isset($this->schedule['planned_quantity']) && is_numeric($this->schedule['planned_quantity']) && $this->schedule['planned_quantity'] > 0 
+        && isset($this->schedule['start_date']) && isset($this->schedule['end_date'])) {
+        
+        $startDate = \Carbon\Carbon::parse($this->schedule['start_date']);
+        $endDate = \Carbon\Carbon::parse($this->schedule['end_date']);
+        $workingDaysCount = $endDate->diffInDays($startDate) + 1; // +1 para incluir o próprio dia de início
+        
+        if ($workingDaysCount > 0 && $totalHours > 0) {
+            // Calcular taxa horária: quantidade planejada / (dias úteis * horas por dia)
+            $hourlyRate = $this->schedule['planned_quantity'] / ($workingDaysCount * $totalHours);
+            $this->schedule['hourly_production_rate'] = round($hourlyRate, 2);
+        }
+        
+        // Calcular tempos de setup e cleanup baseados na quantidade e complexidade
+        $complexityFactor = min(max($this->schedule['planned_quantity'] / 1000, 1), 5); // Fator entre 1 e 5
+        
+        // Setup time: entre 15 e 45 minutos dependendo da complexidade e quantidade
+        $this->schedule['setup_time'] = round(15 + ($complexityFactor * 6));
+        
+        // Cleanup time: entre 10 e 30 minutos dependendo da complexidade e quantidade
+        $this->schedule['cleanup_time'] = round(10 + ($complexityFactor * 4));
+    } else {
+        // Valores padrão se não for possível calcular
+        $this->schedule['hourly_production_rate'] = 10;
+        $this->schedule['setup_time'] = 30;
+        $this->schedule['cleanup_time'] = 15;
+    }
+    
+    \Illuminate\Support\Facades\Log::debug('Cálculo de horas de trabalho, taxa de produção e dias de trabalho', [
+        'turnos_selecionados' => count($this->selectedShifts),
+        'total_horas' => $totalHours,
+        'taxa_producao' => $this->schedule['hourly_production_rate'],
+        'dias_trabalho' => $this->schedule['working_days'],
+        'setup_time' => $this->schedule['setup_time'],
+        'cleanup_time' => $this->schedule['cleanup_time']
+    ]);
 }
 
 /**
