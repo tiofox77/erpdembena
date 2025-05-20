@@ -57,6 +57,47 @@ class GoodsReceipts extends Component
         'refreshGoodsReceipts' => '$refresh'
     ];
     
+    protected $queryString = [
+        'search' => ['except' => '','as' => 's'],
+        'statusFilter' => ['except' => '','as' => 'status'],
+        'supplierFilter' => ['except' => '','as' => 'supplier'],
+        'locationFilter' => ['except' => '','as' => 'location'],
+        'perPage' => ['except' => 10],
+        'sortField' => ['except' => 'receipt_date'],
+        'sortDirection' => ['except' => 'desc']
+    ];
+    
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingSupplierFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingLocationFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
+    
+    public function resetFilters()
+    {
+        $this->reset(['search', 'statusFilter', 'supplierFilter', 'locationFilter']);
+        $this->resetPage();
+    }
+    
     public function sortBy($field)
     {
         if($this->sortField === $field) {
@@ -75,13 +116,16 @@ class GoodsReceipts extends Component
         $goodsReceiptsQuery = GoodsReceipt::query()
             ->with(['supplier', 'purchaseOrder', 'location', 'receiver', 'items'])
             ->when($this->search, function($query) {
-                return $query->where('receipt_number', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('supplier', function($q) {
-                        $q->where('name', 'like', '%' . $this->search . '%');
-                    })
-                    ->orWhereHas('purchaseOrder', function($q) {
-                        $q->where('order_number', 'like', '%' . $this->search . '%');
-                    });
+                $search = '%' . $this->search . '%';
+                return $query->where(function($q) use ($search) {
+                    $q->where('receipt_number', 'like', $search)
+                      ->orWhereHas('supplier', function($sq) use ($search) {
+                          $sq->where('name', 'like', $search);
+                      })
+                      ->orWhereHas('purchaseOrder', function($sq) use ($search) {
+                          $sq->where('order_number', 'like', $search);
+                      });
+                });
             })
             ->when($this->statusFilter, function($query) {
                 return $query->where('status', $this->statusFilter);

@@ -1,27 +1,66 @@
 <div>
     <!-- JavaScript for Notifications -->
     <script>
-        function showNotification(message, type = 'success') {
+        // Ensure toastr is only initialized once
+        if (typeof window.toastrInitialized === 'undefined') {
+            window.toastrInitialized = true;
+            
+            // Initialize toastr with default options
             if (window.toastr) {
                 toastr.options = {
                     closeButton: true,
                     progressBar: true,
                     positionClass: 'toast-top-right',
-                    timeOut: 5000
+                    timeOut: 5000,
+                    preventDuplicates: true,
+                    newestOnTop: true,
+                    showDuration: 300,
+                    hideDuration: 300,
+                    extendedTimeOut: 1000
                 };
-
-                toastr[type](message);
-            } else {
-                alert(message);
             }
         }
 
-        document.addEventListener('livewire:initialized', () => {
-            Livewire.on('notify', (params) => {
-                console.log('Notification event received:', params);
-                showNotification(params.message, params.type);
+        // Function to show notification
+        function showNotification(message, type = 'success', title = '') {
+            if (window.toastr) {
+                // Clear any existing toasts to prevent duplicates
+                toastr.clear();
+                
+                // Show new toast
+                const toast = toastr[type](message, title);
+                
+                // Return the toast element for potential chaining
+                return toast;
+            } else {
+                console.log(`[${type.toUpperCase()}] ${message}`);
+                alert(`[${type.toUpperCase()}] ${message}`);
+                return null;
+            }
+        }
+
+        // Only set up the event listener if not already done
+        if (!window.notificationListenerAdded) {
+            window.notificationListenerAdded = true;
+            
+            document.addEventListener('livewire:initialized', () => {
+                // Handle notifications from Livewire events
+                Livewire.on('notify', (params) => {
+                    if (params && typeof params === 'object') {
+                        console.log('Notification event received:', params);
+                        showNotification(params.message, params.type, params.title || '');
+                    }
+                });
+                
+                // Also handle any queued notifications
+                if (window.queuedNotifications && Array.isArray(window.queuedNotifications)) {
+                    window.queuedNotifications.forEach(notification => {
+                        showNotification(notification.message, notification.type, notification.title || '');
+                    });
+                    window.queuedNotifications = [];
+                }
             });
-        });
+        }
     </script>
 
     <!-- Script para inicializar variáveis Alpine.js globais -->

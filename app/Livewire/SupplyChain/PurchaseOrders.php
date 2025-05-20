@@ -83,6 +83,36 @@ class PurchaseOrders extends Component
         }
     }
     
+    // Reset pagination when any filter changes
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSupplierFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
+
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->statusFilter = '';
+        $this->supplierFilter = '';
+        $this->perPage = 10;
+        $this->resetPage();
+    }
+
     public function render()
     {
         $suppliers = Supplier::orderBy('name')->get();
@@ -95,10 +125,12 @@ class PurchaseOrders extends Component
         
         $purchaseOrdersQuery = PurchaseOrder::with(['supplier', 'createdBy', 'items'])
             ->when($this->search, function($query) {
-                return $query->where('order_number', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('supplier', function($q) {
-                        $q->where('name', 'like', '%' . $this->search . '%');
-                    });
+                return $query->where(function($q) {
+                    $q->where('order_number', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('supplier', function($subQuery) {
+                          $subQuery->where('name', 'like', '%' . $this->search . '%');
+                      });
+                });
             })
             ->when($this->statusFilter, function($query) {
                 return $query->where('status', $this->statusFilter);

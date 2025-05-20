@@ -5,6 +5,7 @@ namespace App\Models\Mrp;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Mrp\ProductionScheduleShift;
 
 class Shift extends Model
 {
@@ -45,6 +46,21 @@ class Shift extends Model
     public function updatedBy()
     {
         return $this->belongsTo('App\Models\User', 'updated_by');
+    }
+    
+    /**
+     * Relação muitos-para-muitos com ProductionSchedule
+     */
+    public function productionSchedules()
+    {
+        return $this->belongsToMany(
+            'App\Models\Mrp\ProductionSchedule',
+            'mrp_production_schedule_shift',
+            'shift_id',
+            'production_schedule_id'
+        )->withTimestamps()
+         ->withPivot(['created_by', 'updated_by'])
+         ->using(ProductionScheduleShift::class);
     }
 
     /**

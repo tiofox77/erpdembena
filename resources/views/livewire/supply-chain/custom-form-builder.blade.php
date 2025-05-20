@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
         <div class="flex items-center bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
             <h2 class="text-lg font-medium text-white flex items-center">
                 <i class="fas fa-list mr-2"></i>
-                Formulários Disponíveis
+                {{ __('messages.available_forms') }}
             </h2>
         </div>
         
@@ -21,21 +21,21 @@ use Illuminate\Support\Str;
                     </div>
                     <input wire:model.debounce.300ms="search" type="search" 
                         class="pl-10 pr-3 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Buscar formulários...">
+                        placeholder="{{ __('messages.search_forms') }}">
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-2">
                     <label for="import-form-input" 
                         class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg cursor-pointer">
                         <i class="fas fa-file-import mr-2"></i>
-                        Importar
+                        {{ __('messages.import') }}
                     </label>
                     <input id="import-form-input" type="file" wire:model.live="importFile" accept=".json" class="hidden" />
                     
                     <button wire:click="create" 
                         class="w-full sm:w-auto inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
                         <i class="fas fa-plus-circle mr-2"></i>
-                        Novo Formulário
+                        {{ __('messages.new_form') }}
                     </button>
                 </div>
             </div>
@@ -48,7 +48,7 @@ use Illuminate\Support\Str;
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center">
                                     <button wire:click="sortBy('name')" class="uppercase tracking-wider">
-                                        Nome
+                                        {{ __('messages.name') }}
                                     </button>
                                     @if($sortField === 'name')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
@@ -56,12 +56,12 @@ use Illuminate\Support\Str;
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Descrição
+                                {{ __('messages.description') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center">
                                     <button wire:click="sortBy('is_active')" class="uppercase tracking-wider">
-                                        Status
+                                        {{ __('messages.status') }}
                                     </button>
                                     @if($sortField === 'is_active')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
@@ -71,7 +71,7 @@ use Illuminate\Support\Str;
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center">
                                     <button wire:click="sortBy('created_at')" class="uppercase tracking-wider">
-                                        Criado em
+                                        {{ __('messages.created_at') }}
                                     </button>
                                     @if($sortField === 'created_at')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
@@ -79,7 +79,7 @@ use Illuminate\Support\Str;
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Ações
+                                {{ __('messages.actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -95,7 +95,7 @@ use Illuminate\Support\Str;
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                     {{ $form->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                    {{ $form->is_active ? 'Ativo' : 'Inativo' }}
+                                    {{ $form->is_active ? __('messages.active') : __('messages.inactive') }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -110,12 +110,12 @@ use Illuminate\Support\Str;
                                     
                                     <button wire:click="previewForm({{ $form->id }})" 
                                         class="text-blue-600 hover:text-blue-900 transition-colors transform hover:scale-110">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye" title="{{ __('messages.preview') }}"></i>
                                     </button>
                                     
                                     <button wire:click="exportForm({{ $form->id }})" 
                                         class="text-green-600 hover:text-green-900 transition-colors transform hover:scale-110">
-                                        <i class="fas fa-file-export"></i>
+                                        <i class="fas fa-file-export" title="{{ __('messages.export') }}"></i>
                                     </button>
                                     
                                     <button wire:click="createField({{ $form->id }})" 
@@ -137,11 +137,11 @@ use Illuminate\Support\Str;
                                     <div class="flex-shrink-0 bg-gray-100 p-3 rounded-full">
                                         <i class="fas fa-clipboard-list text-gray-400 text-2xl"></i>
                                     </div>
-                                    <p class="text-gray-500 text-sm">Nenhum formulário personalizado encontrado</p>
+                                    <p class="text-gray-500 text-sm">{{ __('messages.no_custom_forms_found') }}</p>
                                     <button wire:click="create" 
                                         class="mt-2 inline-flex items-center px-3 py-1 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 focus:outline-none transition-colors">
                                         <i class="fas fa-plus-circle mr-1"></i>
-                                        Criar o primeiro formulário
+                                        {{ __('messages.create_first_form') }}
                                     </button>
                                 </div>
                             </td>
@@ -164,12 +164,12 @@ use Illuminate\Support\Str;
         <div class="flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 px-4 py-3">
             <h2 class="text-lg font-medium text-white flex items-center">
                 <i class="fas fa-list-alt mr-2"></i>
-                Campos do Formulário
+                {{ __('messages.form_fields') }}
             </h2>
             <button wire:click="createField({{ $currentFormId }})" 
                 class="inline-flex items-center px-3 py-1 bg-white border border-transparent rounded-md text-sm font-medium text-green-700 hover:bg-gray-100 focus:outline-none transition-colors">
                 <i class="fas fa-plus-circle mr-1"></i>
-                Adicionar Campo
+                {{ __('messages.add_field') }}
             </button>
         </div>
         
@@ -211,7 +211,7 @@ use Illuminate\Support\Str;
                                             <span class="mr-2">|</span>
                                             <span class="text-red-600">
                                                 <i class="fas fa-asterisk mr-1"></i>
-                                                Obrigatório
+                                                {{ __('messages.required') }}
                                             </span>
                                             @endif
                                         </div>
@@ -238,7 +238,7 @@ use Illuminate\Support\Str;
                     <div class="flex-shrink-0 bg-gray-100 p-3 rounded-full">
                         <i class="fas fa-clipboard-list text-gray-400 text-2xl"></i>
                     </div>
-                    <p class="text-gray-500 text-sm">Nenhum campo adicionado a este formulário</p>
+                    <p class="text-gray-500 text-sm">{{ __('messages.no_fields_added') }}</p>
                     <button wire:click="createField({{ $currentFormId }})" 
                         class="mt-2 inline-flex items-center px-3 py-1 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700 focus:outline-none transition-colors">
                         <i class="fas fa-plus-circle mr-1"></i>
@@ -256,7 +256,7 @@ use Illuminate\Support\Str;
         <div class="bg-white rounded-lg shadow-lg max-w-lg w-full mx-auto">
             <div class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-lg">
                 <h3 class="text-lg font-medium text-white">
-                    {{ $currentFormId ? 'Editar Formulário' : 'Novo Formulário' }}
+                    {{ $currentFormId ? __('messages.edit_form') : __('messages.new_form') }}
                 </h3>
                 <button wire:click="closeModal" class="text-white hover:text-gray-200">
                     <i class="fas fa-times"></i>
@@ -273,7 +273,7 @@ use Illuminate\Support\Str;
                     </div>
                     
                     <div class="mb-4">
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.description') }}</label>
                         <textarea wire:model="currentForm.description" id="description" rows="3" 
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
                                   @error('currentForm.description') border-red-300 focus:border-red-500 focus:ring-red-500 @enderror"></textarea>
@@ -281,26 +281,26 @@ use Illuminate\Support\Str;
                     </div>
                     
                     <div class="mb-4">
-                        <label for="entity_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Entidade *</label>
+                        <label for="entity_type" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.entity_type') }} *</label>
                         <input type="text" id="entity_type" wire:model="currentForm.entity_type" readonly
                             class="w-full rounded-md border-gray-300 bg-gray-100 shadow-sm">
-                        <p class="mt-1 text-xs text-gray-500">Estes formulários são específicos para notas de envio.</p>
+                        <p class="mt-1 text-xs text-gray-500">{{ __('messages.specific_forms_note') }}</p>
                     </div>
                     
                     <div class="mb-4 flex items-center">
                         <input wire:model="currentForm.is_active" type="checkbox" id="is_active" 
                             class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
-                        <label for="is_active" class="ml-2 block text-sm text-gray-700">Formulário Ativo</label>
+                        <label for="is_active" class="ml-2 block text-sm text-gray-700">{{ __('messages.active_form') }}</label>
                     </div>
                     
                     <div class="flex justify-end space-x-2 mt-6">
                         <button type="button" wire:click="closeModal" 
                             class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Cancelar
+                            {{ __('messages.cancel') }}
                         </button>
                         <button type="submit" 
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {{ $currentFormId ? 'Atualizar' : 'Criar' }} Formulário
+                            {{ $currentFormId ? __('messages.update') : __('messages.save') }} Formulário
                         </button>
                     </div>
                 </form>
@@ -323,16 +323,16 @@ use Illuminate\Support\Str;
                 </button>
             </div>
             <div class="p-6">
-                <p class="text-gray-700 mb-4">Tem certeza que deseja excluir este formulário? Esta ação não pode ser desfeita.</p>
+                <p class="text-gray-700 mb-4">{{ __('messages.confirm_form_deletion') }}</p>
                 
                 <div class="flex justify-end space-x-2">
                     <button type="button" wire:click="closeModal" 
                         class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Cancelar
+                        {{ __('messages.cancel') }}
                     </button>
                     <button type="button" wire:click="delete" 
                         class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Excluir Formulário
+                        {{ __('messages.delete_form') }}
                     </button>
                 </div>
             </div>
@@ -347,7 +347,7 @@ use Illuminate\Support\Str;
             <div class="flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-lg">
                 <h3 class="text-lg font-medium text-white">
                     <i class="fas fa-plus-circle mr-2"></i>
-                    {{ $currentFieldId ? 'Editar Campo' : 'Novo Campo' }}
+                    {{ $currentFieldId ? __('messages.edit_field') : __('messages.new_field') }}
                 </h3>
                 <button wire:click="closeModal" class="text-white hover:text-gray-200 focus:outline-none" @click="console.log('Fechando modal de campo')">
                     <i class="fas fa-times text-xl"></i>
@@ -377,7 +377,7 @@ use Illuminate\Support\Str;
             <div class="p-6">
                 <form wire:submit.prevent="saveField">
                     <div class="mb-4">
-                        <label for="field_label" class="block text-sm font-medium text-gray-700 mb-1">Rótulo do Campo *</label>
+                        <label for="field_label" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.field_label') }} *</label>
                         <input wire:model="currentField.label" type="text" id="field_label" 
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50
                                   @error('currentField.label') border-red-300 focus:border-red-500 focus:ring-red-500 @enderror">
@@ -394,7 +394,7 @@ use Illuminate\Support\Str;
                                 <i class="fas fa-code text-gray-400"></i>
                             </div>
                         </div>
-                        <p class="mt-1 text-xs text-gray-500">Identificador único (apenas letras, números e sublinhados).</p>
+                        <p class="mt-1 text-xs text-gray-500">{{ __('messages.field_name_hint') }}</p>
                         @error('currentField.name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     
@@ -418,7 +418,7 @@ use Illuminate\Support\Str;
                     <!-- Opções para select, checkbox, radio -->
                     @if(in_array($currentField['type'], ['select', 'checkbox', 'radio']))
                     <div class="mb-4 p-4 bg-gray-50 rounded-md">
-                        <h4 class="font-medium text-gray-700 mb-2">Opções do Campo</h4>
+                        <h4 class="font-medium text-gray-700 mb-2">{{ __('messages.field_options') }}</h4>
                         
                         <div class="space-y-2 mb-3">
                             @foreach($currentField['options'] as $index => $option)
@@ -434,17 +434,17 @@ use Illuminate\Support\Str;
                         
                         <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                             <div class="flex-1">
-                                <input wire:model="tempOptionLabel" type="text" placeholder="Rótulo da opção" 
+                                <input wire:model="tempOptionLabel" type="text" placeholder="{{ __('messages.option_label') }}" 
                                     class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
                             </div>
                             <div class="flex-1">
-                                <input wire:model="tempOptionValue" type="text" placeholder="Valor da opção" 
+                                <input wire:model="tempOptionValue" type="text" placeholder="{{ __('messages.option_value') }}" 
                                     class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
                             </div>
                             <div>
                                 <button type="button" wire:click="addOption" 
                                     class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700 focus:outline-none transition-colors">
-                                    <i class="fas fa-plus mr-1"></i> Adicionar
+                                    <i class="fas fa-plus mr-1"></i> {{ __('messages.add') }}
                                 </button>
                             </div>
                         </div>
@@ -456,20 +456,20 @@ use Illuminate\Support\Str;
                     <!-- Configuração de relacionamento -->
                     @if($currentField['type'] === 'relationship')
                     <div class="mb-4 p-4 bg-gray-50 rounded-md">
-                        <h4 class="font-medium text-gray-700 mb-3">Configuração de Relacionamento</h4>
+                        <h4 class="font-medium text-gray-700 mb-3">{{ __('messages.relationship_config') }}</h4>
                         
                         <div class="space-y-4">
                             <!-- Model Selection -->
                             <div>
                                 <div class="flex items-center justify-between mb-1">
-                                    <label class="block text-sm font-medium text-gray-700">Modelo Relacionado</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('messages.related_model') }}</label>
                                     @if($relationshipConfig['model'] && $availableColumns === null)
                                         <span class="flex items-center text-xs text-yellow-600">
                                             <svg class="animate-spin -ml-1 mr-1 h-3 w-3 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                            Carregando campos...
+                                            {{ __('messages.loading_fields') }}
                                         </span>
                                     @endif
                                 </div>
@@ -477,7 +477,7 @@ use Illuminate\Support\Str;
                                     wire:change="$set('relationshipConfig.display_field', '')"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 {{ $errors->has('relationshipConfig.model') ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500' : '' }}"
                                     @if($relationshipConfig['model'] && $availableColumns === null) disabled @endif>
-                                    <option value="">Selecione um modelo</option>
+                                    <option value="">{{ __('messages.select_model') }}</option>
                                     @foreach($relationshipModels as $modelClass => $modelLabel)
                                         <option value="{{ $modelClass }}" {{ $modelClass === $relationshipConfig['model'] ? 'selected' : '' }}>
                                             {{ $modelLabel }}
@@ -495,10 +495,10 @@ use Illuminate\Support\Str;
                                 <!-- Display Field Selection -->
                                 <div>
                                     <div class="flex items-center justify-between mb-1">
-                                        <label class="block text-sm font-medium text-gray-700">Campo de Exibição</label>
+                                        <label class="block text-sm font-medium text-gray-700">{{ __('messages.display_field') }}</label>
                                         @if(!empty($relationshipSampleData) && $relationshipConfig['display_field'])
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                {{ count($relationshipSampleData) }} itens carregados
+                                                {{ count($relationshipSampleData) }} {{ __('messages.items_loaded') }}
                                             </span>
                                         @endif
                                     </div>
@@ -509,12 +509,12 @@ use Illuminate\Support\Str;
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                            <span class="text-sm text-gray-600">Carregando campos disponíveis...</span>
+                                            <span class="text-sm text-gray-600">{{ __('messages.loading_available_fields') }}</span>
                                         </div>
                                     @elseif(!empty($availableColumns))
                                         <select wire:model.live="relationshipConfig.display_field" 
                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 {{ $errors->has('relationshipConfig.display_field') ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500' : '' }}">
-                                            <option value="">Selecione um campo</option>
+                                            <option value="">{{ __('messages.select_field') }}</option>
                                             @foreach($availableColumns as $column)
                                                 <option value="{{ $column }}" {{ $column === $relationshipConfig['display_field'] ? 'selected' : '' }}>
                                                     {{ $column }}
@@ -530,9 +530,9 @@ use Illuminate\Support\Str;
                                                     </svg>
                                                 </div>
                                                 <div class="ml-3">
-                                                    <h3 class="text-sm font-medium text-yellow-800">Não foi possível carregar os campos</h3>
+                                                    <h3 class="text-sm font-medium text-yellow-800">{{ __('messages.failed_to_load_fields') }}</h3>
                                                     <div class="mt-2 text-sm text-yellow-700">
-                                                        <p>Verifique se o modelo está correto e se você tem permissão para acessá-lo.</p>
+                                                        <p>{{ __('messages.check_model_permissions') }}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -554,14 +554,14 @@ use Illuminate\Support\Str;
                                 
                                 <!-- Relationship Type -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Relacionamento</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.relationship_type') }}</label>
                                     <select wire:model.live="relationshipConfig.relationship_type" 
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
                                         <option value="belongsTo" {{ ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'belongsTo' ? 'selected' : '' }}>
-                                            Pertence a (Seleção Única)
+                                            {{ __('messages.belongs_to_single') }}
                                         </option>
                                         <option value="hasMany" {{ ($relationshipConfig['relationship_type'] ?? 'belongsTo') === 'hasMany' ? 'selected' : '' }}>
-                                            Tem Muitos (Seleção Múltipla)
+                                            {{ __('messages.has_many_multiple') }}
                                         </option>
                                     </select>
                                     @error('relationshipConfig.relationship_type')
@@ -574,18 +574,18 @@ use Illuminate\Support\Str;
                                     <div class="flex items-center justify-between mb-3">
                                         <h4 class="text-sm font-medium text-gray-800">
                                             <i class="fas fa-eye mr-1.5 text-blue-500"></i>
-                                            Prévia do Campo de Seleção
+                                            {{ __('messages.selection_field_preview') }}
                                         </h4>
                                         <div class="flex items-center space-x-2">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $relationshipConfig['relationship_type'] === 'belongsTo' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                                {{ $relationshipConfig['relationship_type'] === 'belongsTo' ? 'Seleção Única' : 'Seleção Múltipla' }}
+                                                {{ $relationshipConfig['relationship_type'] === 'belongsTo' ? __('messages.single_selection') : __('messages.multiple_selection') }}
                                             </span>
                                             @if(!empty($relationshipSampleData) && count($relationshipSampleData) > 0)
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                                                     <svg class="h-3 w-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                                     </svg>
-                                                    {{ count($relationshipSampleData) }} itens carregados
+                                                    {{ count($relationshipSampleData) }} {{ __('messages.items_loaded') }}
                                                 </span>
                                             @endif
                                         </div>
@@ -601,11 +601,11 @@ use Illuminate\Support\Str;
                                                         </svg>
                                                     </div>
                                                     <div class="ml-3">
-                                                        <h3 class="text-sm font-medium text-yellow-800">Nenhum dado de amostra disponível</h3>
+                                                        <h3 class="text-sm font-medium text-yellow-800">{{ __('messages.no_sample_data_available') }}</h3>
                                                         <div class="mt-1 text-sm text-yellow-700">
-                                                            <p>Selecione um modelo e um campo de exibição válido para visualizar uma prévia.</p>
+                                                            <p>{{ __('messages.select_model_and_display_field') }}</p>
                                                             @if($relationshipConfig['model'] && empty($relationshipSampleData) && $availableColumns !== null)
-                                                                <p class="mt-1">Nenhum registro encontrado no modelo selecionado.</p>
+                                                                <p class="mt-1">{{ __('messages.no_records_found') }}</p>
                                                             @endif
                                                         </div>
                                                     </div>
@@ -619,7 +619,7 @@ use Illuminate\Support\Str;
                                                 <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out" 
                                                     @if($relationshipConfig['relationship_type'] === 'hasMany') multiple @endif
                                                     disabled>
-                                                    <option value="" disabled {{ empty($relationshipSampleData) ? 'selected' : '' }}>Selecione {{ $relationshipModels[$relationshipConfig['model']] ?? 'um item' }}</option>
+                                                    <option value="" disabled {{ empty($relationshipSampleData) ? 'selected' : '' }}>{{ __('messages.select') }} {{ $relationshipModels[$relationshipConfig['model']] ?? __('messages.an_item') }}</option>
                                                     @foreach($relationshipSampleData as $item)
                                                         @php
                                                             $displayField = $relationshipConfig['display_field'];
@@ -641,9 +641,9 @@ use Illuminate\Support\Str;
                                                     </svg>
                                                     <span>
                                                         @if($relationshipConfig['relationship_type'] === 'belongsTo')
-                                                            Os usuários verão uma lista suspensa com os itens acima.
+                                                            {{ __('messages.users_will_see_dropdown') }}
                                                         @else
-                                                            Os usuários poderão selecionar múltiplos itens da lista acima.
+                                                            {{ __('messages.users_can_select_multiple') }}
                                                         @endif
                                                     </span>
                                                 </div>
@@ -652,7 +652,7 @@ use Illuminate\Support\Str;
                                             <!-- Mostrar os primeiros 3 itens como exemplo -->
                                             @if(count($relationshipSampleData) > 0)
                                                 <div class="mt-2">
-                                                    <p class="text-xs font-medium text-gray-500 mb-1">Exemplo de itens ({{ count($relationshipSampleData) }} no total):</p>
+                                                    <p class="text-xs font-medium text-gray-500 mb-1">{{ __('messages.example_items') }} ({{ count($relationshipSampleData) }} {{ __('messages.in_total') }}):</p>
                                                     <ul class="text-xs text-gray-600 space-y-1 max-h-40 overflow-y-auto border border-gray-100 rounded p-2 bg-gray-50">
                                                         @foreach(array_slice($relationshipSampleData, 0, 5) as $item)
                                                             @php
@@ -671,7 +671,7 @@ use Illuminate\Support\Str;
                                                         @endforeach
                                                         @if(count($relationshipSampleData) > 5)
                                                             <li class="text-gray-400 text-xs italic">
-                                                                +{{ count($relationshipSampleData) - 5 }} mais itens...
+                                                                +{{ count($relationshipSampleData) - 5 }} {{ __('messages.more_items') }}...
                                                             </li>
                                                         @endif
                                                     </ul>
@@ -688,31 +688,31 @@ use Illuminate\Support\Str;
                                             <div class="ml-2">
                                                 @if($relationshipConfig['display_field'])
                                                     <p class="text-xs text-gray-600">
-                                                        <span class="font-medium">Campo de exibição:</span> 
+                                                        <span class="font-medium">{{ __('messages.display_field') }}:</span> 
                                                         <code class="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">{{ $relationshipConfig['display_field'] }}</code>
                                                     </p>
                                                     @if(empty($relationshipSampleData))
                                                         <p class="text-xs text-yellow-600 mt-1 flex items-center">
                                                             <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                            Nenhum dado de exemplo encontrado. Verifique se existem registros no modelo selecionado.
+                                                            {{ __('messages.no_sample_data_found_check_records') }}
                                                         </p>
                                                     @else
                                                         <p class="text-xs text-green-600 mt-1 flex items-center">
                                                             <i class="fas fa-check-circle mr-1"></i>
-                                                            {{ count($relationshipSampleData) }} itens de exemplo carregados
+                                                            {{ count($relationshipSampleData) }} {{ __('messages.sample_items_loaded') }}
                                                         </p>
                                                     @endif
                                                 @else
                                                     <p class="text-xs text-red-600 flex items-center">
                                                         <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                        Selecione um campo para exibição
+                                                        {{ __('messages.select_field_to_display') }}
                                                     </p>
                                                 @endif
                                                 
                                                 @if($relationshipConfig['relationship_type'] === 'hasMany')
                                                     <p class="text-xs text-purple-600 mt-1 flex items-center">
                                                         <i class="fas fa-mouse-pointer mr-1"></i>
-                                                        Use Ctrl+Clique para seleção múltipla
+                                                        {{ __('messages.ctrl_click_for_multiple_selection') }}
                                                     </p>
                                                 @endif
                                             </div>
@@ -724,9 +724,9 @@ use Illuminate\Support\Str;
                     </div>
                     @endif
                     
-                    <!-- Regras de validação -->
+                    <!-- {{ __('messages.validation_rules') }} -->
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Regras de Validação</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('messages.validation_rules') }}</label>
                         <div class="flex flex-wrap gap-2">
                             @foreach($commonValidationRules as $rule => $description)
                             <label class="inline-flex items-center p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
@@ -742,17 +742,17 @@ use Illuminate\Support\Str;
                     <div class="mb-4 flex items-center">
                         <input wire:model="currentField.is_required" type="checkbox" id="field_required" 
                             class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
-                        <label for="field_required" class="ml-2 block text-sm text-gray-700">Campo Obrigatório</label>
+                        <label for="field_required" class="ml-2 block text-sm text-gray-700">{{ __('messages.required_field') }}</label>
                     </div>
                     
                     <div class="flex justify-end space-x-2 mt-6">
                         <button type="button" wire:click="closeModal" 
                             class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Cancelar
+                            {{ __('messages.cancel') }}
                         </button>
                         <button type="submit" 
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            {{ $currentFieldId ? 'Atualizar' : 'Adicionar' }} Campo
+                            {{ $currentFieldId ? __('messages.update') : __('messages.add') }} {{ __('messages.field') }}
                         </button>
                     </div>
                 </form>
@@ -763,30 +763,30 @@ use Illuminate\Support\Str;
     
     <!-- Script para download automático quando exportando formulários -->
     <script>
-        // Adiciona logs de debug para o Livewire
+        // {{ __('messages.add_debug_logs_for_livewire') }}
         document.addEventListener('livewire:initialized', () => {
-            console.log('Componente Livewire inicializado');
+            console.log("{{ __('messages.livewire_component_initialized') }}");
             
-            // Log para eventos de sucesso/erro
+            // {{ __('messages.log_for_success_error_events') }}
             @this.on('saved', (message) => {
-                console.log('Sucesso:', message);
-                // Fecha o modal após salvar
+                console.log("{{ __('messages.success') }}", message);
+                // {{ __('messages.close_modal_after_saving') }}
                 @this.set('showFieldModal', false);
             });
             
             @this.on('error', (message) => {
-                console.error('Erro no Livewire:', message);
-                alert('Ocorreu um erro: ' + message);
+                console.error("{{ __('messages.livewire_error') }}", message);
+                alert("{{ __('messages.an_error_occurred') }}" + ': ' + message);
             });
             
-            // Log para eventos de campo
+            // {{ __('messages.log_for_field_events') }}
             @this.on('field-added', () => {
-                console.log('Campo adicionado com sucesso');
+                console.log("{{ __('messages.field_added_successfully') }}");
                 @this.set('showFieldModal', false);
             });
             
             @this.on('field-updated', () => {
-                console.log('Campo atualizado com sucesso');
+                console.log("{{ __('messages.field_updated_successfully') }}");
                 @this.set('showFieldModal', false);
             });
         });
@@ -794,7 +794,7 @@ use Illuminate\Support\Str;
         // Configuração do download de arquivos
         document.addEventListener('livewire:init', function () {
             Livewire.on('download-file', (event) => {
-                console.log('Iniciando download do arquivo:', event.filename || 'formulario.json');
+                console.log("{{ __('messages.starting_file_download') }}", event.filename || 'formulario.json');
                 const url = event.url;
                 // Criar link temporário e acionar download
                 const link = document.createElement('a');
@@ -803,22 +803,22 @@ use Illuminate\Support\Str;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                console.log('Download concluído');
+                console.log("{{ __('messages.download_completed') }}");
             });
         });
         
         // Processar importação automaticamente quando um arquivo é selecionado
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM carregado, configurando listeners');
+            console.log("{{ __('messages.dom_loaded_configuring_listeners') }}");
             
             const importInput = document.getElementById('import-form-input');
             if (importInput) {
                 importInput.addEventListener('change', function() {
-                    console.log('Arquivo selecionado para importação:', this.files[0]?.name);
+                    console.log("{{ __('messages.file_selected_for_import') }}", this.files[0]?.name);
                     if (this.files.length > 0) {
                         // Aguardar o upload do arquivo pelo Livewire
                         setTimeout(() => {
-                            console.log('Chamando método importForm');
+                            console.log("{{ __('messages.calling_import_form_method') }}");
                             @this.importForm();
                         }, 500);
                     }
@@ -828,7 +828,7 @@ use Illuminate\Support\Str;
             // Adiciona listener para o botão de adicionar campo
             document.querySelectorAll('[wire\\:click*="createField"]').forEach(button => {
                 button.addEventListener('click', function(e) {
-                    console.log('Botão de criar campo clicado');
+                    console.log("{{ __('messages.create_field_button_clicked') }}");
                     console.log('Form ID:', this.getAttribute('wire:click'));
                 });
             });
@@ -837,7 +837,7 @@ use Illuminate\Support\Str;
             const fieldForm = document.querySelector('form[wire\\:submit\\.prevent="saveField"]');
             if (fieldForm) {
                 fieldForm.addEventListener('submit', function(e) {
-                    console.log('Formulário de campo submetido');
+                    console.log("{{ __('messages.field_form_submitted') }}");
                     console.log('Dados do formulário:', new FormData(this));
                 });
             }

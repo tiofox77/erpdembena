@@ -15,14 +15,14 @@
                     <div class="flex items-center">
                         <i class="fas fa-chevron-right text-gray-400 mx-2 text-xs"></i>
                         <a href="{{ route('supply-chain.dashboard') }}" class="text-gray-700 hover:text-blue-600">
-                            Supply Chain
+                            {{ __('messages.supply_chain') }}
                         </a>
                     </div>
                 </li>
                 <li>
                     <div class="flex items-center">
                         <i class="fas fa-chevron-right text-gray-400 mx-2 text-xs"></i>
-                        <span class="text-gray-500" aria-current="page">Formulários Personalizados</span>
+                        <span class="text-gray-500" aria-current="page">{{ __('messages.custom_forms') }}</span>
                     </div>
                 </li>
             </ol>

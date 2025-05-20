@@ -34,6 +34,31 @@
             <div class="bg-white p-3 sm:p-6 overflow-y-auto flex-grow">
                 @if($viewingSchedule)
                 
+                <!-- Seleção de Turno -->
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200 animate__animated animate__fadeIn">
+                    <h4 class="text-base font-semibold text-blue-800 mb-3 flex items-center">
+                        <i class="fas fa-user-clock text-blue-600 mr-2"></i>
+                        {{ __('messages.select_shift_first') }}
+                    </h4>
+                    <p class="text-sm text-blue-600 mb-4">{{ __('messages.select_shift_instruction') }}</p>
+                    
+                    <div class="relative rounded-md shadow-sm max-w-lg">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user-clock text-purple-500"></i>
+                        </div>
+                        <select wire:model.live="selectedShiftId" 
+                                class="pl-10 pr-10 py-3 block w-full text-base border-blue-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200 font-medium">
+                            <option value="">{{ __('messages.select_shift') }}</option>
+                            @foreach($shifts as $shift)
+                                <option value="{{ $shift->id }}" class="py-2">{{ $shift->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fas fa-chevron-down text-blue-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Alerta de componentes insuficientes (apenas aviso, não bloqueante) -->
                 @if($showComponentWarning)
                 <div class="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-md shadow-md animate__animated animate__fadeIn">
@@ -196,9 +221,13 @@
                     <h4 class="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                         <i class="fas fa-calendar-day text-blue-600 mr-2 animate__animated animate__fadeIn"></i>
                         {{ __('messages.daily_plans') }}
+                        @if($selectedShiftId)
+                            <span class="ml-2 bg-purple-100 text-purple-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">{{ $selectedShiftName }}</span>
+                        @endif
                     </h4>
                     
                     <div class="mt-2 overflow-x-auto -mx-3 sm:mx-0">
+                    @if($selectedShiftId)
                         <table class="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg overflow-hidden table-auto md:table-fixed">
                             <thead class="bg-gradient-to-r from-blue-50 to-blue-100">
                                 <tr>
@@ -214,6 +243,7 @@
                                             {{ __('messages.time_period') }}
                                         </div>
                                     </th>
+
                                     <th scope="col" class="px-4 py-3 hidden md:table-cell">
                                         <div class="flex items-center">
                                             <i class="fas fa-clipboard-list text-blue-500 mr-2"></i>
@@ -259,8 +289,8 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @if(isset($dailyPlans) && count($dailyPlans) > 0)
-                                @foreach($dailyPlans as $index => $plan)
+                                @if(isset($filteredDailyPlans) && count($filteredDailyPlans) > 0)
+                                @foreach($filteredDailyPlans as $index => $plan)
                                 <tr class="hover:bg-blue-50 transition-colors duration-150 animate__animated animate__fadeIn block md:table-row mb-4 md:mb-0 border rounded-lg md:border-none shadow-md md:shadow-none bg-white">
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="flex items-center">
@@ -275,6 +305,7 @@
                                             <span class="text-gray-600"><i class="fas fa-hourglass-end text-amber-500 mr-1"></i>{{ $plan['end_time'] }}</span>
                                         </div>
                                     </td>
+
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="relative rounded-md shadow-sm">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -282,7 +313,7 @@
                                             </div>
                                             <input type="number" step="0.01" min="0" 
                                                 class="pl-9 pr-8 border-gray-300 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
-                                                wire:model.defer="dailyPlans.{{ $index }}.planned_quantity"
+                                                wire:model.defer="filteredDailyPlans.{{ $index }}.planned_quantity"
                                                 placeholder="0.00">
                                         </div>
                                     </td>
@@ -293,7 +324,7 @@
                                             </div>
                                             <input type="number" step="0.01" min="0" 
                                                 class="pl-9 pr-8 border-gray-300 focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
-                                                wire:model.defer="dailyPlans.{{ $index }}.defect_quantity"
+                                                wire:model.defer="filteredDailyPlans.{{ $index }}.defect_quantity"
                                                 placeholder="0.00">
                                         </div>
                                     </td>
@@ -304,7 +335,7 @@
                                             </div>
                                             <input type="number" step="0.01" min="0" 
                                                 class="pl-9 pr-8 border-gray-300 focus:ring-green-500 focus:border-green-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
-                                                wire:model.defer="dailyPlans.{{ $index }}.actual_quantity"
+                                                wire:model.defer="filteredDailyPlans.{{ $index }}.actual_quantity"
                                                 placeholder="0.00">
                                         </div>
                                     </td>
@@ -313,7 +344,7 @@
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-flag text-blue-400"></i>
                                             </div>
-                                            <select wire:model.defer="dailyPlans.{{ $index }}.status" 
+                                            <select wire:model.defer="filteredDailyPlans.{{ $index }}.status" 
                                                 class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200">
                                                 <option value="pending">{{ __('messages.status_pending') }}</option>
                                                 <option value="in_progress">{{ __('messages.status_in_progress') }}</option>
@@ -325,26 +356,26 @@
                                     <td class="px-4 py-3 text-sm block md:table-cell before:content-['Breakdown:'] md:before:content-none before:font-medium before:text-gray-700 before:block md:before:hidden">
                                         <div class="flex items-center space-x-2">
                                             <label class="inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" wire:model.defer="dailyPlans.{{ $index }}.has_breakdown" class="form-checkbox h-5 w-5 text-red-600 transition duration-150 ease-in-out rounded">
+                                                <input type="checkbox" wire:model.defer="filteredDailyPlans.{{ $index }}.has_breakdown" class="form-checkbox h-5 w-5 text-red-600 transition duration-150 ease-in-out rounded">
                                                 <span class="ml-2 text-sm text-gray-700">{{ __('messages.yes') }}</span>
                                             </label>
-                                            <div x-data="{ show: false }" x-show.transition.opacity="$wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown" class="relative rounded-md shadow-sm flex-1 ml-2">
+                                            <div x-data="{ show: false }" x-show.transition.opacity="$wire.filteredDailyPlans && $wire.filteredDailyPlans[{{ $index }}] && $wire.filteredDailyPlans[{{ $index }}].has_breakdown" class="relative rounded-md shadow-sm flex-1 ml-2">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <i class="fas fa-clock text-gray-400"></i>
                                                 </div>
-                                                <input type="number" wire:model.defer="dailyPlans.{{ $index }}.breakdown_minutes" 
+                                                <input type="number" wire:model.defer="filteredDailyPlans.{{ $index }}.breakdown_minutes" 
                                                     class="pl-9 block w-full py-2 text-sm border-gray-300 focus:ring-red-500 focus:border-red-500 rounded-md transition-all duration-200" 
                                                     placeholder="{{ __('messages.minutes') }}">
                                             </div>
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-sm block md:table-cell before:content-['Failure_Details:'] md:before:content-none before:font-medium before:text-gray-700 before:block md:before:hidden">
-                                        <div x-data="{ show: false }" x-show.transition.opacity="$wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown">
+                                        <div x-data="{ show: false }" x-show.transition.opacity="$wire.filteredDailyPlans && $wire.filteredDailyPlans[{{ $index }}] && $wire.filteredDailyPlans[{{ $index }}].has_breakdown">
                                             <div class="mb-2 relative rounded-md shadow-sm">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <i class="fas fa-tag text-orange-400"></i>
                                                 </div>
-                                                <select wire:model.defer="dailyPlans.{{ $index }}.failure_category_id" 
+                                                <select wire:model.defer="filteredDailyPlans.{{ $index }}.failure_category_id" 
                                                     class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 rounded-md transition-all duration-200">
                                                     <option value="">{{ __('messages.select_failure_category') }}</option>
                                                     @foreach($failureCategories as $category)
@@ -356,7 +387,7 @@
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <i class="fas fa-list text-blue-400"></i>
                                                 </div>
-                                                <select wire:model.defer="dailyPlans.{{ $index }}.failure_root_causes" 
+                                                <select wire:model.defer="filteredDailyPlans.{{ $index }}.failure_root_causes" 
                                                     class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200"
                                                     multiple size="2">
                                                     @foreach($failureRootCauses as $rootCause)
@@ -366,18 +397,18 @@
                                                 <div class="text-xs text-gray-500 mt-1 italic">{{ __('messages.select_multiple') }}</div>
                                             </div>
                                         </div>
-                                        <div x-data="{ show: true }" x-show.transition.opacity="!($wire.dailyPlans && $wire.dailyPlans[{{ $index }}] && $wire.dailyPlans[{{ $index }}].has_breakdown)" class="text-sm text-gray-500 italic">
+                                        <div x-data="{ show: true }" x-show.transition.opacity="!($wire.filteredDailyPlans && $wire.filteredDailyPlans[{{ $index }}] && $wire.filteredDailyPlans[{{ $index }}].has_breakdown)" class="text-sm text-gray-500 italic">
                                             {{ __('messages.no_breakdown_reported') }}
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="flex space-x-2">
-                                            <button type="button" wire:click="updateDailyPlan({{ $index }})" 
+                                            <button type="button" wire:click="saveDailyPlan({{ $index }})" 
                                                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-sm"
                                                     wire:loading.attr="disabled">
                                                 <i class="fas fa-save mr-1 text-blue-200"></i>
-                                                <span wire:loading.remove wire:target="updateDailyPlan({{ $index }})">{{ __('messages.save') }}</span>
-                                                <span wire:loading wire:target="updateDailyPlan({{ $index }})" class="inline-flex items-center">
+                                                <span wire:loading.remove wire:target="saveDailyPlan({{ $index }})">{{ __('messages.save') }}</span>
+                                                <span wire:loading wire:target="saveDailyPlan({{ $index }})" class="inline-flex items-center">
                                                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -402,6 +433,12 @@
                                 @endif
                             </tbody>
                         </table>
+                    @else
+                        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-center">
+                            <i class="fas fa-arrow-up text-yellow-400 text-2xl mb-2 animate__animated animate__bounce"></i>
+                            <p class="text-yellow-700">{{ __('messages.please_select_shift_first') }}</p>
+                        </div>
+                    @endif
                     </div>
                 </div>
                 @endif

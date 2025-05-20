@@ -32,7 +32,7 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
                             </div>
-                            <input wire:model.debounce.300ms="search" id="search" 
+                            <input wire:model.live.debounce.300ms="search" id="search" 
                                 class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out" 
                                 placeholder="{{ __('messages.search_orders') }}" 
                                 type="search">
@@ -48,7 +48,7 @@
                                 <i class="fas fa-tag text-gray-500 mr-1"></i>
                                 {{ __('messages.status') }}
                             </label>
-                            <select wire:model="statusFilter" id="statusFilter" 
+                            <select wire:model.live="statusFilter" id="statusFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_statuses') }}</option>
                                 <option value="draft">{{ __('messages.draft') }}</option>
@@ -67,7 +67,7 @@
                                 <i class="fas fa-building text-gray-500 mr-1"></i>
                                 {{ __('messages.supplier') }}
                             </label>
-                            <select wire:model="supplierFilter" id="supplierFilter" 
+                            <select wire:model.live="supplierFilter" id="supplierFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_suppliers') }}</option>
                                 @foreach($suppliers as $supplier)
@@ -82,7 +82,7 @@
                                 <i class="fas fa-list-ol text-gray-500 mr-1"></i>
                                 {{ __('messages.items_per_page') }}
                             </label>
-                            <select wire:model="perPage" id="perPage" 
+                            <select wire:model.live="perPage" id="perPage" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
@@ -100,7 +100,7 @@
                             {{ __('messages.generate_list_pdf') }}
                         </button>
                         
-                        <button wire:click="resetFilters" 
+                        <button type="button" wire:click="resetFilters" 
                             class="inline-flex justify-center items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                             <i class="fas fa-redo-alt mr-2"></i>
                             {{ __('messages.reset_filters') }}

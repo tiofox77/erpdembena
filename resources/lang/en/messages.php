@@ -2168,6 +2168,33 @@ return [
     'all' => 'All',
     'saving...' => 'Saving...',   
     'livewire/layout.items_per_page' => 'Items per page',
+
+    'display_field' => 'Display Field',
+    'no_sample_data_found_check_records' => 'No sample data found. Please check if there are records in the selected model.',
+    'required_field' => 'Required Field',
+    'field_added_successfully' => 'Field added successfully',
+    'field_updated_successfully' => 'Field updated successfully',
+    'field_form_submitted' => 'Field form submitted',
+    'more_items' => 'more items',
+    'sample_items_loaded' => 'sample items loaded',
+    'select_field_to_display' => 'Select a field to display',
+    'ctrl_click_for_multiple_selection' => 'Hold Ctrl (or Cmd on Mac) to select multiple items',
+    'validation_rules' => 'Validation Rules',
+    'download_completed' => 'Download completed',
+    'dom_loaded_configuring_listeners' => 'DOM loaded, configuring listeners',
+    'file_selected_for_import' => 'File selected for import',
+    'calling_import_form_method' => 'Calling import form method',
+    'create_field_button_clicked' => 'Create field button clicked',
+    'status_form' => 'Status Form',
+    'could_not_load_related_data' => 'Could not load related data. Please check the field configuration.',
+    'hold_ctrl_to_select_multiple' => 'Hold Ctrl (or Cmd on Mac) to select multiple items',
+    'select' => 'Select',
+    'no_records_found' => 'No records found',
+    'select_an_option' => 'Select an option',
+    'yes' => 'Yes',
+    'submission_details' => 'Submission Details',
+    'submitted_at' => 'Submitted at',
+    'close' => 'Close',
     
     
     // Custom Forms for Shipping Notes
@@ -2575,5 +2602,10 @@ return [
     'processing' => 'Processing...',
     'equipment_type_required_info' => 'Selecting an equipment type helps with inventory organization and maintenance planning',
     'manage_equipment_types' => 'Manage Types',
-    'select_equipment_type' => 'Select equipment type'
+    'select_equipment_type' => 'Select equipment type',
+    
+    // Shifts (Turnos)
+    'work_shifts' => 'Work Shifts',
+    'select_shift' => 'Select a shift',
+    'select_appropriate_shift' => 'Select the appropriate work shift for this production schedule'
 ];

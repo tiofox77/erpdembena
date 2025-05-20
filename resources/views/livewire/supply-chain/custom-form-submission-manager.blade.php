@@ -1,12 +1,12 @@
 <div>
-    <!-- Modal para preenchimento de formulário -->
+    <!-- {{ __('messages.form_modal_title') }} -->
     @if($showFormModal)
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-auto">
             <div class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-lg">
                 <h3 class="text-lg font-medium text-white flex items-center">
                     <i class="fas fa-clipboard-check mr-2"></i>
-                    {{ isset($form) ? $form->name : 'Formulário de Status' }}
+                    {{ isset($form) ? $form->name : __('messages.status_form') }}
                 </h3>
                 <button wire:click="closeModal" class="text-white hover:text-gray-200">
                     <i class="fas fa-times"></i>
@@ -80,14 +80,14 @@
                                         @if(empty($relatedItems))
                                             <p class="mt-1 text-xs text-red-500">
                                                 <i class="fas fa-exclamation-circle mr-1"></i>
-                                                Não foi possível carregar os dados relacionados. Verifique a configuração do campo.
+                                                {{ __('messages.could_not_load_related_data') }}
                                             </p>
                                         @endif
                                         
                                         @if($isMultiple)
                                             <p class="mt-1 text-xs text-gray-500">
                                                 <i class="fas fa-info-circle mr-1"></i>
-                                                Mantenha pressionada a tecla Ctrl (ou Cmd no Mac) para selecionar múltiplos itens.
+                                                {{ __('messages.hold_ctrl_to_select_multiple') }}
                                             </p>
                                         @endif
                                     @else
@@ -143,7 +143,7 @@
                                                 id="{{ $field->name }}"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
                                                       @error('formData.' . $field->name) border-red-300 @enderror">
-                                                <option value="">Selecione uma opção</option>
+                                                <option value="">{{ __('messages.select_an_option') }}</option>
                                                 @foreach($field->options as $option)
                                                     <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                                                 @endforeach
@@ -158,7 +158,7 @@
                                                     id="{{ $field->name }}"
                                                     class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
                                                           @error('formData.' . $field->name) border-red-300 @enderror">
-                                                <label for="{{ $field->name }}" class="ml-2 text-sm text-gray-700">Sim</label>
+                                                <label for="{{ $field->name }}" class="ml-2 text-sm text-gray-700">{{ __('messages.yes') }}</label>
                                             </div>
                                             @break
                                         
@@ -205,11 +205,11 @@
                                                 </div>
                                                 
                                                 <div x-show="uploading" class="mt-1 text-xs text-gray-500">
-                                                    Enviando... <span x-text="progress"></span>%
+                                                    {{ __('messages.uploading') }}... <span x-text="progress"></span>%
                                                 </div>
                                                 
                                                 <div x-show="uploading" class="mt-1 text-xs text-gray-500">
-                                                    Enviando... <span x-text="progress"></span>%
+                                                    {{ __('messages.uploading') }}... <span x-text="progress"></span>%
                                                 </div>
                                                 
                                                 @if(isset($formData[$field->name]) && is_string($formData[$field->name]) && str_starts_with($formData[$field->name], 'storage/'))
@@ -239,27 +239,27 @@
                                                 @if($isMultiple) multiple @endif
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
                                                       @error('formData.' . $field->name) border-red-300 @enderror">
-                                                <option value="">Selecione {{ $field->label }}</option>
+                                                <option value="">{{ __('messages.select') }} {{ $field->label }}</option>
                                                 @forelse($relatedItems as $value => $label)
                                                     <option value="{{ $value }}" @if($selectedValue == $value) selected @endif>
                                                         {{ $label }}
                                                     </option>
                                                 @empty
-                                                    <option disabled>Nenhum registro encontrado</option>
+                                                    <option disabled>{{ __('messages.no_records_found') }}</option>
                                                 @endforelse
                                             </select>
                                             
                                             @if(empty($relatedItems))
                                                 <p class="mt-1 text-xs text-red-500">
                                                     <i class="fas fa-exclamation-circle mr-1"></i>
-                                                    Não foi possível carregar os dados relacionados. Verifique a configuração do campo.
+                                                    {{ __('messages.could_not_load_related_data') }}
                                                 </p>
                                             @endif
                                             
                                             @if($isMultiple)
                                                 <p class="mt-1 text-xs text-gray-500">
                                                     <i class="fas fa-info-circle mr-1"></i>
-                                                    Mantenha pressionada a tecla Ctrl (ou Cmd no Mac) para selecionar múltiplos itens.
+                                                    {{ __('messages.hold_ctrl_to_select_multiple') }}
                                                 </p>
                                             @endif
                                             @break
@@ -288,11 +288,11 @@
                         <div class="flex justify-end space-x-2 mt-6">
                             <button type="button" wire:click="closeModal" 
                                 class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Cancelar
+                                {{ __('messages.cancel') }}
                             </button>
                             <button type="submit" 
                                 class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Enviar Formulário
+                                {{ __('messages.submit_form') }}
                             </button>
                         </div>
                     @else
@@ -300,7 +300,7 @@
                             <div class="flex-shrink-0 bg-gray-100 p-3 rounded-full">
                                 <i class="fas fa-exclamation-circle text-gray-400 text-2xl"></i>
                             </div>
-                            <p class="text-gray-500 text-sm">Este formulário não possui campos definidos.</p>
+                            <p class="text-gray-500 text-sm">{{ __('messages.no_fields_defined') }}</p>
                         </div>
                     @endif
                 </form>
@@ -316,7 +316,7 @@
             <div class="flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-lg">
                 <h3 class="text-lg font-medium text-white flex items-center">
                     <i class="fas fa-clipboard-list mr-2"></i>
-                    Detalhes da Submissão
+                    {{ __('messages.submission_details') }}
                 </h3>
                 <button wire:click="closeModal" class="text-white hover:text-gray-200">
                     <i class="fas fa-times"></i>
@@ -326,10 +326,10 @@
                 <div class="mb-4 pb-4 border-b border-gray-200">
                     <div class="flex justify-between items-center">
                         <h4 class="text-lg font-medium text-gray-900">{{ $submission->form->name }}</h4>
-                        <span class="text-sm text-gray-500">Enviado em: {{ $submission->created_at->format('d/m/Y H:i') }}</span>
+                        <span class="text-sm text-gray-500">{{ __('messages.submitted_at') }}: {{ $submission->created_at->format('d/m/Y H:i') }}</span>
                     </div>
                     <p class="text-sm text-gray-500">
-                        Por: {{ $submission->creator->name ?? 'Usuário não encontrado' }}
+                        {{ __('messages.by') }}: {{ $submission->creator->name ?? __('messages.user_not_found') }}
                     </p>
                 </div>
                 
@@ -381,11 +381,11 @@
                             @else
                                 <p class="mt-1 text-sm break-words">
                                     @if($value->field->type === 'checkbox')
-                                        {{ $value->value ? 'Sim' : 'Não' }}
+                                        {{ $value->value ? __('messages.yes') : __('messages.no') }}
                                     @elseif($value->field->type === 'select' || $value->field->type === 'radio')
                                         {{ $value->formatted_value }}
                                     @elseif(empty($value->value))
-                                        <span class="text-gray-400 italic">Não preenchido</span>
+                                        <span class="text-gray-400 italic">{{ __('messages.not_filled') }}</span>
                                     @else
                                         {{ $value->value }}
                                     @endif
@@ -398,7 +398,7 @@
                 <div class="flex justify-end mt-6">
                     <button type="button" wire:click="closeModal" 
                         class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Fechar
+                        {{ __('messages.close') }}
                     </button>
                 </div>
             </div>
