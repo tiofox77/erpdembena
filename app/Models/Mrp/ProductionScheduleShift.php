@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class ProductionScheduleShift extends Pivot
 {
-    use SoftDeletes;
-
     protected $table = 'mrp_production_schedule_shift';
     
     protected $fillable = [
@@ -17,7 +15,7 @@ class ProductionScheduleShift extends Pivot
         'shift_id'
     ];
     
-    protected $dates = ['deleted_at'];
+    // Remoção da propriedade $dates pois não estamos mais usando SoftDeletes
     
     /**
      * Get the production schedule that owns the pivot record.

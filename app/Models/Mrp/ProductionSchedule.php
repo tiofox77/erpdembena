@@ -135,7 +135,7 @@ class ProductionSchedule extends Model
         return $this->belongsToMany(Shift::class, 'mrp_production_schedule_shift', 'production_schedule_id', 'shift_id')
             ->withTimestamps()
             ->using(ProductionScheduleShift::class)
-            ->withoutTrashed()->select('mrp_shifts.*'); // Especifica a tabela para evitar ambiguidade de colunas
+            ->select('mrp_shifts.*'); // Especifica a tabela para evitar ambiguidade de colunas
     }
     
     /**
