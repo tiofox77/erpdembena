@@ -511,7 +511,7 @@
                                 @endforeach
                             </div>
                             <p class="mt-1 text-xs text-gray-500 italic flex items-center">
-                                <i class="fas fa-calculator mr-1 text-blue-400"></i> {{ __('Dias selecionados automaticamente com base nos turnos escolhidos') }}
+                                <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('Selecione os dias em que o trabalho será realizado') }}
                             </p>
                             @error('schedule.working_days')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

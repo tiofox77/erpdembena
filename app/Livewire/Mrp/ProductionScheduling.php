@@ -1065,15 +1065,7 @@ public function edit($id)
             'cleanup_time' => $schedule->cleanup_time,
             'notes' => $schedule->notes,
             'line_id' => $schedule->line_id,
-            'working_days' => $schedule->working_days ?? [
-                'mon' => true,
-                'tue' => true,
-                'wed' => true,
-                'thu' => true,
-                'fri' => true,
-                'sat' => false,
-                'sun' => false
-            ]
+            'working_days' => $schedule->working_days
         ];
         
         \Illuminate\Support\Facades\Log::info('Agendamento encontrado para edição', [
@@ -1231,18 +1223,7 @@ public function calculateWorkingHoursAndRate()
     // Calcular as horas de trabalho totais por dia com base nos turnos selecionados
     $totalHours = 0;
     
-    // Inicializar dias de trabalho (todos como false)
-    $workingDays = [
-        'mon' => false,
-        'tue' => false,
-        'wed' => false,
-        'thu' => false,
-        'fri' => false,
-        'sat' => false,
-        'sun' => false
-    ];
-    
-    // Para cada turno, extrair os dias da semana em que opera
+    // Para cada turno, calcular as horas totais
     foreach ($shifts as $shift) {
         // Converter os horários de início e fim para objetos Carbon
         $startTime = \Carbon\Carbon::parse($shift->start_time);
@@ -1256,23 +1237,10 @@ public function calculateWorkingHoursAndRate()
         // Calcular a duração do turno em horas
         $shiftHours = $endTime->diffInMinutes($startTime) / 60;
         $totalHours += $shiftHours;
-        
-        // Se o turno tem dias de operação especificados, usar esses dados
-        if (isset($shift->working_days) && is_array($shift->working_days)) {
-            foreach ($shift->working_days as $day => $active) {
-                if ($active) {
-                    $workingDays[$day] = true;
-                }
-            }
-        } else {
-            // Se não tiver informação específica, assumir dias úteis (segunda a sexta)
-            $workingDays['mon'] = true;
-            $workingDays['tue'] = true;
-            $workingDays['wed'] = true;
-            $workingDays['thu'] = true;
-            $workingDays['fri'] = true;
-        }
     }
+    
+    // Não modificamos mais os dias de trabalho baseado nos turnos
+    // Os dias de trabalho são definidos pelo usuário de forma independente
     
     // Arredondar para o 0.5 mais próximo
     $totalHours = round($totalHours * 2) / 2;
@@ -1280,8 +1248,19 @@ public function calculateWorkingHoursAndRate()
     // Definir as horas de trabalho por dia
     $this->schedule['working_hours_per_day'] = $totalHours;
     
-    // Definir os dias de trabalho
-    $this->schedule['working_days'] = $workingDays;
+    // Não definimos mais os dias de trabalho automaticamente
+    // Apenas inicializamos caso ainda não estejam definidos
+    if (empty($this->schedule['working_days'])) {
+        $this->schedule['working_days'] = [
+            'mon' => true,
+            'tue' => true,
+            'wed' => true,
+            'thu' => true,
+            'fri' => true,
+            'sat' => false,
+            'sun' => false
+        ];
+    }
     
     // Estimar a taxa de produção horária
     // Se a quantidade planejada estiver definida, calcular uma estimativa baseada nos dias
@@ -1404,38 +1383,96 @@ public function viewDailyPlans($id)
         // Carregar os planos diários existentes
         $this->dailyPlans = [];
         $this->filteredDailyPlans = [];
+        
+        // Obter todos os planos existentes para este agendamento
         $existingPlans = ProductionDailyPlan::where('schedule_id', $id)
             ->orderBy('production_date')
             ->orderBy('start_time')
             ->get();
         
-        // Se não existem planos diários, criar planos com base nos dias de trabalho marcados
-        if ($existingPlans->isEmpty()) {
-            $this->createDailyPlansForWorkingDays($id);
-        } else {            
-            // Processar planos existentes
-            foreach ($existingPlans as $index => $plan) {
+        // Gerar um array com TODOS os dias entre a data inicial e final do planejamento
+        $startDate = \Carbon\Carbon::parse($this->viewingSchedule->start_date);
+        $endDate = \Carbon\Carbon::parse($this->viewingSchedule->end_date);
+        $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
+        
+        \Illuminate\Support\Facades\Log::info('Gerando planos para todo o período do planejamento', [
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'total_dias' => $period->count(),
+            'planos_existentes' => $existingPlans->count()
+        ]);
+        
+        // Agrupar os planos existentes por data para referência rápida
+        $existingPlansByDate = [];
+        foreach ($existingPlans as $plan) {
+            $dateStr = $plan->production_date->format('Y-m-d');
+            if (!isset($existingPlansByDate[$dateStr])) {
+                $existingPlansByDate[$dateStr] = [];
+            }
+            $existingPlansByDate[$dateStr][] = $plan;
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Planos existentes agrupados por data', [
+            'total_datas' => count($existingPlansByDate),
+            'datas' => array_keys($existingPlansByDate)
+        ]);
+        
+        // Criar entradas para todos os dias, usando dados existentes quando disponíveis
+        $index = 0;
+        foreach ($period as $date) {
+            $dateKey = $date->format('Y-m-d');
+            
+            // Verificar se existem planos para esta data
+            if (isset($existingPlansByDate[$dateKey])) {
+                // Processar todos os planos existentes para esta data
+                foreach ($existingPlansByDate[$dateKey] as $plan) {
+                    $this->dailyPlans[$index] = [
+                        'id' => $plan->id,
+                        'production_date' => $dateKey,
+                        'start_time' => $plan->start_time,
+                        'end_time' => $plan->end_time,
+                        'planned_quantity' => $plan->planned_quantity,
+                        'actual_quantity' => $plan->actual_quantity,
+                        'defect_quantity' => $plan->defect_quantity,
+                        'has_breakdown' => $plan->has_breakdown,
+                        'breakdown_minutes' => $plan->breakdown_minutes,
+                        'failure_category_id' => $plan->failure_category_id,
+                        'failure_root_causes' => $plan->failure_root_causes,
+                        'status' => $plan->status,
+                        'notes' => $plan->notes,
+                        'shift_id' => $plan->shift_id,
+                    ];
+                    $index++;
+                }
+            } else {
+                // Criar nova entrada para este dia
                 $this->dailyPlans[$index] = [
-                    'id' => $plan->id,
-                    'production_date' => $plan->production_date->format('Y-m-d'),
-                    'start_time' => $plan->start_time,
-                    'end_time' => $plan->end_time,
-                    'planned_quantity' => $plan->planned_quantity,
-                    'actual_quantity' => $plan->actual_quantity,
-                    'defect_quantity' => $plan->defect_quantity,
-                    'has_breakdown' => $plan->has_breakdown,
-                    'breakdown_minutes' => $plan->breakdown_minutes,
-                    'failure_category_id' => $plan->failure_category_id,
-                    'failure_root_causes' => $plan->failure_root_causes,
-                    'status' => $plan->status,
-                    'notes' => $plan->notes,
-                    'shift_id' => $plan->shift_id,
+                    'id' => null,
+                    'production_date' => $dateKey,
+                    'start_time' => null,
+                    'end_time' => null,
+                    'planned_quantity' => isset($this->viewingSchedule) ? $this->calculateDefaultQuantity() : 0,
+                    'actual_quantity' => 0,
+                    'defect_quantity' => 0,
+                    'has_breakdown' => false,
+                    'breakdown_minutes' => 0,
+                    'failure_category_id' => null,
+                    'failure_root_causes' => null,
+                    'status' => 'pending',
+                    'notes' => '',
+                    'shift_id' => null,
                 ];
+                $index++;
             }
         }
         
         // Calcular o impacto das falhas na produção
         $this->calculateFailureImpact();
+        
+        // Garantir que os daily plans estejam ordenados por data
+        usort($this->dailyPlans, function($a, $b) {
+            return strcmp($a['production_date'], $b['production_date']);
+        });
         
         // Verificar disponibilidade de componentes (se aplicável)
         if (method_exists($this, 'checkComponentAvailability')) {
@@ -1535,8 +1572,67 @@ public function createDailyPlansForWorkingDays($scheduleId)
         // Inicializar planos diários
         $this->dailyPlans = [];
         
-        // Calcular quantidade por dia
-        $dailyQuantity = $schedule->planned_quantity / $totalWorkingDays;
+        // Calcular capacidade diária com base em horas de trabalho e taxa de produção
+        $workingHoursPerDay = $schedule->working_hours_per_day ?? 8; // Padrão: 8 horas/dia
+        $hourlyProductionRate = $schedule->hourly_production_rate ?? 0; // Unidades por hora
+        $setupTime = $schedule->setup_time ?? 0; // Em minutos
+        $cleanupTime = $schedule->cleanup_time ?? 0; // Em minutos
+        
+        // Calcular capacidade base diária
+        $baseCapacity = $workingHoursPerDay * $hourlyProductionRate;
+        
+        // Ajustar capacidade considerando tempo de setup e cleanup
+        $dailyCapacity = $baseCapacity;
+        if ($setupTime > 0 || $cleanupTime > 0) {
+            // Convertendo minutos de setup/cleanup para horas e ajustando a capacidade
+            $totalNonProductiveMinutes = $setupTime + $cleanupTime;
+            $nonProductiveHours = $totalNonProductiveMinutes / 60;
+            
+            if ($workingHoursPerDay > 0) { // Evitar divisão por zero
+                $productiveRatio = max(0, ($workingHoursPerDay - $nonProductiveHours) / $workingHoursPerDay);
+                $dailyCapacity = $baseCapacity * $productiveRatio;
+            }
+        }
+        
+        // Verificar se a capacidade total pode cobrir a quantidade planejada
+        $totalCapacity = $dailyCapacity * $totalWorkingDays;
+        
+        // Log dos cálculos de capacidade para debug
+        \Illuminate\Support\Facades\Log::info('Cálculos de capacidade diária', [
+            'working_hours_per_day' => $workingHoursPerDay,
+            'hourly_production_rate' => $hourlyProductionRate,
+            'setup_time' => $setupTime,
+            'cleanup_time' => $cleanupTime,
+            'base_capacity' => $baseCapacity,
+            'daily_capacity' => $dailyCapacity,
+            'total_capacity' => $totalCapacity,
+            'planned_quantity' => $schedule->planned_quantity
+        ]);
+        
+        // Calcular quantidade diária com base na capacidade
+        $dailyQuantity = 0;
+        
+        if ($dailyCapacity > 0 && $totalCapacity >= $schedule->planned_quantity) {
+            // Capacidade suficiente - distribuir igualmente
+            $dailyQuantity = $schedule->planned_quantity / $totalWorkingDays;
+        } elseif ($dailyCapacity > 0) {
+            // Capacidade insuficiente - usar capacidade máxima diária
+            $dailyQuantity = $dailyCapacity;
+            
+            \Illuminate\Support\Facades\Log::warning('Capacidade insuficiente para quantidade planejada', [
+                'daily_capacity' => $dailyCapacity,
+                'total_capacity' => $totalCapacity,
+                'planned_quantity' => $schedule->planned_quantity,
+                'scheduling_days_needed' => ceil($schedule->planned_quantity / $dailyCapacity)
+            ]);
+        } else {
+            // Fallback se dados de capacidade não forem válidos
+            $dailyQuantity = $schedule->planned_quantity / $totalWorkingDays;
+            
+            \Illuminate\Support\Facades\Log::warning('Dados de capacidade inválidos, usando divisão igual', [
+                'daily_quantity' => $dailyQuantity
+            ]);
+        }
         
         // Se não houver turnos associados, criar um plano por dia sem turno específico
         if ($shifts->isEmpty()) {
@@ -1555,7 +1651,7 @@ public function createDailyPlansForWorkingDays($scheduleId)
                     'breakdown_minutes' => 0,
                     'failure_category_id' => null,
                     'failure_root_causes' => null,
-                    'status' => 'scheduled',
+                    'status' => 'pending',
                     'notes' => '',
                     'shift_id' => null,
                 ];
@@ -1598,7 +1694,7 @@ public function createDailyPlansForWorkingDays($scheduleId)
                         'breakdown_minutes' => 0,
                         'failure_category_id' => null,
                         'failure_root_causes' => null,
-                        'status' => 'scheduled',
+                        'status' => 'pending',
                         'notes' => '',
                         'shift_id' => $shift->id,
                         'shift_name' => $shift->name,  // Armazenar o nome para exibição
@@ -1640,6 +1736,8 @@ public function closeDailyPlansModal()
     $this->editingDailyPlan = null;
 }
 
+
+
 /**
  * Método para selecionar e filtrar planos diários por turno
  * 
@@ -1661,6 +1759,12 @@ public function selectShift($shift_id)
         }
         
         $this->selectedShiftId = $shift_id;
+        
+        // Log adicional para rastrear o valor do shift_id
+        \Illuminate\Support\Facades\Log::info('Shift ID definido explicitamente', [
+            'shift_id_definido' => $this->selectedShiftId,
+            'valor_recebido' => $shift_id
+        ]);
         
         // Encontrar o nome do turno para exibição
         $selectedShift = $this->shifts->firstWhere('id', $shift_id);
@@ -1715,11 +1819,20 @@ public function updatedSelectedShiftId($value)
             return;
         }
         
-        \Illuminate\Support\Facades\Log::info('Turno selecionado', ['shift_id' => $value]);
+        \Illuminate\Support\Facades\Log::info('Turno selecionado', [
+            'shift_id' => $value,
+            'from_livewire_binding' => true
+        ]);
         
         // Obter o nome do turno selecionado
         $selectedShift = $this->shifts->firstWhere('id', $value);
         $this->selectedShiftName = $selectedShift ? $selectedShift->name : '';
+        
+        // Limpar planos filtrados para criar novos
+        $this->filteredDailyPlans = [];
+        
+        // Criar planos diários para este turno
+        $this->createDailyPlansForSelectedShift();
         
         // Filtrar os planos diários pelo turno selecionado
         $this->filterDailyPlansByShift();
@@ -1736,110 +1849,7 @@ public function updatedSelectedShiftId($value)
             message: __('messages.error_selecting_shift')
         );
     }
-}
-
-/**
- * Salvar um plano diário de produção a partir da tabela filtrada
- * 
- * @param int $index Índice do plano filtrado a ser salvo
- */
-public function saveDailyPlan($index)
-{
-    try {
-        // Verificar se o plano filtrado existe
-        if (!isset($this->filteredDailyPlans[$index])) {
-            throw new \Exception(__('messages.daily_plan_not_found'));
-        }
-        
-        $planData = $this->filteredDailyPlans[$index];
-        
-        \Illuminate\Support\Facades\Log::info('Salvando plano diário para o turno', [
-            'index' => $index,
-            'shift_id' => $this->selectedShiftId,
-            'shift_name' => $this->selectedShiftName,
-            'plan_data' => $planData
-        ]);
-        
-        // Garantir que o shift_id está definido no plano
-        $planData['shift_id'] = $this->selectedShiftId;
-        
-        // Se o plano já existe no banco, atualizar
-        if (isset($planData['id']) && $planData['id']) {
-            $plan = ProductionDailyPlan::findOrFail($planData['id']);
-            
-            // Atualizar os campos do plano
-            $plan->production_date = $planData['production_date'];
-            $plan->start_time = $planData['start_time'];
-            $plan->end_time = $planData['end_time'];
-            $plan->planned_quantity = $planData['planned_quantity'];
-            $plan->actual_quantity = $planData['actual_quantity'] ?? 0;
-            $plan->defect_quantity = $planData['defect_quantity'] ?? 0;
-            $plan->has_breakdown = $planData['has_breakdown'] ?? false;
-            $plan->breakdown_minutes = $planData['breakdown_minutes'] ?? 0;
-            $plan->failure_category_id = $planData['failure_category_id'] ?? null;
-            $plan->failure_root_causes = $planData['failure_root_causes'] ?? null;
-            $plan->status = $planData['status'] ?? 'scheduled';
-            $plan->notes = $planData['notes'] ?? '';
-            $plan->shift_id = $planData['shift_id'];
-            
-            $plan->save();
-            
-            $this->dispatch('notify', 
-                type: 'success', 
-                title: __('messages.success'), 
-                message: __('messages.daily_plan_updated')
-            );
-        } else {
-            // Se o plano não existe, criar novo
-            $schedule = ProductionSchedule::findOrFail($this->viewingSchedule->id);
-            
-            $plan = new ProductionDailyPlan();
-            $plan->schedule_id = $schedule->id;
-            $plan->production_date = $planData['production_date'];
-            $plan->start_time = $planData['start_time'];
-            $plan->end_time = $planData['end_time'];
-            $plan->planned_quantity = $planData['planned_quantity'];
-            $plan->actual_quantity = $planData['actual_quantity'] ?? 0;
-            $plan->defect_quantity = $planData['defect_quantity'] ?? 0;
-            $plan->has_breakdown = $planData['has_breakdown'] ?? false;
-            $plan->breakdown_minutes = $planData['breakdown_minutes'] ?? 0;
-            $plan->failure_category_id = $planData['failure_category_id'] ?? null;
-            $plan->failure_root_causes = $planData['failure_root_causes'] ?? null;
-            $plan->status = $planData['status'] ?? 'scheduled';
-            $plan->notes = $planData['notes'] ?? '';
-            $plan->shift_id = $planData['shift_id'];
-            
-            $plan->save();
-            
-            // Atualizar o ID na matriz filtrada
-            $this->filteredDailyPlans[$index]['id'] = $plan->id;
-            
-            $this->dispatch('notify', 
-                type: 'success', 
-                title: __('messages.success'), 
-                message: __('messages.daily_plan_created')
-            );
-        }
-        
-        // Também atualizar o registro correspondente em dailyPlans, se existir
-        $this->updateMainDailyPlansArray($planData);
-        
-        // Recalcular o impacto das falhas na produção
-        $this->calculateFailureImpact();
-        
-    } catch (\Exception $e) {
-        \Illuminate\Support\Facades\Log::error('Erro ao salvar plano diário', [
-            'index' => $index,
-            'erro' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        
-        $this->dispatch('notify', 
-            type: 'error', 
-            title: __('messages.error'), 
-            message: __('messages.failed_to_save_daily_plan') . ": {$e->getMessage()}"
-        );
-    }
+    
 }
 
 /**
@@ -1880,15 +1890,36 @@ public function filterDailyPlansByShift()
         return;
     }
     
-    // Filtrar os planos existentes pelo turno selecionado
+    // Log para rastrear os planos antes da filtragem
+    \Illuminate\Support\Facades\Log::info('Planos diários antes da filtragem', [
+        'total_planos' => count($this->dailyPlans),
+        'planos_com_shift_id' => count(array_filter($this->dailyPlans, function($p) {
+            return isset($p['shift_id']) && $p['shift_id'];
+        })),
+        'planos_com_shift_id_selecionado' => count(array_filter($this->dailyPlans, function($p) {
+            return isset($p['shift_id']) && $p['shift_id'] == $this->selectedShiftId;
+        }))
+    ]);
+    
+    // Modificado para mostrar todos os planos (com ou sem shift_id) quando um turno é selecionado
     $this->filteredDailyPlans = array_values(array_filter($this->dailyPlans, function($plan) {
         // Se o plano já tem um shift_id definido, verificar se corresponde ao selecionado
         if (isset($plan['shift_id']) && $plan['shift_id']) {
-            return $plan['shift_id'] == $this->selectedShiftId;
+            $matches = $plan['shift_id'] == $this->selectedShiftId;
+            if ($matches) {
+                \Illuminate\Support\Facades\Log::debug('Plano encontrado para o turno selecionado', [
+                    'data' => $plan['production_date'] ?? 'desconhecida',
+                    'shift_id' => $plan['shift_id']
+                ]);
+            }
+            return $matches;
         }
         
-        // Para planos sem shift_id, verificar se precisamos criar planos para o turno selecionado
-        return false;
+        // Para planos sem shift_id, incluir todos (removendo o filtro)
+        \Illuminate\Support\Facades\Log::debug('Plano sem shift_id incluído no resultado', [
+            'data' => $plan['production_date'] ?? 'desconhecida'
+        ]);
+        return true; // Incluir todos os planos sem shift_id no resultado
     }));
     
     // Se não houver planos para este turno, criar novos para cada dia
@@ -1913,7 +1944,17 @@ public function filterDailyPlansByShift()
  */
 private function createDailyPlansForSelectedShift()
 {
+    // Log detalhado para diagnóstico do problema de shift_id
+    \Illuminate\Support\Facades\Log::info('Iniciando criação de planos diários para o turno selecionado', [
+        'selectedShiftId' => $this->selectedShiftId,
+        'viewingSchedule' => $this->viewingSchedule ? $this->viewingSchedule->id : null
+    ]);
+    
     if (!$this->selectedShiftId || !$this->viewingSchedule) {
+        \Illuminate\Support\Facades\Log::warning('Não foi possível criar planos: turno ou programação não definidos', [
+            'selectedShiftId' => $this->selectedShiftId,
+            'viewingSchedule' => $this->viewingSchedule ? true : false
+        ]);
         return;
     }
     
@@ -1980,27 +2021,161 @@ private function createDailyPlansForSelectedShift()
             throw new \Exception('Turno não encontrado');
         }
         
-        // Calcular quantidade por dia para este turno
-        $dailyQuantity = $this->viewingSchedule->planned_quantity / $totalWorkingDays;
+        // Calcular capacidade diária com base em horas de trabalho e taxa de produção
+        $workingHoursPerDay = $this->viewingSchedule->working_hours_per_day ?? 8; // Padrão: 8 horas/dia
+        $hourlyProductionRate = $this->viewingSchedule->hourly_production_rate ?? 0; // Unidades por hora
+        $setupTime = $this->viewingSchedule->setup_time ?? 0; // Em minutos
+        $cleanupTime = $this->viewingSchedule->cleanup_time ?? 0; // Em minutos
+        
+        // Calcular capacidade base diária
+        $baseCapacity = $workingHoursPerDay * $hourlyProductionRate;
+        
+        // Ajustar capacidade considerando tempo de setup e cleanup
+        $dailyCapacity = $baseCapacity;
+        if ($setupTime > 0 || $cleanupTime > 0) {
+            // Convertendo minutos para horas
+            $totalNonProductiveMinutes = $setupTime + $cleanupTime;
+            $nonProductiveHours = $totalNonProductiveMinutes / 60;
+            
+            if ($workingHoursPerDay > 0) { // Evitar divisão por zero
+                $productiveRatio = max(0, ($workingHoursPerDay - $nonProductiveHours) / $workingHoursPerDay);
+                $dailyCapacity = $baseCapacity * $productiveRatio;
+            }
+        }
+        
+        // Verificar se a capacidade total pode cobrir a quantidade planejada
+        $totalCapacity = $dailyCapacity * $totalWorkingDays;
+        
+        // Log dos cálculos de capacidade para debug
+        \Illuminate\Support\Facades\Log::info('Cálculos de capacidade diária no modal de planos diários', [
+            'working_hours_per_day' => $workingHoursPerDay,
+            'hourly_production_rate' => $hourlyProductionRate,
+            'setup_time' => $setupTime,
+            'cleanup_time' => $cleanupTime,
+            'base_capacity' => $baseCapacity,
+            'daily_capacity' => $dailyCapacity,
+            'total_capacity' => $totalCapacity,
+            'planned_quantity' => $this->viewingSchedule->planned_quantity
+        ]);
+        
+        // Calcular quantidade diária com base na capacidade
+        $dailyQuantity = 0;
+        
+        if ($dailyCapacity > 0 && $totalCapacity >= $this->viewingSchedule->planned_quantity) {
+            // Capacidade suficiente - distribuir igualmente
+            $dailyQuantity = $this->viewingSchedule->planned_quantity / $totalWorkingDays;
+        } elseif ($dailyCapacity > 0) {
+            // Capacidade insuficiente - usar capacidade máxima diária
+            $dailyQuantity = $dailyCapacity;
+            
+            \Illuminate\Support\Facades\Log::warning('Capacidade insuficiente para quantidade planejada no modal', [
+                'daily_capacity' => $dailyCapacity,
+                'total_capacity' => $totalCapacity,
+                'planned_quantity' => $this->viewingSchedule->planned_quantity,
+                'scheduling_days_needed' => ceil($this->viewingSchedule->planned_quantity / $dailyCapacity)
+            ]);
+        } else {
+            // Fallback se dados de capacidade não forem válidos
+            $dailyQuantity = $this->viewingSchedule->planned_quantity / $totalWorkingDays;
+            
+            \Illuminate\Support\Facades\Log::warning('Dados de capacidade inválidos no modal, usando divisão igual', [
+                'daily_quantity' => $dailyQuantity
+            ]);
+        }
+        
+        // Contar quantos turnos existem no total para calcular proporção
+        $totalShifts = $this->shifts->count();
+        
+        // Se houver mais de um turno, dividir a quantidade diária com base na duração proporcional
+        if ($totalShifts > 1) {
+            // Calcular total de horas dos turnos
+            $totalShiftHours = 0;
+            $shiftHours = [];
+            
+            foreach ($this->shifts as $shift) {
+                $duration = $shift->duration ?? 0;
+                $shiftHours[$shift->id] = $duration;
+                $totalShiftHours += $duration;
+            }
+            
+            // Calcular proporção para o turno selecionado
+            $selectedShiftDuration = $shiftHours[$selectedShift->id] ?? 0;
+            
+            if ($totalShiftHours > 0 && $selectedShiftDuration > 0) {
+                $shiftRatio = $selectedShiftDuration / $totalShiftHours;
+                $dailyQuantity = $dailyQuantity * $shiftRatio;
+                
+                \Illuminate\Support\Facades\Log::info('Ajuste proporcional do turno selecionado', [
+                    'shift_id' => $selectedShift->id,
+                    'shift_name' => $selectedShift->name,
+                    'shift_duration' => $selectedShiftDuration, 
+                    'total_shift_hours' => $totalShiftHours,
+                    'ratio' => $shiftRatio,
+                    'adjusted_quantity' => $dailyQuantity
+                ]);
+            }
+        }
+        
+        // Verificar se já existem planos no banco de dados para esta programação e turno
+        $existingDbPlans = ProductionDailyPlan::where('schedule_id', $this->viewingSchedule->id)
+            ->where('shift_id', $this->selectedShiftId)
+            ->get()
+            ->keyBy(function($plan) {
+                return $plan->production_date->format('Y-m-d');
+            });
+        
+        \Illuminate\Support\Facades\Log::info('Planos existentes no banco de dados para o turno selecionado', [
+            'shift_id' => $this->selectedShiftId,
+            'total_planos_db' => $existingDbPlans->count(),
+            'schedule_id' => $this->viewingSchedule->id
+        ]);
         
         // Criar um plano para cada dia com o turno selecionado
         foreach ($workingDates as $date) {
-            // Verificar se já existe um plano para este dia e turno
-            $existingPlan = array_filter($this->dailyPlans, function($plan) use ($date) {
+            // Verificar se já existe um plano no array local para este dia e turno
+            $existingLocalPlan = array_filter($this->dailyPlans, function($plan) use ($date) {
                 return $plan['production_date'] == $date && 
                        $plan['shift_id'] == $this->selectedShiftId;
             });
             
-            if (!empty($existingPlan)) {
-                // Se já existe, adicionar aos planos filtrados
-                $this->filteredDailyPlans[] = reset($existingPlan);
+            if (!empty($existingLocalPlan)) {
+                // Se já existe no array local, adicionar aos planos filtrados
+                $this->filteredDailyPlans[] = reset($existingLocalPlan);
                 continue;
             }
             
-            // Criar um novo plano para este dia e turno
+            // Verificar se já existe no banco de dados
+            if (isset($existingDbPlans[$date])) {
+                // Se existe no banco, usar os dados do banco
+                $dbPlan = $existingDbPlans[$date];
+                $this->filteredDailyPlans[] = [
+                    'id' => $dbPlan->id,
+                    'production_date' => $date,
+                    'planned_quantity' => $dbPlan->planned_quantity,
+                    'actual_quantity' => $dbPlan->actual_quantity,
+                    'defect_quantity' => $dbPlan->defect_quantity,
+                    'has_breakdown' => $dbPlan->has_breakdown,
+                    'breakdown_minutes' => $dbPlan->breakdown_minutes,
+                    'failure_category_id' => $dbPlan->failure_category_id,
+                    'failure_root_causes' => $dbPlan->failure_root_causes,
+                    'status' => $dbPlan->status,
+                    'notes' => $dbPlan->notes,
+                    'shift_id' => $dbPlan->shift_id,
+                ];
+                continue;
+            }
+            
+            // Definir horários com base no turno selecionado
+            $selectedShift = $this->shifts->firstWhere('id', $this->selectedShiftId);
+            $startTime = $selectedShift ? $selectedShift->start_time : null;
+            $endTime = $selectedShift ? $selectedShift->end_time : null;
+            
+            // Criar um novo plano virtual (não salvo no banco) para este dia e turno
             $this->filteredDailyPlans[] = [
                 'id' => null,
                 'production_date' => $date,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
                 'planned_quantity' => $dailyQuantity,
                 'actual_quantity' => 0,
                 'defect_quantity' => 0,
@@ -2008,7 +2183,7 @@ private function createDailyPlansForSelectedShift()
                 'breakdown_minutes' => 0,
                 'failure_category_id' => null,
                 'failure_root_causes' => null,
-                'status' => 'scheduled',
+                'status' => 'pending',
                 'notes' => '',
                 'shift_id' => $this->selectedShiftId,
             ];
@@ -2030,6 +2205,431 @@ private function createDailyPlansForSelectedShift()
 }
 
 /**
+ * Recalcular planos diários com base nos parâmetros atuais da programação
+ */
+public function recalculatePlans()
+{
+    try {
+        if (!$this->viewingSchedule || !$this->selectedShiftId) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.select_shift_first')
+            );
+            return;
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Recalculando planos diários', [
+            'schedule_id' => $this->viewingSchedule->id,
+            'shift_id' => $this->selectedShiftId
+        ]);
+        
+        // Forçar um recálculo de todos os planos com base na Configuration Schedule original
+        // Isso utiliza o modelo ProductionSchedule que implementamos antes
+        $schedule = ProductionSchedule::find($this->viewingSchedule->id);
+        
+        if (!$schedule) {
+            throw new \Exception('Programação não encontrada');
+        }
+        
+        // Recalcular apenas os planos deste turno
+        $result = $schedule->recalculateDailyPlans(false);
+        
+        // Recarregar os dados atualizados
+        $this->viewDailyPlans($this->viewingSchedule->id);
+        $this->updatedSelectedShiftId($this->selectedShiftId);
+        
+        // Notificar o usuário
+        if (isset($result['success']) && $result['success']) {
+            $this->dispatch('notify',
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.plans_recalculated_successfully')
+            );
+        } else {
+            $this->dispatch('notify',
+                type: 'warning',
+                title: __('messages.warning'),
+                message: $result['error'] ?? __('messages.error_recalculating_plans')
+            );
+        }
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Erro ao recalcular planos diários', [
+            'erro' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        $this->dispatch('notify',
+            type: 'error',
+            title: __('messages.error'),
+            message: __('messages.failed_to_recalculate_plans') . ": {$e->getMessage()}"
+        );
+    }
+}
+
+/**
+ * Salvar um plano diário específico - recebe o índice do plano a ser salvo
+ * 
+ * @param int $index Índice do plano a ser salvo
+ * @return bool Retorna true se o salvamento foi bem sucedido
+ */
+public function saveDailyPlan($index)
+{
+    try {
+        // Verificar se temos os dados básicos necessários
+        if (!$this->viewingSchedule || !$this->selectedShiftId) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.select_shift_first')
+            );
+            return false;
+        }
+        
+        // Verificar se o plano no índice especificado existe
+        if (!isset($this->filteredDailyPlans[$index])) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.plan_not_found')
+            );
+            return false;
+        }
+        
+        // Obter os dados do plano específico
+        $plan = $this->filteredDailyPlans[$index];
+        $dateKey = $plan['production_date'];
+        
+        \Illuminate\Support\Facades\Log::info('Salvando plano diário específico', [
+            'index' => $index,
+            'date' => $dateKey,
+            'schedule_id' => $this->viewingSchedule->id,
+            'shift_id' => $this->selectedShiftId
+        ]);
+        
+        // Verificar se já existe um plano para esta data e turno
+        $existingPlan = ProductionDailyPlan::where('schedule_id', $this->viewingSchedule->id)
+            ->where('shift_id', $this->selectedShiftId)
+            ->where('production_date', $dateKey)
+            ->first();
+            
+        \Illuminate\Support\Facades\Log::info('Verificando plano existente para salvar', [
+            'shift_id_selecionado' => $this->selectedShiftId,
+            'plano_existente' => $existingPlan ? true : false
+        ]);
+            
+        // Se temos ID no plano e ele existe no banco, atualizamos
+        if (isset($plan['id']) && $plan['id']) {
+            $dailyPlan = ProductionDailyPlan::find($plan['id']);
+            if ($dailyPlan) {
+                $dailyPlan->update([
+                    'planned_quantity' => $plan['planned_quantity'],
+                    'actual_quantity' => $plan['actual_quantity'],
+                    'defect_quantity' => $plan['defect_quantity'],
+                    'has_breakdown' => $plan['has_breakdown'],
+                    'breakdown_minutes' => $plan['breakdown_minutes'] ?? 0,
+                    'failure_category_id' => $plan['failure_category_id'] ?? null,
+                    'failure_root_causes' => $plan['failure_root_causes'] ?? null,
+                    'status' => $this->validatePlanStatus($plan['status'] ?? 'pending'),
+                    'notes' => $plan['notes'] ?? '',
+                    'shift_id' => $this->selectedShiftId, // Garantir que o shift_id esteja sempre atualizado
+                    'updated_by' => auth()->id()
+                ]);
+                
+                \Illuminate\Support\Facades\Log::info('Plano atualizado com sucesso', [
+                    'id' => $dailyPlan->id,
+                    'date' => $dailyPlan->production_date->format('Y-m-d'),
+                    'shift_id' => $dailyPlan->shift_id
+                ]);
+                
+                $this->dispatch('notify',
+                    type: 'success',
+                    title: __('messages.success'),
+                    message: __('messages.daily_plan_updated')
+                );
+                
+                return true;
+            }
+        } 
+        // Se o plano já existe para esta data e turno, mas não está relacionado ao array na interface
+        else if ($existingPlan) {
+            $existingPlan->update([
+                'planned_quantity' => $plan['planned_quantity'],
+                'actual_quantity' => $plan['actual_quantity'] ?? $existingPlan->actual_quantity,
+                'defect_quantity' => $plan['defect_quantity'] ?? $existingPlan->defect_quantity,
+                'has_breakdown' => $plan['has_breakdown'] ?? $existingPlan->has_breakdown,
+                'breakdown_minutes' => $plan['breakdown_minutes'] ?? $existingPlan->breakdown_minutes,
+                'failure_category_id' => $plan['failure_category_id'] ?? $existingPlan->failure_category_id,
+                'failure_root_causes' => $plan['failure_root_causes'] ?? $existingPlan->failure_root_causes,
+                'status' => $this->validatePlanStatus($plan['status'] ?? $existingPlan->status),
+                'notes' => $plan['notes'] ?? $existingPlan->notes,
+                'updated_by' => auth()->id()
+            ]);
+            
+            // Atualizar ID no array para futuras atualizações usarem o mesmo registro
+            $this->filteredDailyPlans[$index]['id'] = $existingPlan->id;
+            
+            \Illuminate\Support\Facades\Log::info('Plano existente atualizado', [
+                'id' => $existingPlan->id,
+                'date' => $existingPlan->production_date->format('Y-m-d'),
+                'shift_id' => $existingPlan->shift_id
+            ]);
+            
+            $this->dispatch('notify',
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.daily_plan_updated')
+            );
+            
+            return true;
+        }
+        // Caso não exista, criamos um novo plano
+        else {
+            $newPlan = ProductionDailyPlan::create([
+                'schedule_id' => $this->viewingSchedule->id,
+                'production_date' => $dateKey,
+                'planned_quantity' => $plan['planned_quantity'],
+                'actual_quantity' => $plan['actual_quantity'] ?? 0,
+                'defect_quantity' => $plan['defect_quantity'] ?? 0,
+                'has_breakdown' => $plan['has_breakdown'] ?? false,
+                'breakdown_minutes' => $plan['breakdown_minutes'] ?? 0,
+                'failure_category_id' => $plan['failure_category_id'] ?? null,
+                'failure_root_causes' => $plan['failure_root_causes'] ?? null,
+                'status' => $this->validatePlanStatus($plan['status'] ?? 'pending'),
+                'notes' => $plan['notes'] ?? '',
+                'shift_id' => $this->selectedShiftId, // Garantir que shift_id seja passado corretamente
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id()
+            ]);
+            
+            \Illuminate\Support\Facades\Log::info('Criando novo plano com shift_id explícito (saveDailyPlan)', [
+                'novo_plano_id' => $newPlan->id,
+                'shift_id_usado' => $this->selectedShiftId,
+                'shift_id_salvo' => $newPlan->shift_id
+            ]);
+            
+            // Atualizar ID no array para futuras atualizações usarem o mesmo registro
+            $this->filteredDailyPlans[$index]['id'] = $newPlan->id;
+            
+            \Illuminate\Support\Facades\Log::info('Novo plano criado', [
+                'id' => $newPlan->id,
+                'date' => $newPlan->production_date->format('Y-m-d'),
+                'shift_id' => $newPlan->shift_id
+            ]);
+            
+            $this->dispatch('notify',
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.daily_plan_created')
+            );
+            
+            return true;
+        }
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Erro ao salvar plano diário', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        $this->dispatch('notify',
+            type: 'error',
+            title: __('messages.error'),
+            message: __('messages.error_saving_daily_plan') . ': ' . $e->getMessage()
+        );
+        
+        return false;
+    }
+}
+
+/**
+ * Valida o status para garantir que seja um valor permitido no banco
+ * @param string|null $status
+ * @return string
+ */
+private function validatePlanStatus($status)
+{
+    $allowedStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+    
+    if (in_array($status, $allowedStatuses)) {
+        return $status;
+    }
+    
+    // Se for 'scheduled' ou qualquer outro valor não permitido, usar 'pending'
+    return 'pending';
+}
+
+/**
+ * Salvar planos diários de produção
+ */
+public function saveDailyPlans()
+{
+    try {
+        if (!$this->viewingSchedule || !$this->selectedShiftId) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.select_shift_first')
+            );
+            return;
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Salvando planos diários', [
+            'schedule_id' => $this->viewingSchedule->id,
+            'shift_id' => $this->selectedShiftId,
+            'total_planos' => count($this->filteredDailyPlans)
+        ]);
+        
+        // Verificar quantos planos já existem para este turno
+        $existingPlans = ProductionDailyPlan::where('schedule_id', $this->viewingSchedule->id)
+            ->where('shift_id', $this->selectedShiftId)
+            ->get()
+            ->keyBy(function($plan) {
+                return $plan->production_date->format('Y-m-d');
+            });
+        
+        \Illuminate\Support\Facades\Log::info('Verificação de planos existentes', [
+            'total_planos_existentes' => $existingPlans->count(),
+            'turno_selecionado' => $this->selectedShiftId
+        ]);
+        
+        // Registrar os dados iniciais para debug
+        \Illuminate\Support\Facades\Log::info('Iniciando o processamento para salvar planos', [
+            'total_planos' => count($this->filteredDailyPlans),
+            'shift_id_selecionado' => $this->selectedShiftId,
+            'todos_planos_tem_shift' => collect($this->filteredDailyPlans)->every(function($p) {
+                return isset($p['shift_id']) && $p['shift_id'];
+            })
+        ]);
+        
+        // Processar cada plano diário
+        foreach ($this->filteredDailyPlans as $index => $plan) {
+            $dateKey = $plan['production_date'];
+            
+            // Garantir que o shift_id esteja definido para este plano
+            if (!isset($plan['shift_id']) || !$plan['shift_id']) {
+                $plan['shift_id'] = $this->selectedShiftId;
+            }
+            
+            \Illuminate\Support\Facades\Log::info('Processando plano', [
+                'index' => $index,
+                'date' => $dateKey,
+                'plan_id' => $plan['id'] ?? null,
+                'shift_id' => $plan['shift_id']
+            ]);
+            
+            if (isset($plan['id']) && $plan['id']) {
+                // Atualizar plano existente
+                $dailyPlan = ProductionDailyPlan::find($plan['id']);
+                if ($dailyPlan) {
+                    $dailyPlan->update([
+                        'planned_quantity' => $plan['planned_quantity'],
+                        'actual_quantity' => $plan['actual_quantity'],
+                        'defect_quantity' => $plan['defect_quantity'],
+                        'has_breakdown' => $plan['has_breakdown'],
+                        'breakdown_minutes' => $plan['breakdown_minutes'] ?? 0,
+                        'failure_category_id' => $plan['failure_category_id'] ?? null,
+                        'failure_root_causes' => $plan['failure_root_causes'] ?? null,
+                        'status' => $this->validatePlanStatus($plan['status'] ?? 'pending'),
+                        'notes' => $plan['notes'] ?? '',
+                        'shift_id' => $plan['shift_id'] ?? $this->selectedShiftId // Garantir que o shift_id seja atualizado
+                    ]);
+                    
+                    \Illuminate\Support\Facades\Log::info('Plano atualizado com shift_id', [
+                        'id' => $dailyPlan->id,
+                        'shift_id_plano' => $plan['shift_id'] ?? 'não definido',
+                        'shift_id_usado' => $plan['shift_id'] ?? $this->selectedShiftId,
+                        'shift_id_salvo' => $dailyPlan->fresh()->shift_id
+                    ]);
+                    
+                    \Illuminate\Support\Facades\Log::info('Plano atualizado', [
+                        'id' => $dailyPlan->id,
+                        'date' => $dailyPlan->production_date->format('Y-m-d'),
+                        'shift_id' => $dailyPlan->shift_id,
+                        'quantity' => $dailyPlan->planned_quantity
+                    ]);
+                }
+            } else if (!isset($existingPlans[$dateKey])) {
+                // Criar novo plano apenas se não existir um para esta data e turno
+                $newPlan = ProductionDailyPlan::create([
+                    'schedule_id' => $this->viewingSchedule->id,
+                    'production_date' => $plan['production_date'],
+                    'start_time' => $plan['start_time'] ?? null,
+                    'end_time' => $plan['end_time'] ?? null,
+                    'planned_quantity' => $plan['planned_quantity'],
+                    'actual_quantity' => $plan['actual_quantity'] ?? 0,
+                    'defect_quantity' => $plan['defect_quantity'] ?? 0,
+                    'has_breakdown' => $plan['has_breakdown'] ?? false,
+                    'breakdown_minutes' => $plan['breakdown_minutes'] ?? 0,
+                    'failure_category_id' => $plan['failure_category_id'] ?? null,
+                    'failure_root_causes' => $plan['failure_root_causes'] ?? null,
+                    'status' => $this->validatePlanStatus($plan['status'] ?? 'pending'),
+                    'notes' => $plan['notes'] ?? '',
+                    'shift_id' => $this->selectedShiftId, // Garantir que shift_id seja passado corretamente
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
+                
+                \Illuminate\Support\Facades\Log::info('Criando novo plano com shift_id explícito', [
+                    'novo_plano_id' => $newPlan->id,
+                    'shift_id_usado' => $this->selectedShiftId,
+                    'shift_id_salvo' => $newPlan->shift_id
+                ]);
+                
+                \Illuminate\Support\Facades\Log::info('Novo plano criado', [
+                    'id' => $newPlan->id,
+                    'date' => $newPlan->production_date->format('Y-m-d'),
+                    'shift_id' => $newPlan->shift_id,
+                    'quantity' => $newPlan->planned_quantity
+                ]);
+            } else {
+                // Se o plano já existe mas não foi carregado na interface, atualizar a quantidade e o shift_id
+                $existingPlan = $existingPlans[$dateKey];
+                $existingPlan->update([
+                    'planned_quantity' => $plan['planned_quantity'],
+                    'shift_id' => $plan['shift_id'] ?? $this->selectedShiftId // Garantir que o shift_id esteja definido
+                ]);
+                
+                \Illuminate\Support\Facades\Log::info('Plano existente atualizado com shift_id explícito', [
+                    'id' => $existingPlan->id,
+                    'shift_id_usado' => $plan['shift_id'] ?? $this->selectedShiftId,
+                    'shift_id_salvo' => $existingPlan->fresh()->shift_id
+                ]);
+                
+                \Illuminate\Support\Facades\Log::info('Plano existente atualizado', [
+                    'id' => $existingPlan->id,
+                    'date' => $existingPlan->production_date->format('Y-m-d'),
+                    'shift_id' => $existingPlan->shift_id,
+                    'quantity' => $existingPlan->planned_quantity
+                ]);
+            }
+        }
+        
+        // Notificar sucesso
+        $this->dispatch('notify',
+            type: 'success',
+            title: __('messages.success'),
+            message: __('messages.daily_plans_saved_successfully')
+        );
+        
+        // Recarregar dados
+        $this->viewDailyPlans($this->viewingSchedule->id);
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Erro ao salvar planos diários', [
+            'erro' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        $this->dispatch('notify',
+            type: 'error',
+            title: __('messages.error'),
+            message: __('messages.failed_to_save_daily_plans')
+        );
+    }
+}
+
+/**
  * Atualizar um plano diário de produção
  * 
  * @param int $index Índice do plano a ser atualizado
@@ -2039,53 +2639,57 @@ public function updateDailyPlan($index, $data = null)
 {
     try {
         // Verificar se o plano existe
-        if (!isset($this->dailyPlans[$index])) {
+        if (!isset($this->filteredDailyPlans[$index])) {
             throw new \Exception(__('messages.daily_plan_not_found'));
         }
         
         // Se não foram passados dados específicos, usar os dados do formulário
         if (!$data) {
-            $data = $this->dailyPlans[$index];
+            $data = $this->filteredDailyPlans[$index];
+        }
+        
+        // Assegurar que o shift_id está definido
+        if (!isset($data['shift_id']) && $this->selectedShiftId) {
+            $data['shift_id'] = $this->selectedShiftId;
         }
         
         \Illuminate\Support\Facades\Log::info('Atualizando plano diário', [
             'index' => $index,
             'data' => $data,
-            'shift_id' => $data['shift_id'] ?? null
+            'shift_id' => $data['shift_id'] ?? $this->selectedShiftId ?? null
         ]);
         
         // Se o plano já existe no banco, atualizar
-        if (isset($this->dailyPlans[$index]['id']) && $this->dailyPlans[$index]['id']) {
-            $plan = ProductionDailyPlan::findOrFail($this->dailyPlans[$index]['id']);
+        if (isset($this->filteredDailyPlans[$index]['id']) && $this->filteredDailyPlans[$index]['id']) {
+            $plan = ProductionDailyPlan::findOrFail($this->filteredDailyPlans[$index]['id']);
             
             // Atualizar os campos do plano
-            $plan->production_date = $data['production_date'] ?? $this->dailyPlans[$index]['production_date'];
-            $plan->start_time = $data['start_time'] ?? $this->dailyPlans[$index]['start_time'];
-            $plan->end_time = $data['end_time'] ?? $this->dailyPlans[$index]['end_time'];
-            $plan->planned_quantity = $data['planned_quantity'] ?? $this->dailyPlans[$index]['planned_quantity'];
-            $plan->actual_quantity = $data['actual_quantity'] ?? $this->dailyPlans[$index]['actual_quantity'] ?? 0;
-            $plan->defect_quantity = $data['defect_quantity'] ?? $this->dailyPlans[$index]['defect_quantity'] ?? 0;
-            $plan->has_breakdown = $data['has_breakdown'] ?? $this->dailyPlans[$index]['has_breakdown'] ?? false;
-            $plan->breakdown_minutes = $data['breakdown_minutes'] ?? $this->dailyPlans[$index]['breakdown_minutes'] ?? 0;
-            $plan->failure_category_id = $data['failure_category_id'] ?? $this->dailyPlans[$index]['failure_category_id'] ?? null;
-            $plan->failure_root_causes = $data['failure_root_causes'] ?? $this->dailyPlans[$index]['failure_root_causes'] ?? null;
-            $plan->status = $data['status'] ?? $this->dailyPlans[$index]['status'] ?? 'scheduled';
-            $plan->notes = $data['notes'] ?? $this->dailyPlans[$index]['notes'] ?? '';
-            $plan->shift_id = $data['shift_id'] ?? $this->dailyPlans[$index]['shift_id'] ?? null;
+            $plan->production_date = $data['production_date'] ?? $this->filteredDailyPlans[$index]['production_date'];
+            $plan->start_time = $data['start_time'] ?? $this->filteredDailyPlans[$index]['start_time'];
+            $plan->end_time = $data['end_time'] ?? $this->filteredDailyPlans[$index]['end_time'];
+            $plan->planned_quantity = $data['planned_quantity'] ?? $this->filteredDailyPlans[$index]['planned_quantity'];
+            $plan->actual_quantity = $data['actual_quantity'] ?? $this->filteredDailyPlans[$index]['actual_quantity'] ?? 0;
+            $plan->defect_quantity = $data['defect_quantity'] ?? $this->filteredDailyPlans[$index]['defect_quantity'] ?? 0;
+            $plan->has_breakdown = $data['has_breakdown'] ?? $this->filteredDailyPlans[$index]['has_breakdown'] ?? false;
+            $plan->breakdown_minutes = $data['breakdown_minutes'] ?? $this->filteredDailyPlans[$index]['breakdown_minutes'] ?? 0;
+            $plan->failure_category_id = $data['failure_category_id'] ?? $this->filteredDailyPlans[$index]['failure_category_id'] ?? null;
+            $plan->failure_root_causes = $data['failure_root_causes'] ?? $this->filteredDailyPlans[$index]['failure_root_causes'] ?? null;
+            $plan->status = $data['status'] ?? $this->filteredDailyPlans[$index]['status'] ?? 'pending';
+            $plan->notes = $data['notes'] ?? $this->filteredDailyPlans[$index]['notes'] ?? '';
             
-            // Atualizar o turno selecionado, se fornecido
-            if (isset($data['shift_id'])) {
-                $plan->shift_id = $data['shift_id'];
-            }
+            // Garantir que o turno selecionado seja salvo
+            $plan->shift_id = $data['shift_id'] ?? $this->selectedShiftId ?? $this->filteredDailyPlans[$index]['shift_id'] ?? null;
             
             $plan->save();
             
             // Atualizar o objeto na memória
-            $this->dailyPlans[$index] = array_merge($this->dailyPlans[$index], $data);
-            $this->dailyPlans[$index]['id'] = $plan->id;
+            $this->filteredDailyPlans[$index] = array_merge($this->filteredDailyPlans[$index], $data);
+            $this->filteredDailyPlans[$index]['id'] = $plan->id;
+            $this->filteredDailyPlans[$index]['shift_id'] = $plan->shift_id;
             
             \Illuminate\Support\Facades\Log::info('Plano diário atualizado com sucesso', [
-                'id' => $plan->id
+                'id' => $plan->id,
+                'shift_id' => $plan->shift_id
             ]);
         } else {
             // Plano novo, criar no banco de dados
@@ -2093,23 +2697,21 @@ public function updateDailyPlan($index, $data = null)
             
             $plan = new ProductionDailyPlan();
             $plan->schedule_id = $schedule->id;
-            $plan->production_date = $data['production_date'] ?? $this->dailyPlans[$index]['production_date'];
-            $plan->start_time = $data['start_time'] ?? $this->dailyPlans[$index]['start_time'];
-            $plan->end_time = $data['end_time'] ?? $this->dailyPlans[$index]['end_time'];
-            $plan->planned_quantity = $data['planned_quantity'] ?? $this->dailyPlans[$index]['planned_quantity'];
-            $plan->actual_quantity = $data['actual_quantity'] ?? $this->dailyPlans[$index]['actual_quantity'] ?? 0;
-            $plan->defect_quantity = $data['defect_quantity'] ?? $this->dailyPlans[$index]['defect_quantity'] ?? 0;
-            $plan->has_breakdown = $data['has_breakdown'] ?? $this->dailyPlans[$index]['has_breakdown'] ?? false;
-            $plan->breakdown_minutes = $data['breakdown_minutes'] ?? $this->dailyPlans[$index]['breakdown_minutes'] ?? 0;
-            $plan->failure_category_id = $data['failure_category_id'] ?? $this->dailyPlans[$index]['failure_category_id'] ?? null;
-            $plan->failure_root_causes = $data['failure_root_causes'] ?? $this->dailyPlans[$index]['failure_root_causes'] ?? null;
-            $plan->status = $data['status'] ?? $this->dailyPlans[$index]['status'] ?? 'scheduled';
-            $plan->notes = $data['notes'] ?? $this->dailyPlans[$index]['notes'] ?? '';
+            $plan->production_date = $data['production_date'] ?? $this->filteredDailyPlans[$index]['production_date'];
+            $plan->start_time = $data['start_time'] ?? $this->filteredDailyPlans[$index]['start_time'];
+            $plan->end_time = $data['end_time'] ?? $this->filteredDailyPlans[$index]['end_time'];
+            $plan->planned_quantity = $data['planned_quantity'] ?? $this->filteredDailyPlans[$index]['planned_quantity'];
+            $plan->actual_quantity = $data['actual_quantity'] ?? $this->filteredDailyPlans[$index]['actual_quantity'] ?? 0;
+            $plan->defect_quantity = $data['defect_quantity'] ?? $this->filteredDailyPlans[$index]['defect_quantity'] ?? 0;
+            $plan->has_breakdown = $data['has_breakdown'] ?? $this->filteredDailyPlans[$index]['has_breakdown'] ?? false;
+            $plan->breakdown_minutes = $data['breakdown_minutes'] ?? $this->filteredDailyPlans[$index]['breakdown_minutes'] ?? 0;
+            $plan->failure_category_id = $data['failure_category_id'] ?? $this->filteredDailyPlans[$index]['failure_category_id'] ?? null;
+            $plan->failure_root_causes = $data['failure_root_causes'] ?? $this->filteredDailyPlans[$index]['failure_root_causes'] ?? null;
+            $plan->status = $data['status'] ?? $this->filteredDailyPlans[$index]['status'] ?? 'pending';
+            $plan->notes = $data['notes'] ?? $this->filteredDailyPlans[$index]['notes'] ?? '';
             
-            // Salvar o turno selecionado, se fornecido
-            if (isset($data['shift_id'])) {
-                $plan->shift_id = $data['shift_id'];
-            }
+            // Garantir que o turno selecionado seja salvo
+            $plan->shift_id = $data['shift_id'] ?? $this->selectedShiftId ?? null;
             
             $plan->save();
             
@@ -2212,6 +2814,41 @@ public function updateDailyPlan($index, $data = null)
         );
         
         return false;
+    }
+}
+
+/**
+ * Calcula a quantidade padrão para novos planos diários
+ * 
+ * @return float A quantidade planejada recomendada por dia
+ */
+private function calculateDefaultQuantity()
+{
+    if (!$this->viewingSchedule) {
+        return 0;
+    }
+    
+    try {
+        // Calcular com base no período e quantidade total planejada
+        $startDate = \Carbon\Carbon::parse($this->viewingSchedule->start_date);
+        $endDate = \Carbon\Carbon::parse($this->viewingSchedule->end_date);
+        $totalDays = $startDate->diffInDays($endDate) + 1; // Incluir o próprio dia
+        
+        if ($totalDays <= 0) {
+            return 0;
+        }
+        
+        // Se a quantidade planejada total está definida, dividir pelo número de dias
+        if ($this->viewingSchedule->planned_quantity > 0) {
+            return $this->viewingSchedule->planned_quantity / $totalDays;
+        }
+        
+        return 0;
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Erro ao calcular quantidade padrão', [
+            'erro' => $e->getMessage()
+        ]);
+        return 0;
     }
 }
 
@@ -2936,9 +3573,12 @@ public function update()
             \Illuminate\Support\Facades\Log::info('Todos os turnos foram removidos da programação ID: ' . $schedule->id);
         }
         
-        // Se datas ou quantidade foram alteradas, redistribuir os planos diários
+        // Não precisamos chamar distributePlannedQuantity() aqui porque o hook booted() já faz isso automaticamente
+        // quando os campos relevantes são atualizados
         if ($datesChanged) {
-            $schedule->distributePlannedQuantity();
+            \Illuminate\Support\Facades\Log::info('Datas ou quantidade alteradas - os planos diários serão atualizados automaticamente pelo hook booted()', [
+                'schedule_id' => $schedule->id
+            ]);
         }
         
         \Illuminate\Support\Facades\Log::info('Agendamento atualizado com sucesso', [
@@ -3002,22 +3642,20 @@ public function store()
         // Processar os turnos selecionados para a tabela pivot mrp_production_schedule_shift
         $selectedShiftIds = [];
         
-        // Debug do formato dos dados recebidos para shifts
+        // Debug do formato dos dados de turnos recebidos
         \Illuminate\Support\Facades\Log::debug('Formato dos dados de turnos recebidos:', [
-            'data_shifts' => $data['shifts'] ?? 'shifts não definido',
+            'selectedShifts' => $this->selectedShifts,
             'pivot_table' => 'mrp_production_schedule_shift'
         ]);
         
-        if (isset($data['shifts']) && is_array($data['shifts'])) {
-            // Extrair os IDs dos turnos selecionados (as chaves onde o valor é 1)
-            foreach ($data['shifts'] as $shiftId => $value) {
-                if ($value == 1) {
-                    $selectedShiftIds[] = intval($shiftId);
-                    
-                    // Registrar cada turno que está sendo adicionado
-                    $shiftName = Shift::find($shiftId)?->name ?? 'desconhecido';
-                    \Illuminate\Support\Facades\Log::debug("Adicionando turno ID: {$shiftId} ({$shiftName}) à programação");
-                }
+        if (!empty($this->selectedShifts)) {
+            // Converter todos os IDs para inteiros
+            foreach ($this->selectedShifts as $shiftId) {
+                $selectedShiftIds[] = intval($shiftId);
+                
+                // Registrar cada turno que está sendo adicionado
+                $shiftName = Shift::find($shiftId)?->name ?? 'desconhecido';
+                \Illuminate\Support\Facades\Log::debug("Adicionando turno ID: {$shiftId} ({$shiftName}) à programação");
             }
             
             // Garantir que os IDs sejam inteiros válidos
@@ -3044,20 +3682,27 @@ public function store()
                     'turnos_associados_count' => $associatedShifts->count(),
                     'turnos_nomes' => $associatedShifts->pluck('name')->toArray()
                 ]);
+                
+                // Recarregar o modelo após sincronizar os turnos para garantir que a relação esteja atualizada
+                $schedule = $schedule->fresh();
+                
+                \Illuminate\Support\Facades\Log::info('Turnos associados com sucesso ao agendamento');
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Erro ao salvar turnos na tabela pivot:', [
                     'message' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
+                
+                // Não criar planos diários automaticamente
+                \Illuminate\Support\Facades\Log::info('Erro ao associar turnos, mas o agendamento foi criado');
             }
         } else {
             \Illuminate\Support\Facades\Log::warning('Nenhum turno selecionado ou formato inválido na criação da programação');
+            
+            // Não criar planos diários automaticamente
+            \Illuminate\Support\Facades\Log::info('Agendamento criado sem turnos associados');
         }
         
-        // Criar planos diários
-        $schedule->distributePlannedQuantity();
-        
-        \Illuminate\Support\Facades\Log::info('Planos diários criados com sucesso');
         
         // Fechar o modal após salvar
         $this->closeCreateEditModal();

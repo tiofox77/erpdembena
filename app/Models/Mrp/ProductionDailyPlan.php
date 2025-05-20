@@ -41,6 +41,7 @@ class ProductionDailyPlan extends Model
         'notes',
         'created_by',
         'updated_by',
+        'shift_id',
     ];
 
     /**

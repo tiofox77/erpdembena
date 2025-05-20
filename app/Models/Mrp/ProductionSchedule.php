@@ -16,6 +16,30 @@ use Carbon\Carbon;
 class ProductionSchedule extends Model
 {
     use HasFactory, SoftDeletes;
+    
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        // Quando uma programação é atualizada, registrar alterações mas NÃO recalcular planos diários automaticamente
+        static::updated(function($schedule) {
+            // Verificar se houve mudança em campos relevantes para o cálculo
+            if ($schedule->wasChanged(['planned_quantity', 'working_hours_per_day', 'hourly_production_rate',
+                                      'setup_time', 'cleanup_time', 'start_date', 'end_date', 'working_days'])) {
+                \Illuminate\Support\Facades\Log::info('Detectada alteração em campos relevantes para distribuição', [
+                    'schedule_id' => $schedule->id,
+                    'schedule_number' => $schedule->schedule_number,
+                    'campos_alterados' => $schedule->getChanges()
+                ]);
+                
+                // NÃO recalcular planos diários automaticamente - isso será feito manualmente na interface de planos diários
+                // $schedule->recalculateDailyPlans(false);
+            }
+        });
+    }
 
     /**
      * A tabela associada ao modelo.
@@ -36,8 +60,6 @@ class ProductionSchedule extends Model
         'end_date',
         'planned_quantity',
         'actual_quantity',
-        'actual_start_time',
-        'actual_end_time',
         'is_delayed',
         'delay_reason',
         'status',
@@ -65,8 +87,6 @@ class ProductionSchedule extends Model
         'end_date' => 'date',
         'planned_quantity' => 'decimal:3',
         'actual_quantity' => 'decimal:3',
-        'actual_start_time' => 'datetime',
-        'actual_end_time' => 'datetime',
         'is_delayed' => 'boolean',
         'working_hours_per_day' => 'decimal:2',
         'hourly_production_rate' => 'decimal:2',
@@ -277,25 +297,31 @@ class ProductionSchedule extends Model
             
             // Mapear dias da semana para códigos numéricos
             $dayNameMapping = [
-                0 => 'sunday',
-                1 => 'monday',
-                2 => 'tuesday',
-                3 => 'wednesday',
-                4 => 'thursday',
-                5 => 'friday',
-                6 => 'saturday'
+                0 => 'sun',
+                1 => 'mon',
+                2 => 'tue',
+                3 => 'wed',
+                4 => 'thu',
+                5 => 'fri',
+                6 => 'sat'
             ];
-            
+        
             // Dias de trabalho definidos no agendamento
             $workingDays = $this->working_days ?? [
-                'monday' => true,
-                'tuesday' => true,
-                'wednesday' => true,
-                'thursday' => true,
-                'friday' => true,
-                'saturday' => false,
-                'sunday' => false
+                'mon' => true,
+                'tue' => true,
+                'wed' => true,
+                'thu' => true,
+                'fri' => true,
+                'sat' => false,
+                'sun' => false
             ];
+            
+            // Debug dos dias de trabalho definidos
+            \Illuminate\Support\Facades\Log::debug('Dias de trabalho definidos na programação:', [
+                'working_days' => $workingDays,
+                'schedule_id' => $this->id
+            ]);    
             
             // Calcular o número total de dias entre as datas de início e fim
             $startDate = \Carbon\Carbon::parse($this->start_date);
@@ -401,8 +427,6 @@ class ProductionSchedule extends Model
                         $dailyPlan = new \App\Models\Mrp\ProductionDailyPlan([
                             'schedule_id' => $this->id,
                             'production_date' => $date,
-                            'start_time' => $this->start_time,
-                            'end_time' => $this->end_time,
                             'planned_quantity' => $quantityPerShift,
                             'status' => 'pending',
                             'created_by' => $userId,
@@ -423,8 +447,6 @@ class ProductionSchedule extends Model
                     $dailyPlan = new \App\Models\Mrp\ProductionDailyPlan([
                         'schedule_id' => $this->id,
                         'production_date' => $date,
-                        'start_time' => $this->start_time,
-                        'end_time' => $this->end_time,
                         'planned_quantity' => $quantityForDay,
                         'status' => 'pending',
                         'created_by' => $userId,
@@ -565,16 +587,26 @@ class ProductionSchedule extends Model
             
             if ($setupTime > 0 || $cleanupTime > 0) {
                 $totalNonProductiveMinutes = $setupTime + $cleanupTime;
-                $capacityReduction = $totalNonProductiveMinutes / ($hoursPerDay * 60);
-                $dailyCapacity = $dailyCapacity * (1 - $capacityReduction);
+                // Converter minutos para horas
+                $nonProductiveHours = $totalNonProductiveMinutes / 60;
                 
-                if ($debug) {
-                    \Illuminate\Support\Facades\Log::info('Capacidade ajustada para setup/cleanup', [
-                        'setup_time' => $setupTime, 
-                        'cleanup_time' => $cleanupTime,
-                        'daily_capacity_before' => $hoursPerDay * $hourlyRate,
-                        'daily_capacity_after' => $dailyCapacity
-                    ]);
+                if ($hoursPerDay > 0) { // Evitar divisão por zero
+                    // Calcular a proporção de tempo produtivo (tempo total menos setup/cleanup)
+                    $productiveRatio = max(0, ($hoursPerDay - $nonProductiveHours) / $hoursPerDay);
+                    $dailyCapacity = $dailyCapacity * $productiveRatio;
+                    
+                    if ($debug) {
+                        \Illuminate\Support\Facades\Log::info('Capacidade ajustada para setup/cleanup (método corrigido)', [
+                            'setup_time' => $setupTime, 
+                            'cleanup_time' => $cleanupTime,
+                            'total_non_productive_minutes' => $totalNonProductiveMinutes,
+                            'non_productive_hours' => $nonProductiveHours,
+                            'hours_per_day' => $hoursPerDay,
+                            'productive_ratio' => $productiveRatio,
+                            'daily_capacity_before' => $hoursPerDay * $hourlyRate,
+                            'daily_capacity_after' => $dailyCapacity
+                        ]);
+                    }
                 }
             }
             
@@ -658,17 +690,104 @@ class ProductionSchedule extends Model
                 
                 // Se houver turnos associados, criar um plano para cada turno
                 if ($shifts->isNotEmpty()) {
-                    // Distribuir a quantidade planejada igualmente entre os turnos
+                    // Distribuir a quantidade planejada entre os turnos com base na duração de cada turno
                     $shiftsCount = $shifts->count();
-                    $quantityPerShift = $quantityForDay / $shiftsCount;
+                    $totalShiftHours = 0;
+                    $shiftHours = [];
                     
                     foreach ($shifts as $shift) {
+                        $duration = $shift->duration; // Usa o accessor que calcula a duração do turno
+                        $shiftHours[$shift->id] = $duration;
+                        $totalShiftHours += $duration;
+                    }
+                    
+                    // Debug para investigar o problema da distribuição
+                    if ($debug) {
+                        \Illuminate\Support\Facades\Log::info('Detalhes dos turnos e horas', [
+                            'date' => $date,
+                            'shifts_count' => $shiftsCount,
+                            'total_shift_hours' => $totalShiftHours,
+                            'shift_details' => $shifts->map(function($shift) {
+                                return [
+                                    'id' => $shift->id,
+                                    'name' => $shift->name,
+                                    'start_time' => $shift->start_time,
+                                    'end_time' => $shift->end_time,
+                                    'duration' => $shift->duration,
+                                ];
+                            })->toArray(),
+                        ]);
+                    }
+                    
+                    // Verificar se a duração total dos turnos é válida
+                    if ($totalShiftHours <= 0) {
+                        $quantityPerShift = $quantityForDay / $shiftsCount; // Fallback para divisão igual
+                    } else {
+                        // Inicializar array para armazenar quantidade por turno
+                        $shiftQuantities = [];
+                        
+                        // Distribuir proporcionalmente à duração do turno
+                        foreach ($shifts as $shift) {
+                            $ratio = $shiftHours[$shift->id] / $totalShiftHours;
+                            $shiftQuantities[$shift->id] = $quantityForDay * $ratio;
+                        }
+                    }
+                    
+                    if ($debug) {
+                        \Illuminate\Support\Facades\Log::info('Distribuição proporcional de quantidade por turnos', [
+                            'date' => $date,
+                            'daily_quantity' => $quantityForDay,
+                            'shifts_count' => $shiftsCount,
+                            'shift_quantities' => isset($shiftQuantities) ? $shiftQuantities : [],
+                            'total_shift_hours' => $totalShiftHours,
+                            'working_hours_per_day' => $this->working_hours_per_day,
+                            'hourly_production_rate' => $this->hourly_production_rate,
+                            'schedule_id' => $this->id,
+                            'schedule_number' => $this->schedule_number,
+                            'planned_quantity' => $this->planned_quantity
+                        ]);
+                    }
+                    
+                    // Criar planos diários com base na quantidade calculada para cada turno
+                    foreach ($shifts as $shift) {
+                        // Determinar a quantidade para este turno específico
+                        $shiftQuantity = 0;
+                        
+                        if (isset($shiftQuantities) && isset($shiftQuantities[$shift->id])) {
+                            // Usar a quantidade proporcional à duração do turno
+                            $shiftQuantity = $shiftQuantities[$shift->id];
+                        } else {
+                            // Fallback para divisão igual
+                            $shiftQuantity = $quantityForDay / $shiftsCount;
+                        }
+                        
+                        // Verificar se é o último turno no último dia para ajustar o total
+                        if ($isLastDay && $shift->id === $shifts->last()->id) {
+                            // Calcular o total já atribuído antes deste último turno
+                            $totalAssigned = 0;
+                            foreach ($plans as $existingPlan) {
+                                $totalAssigned += $existingPlan['planned_quantity']; 
+                            }
+                            $difference = $this->planned_quantity - $totalAssigned;
+                            
+                            if ($debug) {
+                                \Illuminate\Support\Facades\Log::info('Ajuste do último turno para garantir total exato', [
+                                    'total_assigned_before' => $totalAssigned,
+                                    'planned_quantity' => $this->planned_quantity,
+                                    'difference' => $difference,
+                                    'original_shift_quantity' => $shiftQuantity,
+                                    'new_shift_quantity' => $shiftQuantity + $difference
+                                ]);
+                            }
+                            
+                            // Ajustar a quantidade para garantir o total exato
+                            $shiftQuantity = max(0, $shiftQuantity + $difference);
+                        }
+                        
                         $planData = [
                             'schedule_id' => $this->id,
                             'production_date' => $date,
-                            'start_time' => $this->start_time,
-                            'end_time' => $this->end_time,
-                            'planned_quantity' => $quantityPerShift,
+                            'planned_quantity' => $shiftQuantity,
                             'status' => 'pending',
                             'created_by' => $userId,
                             'updated_by' => $userId,
@@ -676,8 +795,16 @@ class ProductionSchedule extends Model
                         ];
                         $plans[] = $planData;
                         
-                        if ($debug && $index === 0) { // Logar apenas para o primeiro dia como exemplo
-                            \Illuminate\Support\Facades\Log::debug('Dados de plano diário com turno', $planData);
+                        if ($debug) {
+                            $logMessage = $index === 0 ? 'Dados de plano diário com turno (primeiro dia)' : 
+                                         ($isLastDay ? 'Dados de plano diário com turno (último dia)' : 'Dados de plano diário com turno');
+                            
+                            \Illuminate\Support\Facades\Log::debug($logMessage, array_merge($planData, [
+                                'shift_name' => $shift->name,
+                                'shift_duration' => isset($shiftHours[$shift->id]) ? $shiftHours[$shift->id] : 'N/A',
+                                'total_shift_hours' => $totalShiftHours,
+                                'ratio_of_day' => isset($shiftHours[$shift->id]) && $totalShiftHours > 0 ? ($shiftHours[$shift->id] / $totalShiftHours) : 'N/A'
+                            ]));
                         }
                     }
                 } else {
@@ -685,8 +812,6 @@ class ProductionSchedule extends Model
                     $planData = [
                         'schedule_id' => $this->id,
                         'production_date' => $date,
-                        'start_time' => $this->start_time,
-                        'end_time' => $this->end_time,
                         'planned_quantity' => $quantityForDay,
                         'status' => 'pending',
                         'created_by' => $userId,
@@ -736,6 +861,122 @@ class ProductionSchedule extends Model
             
             // Retornar erro para exibição na interface
             return ['error' => $errorMsg, 'exception' => get_class($e), 'plans' => []];
+        }
+    }
+    
+    /**
+     * Recalcula e atualiza todos os planos diários associados a esta programação
+     * Este método é chamado automaticamente quando a programação é atualizada
+     * para garantir que os planos diários reflitam as configurações atualizadas
+     * 
+     * @param bool $forceDelete Se true, exclui todos os planos atuais antes de recalcular
+     * @return array Detalhes da operação realizada
+     */
+    public function recalculateDailyPlans($forceDelete = false)
+    {
+        try {
+            \Illuminate\Support\Facades\Log::info('Iniciando recálculo de planos diários', [
+                'schedule_id' => $this->id,
+                'schedule_number' => $this->schedule_number,
+                'force_delete' => $forceDelete
+            ]);
+            
+            // Obter os planos diários atuais
+            $currentPlans = ProductionDailyPlan::where('schedule_id', $this->id)->get();
+            $planCount = $currentPlans->count();
+            
+            // Se não existem planos ou forceDelete é true, excluir e recalcular tudo
+            if ($planCount === 0 || $forceDelete) {
+                // Se houver planos existentes, excluí-los
+                if ($planCount > 0) {
+                    ProductionDailyPlan::where('schedule_id', $this->id)->delete();
+                    
+                    \Illuminate\Support\Facades\Log::info('Planos diários excluídos para recálculo', [
+                        'schedule_id' => $this->id,
+                        'planos_excluidos' => $planCount
+                    ]);
+                }
+                
+                // Calcular novos planos diários com base nas configurações atuais
+                $result = $this->calculatePlannedDistribution(true);
+                
+                if (isset($result['error'])) {
+                    throw new \Exception($result['error']);
+                }
+                
+                // Criar os novos planos diários
+                $newPlans = [];
+                foreach ($result['plans'] as $plan) {
+                    $newPlans[] = ProductionDailyPlan::create($plan);
+                }
+                
+                \Illuminate\Support\Facades\Log::info('Planos diários recalculados com sucesso', [
+                    'schedule_id' => $this->id,
+                    'novos_planos' => count($newPlans)
+                ]);
+                
+                return [
+                    'success' => true,
+                    'message' => 'Planos diários recalculados com sucesso',
+                    'deleted_plans' => $planCount,
+                    'new_plans' => count($newPlans)
+                ];
+            } else {
+                // Se existem planos e forceDelete é false, atualizar os planos existentes
+                // sem excluí-los (preserva dados já registrados pelo usuário)
+                
+                // Calcular novas distribuições
+                $result = $this->calculatePlannedDistribution(true);
+                
+                if (isset($result['error'])) {
+                    throw new \Exception($result['error']);
+                }
+                
+                // Criar um mapa dos planos calculados indexado por data+turno
+                $plannedMap = [];
+                foreach ($result['plans'] as $plan) {
+                    $key = $plan['production_date'] . '-' . ($plan['shift_id'] ?? 'noshift');
+                    $plannedMap[$key] = $plan;
+                }
+                
+                // Atualizar apenas as quantidades planejadas dos planos existentes
+                $updatedCount = 0;
+                foreach ($currentPlans as $currentPlan) {
+                    $key = $currentPlan->production_date->format('Y-m-d') . '-' . ($currentPlan->shift_id ?? 'noshift');
+                    
+                    if (isset($plannedMap[$key])) {
+                        // Atualizar apenas a quantidade planejada (preservar outros dados)
+                        $currentPlan->planned_quantity = $plannedMap[$key]['planned_quantity'];
+                        $currentPlan->save();
+                        $updatedCount++;
+                    }
+                }
+                
+                \Illuminate\Support\Facades\Log::info('Planos diários atualizados (apenas quantidades)', [
+                    'schedule_id' => $this->id,
+                    'total_planos' => $planCount,
+                    'planos_atualizados' => $updatedCount
+                ]);
+                
+                return [
+                    'success' => true, 
+                    'message' => 'Quantidades planejadas atualizadas',
+                    'updated_plans' => $updatedCount,
+                    'total_plans' => $planCount
+                ];
+            }
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erro ao recalcular planos diários', [
+                'schedule_id' => $this->id,
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Erro ao recalcular planos diários: ' . $e->getMessage()
+            ];
         }
     }
 }

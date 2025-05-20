@@ -300,9 +300,18 @@
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="flex items-center space-x-1">
-                                            <span class="text-gray-600"><i class="fas fa-hourglass-start text-green-500 mr-1"></i>{{ $plan['start_time'] }}</span>
-                                            <i class="fas fa-arrow-right text-gray-400"></i>
-                                            <span class="text-gray-600"><i class="fas fa-hourglass-end text-amber-500 mr-1"></i>{{ $plan['end_time'] }}</span>
+                                            @if(isset($selectedShiftId) && $selectedShiftId)
+                                                @php
+                                                    $shift = $shifts->firstWhere('id', $selectedShiftId);
+                                                    $startTime = $shift ? $shift->start_time : '00:00';
+                                                    $endTime = $shift ? $shift->end_time : '00:00';
+                                                @endphp
+                                                <span class="text-gray-600"><i class="fas fa-hourglass-start text-green-500 mr-1"></i>{{ $startTime }}</span>
+                                                <i class="fas fa-arrow-right text-gray-400"></i>
+                                                <span class="text-gray-600"><i class="fas fa-hourglass-end text-amber-500 mr-1"></i>{{ $endTime }}</span>
+                                            @else
+                                                <span class="text-gray-500 italic">{{ __('messages.select_shift_first') }}</span>
+                                            @endif
                                         </div>
                                     </td>
 
@@ -403,7 +412,7 @@
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="flex space-x-2">
-                                            <button type="button" wire:click="saveDailyPlan({{ $index }})" 
+                                            <button type="button" wire:click.prevent="saveDailyPlan({{ $index }})" 
                                                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-sm"
                                                     wire:loading.attr="disabled">
                                                 <i class="fas fa-save mr-1 text-blue-200"></i>
@@ -450,11 +459,24 @@
                     <i class="fas fa-info-circle mr-1 text-blue-400"></i>
                     <span>{{ __('messages.daily_plans_info') }}</span>
                 </div>
-                <button type="button" wire:click="closeDailyPlansModal" 
-                    class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                    <i class="fas fa-times mr-2"></i>
-                    {{ __('messages.close') }}
-                </button>
+                <div class="flex space-x-2">
+                    <button type="button" wire:click="recalculatePlans" wire:loading.attr="disabled" 
+                        class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 transition-all duration-200 ease-in-out transform hover:scale-105">
+                        <div wire:loading.remove wire:target="recalculatePlans">
+                            <i class="fas fa-calculator mr-2"></i>
+                            {{ __('messages.recalculate') }}
+                        </div>
+                        <div wire:loading wire:target="recalculatePlans">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            {{ __('messages.calculating') }}...
+                        </div>
+                    </button>
+                    <button type="button" wire:click="closeDailyPlansModal" 
+                        class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                        <i class="fas fa-times mr-2"></i>
+                        {{ __('messages.close') }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
