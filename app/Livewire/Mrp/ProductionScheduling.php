@@ -2339,7 +2339,7 @@ public function view($id)
         
         // Definir ID e carregar o agendamento completo com seus relacionamentos
         $this->scheduleId = $id;
-        $this->selectedSchedule = ProductionSchedule::with(['product', 'location', 'line', 'shift'])->find($id);
+        $this->selectedSchedule = ProductionSchedule::with(['product', 'location', 'line', 'shifts'])->find($id);
         
         if (!$this->selectedSchedule) {
             \Illuminate\Support\Facades\Log::warning('Agendamento não encontrado', ['id' => $id]);

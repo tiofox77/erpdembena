@@ -265,14 +265,14 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.actual_start_time') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
-                                        {{ $viewingSchedule->actual_start_time ? $viewingSchedule->actual_start_time->format('d/m/Y H:i') : __('messages.not_started') }}
+                                        {{ $viewingSchedule->start_date ? $viewingSchedule->start_date->format('d/m/Y') : __('messages.not_started') }}
                                     </dd>
                                 </div>
 
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.actual_end_time') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
-                                        {{ $viewingSchedule->actual_end_time ? $viewingSchedule->actual_end_time->format('d/m/Y H:i') : __('messages.not_completed') }}
+                                        {{ $viewingSchedule->end_date ? $viewingSchedule->end_date->format('d/m/Y') : __('messages.not_completed') }}
                                     </dd>
                                 </div>
 
