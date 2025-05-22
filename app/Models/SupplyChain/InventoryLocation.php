@@ -24,7 +24,8 @@ class InventoryLocation extends Model
         'postal_code',
         'phone',
         'manager',
-        'is_active'
+        'is_active',
+        'is_raw_material_warehouse'
     ];
 
     /**

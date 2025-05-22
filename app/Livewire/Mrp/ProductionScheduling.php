@@ -39,6 +39,15 @@ class ProductionScheduling extends Component
     public $showComponentWarning = false;
     public $insufficientComponents = [];
     public $maxQuantityPossible = 0;
+    public $rawMaterialWarehouses = null;
+    
+    /**
+     * Computed property to check if raw material warehouses exist
+     */
+    public function getHasRawMaterialWarehousesProperty()
+    {
+        return $this->rawMaterialWarehouses && $this->rawMaterialWarehouses->count() > 0;
+    }
     
     // Propriedades para modal
     public $showModal = false;
@@ -91,6 +100,7 @@ class ProductionScheduling extends Component
         $this->showComponentWarning = false;
         $this->insufficientComponents = [];
         $this->maxQuantityPossible = 0;
+        $this->rawMaterialWarehouses = null;
         
         // Define um tempo limite para prevenir loops infinitos
         $startTime = microtime(true);
@@ -165,11 +175,36 @@ class ProductionScheduling extends Component
             return;
         }
         
+        // Buscar todos os locais marcados como armazém de matéria-prima (fora do loop para eficiência)
+        // Importante: certifique-se de usar a tabela correta sc_inventory_locations
+        $this->rawMaterialWarehouses = Location::where('is_raw_material_warehouse', 1) // Usando 1 em vez de true para garantir compatibilidade com MySQL
+            ->where('is_active', 1) // Usando 1 em vez de true para garantir compatibilidade com MySQL
+            ->select('id', 'name', 'code', 'city')
+            ->orderBy('name')
+            ->get();
+        
+        // Log para debug - verificar o SQL gerado e os resultados
+        \Illuminate\Support\Facades\Log::info('SQL para buscar armazéns de matéria-prima', [
+            'query' => Location::where('is_raw_material_warehouse', 1)->where('is_active', 1)->toSql(),
+            'bindings' => Location::where('is_raw_material_warehouse', 1)->where('is_active', 1)->getBindings(),
+            'count' => $this->rawMaterialWarehouses->count(),
+            'warehouses' => $this->rawMaterialWarehouses->toArray()
+        ]);
+        
+        // Extrair apenas os IDs para o filtro de disponibilidade
+        $rawMaterialLocationIds = $this->rawMaterialWarehouses->pluck('id')->toArray();
+        
+        // Registrar informações sobre os locais de matéria-prima para debug
+        \Illuminate\Support\Facades\Log::info('Locais de armazém de matéria-prima', [
+            'total_locations' => count($rawMaterialLocationIds),
+            'location_ids' => $rawMaterialLocationIds
+        ]);
+        
         // Usar a variável planned_quantity já definida acima
         $this->componentAvailability = [];
         $insufficientFound = false;
         $maxPossible = PHP_INT_MAX;
-        
+            
         // Registrar a quantidade para debug
         \Illuminate\Support\Facades\Log::info('Verificando quantidade:', [
             'planned_quantity' => $planned_quantity,
@@ -206,10 +241,42 @@ class ProductionScheduling extends Component
         // Calcular quantidade necessária do componente
         $required_quantity = $bomComponent->quantity * $planned_quantity;
         
-        // Calcular quantidade disponível (somar todos os locais de inventário)
+        // Calcular quantidade disponível (somar apenas os locais de inventário marcados como armazém de matéria-prima)
         $available_quantity = 0;
         if ($bomComponent->component->inventoryItems) {
-            $available_quantity = $bomComponent->component->inventoryItems->sum('quantity_on_hand');
+            
+            // Filtrar apenas os itens em armazéns de matéria-prima
+            // Importante: usar $rawMaterialLocationIds que foi definido fora do loop
+            \Illuminate\Support\Facades\Log::info('Filtrando itens de inventário para componente', [
+                'component_name' => $bomComponent->component->name ?? 'Desconhecido',
+                'total_inventory_items' => $bomComponent->component->inventoryItems->count(),
+                'raw_material_location_ids' => $rawMaterialLocationIds
+            ]);
+            
+            $rawMaterialItems = $bomComponent->component->inventoryItems->filter(function($item) use ($rawMaterialLocationIds) {
+                \Illuminate\Support\Facades\Log::info('Verificando item de inventário', [
+                    'item_id' => $item->id,
+                    'location_id' => $item->location_id,
+                    'is_in_raw_material_warehouse' => in_array($item->location_id, $rawMaterialLocationIds)
+                ]);
+                return in_array($item->location_id, $rawMaterialLocationIds);
+            });
+            
+            // Somar as quantidades disponíveis apenas nos armazéns de matéria-prima
+            $available_quantity = $rawMaterialItems->sum('quantity_on_hand');
+            
+            // Para debug, também calcular a quantidade total em todos os armazéns
+            $total_available = $bomComponent->component->inventoryItems->sum('quantity_on_hand');
+            
+            // Se a quantidade disponível for diferente da total, registrar para debug
+            if ($available_quantity != $total_available) {
+                \Illuminate\Support\Facades\Log::info('Diferença de quantidade entre armazéns de matéria-prima e total', [
+                    'component' => $bomComponent->component->name,
+                    'raw_material_warehouses_only' => $available_quantity,
+                    'all_warehouses' => $total_available,
+                    'difference' => $total_available - $available_quantity
+                ]);
+            }
         }
         
         // Verificar se há quantidade suficiente
@@ -265,7 +332,7 @@ public $schedule = [
     'planned_quantity' => '',
     'actual_quantity' => 0,
     'actual_start_time' => null,
-    'actual_end_time' => null,
+    'end_date' => null, // Substituído actual_end_time por end_date
     'is_delayed' => false,
     'delay_reason' => '',
     'status' => 'draft',

@@ -39,10 +39,19 @@ return [
     'view_location' => 'Visualizar Localização',
     'delete_location' => 'Excluir Localização',
     
+    // Armazém de Matéria-Prima
+    'is_raw_material_warehouse' => 'Armazém de Matéria-Prima',
+    'is_raw_material_warehouse_help' => 'Marque esta localização como um armazém de matéria-prima para processos de produção. Apenas localizações marcadas como armazéns de matéria-prima serão consideradas ao verificar a disponibilidade de componentes para programação de produção.',
+    
     // Status options
     'active' => 'Ativo',
     'inactive' => 'Inativo',
     'is_active' => 'Status',
+    'active_info' => 'Localizações ativas estão disponíveis para operações de inventário',
+    
+    // Raw Material Warehouse
+    'raw_material_warehouse' => 'Armazém de Matéria-Prima',
+    'raw_material_warehouse_description' => 'Este local armazena matérias-primas utilizadas na produção.',
     
     // Confirmations
     'confirm_deletion' => 'Confirmar Exclusão',

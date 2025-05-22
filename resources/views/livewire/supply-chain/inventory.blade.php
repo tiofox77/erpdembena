@@ -389,6 +389,16 @@
                                                 <i class="fas fa-industry mr-1"></i>
                                                 {{ __('messages.production') }}
                                             </span>
+                                        @elseif($transaction->transaction_type === 'raw_production')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-red-200">
+                                                <i class="fas fa-minus-circle mr-1"></i>
+                                                {{ __('messages.raw_material') }}
+                                            </span>
+                                        @elseif($transaction->transaction_type === 'production_order')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-green-200">
+                                                <i class="fas fa-plus-circle mr-1"></i>
+                                                {{ __('messages.production_order') }}
+                                            </span>
                                         @else
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-blue-200">
                                                 <i class="fas fa-exchange-alt mr-1"></i>
@@ -398,7 +408,12 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($transaction->quantity > 0)
+                                    @if($transaction->transaction_type === 'raw_production')
+                                        <div class="text-sm font-bold text-red-600 flex items-center animate-fadeIn transition-all duration-300 hover:scale-110">
+                                            <span class="bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">-</span>
+                                            {{ number_format(abs($transaction->quantity), 2) }}
+                                        </div>
+                                    @elseif($transaction->quantity > 0)                                        
                                         <div class="text-sm font-bold text-green-600 flex items-center animate-fadeIn transition-all duration-300 hover:scale-110">
                                             <span class="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">+</span>
                                             {{ number_format($transaction->quantity, 2) }}
@@ -1095,10 +1110,50 @@
                                                             {{ __('messages.stock_removed') }}
                                                         </span>
                                                     @endif
-                                                @else
+                                                @elseif($transaction->transaction_type === 'transfer')
                                                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                                                         <i class="fas fa-exchange-alt mr-1"></i>
                                                         {{ __('messages.stock_transfer') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'raw_production')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                                                        <i class="fas fa-industry mr-1"></i>
+                                                        {{ __('messages.raw_material') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'production_order')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800">
+                                                        <i class="fas fa-cogs mr-1"></i>
+                                                        {{ __('messages.production_order') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'purchase_receipt')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                                        <i class="fas fa-truck-loading mr-1"></i>
+                                                        {{ __('messages.purchase_receipt') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'sales_issue')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                        <i class="fas fa-shopping-cart mr-1"></i>
+                                                        {{ __('messages.sales_issue') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'production')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                        <i class="fas fa-industry mr-1"></i>
+                                                        {{ __('messages.production') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'production_receipt')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                        <i class="fas fa-box-open mr-1"></i>
+                                                        {{ __('messages.production_receipt') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'production_issue')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                                                        <i class="fas fa-box mr-1"></i>
+                                                        {{ __('messages.production_issue') }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                                        <i class="fas fa-question-circle mr-1"></i>
+                                                        {{ $transaction->transaction_type }}
                                                     </span>
                                                 @endif
                                             </div>

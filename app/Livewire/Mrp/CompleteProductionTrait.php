@@ -60,7 +60,7 @@ trait CompleteProductionTrait
             $transaction = new \App\Models\SupplyChain\InventoryTransaction();
             
             // Geramos um número de transação único
-            $prefix = 'TRX-' . date('Ymd');
+            $prefix = 'TRX-PROD-' . date('Ymd');
             $lastTransaction = \App\Models\SupplyChain\InventoryTransaction::where('transaction_number', 'LIKE', $prefix . '-%')
                 ->orderBy('id', 'desc')
                 ->first();
@@ -79,7 +79,7 @@ trait CompleteProductionTrait
             $transaction->reference_type = 'production';
             $transaction->reference_id = $schedule->id;
             $transaction->quantity = $actualQuantity;
-            $transaction->transaction_type = 'production_receipt'; // Valor válido para o ENUM
+            $transaction->transaction_type = 'production_order'; // Novo tipo específico para produtos produzidos
             $transaction->notes = 'Produção completada (movimentação manual): ' . $schedule->schedule_number;
             $transaction->created_by = auth()->id();
             $transaction->save();
@@ -175,7 +175,7 @@ trait CompleteProductionTrait
             
             // Atualizar o status e registrar a data/hora de conclusão
             $schedule->status = 'completed';
-            $schedule->actual_end_time = now();
+            $schedule->end_date = now(); // Usando end_date em vez de actual_end_time
             $schedule->actual_quantity = $actualQuantity;
             
             // IMPORTANTE: Salvar as alterações no banco de dados
@@ -274,7 +274,7 @@ trait CompleteProductionTrait
                 $transaction = new \App\Models\SupplyChain\InventoryTransaction();
                 
                 // Gerar um número de transação único
-                $prefix = 'TRX-AUTO-' . date('Ymd');
+                $prefix = 'TRX-PROD-AUTO-' . date('Ymd');
                 $lastTransaction = \App\Models\SupplyChain\InventoryTransaction::where('transaction_number', 'LIKE', $prefix . '-%')
                     ->orderBy('id', 'desc')
                     ->first();
@@ -293,7 +293,7 @@ trait CompleteProductionTrait
                 $transaction->reference_type = 'production';
                 $transaction->reference_id = $schedule->id;
                 $transaction->quantity = $actualQuantity;
-                $transaction->transaction_type = 'production_receipt';
+                $transaction->transaction_type = 'production_order'; // Novo tipo específico para produtos produzidos
                 $transaction->notes = 'Produção completada (automático): ' . $schedule->schedule_number;
                 $transaction->created_by = auth()->id();
                 $transaction->save();
@@ -338,6 +338,7 @@ trait CompleteProductionTrait
     
     /**
      * Método para descontar os componentes do estoque após produção
+     * Agora desconta apenas de armazéns marcados como matéria-prima
      * Permite que o estoque fique negativo
      * 
      * @param ProductionSchedule $schedule Agendamento de produção
@@ -372,12 +373,25 @@ trait CompleteProductionTrait
                 ]);
                 return;
             }
+
+            // Buscar armazéns marcados como matéria-prima
+            $rawMaterialWarehouses = \App\Models\SupplyChain\InventoryLocation::where('is_raw_material_warehouse', 1)
+                ->where('is_active', 1)
+                ->get();
+
+            if ($rawMaterialWarehouses->isEmpty()) {
+                Log::warning('Não existem armazéns de matéria-prima configurados', [
+                    'schedule_id' => $schedule->id
+                ]);
+                return;
+            }
             
-            Log::info('Processando componentes da BOM', [
+            Log::info('Processando componentes da BOM com armazéns de matéria-prima', [
                 'bom_header_id' => $bomHeader->id,
                 'total_components' => $components->count(),
                 'schedule_id' => $schedule->id,
-                'product_quantity' => $schedule->actual_quantity
+                'product_quantity' => $schedule->actual_quantity,
+                'raw_material_warehouses' => $rawMaterialWarehouses->pluck('name', 'id')->toArray()
             ]);
             
             $componentsWithIssues = [];
@@ -386,70 +400,165 @@ trait CompleteProductionTrait
             foreach ($components as $component) {
                 // Calcular a quantidade necessária baseada na produção real
                 $requiredQuantity = $component->quantity * $schedule->actual_quantity;
-                
-                // Buscar o item de estoque do componente
-                $inventoryItem = \App\Models\SupplyChain\InventoryItem::firstOrNew([
-                    'product_id' => $component->component_id,
-                    'location_id' => $schedule->location_id
-                ]);
-                
-                // Registrar a quantidade atual antes da atualização
-                $currentStock = $inventoryItem->quantity_on_hand ?? 0;
-                
-                // Descontar a quantidade necessária do estoque (pode ficar negativo)
-                $inventoryItem->quantity_on_hand = $currentStock - $requiredQuantity;
-                $inventoryItem->quantity_available = $inventoryItem->quantity_on_hand - ($inventoryItem->quantity_allocated ?? 0);
-                $inventoryItem->save();
-                
-                // Registrar a movimentação de estoque para o componente
-                $transaction = new \App\Models\SupplyChain\InventoryTransaction();
-                
-                // Gerar um número de transação único
-                $prefix = 'TRX-COMP-' . date('Ymd');
-                $lastTransaction = \App\Models\SupplyChain\InventoryTransaction::where('transaction_number', 'LIKE', $prefix . '-%')
-                    ->orderBy('id', 'desc')
-                    ->first();
-                    
-                if ($lastTransaction) {
-                    $lastNumber = intval(substr($lastTransaction->transaction_number, strlen($prefix) + 1));
-                    $newNumber = $lastNumber + 1;
-                } else {
-                    $newNumber = 1;
-                }
-                $transaction->transaction_number = $prefix . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-                
-                // Configurar a transação para o componente
-                $transaction->product_id = $component->component_id;
-                $transaction->source_location_id = $schedule->location_id;
-                $transaction->destination_location_id = null; // Componente consumido, não tem destino
-                $transaction->reference_type = 'production_component';
-                $transaction->reference_id = $schedule->id;
-                $transaction->quantity = $requiredQuantity;
-                $transaction->transaction_type = 'component_consumption'; // Consumo de componente
-                $transaction->notes = "Componente consumido para produção: {$schedule->schedule_number}";
-                $transaction->created_by = auth()->id();
-                $transaction->save();
-                
-                // Registrar informações úteis para debugging
+                $remainingQuantity = $requiredQuantity;
                 $componentName = $component->component ? $component->component->name : "Componente ID: {$component->component_id}";
                 
-                Log::info("Componente deduzido do estoque", [
+                // Registrar informações iniciais
+                Log::info("Iniciando processamento de componente", [
                     'component_id' => $component->component_id,
                     'component_name' => $componentName,
-                    'required_quantity' => $requiredQuantity,
-                    'prev_stock' => $currentStock,
-                    'new_stock' => $inventoryItem->quantity_on_hand,
-                    'is_negative' => $inventoryItem->quantity_on_hand < 0
+                    'required_quantity' => $requiredQuantity
                 ]);
                 
-                // Registrar componentes que ficaram com estoque negativo
-                if ($inventoryItem->quantity_on_hand < 0) {
+                // Verificar estoque em cada armazém de matéria-prima
+                foreach ($rawMaterialWarehouses as $warehouse) {
+                    // Se já consumimos toda a quantidade necessária, podemos sair do loop
+                    if ($remainingQuantity <= 0) {
+                        break;
+                    }
+                    
+                    // Buscar o item de estoque do componente neste armazém
+                    $inventoryItem = \App\Models\SupplyChain\InventoryItem::firstOrNew([
+                        'product_id' => $component->component_id,
+                        'location_id' => $warehouse->id
+                    ]);
+                    
+                    // Registrar a quantidade atual antes da atualização
+                    $currentStock = $inventoryItem->quantity_on_hand ?? 0;
+                    
+                    // Determinar quanto vamos consumir deste armazém
+                    $quantityToDeduct = min($currentStock, $remainingQuantity);
+                    
+                    // Se não houver estoque neste armazém, continuar para o próximo
+                    if ($currentStock <= 0) {
+                        Log::info("Armazém sem estoque deste componente", [
+                            'warehouse_id' => $warehouse->id,
+                            'warehouse_name' => $warehouse->name,
+                            'component_id' => $component->component_id
+                        ]);
+                        continue;
+                    }
+                    
+                    Log::info("Processando consumo de componente do armazém de matéria-prima", [
+                        'warehouse_id' => $warehouse->id,
+                        'warehouse_name' => $warehouse->name,
+                        'component_id' => $component->component_id,
+                        'current_stock' => $currentStock,
+                        'quantity_to_deduct' => $quantityToDeduct,
+                        'remaining_quantity' => $remainingQuantity
+                    ]);
+                    
+                    // Descontar a quantidade do estoque
+                    $inventoryItem->quantity_on_hand = $currentStock - $quantityToDeduct;
+                    $inventoryItem->quantity_available = $inventoryItem->quantity_on_hand - ($inventoryItem->quantity_allocated ?? 0);
+                    $inventoryItem->save();
+                    
+                    // Atualizar a quantidade restante
+                    $remainingQuantity -= $quantityToDeduct;
+                    
+                    // Registrar a movimentação de estoque para o componente
+                    $transaction = new \App\Models\SupplyChain\InventoryTransaction();
+                    
+                    // Gerar um número de transação único
+                    $prefix = 'TRX-RAW-' . date('Ymd');
+                    $lastTransaction = \App\Models\SupplyChain\InventoryTransaction::where('transaction_number', 'LIKE', $prefix . '-%')
+                        ->orderBy('id', 'desc')
+                        ->first();
+                        
+                    if ($lastTransaction) {
+                        $lastNumber = intval(substr($lastTransaction->transaction_number, strlen($prefix) + 1));
+                        $newNumber = $lastNumber + 1;
+                    } else {
+                        $newNumber = 1;
+                    }
+                    $transaction->transaction_number = $prefix . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+                    
+                    // Configurar a transação para o componente com o novo tipo RAW_PRODUCTION
+                    $transaction->product_id = $component->component_id;
+                    $transaction->source_location_id = $warehouse->id;
+                    $transaction->destination_location_id = null; // Componente consumido, não tem destino
+                    $transaction->reference_type = 'production_component';
+                    $transaction->reference_id = $schedule->id;
+                    $transaction->quantity = $quantityToDeduct;
+                    $transaction->transaction_type = 'raw_production'; // Novo tipo específico para consumo de matéria-prima
+                    $transaction->notes = "Matéria-prima consumida para produção: {$schedule->schedule_number}";
+                    $transaction->created_by = auth()->id();
+                    $transaction->save();
+                    
+                    Log::info("Componente deduzido do armazém de matéria-prima", [
+                        'warehouse_id' => $warehouse->id,
+                        'warehouse_name' => $warehouse->name,
+                        'component_id' => $component->component_id,
+                        'component_name' => $componentName,
+                        'quantity_deducted' => $quantityToDeduct,
+                        'prev_stock' => $currentStock,
+                        'new_stock' => $inventoryItem->quantity_on_hand
+                    ]);
+                }
+                
+                // Se ainda temos quantidade restante, precisamos criar um registro negativo
+                if ($remainingQuantity > 0) {
+                    Log::warning("Estoque insuficiente de matéria-prima nos armazéns. Criando estoque negativo.", [
+                        'component_id' => $component->component_id,
+                        'component_name' => $componentName,
+                        'remaining_quantity' => $remainingQuantity
+                    ]);
+                    
+                    // Selecionar o primeiro armazém de matéria-prima para criar o estoque negativo
+                    $defaultWarehouse = $rawMaterialWarehouses->first();
+                    
+                    // Buscar o item de estoque do componente neste armazém
+                    $inventoryItem = \App\Models\SupplyChain\InventoryItem::firstOrNew([
+                        'product_id' => $component->component_id,
+                        'location_id' => $defaultWarehouse->id
+                    ]);
+                    
+                    // Registrar a quantidade atual antes da atualização
+                    $currentStock = $inventoryItem->quantity_on_hand ?? 0;
+                    
+                    // Descontar a quantidade restante do estoque (vai ficar negativo)
+                    $inventoryItem->quantity_on_hand = $currentStock - $remainingQuantity;
+                    $inventoryItem->quantity_available = $inventoryItem->quantity_on_hand - ($inventoryItem->quantity_allocated ?? 0);
+                    $inventoryItem->save();
+                    
+                    // Registrar a movimentação de estoque para o componente
+                    $transaction = new \App\Models\SupplyChain\InventoryTransaction();
+                    
+                    // Gerar um número de transação único
+                    $prefix = 'TRX-RAW-NEG-' . date('Ymd');
+                    $lastTransaction = \App\Models\SupplyChain\InventoryTransaction::where('transaction_number', 'LIKE', $prefix . '-%')
+                        ->orderBy('id', 'desc')
+                        ->first();
+                        
+                    if ($lastTransaction) {
+                        $lastNumber = intval(substr($lastTransaction->transaction_number, strlen($prefix) + 1));
+                        $newNumber = $lastNumber + 1;
+                    } else {
+                        $newNumber = 1;
+                    }
+                    $transaction->transaction_number = $prefix . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+                    
+                    // Configurar a transação para o componente
+                    $transaction->product_id = $component->component_id;
+                    $transaction->source_location_id = $defaultWarehouse->id;
+                    $transaction->destination_location_id = null;
+                    $transaction->reference_type = 'production_component';
+                    $transaction->reference_id = $schedule->id;
+                    $transaction->quantity = $remainingQuantity;
+                    $transaction->transaction_type = 'raw_production';
+                    $transaction->notes = "Matéria-prima consumida para produção (estoque negativo): {$schedule->schedule_number}";
+                    $transaction->created_by = auth()->id();
+                    $transaction->save();
+                    
+                    // Registrar componentes que ficaram com estoque negativo
                     $componentsWithIssues[] = [
                         'component_id' => $component->component_id,
                         'component_name' => $componentName,
                         'required' => $requiredQuantity,
-                        'available' => $currentStock,
-                        'shortage' => abs($inventoryItem->quantity_on_hand)
+                        'consumed' => $requiredQuantity - $remainingQuantity,
+                        'shortage' => $remainingQuantity,
+                        'warehouse_id' => $defaultWarehouse->id,
+                        'warehouse_name' => $defaultWarehouse->name
                     ];
                 }
             }
@@ -467,7 +576,8 @@ trait CompleteProductionTrait
         } catch (\Exception $e) {
             Log::error('Erro ao descontar componentes do estoque: ' . $e->getMessage(), [
                 'schedule_id' => $schedule->id ?? null,
-                'exception' => $e
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
             ]);
             
             // Não lançamos a exceção para cima para evitar que o processo principal seja interrompido

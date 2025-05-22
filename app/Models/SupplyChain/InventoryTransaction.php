@@ -47,6 +47,10 @@ class InventoryTransaction extends Model
     const TYPE_TRANSFER = 'transfer';
     const TYPE_ADJUSTMENT = 'adjustment';
     const TYPE_PRODUCTION = 'production';
+    const TYPE_PRODUCTION_RECEIPT = 'production_receipt';
+    const TYPE_PRODUCTION_ISSUE = 'production_issue';
+    const TYPE_RAW_PRODUCTION = 'raw_production';
+    const TYPE_PRODUCTION_ORDER = 'production_order';
     
     /**
      * Constants for adjustment actions

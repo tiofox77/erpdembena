@@ -8,13 +8,16 @@ return [
     'capacity_help' => 'Enter the resource capacity with the appropriate unit of measure.',
     'efficiency_factor_help' => 'Enter the efficiency percentage (1-200%). The standard is 100%.',
     'resource_description_help' => 'Provide a brief description of the resource (optional).',
-    'bom_products_only' => 'Only products with components registered in BOM Management are displayed.', 
+    'bom_products_only' => 'Only products with components registered in BOM Management are displayed.',
     // MRP - Component Availability Messages
     'sufficient_components' => 'Sufficient components to produce the planned quantity!',
     'maximum_capacity' => 'Maximum capacity',
     'units' => 'units',
     'checking_component_availability' => 'Checking component availability',
-    
+    'raw_material_warehouse_note' => 'Note',
+    'raw_material_warehouse_verification' => 'This verification only considers stock available in warehouses marked as "Raw Material Warehouse".',
+    'raw_material_warehouses' => 'Raw Material Warehouses',
+    'no_raw_material_warehouses' => 'No warehouses marked as raw material warehouse. Please configure at least one warehouse as raw material warehouse.',
     // MRP - Production Orders
     'mrp_production_orders' => 'Production Orders',
     'new_production_order' => 'New Production Order',
@@ -66,7 +69,7 @@ return [
     'completed' => 'Completed',
     'cancelled' => 'Cancelled',
     'low' => 'Low',
-    'medium' => 'Medium', 
+    'medium' => 'Medium',
     'high' => 'High',
     'urgent' => 'Urgent',
     'delete_confirmation' => 'Delete Confirmation',
@@ -156,7 +159,7 @@ return [
     'inventory_items' => 'Inventory Items',
     'inventory_value' => 'Inventory Value',
     'try_different_search' => 'Try a different search term or add a new location',
-    'no_locations_found' => 'No locations found',   
+    'no_locations_found' => 'No locations found',
     'showing' => 'Showing',
     'to' => 'to',
     'of' => 'of',
@@ -188,10 +191,10 @@ return [
     'enter_quantity_to_transfer' => 'Enter Quantity to Transfer',
     'enter_quantity' => 'Enter Quantity',
     'all_stock_levels' => 'All Stock Levels',
-    'value' => 'Value', 
+    'value' => 'Value',
     'last_updated' => 'Last Updated',
     'user' => 'User',
-    'transaction_number' => 'Transaction Number',  
+    'transaction_number' => 'Transaction Number',
     'no_inventory_items_found' => 'No inventory items found',
     'try_adjusting_filters' => 'Try adjusting the filters',
     'recent_transactions' => 'Recent Transactions',
@@ -226,7 +229,6 @@ return [
     'insufficient_stock' => 'Insufficient stock available for transfer',
     'same_location_transfer' => 'Source and destination locations must be different',
     'inventory_transfer_successful' => 'Stock transfer completed successfully',
-    
     // Transfer messages
     'transfer_stock' => 'Transfer Stock',
     'transfer_quantity' => 'Transfer Quantity',
@@ -248,7 +250,6 @@ return [
     'insufficient_stock' => 'Insufficient stock available for transfer',
     'same_location_transfer' => 'Source and destination locations must be different',
     'inventory_transfer_successful' => 'Stock transfer completed successfully',
-    
     // Navegação
     'dashboard' => 'Dashboard',
     'home' => 'Home',
@@ -280,7 +281,7 @@ return [
     'reports_and_history' => 'Reports & History',
     'suppliers' => 'Suppliers',
     'product_categories' => 'Product Categories',
-    'products' => 'Products', 
+    'products' => 'Products',
     'inventory_locations' => 'Inventory Locations',
     'inventory' => 'Inventory',
     'purchase_orders' => 'Purchase Orders',
@@ -312,15 +313,14 @@ return [
     'stock_out' => 'Stock Out',
     'stock_history' => 'Stock History',
     'no_task' => 'No Task',
-    'select_line' => 'Select Line',  
-    'select_area' => 'Select Area',  
+    'select_line' => 'Select Line',
+    'select_area' => 'Select Area',
     'new_maintenance_plan' => 'New Maintenance Plan',
     'created_by' => 'Created By',
     'not_assigned' => 'Not Assigned',
     'created_at' => 'Created At',
     'maintenance_plan_notes' => 'Maintenance Plan Notes',
     'schedule_creation_error' => 'Error creating schedule',
-    
     // Manutenção
     'maintenance_plan' => 'Maintenance Plan',
     'maintenance_plans' => 'Maintenance Plans',
@@ -487,7 +487,6 @@ return [
     'history' => 'History',
     'adjustment' => 'Adjustment',
     'responsible_placeholder' => 'Responsible',
-
     // Additional maintenance plan translations
     'basic_information' => 'Basic Information',
     'equipment' => 'Equipment',
@@ -580,7 +579,6 @@ return [
     'thursday' => 'Thursday',
     'friday' => 'Friday',
     'saturday' => 'Saturday',
-    
     // Status
     'status' => 'Status',
     'pending' => 'Pending',
@@ -588,7 +586,6 @@ return [
     'completed' => 'Completed',
     'cancelled' => 'Cancelled',
     'schedule' => 'Schedule',
-    
     // Equipamentos
     'asset_number' => 'Asset Number',
     'serial_number' => 'Serial Number',
@@ -598,7 +595,6 @@ return [
     'department' => 'Department',
     'area' => 'Area',
     'line' => 'Line',
-    
     // Períodos
     'date' => 'Date',
     'datetime' => 'Date and Time',
@@ -627,7 +623,6 @@ return [
     'duration' => 'Duration',
     'due_date' => 'Due Date',
     'completion_date' => 'Completion Date',
-    
     // MRP
     'mrp' => 'MRP (Material Requirements Planning)',
     'demand_forecasting' => 'Demand Forecasting',
@@ -662,7 +657,6 @@ return [
     'select_component' => 'Select a component',
     'save' => 'Save',
     'cancel' => 'Cancel',
-    
     // Units of Measure
     'unit' => 'Unit',
     'kilogram' => 'Kilogram',
@@ -676,7 +670,6 @@ return [
     'purchase_planning' => 'Purchase Planning',
     'capacity_planning' => 'Capacity Planning',
     'financial_reporting' => 'Financial Reporting',
-    
     // Supply Chain
     'supply_chain_dashboard' => 'Supply Chain Dashboard',
     'low_stock_alerts' => 'Low Stock Alerts',
@@ -776,7 +769,6 @@ return [
     'goods_receipt_not_found' => 'Goods receipt not found',
     'goods_receipt_deleted' => 'Goods receipt deleted successfully',
     'goods_receipt_delete_failed' => 'Failed to delete goods receipt',
-    
     // Modals and Notifications
     'confirm_delete' => 'Confirm Delete',
     'delete_confirmation' => 'Are you sure you want to delete this item? This action cannot be undone.',
@@ -883,7 +875,6 @@ return [
     'work_equipment' => 'Work Equipment',
     'reports_and_dashboards' => 'Reports & Dashboards',
     'cannot_edit_completed_cancelled_order' => 'Cannot edit completed or cancelled order',
-
     // Supply Chain - Specific Keys
     // Global Supply Chain keys (still available in flat format)
     'add_supplier' => 'Add Supplier',
@@ -902,7 +893,6 @@ return [
     'active' => 'Active',
     'inactive' => 'Inactive',
     'no_suppliers_found' => 'No suppliers found',
-    
     // Namespaced keys for Supply Chain (livewire/suppliers)
     'livewire/suppliers.suppliers_management' => 'Suppliers Management',
     'livewire/suppliers.add_supplier' => 'Add Supplier',
@@ -925,7 +915,6 @@ return [
     'livewire/suppliers.search_suppliers' => 'Search suppliers...',
     'livewire/suppliers.all_statuses' => 'All Statuses',
     'livewire/suppliers.no_suppliers_found' => 'No suppliers found',
-    
     // Namespaced keys for Supply Chain (livewire/supply-chain/suppliers)
     'livewire/supply-chain/suppliers.suppliers_management' => 'Suppliers Management',
     'livewire/supply-chain/suppliers.add_supplier' => 'Add Supplier',
@@ -948,10 +937,8 @@ return [
     'livewire/supply-chain/suppliers.search_suppliers' => 'Search suppliers...',
     'livewire/supply-chain/suppliers.all_statuses' => 'All Statuses',
     'livewire/supply-chain/suppliers.no_suppliers_found' => 'No suppliers found',
-
     // Inventory Locations
     'inventory_locations_management' => 'Inventory Locations Management',
-
     // Inventory Levels Management
     'inventory_levels' => 'Inventory Levels',
     'inventory_levels_description' => 'Manage minimum, maximum and reorder points for products',
@@ -993,7 +980,6 @@ return [
     'delete_location_confirmation' => 'Are you sure you want to delete this location?',
     'delete_location_has_items_warning' => 'This location has inventory items. They must be transferred before deletion.',
     'search_locations' => 'Search locations...',
-    
     // Namespaced keys for Inventory Locations
     'livewire/supply-chain/locations.inventory_locations_management' => 'Inventory Locations Management',
     'livewire/supply-chain/locations.add_location' => 'Add Location',
@@ -1018,7 +1004,6 @@ return [
     'livewire/supply-chain/locations.delete_location_confirmation' => 'Are you sure you want to delete this location?',
     'livewire/supply-chain/locations.delete_location_has_items_warning' => 'This location has inventory items. They must be transferred before deletion.',
     'livewire/supply-chain/locations.search_locations' => 'Search locations...',
-
     // Products
     'products_management' => 'Products Management',
     'add_product' => 'Add Product',
@@ -1117,7 +1102,6 @@ return [
     'goods_receipt_not_found' => 'Goods receipt not found',
     'goods_receipt_deleted' => 'Goods receipt deleted successfully',
     'goods_receipt_delete_failed' => 'Failed to delete goods receipt',
-    
     // Modals and Notifications
     'confirm_delete' => 'Confirm Delete',
     'delete_confirmation' => 'Are you sure you want to delete this item? This action cannot be undone.',
@@ -1224,7 +1208,6 @@ return [
     'work_equipment' => 'Work Equipment',
     'reports_and_dashboards' => 'Reports & Dashboards',
     'cannot_edit_completed_cancelled_order' => 'Cannot edit completed or cancelled order',
-
     // Supply Chain - Specific Keys
     // Global Supply Chain keys (still available in flat format)
     'add_supplier' => 'Add Supplier',
@@ -1245,7 +1228,6 @@ return [
     'no_suppliers_found' => 'No suppliers found',
     'direct_receipt' => 'Direct Receipt',
     'search_by_receipt_number_or_supplier' => 'Search by receipt number or supplier',
-
     // Namespaced keys for Supply Chain (livewire/suppliers)
     'livewire/suppliers.suppliers_management' => 'Suppliers Management',
     'livewire/suppliers.add_supplier' => 'Add Supplier',
@@ -1268,7 +1250,6 @@ return [
     'livewire/suppliers.search_suppliers' => 'Search suppliers...',
     'livewire/suppliers.all_statuses' => 'All Statuses',
     'livewire/suppliers.no_suppliers_found' => 'No suppliers found',
-    
     // Namespaced keys for Supply Chain (livewire/supply-chain/suppliers)
     'livewire/supply-chain/suppliers.suppliers_management' => 'Suppliers Management',
     'livewire/supply-chain/suppliers.add_supplier' => 'Add Supplier',
@@ -1291,7 +1272,6 @@ return [
     'livewire/supply-chain/suppliers.search_suppliers' => 'Search suppliers...',
     'livewire/supply-chain/suppliers.all_statuses' => 'All Statuses',
     'livewire/supply-chain/suppliers.no_suppliers_found' => 'No suppliers found',
-
     // Product Categories
     'categories_management' => 'Categories Management',
     'add_category' => 'Add Category',
@@ -1309,7 +1289,6 @@ return [
     'search_categories' => 'Search categories...',
     'no_categories_found' => 'No categories found',
     'all_categories' => 'All Categories',
-    
     // Namespaced keys for Product Categories
     'livewire/product-categories.categories_management' => 'Categories Management',
     'livewire/product-categories.add_category' => 'Add Category',
@@ -1325,7 +1304,6 @@ return [
     'livewire/product-categories.cannot_delete_category_with_products' => 'Cannot delete category with associated products',
     'livewire/product-categories.search_categories' => 'Search categories...',
     'livewire/product-categories.no_categories_found' => 'No categories found',
-
     // Purchase Orders
     'add_order' => 'Add Order',
     'create_order' => 'Create Order',
@@ -1349,7 +1327,6 @@ return [
     'all_suppliers' => 'All Suppliers',
     'search_orders' => 'Search orders...',
     'no_orders_found' => 'No orders found',
-
     // Goods Receipts
     'goods_receipts_management' => 'Goods Receipts Management',
     'add_receipt' => 'Add Receipt',
@@ -1362,7 +1339,6 @@ return [
     'all_locations' => 'All Locations',
     'search_receipts' => 'Search receipts...',
     'no_receipts_found' => 'No receipts found',
-
     // Inventory
     'inventory_management' => 'Inventory Management',
     'stock_level' => 'Stock Level',
@@ -1376,7 +1352,6 @@ return [
     'expiry_date' => 'Expiry Date',
     'search_inventory' => 'Search inventory...',
     'no_inventory_found' => 'No inventory found',
-
     // Supply Chain Dashboard
     'supply_chain_dashboard' => 'Supply Chain Dashboard',
     'low_stock_alerts' => 'Low Stock Alerts',
@@ -1404,7 +1379,6 @@ return [
     'category' => 'Category',
     'overdue_orders_legend' => 'Overdue orders',
     'approaching_delivery_legend' => 'Approaching delivery (less than 15 days)',
-    
     // Dashboard additional
     'data_refreshed_successfully' => 'Dashboard data refreshed successfully',
     'dashboard_time_range_updated' => 'Dashboard time range updated',
@@ -1416,7 +1390,6 @@ return [
     'view' => 'View',
     'receive' => 'Receive',
     'order' => 'Order',
-    
     // Purchase Orders
     'purchase_orders' => 'Purchase Orders',
     'purchase_order' => 'Purchase Order',
@@ -1431,8 +1404,7 @@ return [
     'order_total' => 'Order Total',
     'order_details' => 'Order Details',
     'order_items' => 'Order Items',
-    
-    // Shipping Notes 
+    // Shipping Notes
     'shipping_notes' => 'Shipping Notes',
     'more_actions' => 'More Actions',
     'status_draft' => 'Draft',
@@ -1470,7 +1442,6 @@ return [
     'shipping_status_delivered' => 'Delivered',
     'shipping_status_returned' => 'Returned',
     'shipping_status_issue' => 'Issue Reported',
-    
     // Order Messages
     'order_must_have_items' => 'Order must have at least one item',
     'purchase_order_created' => 'Purchase order created successfully',
@@ -1486,7 +1457,6 @@ return [
     'edit_order' => 'Edit Order',
     'delete' => 'Delete',
     'cancel' => 'Cancel',
-    
     // Shipping Notes
     'shipping_notes' => 'Shipping Notes',
     'more_actions' => 'More Actions',
@@ -1510,7 +1480,6 @@ return [
     'download_attachment' => 'Download Attachment',
     'updated_by' => 'Updated By',
     'updated_at' => 'Updated At',
-    
     // Shipping Notes Status
     'shipping_status_order_placed' => 'Order Placed',
     'shipping_status_proforma_invoice_received' => 'Proforma Invoice Received',
@@ -1527,19 +1496,17 @@ return [
     'shipping_status_delivered' => 'Delivered',
     'shipping_status_returned' => 'Returned',
     'shipping_status_issue' => 'Issue Reported',
-    
     // Purchase Orders List Messages
     'purchase_orders_list' => 'Purchase Orders List',
     'purchase_orders_empty' => 'No purchase orders found',
     'purchase_orders_actions' => 'Actions',
-    'purchase_orders_show_all_actions' => 'true', // Controla se todas as ações devem ser exibidas sempre
+    'purchase_orders_show_all_actions' => 'true',  // Controla se todas as ações devem ser exibidas sempre
     'purchase_orders_list_title' => 'Purchase Orders Management',
     'purchase_orders_list_subtitle' => 'View and manage your purchase orders',
-    'purchase_orders_more_actions' => 'More Actions', 
+    'purchase_orders_more_actions' => 'More Actions',
     'purchase_orders_order_added' => 'Purchase order added successfully',
     'purchase_orders_order_updated' => 'Purchase order updated successfully',
     'purchase_orders_order_deleted' => 'Purchase order deleted successfully',
-    
     // Notification system messages
     'error_occurred' => 'An error occurred',
     'no_permission' => 'You do not have permission to perform this action',
@@ -1552,7 +1519,6 @@ return [
     'information' => 'Information',
     'permission_denied' => 'Permission Denied',
     'access_denied' => 'Access Denied',
-    
     // Shipping Note Validation
     'shipping_note_status_required' => 'The shipping status is required',
     'shipping_note_note_required' => 'The note is required',
@@ -1562,7 +1528,6 @@ return [
     'error_saving_attachment' => 'Error saving attachment',
     'shipping_note_model_not_found' => 'Shipping Note model not found. Check if the model file and migration exist',
     'error_saving_shipping_note' => 'Could not save shipping note. The save() method returned false',
-    
     // Products and Selector
     'product' => 'Product',
     'products' => 'Products',
@@ -1581,7 +1546,6 @@ return [
     'unit_price' => 'Unit Price',
     'total' => 'Total',
     'actions' => 'Actions',
-    
     // Order Messages
     'order_must_have_items' => 'Order must have at least one item',
     'purchase_order_created' => 'Purchase order created successfully',
@@ -1597,7 +1561,6 @@ return [
     'edit_order' => 'Edit Order',
     'delete' => 'Delete',
     'cancel' => 'Cancel',
-    
     // Shipping Notes Status
     'shipping_status_order_placed' => 'Order Placed',
     'shipping_status_proforma_invoice_received' => 'Proforma Invoice Received',
@@ -1612,19 +1575,17 @@ return [
     'shipping_status_customs' => 'In Customs',
     'shipping_status_delivery' => 'Out for Delivery',
     'shipping_status_delivered' => 'Delivered',
-    
     // Purchase Orders List Messages
     'purchase_orders_list' => 'Purchase Orders List',
     'purchase_orders_empty' => 'No purchase orders found',
     'purchase_orders_actions' => 'Actions',
-    'purchase_orders_show_all_actions' => 'true', // Controla se todas as ações devem ser exibidas sempre
+    'purchase_orders_show_all_actions' => 'true',  // Controla se todas as ações devem ser exibidas sempre
     'purchase_orders_list_title' => 'Purchase Orders Management',
     'purchase_orders_list_subtitle' => 'View and manage your purchase orders',
-    'purchase_orders_more_actions' => 'More Actions', 
+    'purchase_orders_more_actions' => 'More Actions',
     'purchase_orders_order_added' => 'Purchase order added successfully',
     'purchase_orders_order_updated' => 'Purchase order updated successfully',
     'purchase_orders_order_deleted' => 'Purchase order deleted successfully',
-    
     // Notification system messages
     'error_occurred' => 'An error occurred',
     'no_permission' => 'You do not have permission to perform this action',
@@ -1637,7 +1598,6 @@ return [
     'information' => 'Information',
     'permission_denied' => 'Permission Denied',
     'access_denied' => 'Access Denied',
-    
     // PDF de recebimentos de mercadorias
     'pdf_generated_successfully' => 'PDF generated successfully',
     'pdf_generation_failed' => 'Failed to generate PDF',
@@ -1664,7 +1624,6 @@ return [
     'generated_at' => 'Generated at',
     'total_items' => 'Total items',
     'no_purchase_order' => 'No purchase order',
-    
     // Dashboard
     'supply_chain_dashboard' => 'Supply Chain Dashboard',
     'refresh_data' => 'Refresh Data',
@@ -1715,14 +1674,12 @@ return [
     'category' => 'Category',
     'overdue_orders_legend' => 'Overdue orders',
     'approaching_delivery_legend' => 'Approaching delivery (less than 15 days)',
-    
     // Advanced Filters
     'advanced_filters' => 'Advanced Filters',
     'all_equipment' => 'All Equipment',
     'all_tasks' => 'All Tasks',
     'equipment' => 'Equipment',
     'task' => 'Task',
-
     // Dashboard Restricted Access
     'access_restricted' => 'Access Restricted',
     'no_module_permissions' => 'You do not have permission to access any modules in this system.',
@@ -1733,7 +1690,6 @@ return [
     'roles' => 'Roles',
     'no_roles_assigned' => 'No roles assigned',
     'logout' => 'Logout',
-
     // Calendar General
     'holiday' => 'Holiday',
     'weekend' => 'Weekend',
@@ -1754,10 +1710,8 @@ return [
     'cancelled' => 'Cancelled',
     'corrective_maintenance_calendar' => 'Corrective Maintenance Calendar',
     'calendar_shows_corrective_events' => 'Calendar shows all corrective maintenance events',
-    
     // Dashboard
     'dashboard_overview' => 'Dashboard Overview',
-    
     // Reports - Failure Analysis
     'reports.failure_analysis.title' => 'Failure Analysis',
     'reports.failure_analysis.subtitle' => 'Analysis of failures, causes, and patterns',
@@ -1822,10 +1776,8 @@ return [
     'task_description_wise_status' => 'Task Description Wise Status',
     'maintenance_plan_status' => 'Maintenance Plan Status',
     'monthly_maintenance_distribution' => 'Monthly Maintenance Distribution',
-    
     // PDF Generation
     'export_to_pdf' => 'Export to PDF',
-    
     // Dashboard de Manutenção
     'maintenance_dashboard' => 'Maintenance Dashboard',
     'total_equipment' => 'Total Equipment',
@@ -1844,7 +1796,6 @@ return [
     'manage_technicians' => 'Manage Technicians',
     'maintenance_status_distribution' => 'Maintenance Status Distribution',
     'maintenance_by_type' => 'Maintenance by Type',
-    
     // Corrective Maintenance PDF
     'maintenance_corrective_report' => 'Corrective Maintenance Report',
     'corrective_maintenance_records' => 'Corrective Maintenance Records',
@@ -1872,7 +1823,6 @@ return [
     'approved_by' => 'Approved By',
     'quick_access' => 'Quick Access',
     'maintenance_planning' => 'Maintenance Planning',
-    
     // Unit Types
     'unit_types' => 'Unit Types',
     'add_unit_type' => 'Add Unit Type',
@@ -1932,12 +1882,10 @@ return [
     'total_records' => 'Total records',
     'no_maintenance_plans_found' => 'No maintenance plans found',
     'generating_pdf' => 'Generating PDF',
-    
     // Additional translations for PDF reports
     'equipment_downtime_reporting' => 'Equipment Downtime Reporting',
     'export_to_pdf' => 'Export to PDF',
     'report_downtime' => 'Downtime Report',
-    
     // Maintenance plan frequency dates translations
     'calculated_maintenance_dates' => 'Calculated Maintenance Dates',
     'maintenance_dates_description' => 'The following dates reflect the maintenance frequency, excluding holidays and Sundays:',
@@ -1949,7 +1897,6 @@ return [
     'showing' => 'Showing',
     'of' => 'of',
     'months' => 'months',
-    
     // Frequency types
     'once' => 'Once',
     'daily' => 'Daily',
@@ -1977,7 +1924,7 @@ return [
     'resource_type' => 'Resource Type',
     'resource' => 'Resource',
     'department' => 'Department',
-    'location' => 'Location', 
+    'location' => 'Location',
     'select_resource_type' => 'Select Resource Type',
     'select_resource' => 'Select Resource',
     'select_department' => 'Select Department',
@@ -2167,9 +2114,8 @@ return [
     'no_breakdown_reported' => 'No breakdown reported',
     'supplier_categories' => 'Supplier Categories',
     'all' => 'All',
-    'saving...' => 'Saving...',   
+    'saving...' => 'Saving...',
     'livewire/layout.items_per_page' => 'Items per page',
-
     'display_field' => 'Display Field',
     'no_sample_data_found_check_records' => 'No sample data found. Please check if there are records in the selected model.',
     'required_field' => 'Required Field',
@@ -2196,8 +2142,20 @@ return [
     'submission_details' => 'Submission Details',
     'submitted_at' => 'Submitted at',
     'close' => 'Close',
-    
-    
+    'production_order' => 'Production Order',
+    'raw_material' => 'Raw Material',
+    'purchase_receipt' => 'Purchase Receipt',
+    'on_time' => 'On Time',
+    'late' => 'Late',
+    'production_results' => 'Production Results',
+    'completion_status' => 'Completion Status',
+    'planned_vs_actual' => 'Planned vs Actual',
+    'select_shift_instruction' => 'Select a shift to view production results',
+    'select_shift_first' => 'Please select a shift first',
+    'please_select_shift_first' => 'Please select a shift first',
+    'select_multiple' => 'Hold Ctrl (or Cmd on Mac) to select multiple items',
+    'select_failure_category' => 'Select a failure category',
+    'production_on_track' => 'Production On Track',
     // Custom Forms for Shipping Notes
     'custom_forms' => 'Custom Forms',
     'custom_form' => 'Custom Form',
@@ -2298,7 +2256,6 @@ return [
     'actual_cost' => 'Actual Cost',
     'task_completed_for_specific_date' => 'This maintenance task has been marked as completed for :date only. You can still manage other dates.',
     'completed_plan_edit_disabled' => 'This maintenance plan is marked as completed. You cannot add or edit maintenance notes.',
-    
     // BOM Status messages
     'bom_status_must_be_active' => 'BOM status must be active',
     'activate_bom_to_continue' => 'Please change the BOM status to active in BOM Management to continue',
@@ -2319,7 +2276,6 @@ return [
     'empty_daily_plans_message' => 'You can create production plans by day for this schedule',
     'production_completed_with_quantity' => 'Production completed! Quantity recorded: :quantity',
     'enter_produced_quantity' => 'Enter produced quantity',
-    
     // MRP - Production Scheduling
     'production_scheduling' => 'Production Scheduling',
     'production_scheduling_description' => 'Manage production schedules for your manufacturing operations',
@@ -2336,7 +2292,6 @@ return [
     'select_shift_info' => 'Select the shift when this schedule will be executed',
     'cleanup_time_help' => 'Time needed to clean up after production (in minutes)',
     'schedule_notes_placeholder' => 'Enter any additional notes about this production schedule...',
-    
     // MRP - Daily Plans and Breakdown Analysis
     'daily_production_plans' => 'Daily Production Plans',
     'no_schedule_selected' => 'No schedule selected',
@@ -2365,13 +2320,11 @@ return [
     'daily_plan_updated' => 'Daily plan updated successfully',
     'failed_to_update_daily_plan' => 'Failed to update daily plan',
     'daily_plans' => 'Daily Plans',
-    
     // Chart Labels
     'breakdown_efficiency_chart' => 'Breakdown Impact on Efficiency',
     'planned_vs_actual_chart' => 'Planned vs Actual Production',
     'breakdown_and_efficiency' => 'Breakdown and Efficiency',
     'production_quantities' => 'Production Quantities',
-    
     // MRP - Shifts Management
     'shifts' => 'Shifts',
     'shifts_management' => 'Shifts Management',
@@ -2412,7 +2365,6 @@ return [
     'shift_deleted' => 'Shift has been deleted successfully',
     'delete_shift_confirmation' => 'Are you sure you want to delete this shift?',
     'delete_shift_warning' => 'This will permanently remove the shift and cannot be undone.',
-    
     // MRP - Lines Management
     'lines' => 'Production Lines',
     'lines_management' => 'Production Lines Management',
@@ -2441,7 +2393,6 @@ return [
     'line_deleted' => 'Production line has been deleted successfully',
     'delete_line_confirmation' => 'Are you sure you want to delete this production line?',
     'delete_line_warning' => 'This will permanently remove the production line and cannot be undone.',
-    
     // Maintenance Plan Report - Date Selection
     'select_date_range' => 'Select Date Range',
     'report_type' => 'Report Type',
@@ -2459,8 +2410,7 @@ return [
     'generated_on' => 'Generated On',
     'total_plans' => 'Total Plans',
     'scheduled' => 'Scheduled',
-    'maintenance_plan_report_notes' => 'This report shows all maintenance plans scheduled during the selected period. Occurrences are calculated based on each plan\'s frequency settings.',
-    
+    'maintenance_plan_report_notes' => "This report shows all maintenance plans scheduled during the selected period. Occurrences are calculated based on each plan's frequency settings.",
     // MRP - Breakdown Impact Analysis
     'breakdown_impact' => 'Breakdown Impact Analysis',
     'breakdown_impact_analysis' => 'Breakdown Impact Analysis',
@@ -2485,7 +2435,6 @@ return [
     'quality_analysis_chart_initialized' => 'Quality Analysis Chart initialized',
     'value' => 'Value',
     'hours' => 'Hours',
-    
     // MRP - Failure Root Cause Analysis
     'failure_root_causes' => 'Failure Root Causes',
     'failure_root_causes_description' => 'Manage and analyze root causes of equipment failures',
@@ -2508,7 +2457,6 @@ return [
     'enter_root_cause_name' => 'Enter root cause name',
     'enter_root_cause_description' => 'Enter a detailed description of this root cause...',
     'no_category' => 'No category',
-    
     // MRP - Failure Categories
     'failure_categories' => 'Failure Categories',
     'failure_categories_description' => 'Manage categories for equipment failure analysis',
@@ -2536,7 +2484,6 @@ return [
     'color_code_help' => 'Choose a color to visually identify this category',
     'visual_properties' => 'Visual Properties',
     'basic_information' => 'Basic Information',
-    
     // Database SQL Analysis
     'database_analysis' => 'Database SQL Analysis',
     'database_analysis_desc' => 'Check all database tables, space usage, and operational status.',
@@ -2579,7 +2526,6 @@ return [
     'used' => 'Used',
     'free' => 'Free',
     'available' => 'Available',
-    
     // Equipment Types
     'equipment_types' => 'Equipment Types',
     'manage_equipment_types_description' => 'Create, edit, and manage equipment types for classification and organization',
@@ -2604,7 +2550,6 @@ return [
     'equipment_type_required_info' => 'Selecting an equipment type helps with inventory organization and maintenance planning',
     'manage_equipment_types' => 'Manage Types',
     'select_equipment_type' => 'Select equipment type',
-    
     // Shifts (Turnos)
     'work_shifts' => 'Work Shifts',
     'select_shift' => 'Select a shift',

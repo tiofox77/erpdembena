@@ -150,46 +150,31 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center cursor-pointer" wire:click="sortBy('name')">
-                                                <i class="fas fa-warehouse text-gray-400 mr-2"></i>
-                                                {{ __('livewire/supply-chain/locations.location_name') }}
-                                                @if ($sortField === 'name')
-                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                                                @else
-                                                    <i class="fas fa-sort ml-1"></i>
-                                                @endif
-                                            </div>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('name')">
+                                            {{ __('livewire/supply-chain/locations.name') }}
+                                            <i class="fas fa-sort{{ $sortField === 'name' ? '-' . ($sortDirection === 'asc' ? 'up' : 'down') : '' }} ml-1"></i>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('code')">
+                                            {{ __('livewire/supply-chain/locations.code') }}
+                                            <i class="fas fa-sort{{ $sortField === 'code' ? '-' . ($sortDirection === 'asc' ? 'up' : 'down') : '' }} ml-1"></i>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('city')">
+                                            {{ __('livewire/supply-chain/locations.city') }}
+                                            <i class="fas fa-sort{{ $sortField === 'city' ? '-' . ($sortDirection === 'asc' ? 'up' : 'down') : '' }} ml-1"></i>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-barcode text-gray-400 mr-2"></i>
-                                                {{ __('messages.location_code') }}
-                                            </div>
+                                            {{ __('livewire/supply-chain/locations.items') }}
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>
-                                                {{ __('messages.address') }}
-                                            </div>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('is_active')">
+                                            {{ __('livewire/supply-chain/locations.status') }}
+                                            <i class="fas fa-sort{{ $sortField === 'is_active' ? '-' . ($sortDirection === 'asc' ? 'up' : 'down') : '' }} ml-1"></i>
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-boxes text-gray-400 mr-2"></i>
-                                                {{ __('messages.inventory_items') }}
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                                {{ __('messages.inventory_value') }}
-                                            </div>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('is_raw_material_warehouse')">
+                                            {{ __('livewire/supply-chain/locations.is_raw_material_warehouse') }}
+                                            <i class="fas fa-sort{{ $sortField === 'is_raw_material_warehouse' ? '-' . ($sortDirection === 'asc' ? 'up' : 'down') : '' }} ml-1"></i>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center justify-end">
-                                                <i class="fas fa-cogs text-gray-400 mr-2"></i>
-                                                {{ __('messages.actions') }}
-                                            </div>
+                                            {{ __('livewire/supply-chain/locations.actions') }}
                                         </th>
                                     </tr>
                                 </thead>
@@ -197,19 +182,35 @@
                                     @forelse ($locations as $location)
                                     <tr class="hover:bg-gray-50 transition-colors duration-150">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $location->name }}</div>
+                                            <div class="flex items-center">
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">{{ $location->name }}</div>
+                                                    @if($location->description)
+                                                        <div class="text-sm text-gray-500">{{ $location->description }}</div>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $location->location_code }}</div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-900">{{ \Illuminate\Support\Str::limit($location->address, 50) }}</div>
+                                            <div class="text-sm text-gray-900">{{ $location->code }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $location->inventory_count }}</div>
+                                            <div class="text-sm text-gray-900">{{ $location->city }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {{ $location->inventory_items_count }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ number_format($location->inventory_value, 2) }}</div>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $location->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ $location->is_active ? __('messages.active') : __('messages.inactive') }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $location->is_raw_material_warehouse ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ $location->is_raw_material_warehouse ? __('messages.yes') : __('messages.no') }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex justify-end space-x-2">
@@ -420,6 +421,31 @@
                                         </label>
                                         <p class="text-xs text-gray-500 mt-1">
                                             {{ __('livewire/supply-chain/locations.active_info') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Armazém de Matéria-Prima -->
+                                <div class="flex items-center space-x-3 mt-4">
+                                    <div>
+                                        <label for="is_raw_material_warehouse" class="flex items-center cursor-pointer">
+                                            <div class="relative">
+                                                <!-- Input escondido -->
+                                                <input type="checkbox" wire:model.defer="location.is_raw_material_warehouse" id="is_raw_material_warehouse" class="sr-only">
+                                                <!-- Track (fundo do toggle) -->
+                                                <div class="w-12 h-6 bg-gray-300 rounded-full shadow-inner transition-all duration-300 ease-in-out"></div>
+                                                <!-- Dot (bolinha do toggle) -->
+                                                <div class="dot absolute w-6 h-6 bg-white rounded-full shadow left-0 top-0 transition-transform duration-300 ease-in-out transform"
+                                                    :class="{'translate-x-6 bg-blue-500': $wire.location.is_raw_material_warehouse, 'bg-white': !$wire.location.is_raw_material_warehouse}"></div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <label for="is_raw_material_warehouse" class="text-sm font-medium text-gray-700 cursor-pointer">
+                                            {{ __('livewire/supply-chain/locations.is_raw_material_warehouse') }}
+                                        </label>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {{ __('livewire/supply-chain/locations.is_raw_material_warehouse_help') }}
                                         </p>
                                     </div>
                                 </div>
@@ -640,9 +666,19 @@
                                 <h2 class="text-md font-medium text-gray-700">{{ __('messages.additional_information') }}</h2>
                             </div>
                             <div class="p-4">
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{{ __('livewire/supply-chain/locations.notes') }}</h4>
-                                    <p class="text-sm font-medium text-gray-900">{{ $viewLocation->notes ?: '--' }}</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{{ __('livewire/supply-chain/locations.notes') }}</h4>
+                                        <p class="text-sm font-medium text-gray-900">{{ $viewLocation->notes ?: '--' }}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{{ __('livewire/supply-chain/locations.raw_material_warehouse') }}</h4>
+                                        <div>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $viewLocation->is_raw_material_warehouse ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ $viewLocation->is_raw_material_warehouse ? __('messages.yes') : __('messages.no') }}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

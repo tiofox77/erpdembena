@@ -158,11 +158,12 @@
                         <span class="text-sm font-medium text-gray-500 flex items-center">
                             <i class="fas fa-check-circle text-green-500 mr-2"></i> {{ __('messages.actual_quantity') }}:
                         </span>
-                        <p class="text-sm text-gray-900 mt-1 font-semibold">{{ number_format($viewingSchedule->actual_quantity, 2) }}</p>
+                        @php
+                            $totalActualQuantity = $viewingSchedule->dailyPlans->sum('actual_quantity');
+                            $percentage = $viewingSchedule->planned_quantity > 0 ? min(100, round(($totalActualQuantity / $viewingSchedule->planned_quantity) * 100)) : 0;
+                        @endphp
+                        <p class="text-sm text-gray-900 mt-1 font-semibold">{{ number_format($totalActualQuantity, 2) }}</p>
                         <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
-                            @php
-                                $percentage = $viewingSchedule->planned_quantity > 0 ? min(100, round(($viewingSchedule->actual_quantity / $viewingSchedule->planned_quantity) * 100)) : 0;
-                            @endphp
                             <div class="bg-green-500 h-1.5 rounded-full" style="width: {{ $percentage }}%"></div>
                         </div>
                         <p class="text-xs text-right text-gray-500">{{ $percentage }}%</p>
@@ -171,12 +172,12 @@
                         <span class="text-sm font-medium text-gray-500 flex items-center">
                             <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> {{ __('messages.defect_quantity') }}:
                         </span>
-                        <p class="text-sm text-gray-900 mt-1 font-semibold">{{ number_format($breakdownImpact['total_defect_quantity'] ?? 0, 2) }}</p>
+                        @php
+                            $totalDefectQuantity = $viewingSchedule->dailyPlans->sum('defect_quantity');
+                            $defectPercentage = $viewingSchedule->planned_quantity > 0 ? min(100, round(($totalDefectQuantity / $viewingSchedule->planned_quantity) * 100)) : 0;
+                        @endphp
+                        <p class="text-sm text-gray-900 mt-1 font-semibold">{{ number_format($totalDefectQuantity, 2) }}</p>
                         <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
-                            @php
-                                $totalDefects = $breakdownImpact['total_defect_quantity'] ?? 0;
-                                $defectPercentage = $viewingSchedule->actual_quantity > 0 ? min(100, round(($totalDefects / $viewingSchedule->actual_quantity) * 100)) : 0;
-                            @endphp
                             <div class="bg-red-500 h-1.5 rounded-full" style="width: {{ $defectPercentage }}%"></div>
                         </div>
                         <p class="text-xs text-right text-gray-500">{{ $defectPercentage }}%</p>
@@ -321,7 +322,8 @@
                                                 <i class="fas fa-cubes text-blue-400"></i>
                                             </div>
                                             <input type="number" step="0.01" min="0" 
-                                                class="pl-9 pr-8 border-gray-300 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
+                                                class="pl-9 pr-12 border-gray-300 focus:ring-blue-500 focus:border-blue-500 block w-full border rounded-lg transition-all duration-200 text-sm" 
+                                                style="-moz-appearance: auto; -webkit-appearance: auto; appearance: auto; padding-right: 20px;"
                                                 wire:model.defer="filteredDailyPlans.{{ $index }}.planned_quantity"
                                                 placeholder="0.00">
                                         </div>
@@ -332,7 +334,8 @@
                                                 <i class="fas fa-exclamation-circle text-red-400"></i>
                                             </div>
                                             <input type="number" step="0.01" min="0" 
-                                                class="pl-9 pr-8 border-gray-300 focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
+                                                class="pl-9 pr-12 border-gray-300 focus:ring-red-500 focus:border-red-500 block w-full border rounded-lg transition-all duration-200 text-sm" 
+                                                style="-moz-appearance: auto; -webkit-appearance: auto; appearance: auto; padding-right: 20px;"
                                                 wire:model.defer="filteredDailyPlans.{{ $index }}.defect_quantity"
                                                 placeholder="0.00">
                                         </div>
@@ -343,7 +346,8 @@
                                                 <i class="fas fa-check-circle text-green-400"></i>
                                             </div>
                                             <input type="number" step="0.01" min="0" 
-                                                class="pl-9 pr-8 border-gray-300 focus:ring-green-500 focus:border-green-500 block w-full sm:text-sm border rounded-lg transition-all duration-200" 
+                                                class="pl-9 pr-12 border-gray-300 focus:ring-green-500 focus:border-green-500 block w-full border rounded-lg transition-all duration-200 text-sm" 
+                                                style="-moz-appearance: auto; -webkit-appearance: auto; appearance: auto; padding-right: 20px;"
                                                 wire:model.defer="filteredDailyPlans.{{ $index }}.actual_quantity"
                                                 placeholder="0.00">
                                         </div>
@@ -385,7 +389,7 @@
                                                     <i class="fas fa-tag text-orange-400"></i>
                                                 </div>
                                                 <select wire:model.defer="filteredDailyPlans.{{ $index }}.failure_category_id" 
-                                                    class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 rounded-md transition-all duration-200">
+                                                    class="pl-8 pr-2 block w-full py-1.5 text-xs sm:text-sm border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 rounded-md transition-all duration-200 truncate">
                                                     <option value="">{{ __('messages.select_failure_category') }}</option>
                                                     @foreach($failureCategories as $category)
                                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -397,8 +401,8 @@
                                                     <i class="fas fa-list text-blue-400"></i>
                                                 </div>
                                                 <select wire:model.defer="filteredDailyPlans.{{ $index }}.failure_root_causes" 
-                                                    class="pl-9 block w-full py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200"
-                                                    multiple size="2">
+                                                    class="pl-8 pr-2 block w-full py-1 text-xs sm:text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md transition-all duration-200 truncate"
+                                                    multiple size="3">
                                                     @foreach($failureRootCauses as $rootCause)
                                                         <option value="{{ $rootCause->id }}">{{ $rootCause->name }}</option>
                                                     @endforeach

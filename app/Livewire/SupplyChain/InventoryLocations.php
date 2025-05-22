@@ -24,6 +24,7 @@ class InventoryLocations extends Component
         'contact_person' => '',
         'notes' => '',
         'is_active' => true,
+        'is_raw_material_warehouse' => false,
     ];
     public $is_active = true;
 
@@ -57,6 +58,7 @@ class InventoryLocations extends Component
             'location.phone' => 'nullable|string|max:50',
             'location.contact_person' => 'nullable|string|max:100',
             'location.is_active' => 'boolean',
+            'location.is_raw_material_warehouse' => 'boolean',
         ];
     }
 
@@ -103,6 +105,7 @@ class InventoryLocations extends Component
         $this->location['phone'] = $locationModel->phone;
         $this->location['contact_person'] = $locationModel->manager;
         $this->location['is_active'] = $locationModel->is_active;
+        $this->location['is_raw_material_warehouse'] = $locationModel->is_raw_material_warehouse;
         
         $this->showModal = true;
     }
@@ -126,6 +129,7 @@ class InventoryLocations extends Component
             $locationModel->phone = $this->location['phone'] ?? null;
             $locationModel->manager = $this->location['contact_person'] ?? null;
             $locationModel->is_active = $this->location['is_active'] ?? true;
+            $locationModel->is_raw_material_warehouse = $this->location['is_raw_material_warehouse'] ?? false;
             
             $locationModel->save();
             
@@ -233,6 +237,7 @@ class InventoryLocations extends Component
             'contact_person' => '',
             'notes' => '',
             'is_active' => true,
+            'is_raw_material_warehouse' => false,
         ];
     }
 

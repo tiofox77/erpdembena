@@ -85,9 +85,9 @@
                         </div>
 
                         <!-- Data Inicial -->
-                        <div>
-                            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
-                                {{ __('messages.start_date') }} <span class="text-red-500">*</span>
+                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
+                            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i> {{ __('messages.start_date') }} <span class="text-red-500">*</span>
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -170,18 +170,73 @@
                             
                             <!-- Alerta de componentes suficientes/insuficientes -->
                             @if($schedule['product_id'] && is_numeric($schedule['planned_quantity']) && $schedule['planned_quantity'] > 0)
-                                @if(!$showComponentWarning && $maxQuantityPossible > 0)
-                                    <div class="mt-2 p-3 bg-green-50 border-l-4 border-green-400 rounded-md shadow-sm animate__animated animate__fadeIn">
+                                <!-- Seção de informações sobre matéria-prima sempre visível -->
+                              
+                                
+                                <!-- Alerta de componentes insuficientes -->
+                                @if($showComponentWarning)
+                                    <div class="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-md shadow-sm">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0">
-                                                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                                                <i class="fas fa-exclamation-triangle text-yellow-500 text-xl animate__animated animate__pulse animate__infinite"></i>
                                             </div>
                                             <div class="ml-3 flex-1">
-                                                <p class="text-sm font-medium text-green-800">
-                                                    {{ __('messages.sufficient_components') }}
-                                                </p>
-                                                <p class="text-xs text-green-700 mt-1">
-                                                    {{ __('messages.maximum_capacity') }}: <span class="font-bold">{{ number_format($maxQuantityPossible, 0) }}</span> {{ __('messages.units') }}
+                                                <p class="text-sm font-medium text-yellow-800">
+                                                    @if(count($insufficientComponents) == 1 && isset($insufficientComponents[0]['name']) && $insufficientComponents[0]['name'] == 'BOM com status inválido')
+                                                        <span class="font-bold">{{ __('messages.bom_inactive_warning') }}</span>
+                                                        <span class="block text-xs mt-1">{{ __('messages.activate_bom_instruction') }}</span>
+                                                    @else
+                                                        {{ __('messages.insufficient_components_warning') }} 
+                                                        <span class="font-bold">({{ __('messages.maximum_possible') }}: {{ $maxQuantityPossible }})</span>
+                                                        
+                                                        <!-- Lista de componentes insuficientes -->
+                                                        <div class="mt-2">
+                                                            <ul class="space-y-2 divide-y divide-gray-100">
+                                                                @foreach($insufficientComponents as $component)
+                                                                    <li class="border-l-2 border-red-400 pl-3 py-2 hover:bg-yellow-50 transition-all duration-200 rounded-r-md">
+                                                                        <div class="font-medium flex items-center">
+                                                                            <i class="fas fa-box-open text-gray-700 mr-1"></i>
+                                                                            <span>{{ $component['name'] }}</span>
+                                                                            <span class="text-xs text-gray-500 ml-1">({{ $component['sku'] }})</span>
+                                                                        </div>
+                                                                        <div class="text-xs flex flex-wrap justify-between mt-2 gap-2">
+                                                                            <span class="text-gray-700 bg-green-50 px-2 py-1 rounded-md">
+                                                                                <i class="fas fa-cubes text-green-600 mr-1"></i> {{ __('messages.available') }}: <span class="font-bold">{{ is_numeric($component['available']) ? number_format((float)$component['available'], 2) : $component['available'] }}</span>
+                                                                            </span>
+                                                                            <span class="text-gray-700 bg-blue-50 px-2 py-1 rounded-md">
+                                                                                <i class="fas fa-clipboard-list text-blue-600 mr-1"></i> {{ __('messages.required') }}: <span class="font-bold">{{ is_numeric($component['required']) ? number_format((float)$component['required'], 2) : $component['required'] }}</span>
+                                                                            </span>
+                                                                            <span class="text-red-600 font-bold bg-red-50 px-2 py-1 rounded-md">
+                                                                                <i class="fas fa-exclamation-circle mr-1"></i> {{ __('messages.missing') }}: {{ is_numeric($component['missing']) ? number_format((float)$component['missing'], 2) : $component['missing'] }}
+                                                                            </span>
+                                                                        </div>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                        
+                                                        <!-- Nota sobre armazéns de matéria-prima -->
+                                                        <div class="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
+                                                            <p class="flex items-center text-xs text-blue-800">
+                                                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                                                                <strong>{{ __('messages.raw_material_warehouse_note') }}:</strong> {{ __('messages.raw_material_warehouse_verification') }}
+                                                            </p>
+                                                            
+                                                            <!-- Listagem dos armazéns de matéria-prima -->
+                                                            @if($this->hasRawMaterialWarehouses)
+                                                                <div class="mt-2">
+                                                                    <p class="text-xs text-blue-800 font-semibold">{{ __('messages.raw_material_warehouses') }}:</p>
+                                                                    <ul class="list-disc list-inside text-xs text-blue-800 ml-2 mt-1">
+                                                                        @foreach($rawMaterialWarehouses as $warehouse)
+                                                                            <li>{{ $warehouse->name }} ({{ $warehouse->code }})</li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
+                                                            @else
+                                                                <p class="mt-1 text-xs text-red-600 font-semibold">{{ __('messages.no_raw_material_warehouses') }}</p>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                 </p>
                                             </div>
                                         </div>
@@ -204,63 +259,13 @@
                                 @endif
                             @endif
                             
-                            <!-- Alerta de componentes insuficientes -->
-                            @if($showComponentWarning)
-                                <div class="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-md shadow-sm">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0">
-                                            <i class="fas fa-exclamation-triangle text-yellow-500 text-xl animate__animated animate__pulse animate__infinite"></i>
-                                        </div>
-                                        <div class="ml-3 flex-1">
-                                            <p class="text-sm font-medium text-yellow-800">
-                                                @if(count($insufficientComponents) == 1 && isset($insufficientComponents[0]['name']) && $insufficientComponents[0]['name'] == 'BOM com status inválido')
-                                                    <span class="font-bold">{{ __('messages.bom_inactive_warning') }}</span>
-                                                    <span class="block text-xs mt-1">{{ __('messages.activate_bom_instruction') }}</span>
-                                                @else
-                                                    {{ __('messages.insufficient_components_warning') }} 
-                                                    <span class="font-bold">({{ __('messages.maximum_possible') }}: {{ $maxQuantityPossible }})</span>
-                                                @endif
-                                            </p>
-                                            <div x-data="{showDetails: false}" class="mt-1">
-                                                <button @click="showDetails = !showDetails" type="button" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center">
-                                                    <i class="fas" :class="showDetails ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                                                    <span class="ml-1">{{ __('messages.view_details') }}</span>
-                                                </button>
-                                                <div x-show="showDetails" class="mt-2 text-xs text-gray-700">
-                                                    <ul class="space-y-2">
-                                                        @foreach($insufficientComponents as $component)
-                                                            <li class="border-l-2 border-red-400 pl-3 py-1 hover:bg-yellow-100 transition-colors duration-200">
-                                                                <div class="font-medium flex items-center">
-                                                                    <i class="fas fa-box-open text-gray-700 mr-1"></i>
-                                                                    <span>{{ $component['name'] }}</span>
-                                                                    <span class="text-xs text-gray-500 ml-1">({{ $component['sku'] }})</span>
-                                                                </div>
-                                                                <div class="text-xs flex justify-between mt-1">
-                                                                    <span class="text-gray-700">
-                                                                        <i class="fas fa-cubes text-green-600 mr-1"></i> {{ __('messages.available') }}: <span class="font-bold">{{ is_numeric($component['available']) ? number_format((float)$component['available'], 2) : $component['available'] }}</span>
-                                                                    </span>
-                                                                    <span class="text-gray-700">
-                                                                        <i class="fas fa-clipboard-list text-blue-600 mr-1"></i> {{ __('messages.required') }}: <span class="font-bold">{{ is_numeric($component['required']) ? number_format((float)$component['required'], 2) : $component['required'] }}</span>
-                                                                    </span>
-                                                                    <span class="text-red-600 font-bold">
-                                                                        <i class="fas fa-exclamation-circle mr-1"></i> {{ __('messages.missing') }}: {{ is_numeric($component['missing']) ? number_format((float)$component['missing'], 2) : $component['missing'] }}
-                                                                    </span>
-                                                                </div>
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
+
                         </div>
 
                         <!-- Status -->
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
-                                {{ __('messages.status') }} <span class="text-red-500">*</span>
+                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-circle text-blue-500 mr-2"></i> {{ __('messages.status') }} <span class="text-red-500">*</span>
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -290,9 +295,9 @@
                         </div>
 
                         <!-- Prioridade -->
-                        <div>
-                            <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">
-                                {{ __('messages.priority') }} <span class="text-red-500">*</span>
+                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
+                            <label for="priority" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-exclamation text-blue-500 mr-2"></i> {{ __('messages.priority') }} <span class="text-red-500">*</span>
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -321,16 +326,21 @@
                         </div>
 
                         <!-- Responsável -->
-                        <div>
-                            <label for="responsible" class="block text-sm font-medium text-gray-700 mb-1">
-                                {{ __('messages.responsible') }}
+                        <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
+                            <label for="responsible" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-user text-blue-500 mr-2"></i> {{ __('messages.responsible') }}
                             </label>
-                            <input type="text" id="responsible" wire:model.live="schedule.responsible" maxlength="100"
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" 
-                                placeholder="{{ __('messages.responsible_placeholder') }}">
-                            @error('schedule.responsible')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm"><i class="fas fa-id-badge"></i></span>
+                                </div>
+                                <input type="text" id="responsible" wire:model.live="schedule.responsible" maxlength="100"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm" 
+                                    placeholder="{{ __('messages.responsible_placeholder') }}">
+                                                            @error('schedule.responsible')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                         
                         <!-- Linha de Produção -->
@@ -394,7 +404,9 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">{{ __('messages.shifts_help') }}</p>
+                            <p class="mt-1 text-xs text-gray-500 italic flex items-center">
+                            <i class="fas fa-info-circle mr-1 text-blue-400"></i> {{ __('messages.shifts_help') }}
+                        </p>
                             @error('schedule.shifts')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
