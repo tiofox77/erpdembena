@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mrp_production_schedules', function (Blueprint $table) {
-            $table->dropColumn('actual_start_time');
-            $table->dropColumn('actual_end_time');
+            if (Schema::hasColumn('mrp_production_schedules', 'actual_start_time')) {
+                $table->dropColumn('actual_start_time');
+            }
+            
+            if (Schema::hasColumn('mrp_production_schedules', 'actual_end_time')) {
+                $table->dropColumn('actual_end_time');
+            }
         });
     }
 
