@@ -9,6 +9,7 @@ use App\Models\SupplyChain\Supplier;
 use App\Models\SupplyChain\PurchaseOrderItem;
 use App\Models\SupplyChain\GoodsReceipt;
 use App\Models\SupplyChain\ShippingNote;
+use App\Models\SupplyChain\CustomFormField;
 use App\Models\User;
 
 class PurchaseOrder extends Model
@@ -256,5 +257,157 @@ class PurchaseOrder extends Model
         $this->total_amount = $this->subtotal + $this->tax_amount + $this->shipping_amount - $this->discount_amount;
         
         return $this;
+    }
+    
+    /**
+     * Get the status display field value from shipping notes and their associated custom forms
+     * 
+     * @return array
+     */
+    public function getStatusDisplayFieldValue()
+    {
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Iniciando getStatusDisplayFieldValue para PO #' . $this->id);
+        
+        $result = [
+            'status' => ucfirst(str_replace('_', ' ', $this->status)),
+            'custom_field_value' => null,
+            'custom_field_name' => null
+        ];
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Status base do PO', [
+            'po_id' => $this->id,
+            'status' => $this->status,
+            'formatted_status' => $result['status']
+        ]);
+        
+        // 1. Encontrar a última nota de envio (shipping note) deste pedido de compra
+        $latestShippingNote = $this->latestShippingNote()->first();
+        
+        if (!$latestShippingNote) {
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Nenhuma shipping note encontrada para PO #' . $this->id);
+            return $result;
+        }
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Shipping note encontrada', [
+            'po_id' => $this->id,
+            'shipping_note_id' => $latestShippingNote->id,
+            'created_at' => $latestShippingNote->created_at
+        ]);
+        
+        // 2. Verificar se a nota de envio tem um formulário personalizado associado
+        $customForm = $latestShippingNote->customForm;
+        if (!$customForm) {
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Shipping note não tem formulário personalizado associado', [
+                'po_id' => $this->id,
+                'shipping_note_id' => $latestShippingNote->id
+            ]);
+            return $result;
+        }
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Formulário personalizado encontrado', [
+            'po_id' => $this->id,
+            'shipping_note_id' => $latestShippingNote->id,
+            'custom_form_id' => $customForm->id,
+            'custom_form_name' => $customForm->name
+        ]);
+        
+        // 3. Verificar se o formulário tem configuração de exibição de status
+        $statusDisplayConfig = $customForm->status_display_config;
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Configuração de exibição de status', [
+            'po_id' => $this->id,
+            'custom_form_id' => $customForm->id,
+            'status_display_config' => $statusDisplayConfig
+        ]);
+        
+        if (empty($statusDisplayConfig) || !isset($statusDisplayConfig['field_id']) || !isset($statusDisplayConfig['enabled']) || !$statusDisplayConfig['enabled']) {
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Configuração de status inválida ou desativada', [
+                'po_id' => $this->id,
+                'custom_form_id' => $customForm->id,
+                'empty_config' => empty($statusDisplayConfig),
+                'has_field_id' => isset($statusDisplayConfig['field_id']),
+                'has_enabled' => isset($statusDisplayConfig['enabled']),
+                'is_enabled' => $statusDisplayConfig['enabled'] ?? false
+            ]);
+            return $result;
+        }
+        
+        // 4. Buscar o campo configurado para exibição de status
+        $fieldId = $statusDisplayConfig['field_id'];
+        $field = \App\Models\SupplyChain\CustomFormField::find($fieldId);
+        
+        if (!$field) {
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Campo configurado não encontrado', [
+                'po_id' => $this->id,
+                'field_id' => $fieldId
+            ]);
+            return $result;
+        }
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Campo configurado encontrado', [
+            'po_id' => $this->id,
+            'field_id' => $fieldId,
+            'field_name' => $field->name,
+            'field_label' => $field->label,
+            'field_type' => $field->type
+        ]);
+        
+        // 5. Guardar o nome do campo para exibição
+        $result['custom_field_name'] = $field->label ?? $field->name;
+        
+        // 6. Usar o método currentStatus da ShippingNote para obter o valor formatado do campo
+        $customFieldValue = $latestShippingNote->currentStatus();
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Valor obtido através do método currentStatus()', [
+            'po_id' => $this->id,
+            'shipping_note_id' => $latestShippingNote->id,
+            'field_id' => $fieldId,
+            'custom_field_value' => $customFieldValue
+        ]);
+        
+        // Diretamente usar o valor de customFieldValue sem criar um objeto stdClass
+        if ($customFieldValue !== null) {
+            // Extrair o valor do campo
+            $fieldValue = $customFieldValue;
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Valor formatado encontrado', [
+                'po_id' => $this->id,
+                'field_value' => $fieldValue
+            ]);
+        } else {
+            // Tentar consulta direta ao banco para depuração
+            $rawValue = \Illuminate\Support\Facades\DB::table('sc_custom_form_field_values')
+                ->where('field_id', $fieldId)
+                ->where('submission_id', $latestShippingNote->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+                
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Tentativa de consulta direta à tabela', [
+                'raw_result' => $rawValue ? json_encode($rawValue) : 'null',
+                'value_if_exists' => $rawValue ? $rawValue->value : null
+            ]);
+            
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Nenhum valor encontrado na tabela de valores');
+        }
+        
+        if (empty($fieldValue)) {
+            \Illuminate\Support\Facades\Log::debug('PO Status Debug: Nenhum valor de campo encontrado para exibição de status');
+            return $result;
+        }
+        
+        // O método currentStatus() já retorna o valor formatado
+        // não é necessário formatar novamente
+        $formattedValue = $fieldValue;
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Usando valor já formatado do método currentStatus()', [
+            'formatted_value' => $formattedValue
+        ]);
+        
+        $result['custom_field_value'] = $formattedValue;
+        
+        \Illuminate\Support\Facades\Log::debug('PO Status Debug: Resultado final', [
+            'po_id' => $this->id,
+            'result' => $result
+        ]);
+        
+        return $result;
     }
 }

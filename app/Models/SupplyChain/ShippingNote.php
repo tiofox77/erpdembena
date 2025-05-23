@@ -5,6 +5,7 @@ namespace App\Models\SupplyChain;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ShippingNote extends Model
 {
@@ -151,4 +152,65 @@ class ShippingNote extends Model
     {
         return $this->belongsTo(CustomForm::class, 'custom_form_id');
     }
+
+    /**
+     * Relacionamento com a submissão do formulário
+     */
+    public function formSubmission()
+    {
+        return $this->hasOne(CustomFormSubmission::class, 'entity_id')
+                ->where('form_id', $this->custom_form_id);
+    }
+    
+    /**
+     * Busca o valor do campo configurado em status_display_config do formulário
+     * 
+     * @return string|null
+     */
+    public function currentStatus()
+    {
+        // Verificar se existe um formulário personalizado associado
+        if (!$this->custom_form_id) {
+            return null;
+        }
+
+        // Consulta SQL otimizada para obter o valor do campo de status em uma única consulta
+        $result = DB::table('sc_custom_forms')
+            ->select('scfv.value', 'scff.type', 'scff.options')
+            ->join('sc_custom_form_submissions as scfs', function ($join) {
+                $join->on('scfs.form_id', '=', 'sc_custom_forms.id')
+                     ->where('scfs.entity_id', '=', $this->id);
+            })
+            ->join('sc_custom_form_field_values as scfv', function ($join) {
+                $join->on('scfv.submission_id', '=', 'scfs.id')
+                     ->whereRaw('scfv.field_id = JSON_UNQUOTE(JSON_EXTRACT(sc_custom_forms.status_display_config, "$.field_id"))');
+            })
+            ->join('sc_custom_form_fields as scff', 'scff.id', '=', 'scfv.field_id')
+            ->where('sc_custom_forms.id', '=', $this->custom_form_id)
+            ->whereRaw('JSON_EXTRACT(sc_custom_forms.status_display_config, "$.enabled") = true')
+            ->orderBy('scfv.created_at', 'desc')
+            ->first();
+        
+        if (!$result) {
+            return null;
+        }
+        
+        // Formatar o valor baseado no tipo do campo
+        if ($result->type === 'select' || $result->type === 'radio') {
+            $options = is_string($result->options) ? json_decode($result->options, true) : $result->options;
+            
+            if (is_array($options)) {
+                foreach ($options as $option) {
+                    if (isset($option['value']) && $option['value'] == $result->value) {
+                        return $option['label'] ?? $result->value;
+                    }
+                }
+            }
+        } elseif ($result->type === 'checkbox') {
+            return $result->value ? 'Sim' : 'Não';
+        }
+        
+        return $result->value;
+    }
 }
+

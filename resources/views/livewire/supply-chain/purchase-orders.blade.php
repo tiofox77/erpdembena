@@ -233,6 +233,7 @@
                                                 @elseif($order->status == 'arrived_at_port') bg-pink-100 text-pink-800
                                                 @elseif($order->status == 'customs_clearance') bg-teal-100 text-teal-800
                                                 @elseif($order->status == 'delivered') bg-cyan-100 text-cyan-800
+                                                @else bg-blue-100 text-blue-800
                                                 @endif">
                                                 
                                                 @if(!$isStandardStatus)
@@ -275,6 +276,18 @@
                                                         {{ __("messages.status_{$order->status}") }}
                                                     @endif
                                                 @endif
+                                                
+                                                <!-- Exibir valor do campo personalizado ao lado do status -->
+                                                <span class="ml-2 font-normal border-l border-current pl-2">
+                                                    @php
+                                                        $statusValue = $order->getStatusDisplayFieldValue();
+                                                        if (isset($statusValue['custom_field_name'])) {
+                                                            echo $statusValue['custom_field_name'] . ': ' . ($statusValue['custom_field_value'] ?? 'N/A');
+                                                        } else {
+                                                            echo 'PO Status: ' . $statusValue['status'];
+                                                        }
+                                                    @endphp
+                                                </span>
                                             </span>
                                             @if($order->shipping_status_date)
                                                 <span class="text-xs text-gray-500 ml-2">

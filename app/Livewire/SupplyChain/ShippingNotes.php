@@ -188,6 +188,32 @@ class ShippingNotes extends Component
         try {
             $shippingNote = ShippingNote::findOrFail($id);
             
+            // Check if status is 'completed' (prevent deletion in this case)
+            $currentStatus = null;
+            
+            // Check regular status field
+            if ($shippingNote->status === 'delivered') {
+                $currentStatus = 'completed';
+            }
+            
+            // If using custom form, check the current status from the form
+            if ($shippingNote->status === 'custom_form' && $shippingNote->custom_form_id) {
+                $customStatus = $shippingNote->currentStatus();
+                if ($customStatus === 'completed') {
+                    $currentStatus = 'completed';
+                }
+            }
+            
+            // Prevent deletion if status is 'completed'
+            if ($currentStatus === 'completed') {
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'title' => __('messages.error'),
+                    'message' => __('messages.cannot_delete_completed_shipping_note')
+                ]);
+                return;
+            }
+            
             // Delete attachment if exists
             if ($shippingNote->attachment_url) {
                 Storage::delete($shippingNote->attachment_url);

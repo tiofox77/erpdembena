@@ -39,6 +39,10 @@ class CustomFormBuilder extends Component
         'description' => '',
         'entity_type' => 'shipping_note',
         'is_active' => true,
+        'status_display_config' => [
+            'enabled' => false,
+            'field_id' => null
+        ],
     ];
     
     public $currentFieldId = null;
@@ -576,14 +580,18 @@ class CustomFormBuilder extends Component
     public function edit($id)
     {
         $this->resetForm();
-        $this->currentFormId = $id;
         $form = CustomForm::findOrFail($id);
         
+        $this->currentFormId = $form->id;
         $this->currentForm = [
             'name' => $form->name,
             'description' => $form->description,
             'entity_type' => $form->entity_type,
             'is_active' => $form->is_active,
+            'status_display_config' => $form->status_display_config ?? [
+                'enabled' => false,
+                'field_id' => null
+            ],
         ];
         
         $this->showFormModal = true;
@@ -596,6 +604,8 @@ class CustomFormBuilder extends Component
             'currentForm.description' => 'nullable|string|max:1000',
             'currentForm.entity_type' => 'required|string',
             'currentForm.is_active' => 'boolean',
+            'currentForm.status_display_config.enabled' => 'boolean',
+            'currentForm.status_display_config.field_id' => 'nullable|integer',
         ]);
         
         if ($this->currentFormId) {
@@ -606,6 +616,7 @@ class CustomFormBuilder extends Component
                 'description' => $this->currentForm['description'],
                 'entity_type' => $this->currentForm['entity_type'],
                 'is_active' => $this->currentForm['is_active'],
+                'status_display_config' => $this->currentForm['status_display_config'],
             ]);
             
             $this->dispatch('notify', 
@@ -619,6 +630,7 @@ class CustomFormBuilder extends Component
                 'description' => $this->currentForm['description'],
                 'entity_type' => $this->currentForm['entity_type'],
                 'is_active' => $this->currentForm['is_active'],
+                'status_display_config' => $this->currentForm['status_display_config'],
                 'created_by' => Auth::id(),
             ]);
             
@@ -1041,6 +1053,10 @@ class CustomFormBuilder extends Component
             'description' => '',
             'entity_type' => 'shipping_note',
             'is_active' => true,
+            'status_display_config' => [
+                'enabled' => false,
+                'field_id' => null
+            ],
         ];
         
         // Reset relationship configuration

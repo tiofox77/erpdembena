@@ -2540,6 +2540,7 @@ return [
     'equipment_type_has_parts' => 'Cannot delete equipment type :name because it has associated parts',
     'error_saving_equipment_type' => 'Error saving equipment type',
     'error_deleting_equipment_type' => 'Error deleting equipment type',
+    'cannot_delete_completed_shipping_note' => 'Cannot delete shipping note with "completed" status',
     'delete_equipment_type_confirmation' => 'Are you sure you want to delete the equipment type :name?',
     'no_types_found' => 'No equipment types found',
     'enter_type_name' => 'Enter the equipment type name',
@@ -2550,6 +2551,8 @@ return [
     'equipment_type_required_info' => 'Selecting an equipment type helps with inventory organization and maintenance planning',
     'manage_equipment_types' => 'Manage Types',
     'select_equipment_type' => 'Select equipment type',
+    'search_by_order_number_or_supplier' => 'Search by order number or supplier',
+    'cannot_delete_completed_order' => 'Cannot delete completed order',
     // Shifts (Turnos)
     'work_shifts' => 'Work Shifts',
     'select_shift' => 'Select a shift',

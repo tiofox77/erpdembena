@@ -293,6 +293,42 @@ use Illuminate\Support\Str;
                         <label for="is_active" class="ml-2 block text-sm text-gray-700">{{ __('messages.active_form') }}</label>
                     </div>
                     
+                    <div class="mb-4 border-t border-gray-200 pt-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-eye mr-1"></i>
+                            Exibição de campo no status
+                        </h4>
+                        <p class="text-xs text-gray-500 mb-3">Configure um campo deste formulário para ser exibido ao lado do status nas listagens de pedidos de compra.</p>
+                        
+                        <div class="flex items-center mb-3">
+                            <input wire:model="currentForm.status_display_config.enabled" type="checkbox" id="status_display_enabled" 
+                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                            <label for="status_display_enabled" class="ml-2 block text-sm text-gray-700">Habilitar exibição de campo no status</label>
+                        </div>
+                        
+                        @if(isset($currentForm['status_display_config']['enabled']) && $currentForm['status_display_config']['enabled'])
+                            <div class="mb-3">
+                                <label for="status_display_field" class="block text-sm font-medium text-gray-700 mb-1">Campo a ser exibido</label>
+                                <select wire:model="currentForm.status_display_config.field_id" id="status_display_field" 
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                    <option value="">Selecione um campo...</option>
+                                    @php
+                                        $formFields = [];
+                                        if ($currentFormId) {
+                                            $formFields = \App\Models\SupplyChain\CustomFormField::where('form_id', $currentFormId)
+                                                ->orderBy('label')
+                                                ->get();
+                                        }
+                                    @endphp
+                                    @foreach($formFields as $formField)
+                                        <option value="{{ $formField->id }}">{{ $formField->label }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">O valor deste campo será exibido ao lado do status na listagem de pedidos.</p>
+                            </div>
+                        @endif
+                    </div>
+                    
                     <div class="flex justify-end space-x-2 mt-6">
                         <button type="button" wire:click="closeModal" 
                             class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">

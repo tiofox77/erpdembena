@@ -717,26 +717,44 @@ class PurchaseOrders extends Component
         try {
             $order = PurchaseOrder::findOrFail($this->deleteOrderId);
             
-            // Verificar se pode ser excluído
-            if (!in_array($order->status, ['draft', 'pending_approval', 'ordered'])) {
-                $this->dispatch('notify', type: 'error', message: __('messages.cannot_delete_order_in_status', ['status' => $order->status]));
+            // Verificar se pode ser excluído - não permitir exclusão se status for 'completed'
+            if ($order->status === 'completed') {
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    title: __('messages.error'),
+                    message: __('messages.cannot_delete_completed_order')
+                );
                 $this->closeDeleteModal();
                 return;
             }
             
             $order->delete();
             
-            $this->dispatch('notify', type: 'success', message: __('messages.purchase_order_deleted'));
+            $this->dispatch('notify', 
+                type: 'success', 
+                title: __('messages.success'),
+                message: __('messages.purchase_order_deleted')
+            );
             
             $this->closeDeleteModal();
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                title: __('messages.error'),
+                message: $e->getMessage()
+            );
+            Log::error('Erro ao excluir ordem de compra', [
+                'order_id' => $this->deleteOrderId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
     
     public function closeDeleteModal()
     {
         $this->showDeleteModal = false;
+        $this->deleteOrderId = null;
     }
     
     public function updateOrderStatus($orderId, $status)

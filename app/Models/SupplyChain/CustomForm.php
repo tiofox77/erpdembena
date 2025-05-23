@@ -18,11 +18,13 @@ class CustomForm extends Model
         'description',
         'entity_type',
         'is_active',
-        'created_by'
+        'created_by',
+        'status_display_config'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'status_display_config' => 'array',
     ];
 
     /**
