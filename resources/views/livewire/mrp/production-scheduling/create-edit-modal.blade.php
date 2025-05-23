@@ -327,20 +327,37 @@
 
                         <!-- Responsável -->
                         <div class="transition duration-300 ease-in-out transform hover:scale-[1.02]">
-                            <label for="responsible" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                            <label for="responsible_id" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                                 <i class="fas fa-user text-blue-500 mr-2"></i> {{ __('messages.responsible') }}
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm"><i class="fas fa-id-badge"></i></span>
                                 </div>
-                                <input type="text" id="responsible" wire:model.live="schedule.responsible" maxlength="100"
-                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm" 
-                                    placeholder="{{ __('messages.responsible_placeholder') }}">
-                                                            @error('schedule.responsible')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <select id="responsible_id" wire:model.live="schedule.responsible_id"
+                                    class="block w-full pl-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm @error('schedule.responsible_id') border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500 @enderror">
+                                    <option value="">{{ __('messages.select_responsible') }}</option>
+                                    @foreach($responsibles as $responsible)
+                                        <option value="{{ $responsible->id }}" {{ $responsible->is_active ? '' : 'disabled' }}>
+                                            {{ $responsible->name }} 
+                                            @if(!$responsible->is_active) (Inativo) @endif
+                                            @if($responsible->position) - {{ $responsible->position }} @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('schedule.responsible_id')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
                                 @enderror
                             </div>
+                            @error('schedule.responsible_id')
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
                         </div>
                         
                         <!-- Linha de Produção -->

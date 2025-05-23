@@ -299,6 +299,9 @@ Route::middleware(['auth'])->group(function () {
         // Failure Root Cause Analysis
         Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-categories', App\Livewire\Mrp\FailureCategories::class)->name('failure-categories');
         Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-root-causes', App\Livewire\Mrp\FailureRootCauses::class)->name('failure-root-causes');
+        
+        // Responsibles Management
+        Route::middleware(['permission:mrp.responsibles.view'])->get('/responsibles', App\Livewire\Mrp\Responsibles::class)->name('responsibles');
     });
 
     // Supply Chain Module Routes

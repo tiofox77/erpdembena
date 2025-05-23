@@ -52,22 +52,7 @@
                     <p class="mt-1 text-xs text-gray-500">{{ __('messages.search_schedules_help') }}</p>
                 </div>
                 
-                <!-- Filtro por Período -->
-                <div>
-                    <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">
-                        {{ __('messages.start_date') }}
-                    </label>
-                    <input type="date" id="startDate" wire:model.live="dateFilter.start" 
-                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                </div>
-                
-                <div>
-                    <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">
-                        {{ __('messages.end_date') }}
-                    </label>
-                    <input type="date" id="endDate" wire:model.live="dateFilter.end" 
-                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                </div>
+                <!-- Filtros de data removidos -->
                 
                 <!-- Filtro por Status -->
                 <div>
@@ -176,24 +161,19 @@
                                     @endif
                                 </div>
                             </th>
-                            <th wire:click="sortBy('start_date')" class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-200">
+                            <th wire:click="sortBy('responsible_id')" class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-200">
                                 <div class="flex items-center">
-                                    {{ __('messages.start_date') }}
-                                    @if($sortField === 'start_date')
+                                    {{ __('messages.responsible') }}
+                                    @if($sortField === 'responsible_id')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-2 text-blue-500"></i>
                                     @else
                                         <i class="fas fa-sort ml-2 text-gray-400"></i>
                                     @endif
                                 </div>
                             </th>
-                            <th wire:click="sortBy('end_date')" class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-200">
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center">
-                                    {{ __('messages.end_date') }}
-                                    @if($sortField === 'end_date')
-                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-2 text-blue-500"></i>
-                                    @else
-                                        <i class="fas fa-sort ml-2 text-gray-400"></i>
-                                    @endif
+                                    {{ __('messages.shifts') }}
                                 </div>
                             </th>
                             <th wire:click="sortBy('quantity')" class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-200">
@@ -243,26 +223,52 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $schedule->start_date->format('d/m/Y') }}
+                                    @if($schedule->responsible)
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-blue-500"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-gray-900">{{ $schedule->responsible->name }}</div>
+                                                <div class="text-xs text-gray-500">{{ $schedule->responsible->position }}</div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400 italic">{{ __('messages.not_assigned') }}</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $schedule->end_date->format('d/m/Y') }}
+                                    <div class="flex flex-wrap gap-1">
+                                        @forelse($schedule->shifts as $shift)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                <i class="fas fa-clock mr-1"></i> {{ $shift->name }}
+                                            </span>
+                                        @empty
+                                            <span class="text-gray-400 italic">{{ __('messages.no_shifts_assigned') }}</span>
+                                        @endforelse
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                                    {{ number_format($schedule->quantity, 2) }}
+                                    @php
+                                        // Calcular a soma das quantidades reais dos planos diários
+                                        $actualQuantity = $schedule->dailyPlans->sum('actual_quantity');
+                                    @endphp
+                                    {{ number_format($actualQuantity, 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {{ $schedule->status === 'draft' ? 'bg-gray-100 text-gray-800' : 
-                                           ($schedule->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : 
-                                           ($schedule->status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
-                                           ($schedule->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'))) }}">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-300
+                                        {{ $schedule->status === 'draft' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' : 
+                                           ($schedule->status === 'confirmed' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 hover:shadow' : 
+                                           ($schedule->status === 'in_progress' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-md hover:shadow-lg' : 
+                                           ($schedule->status === 'completed' ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow' : 'bg-red-100 text-red-800 hover:bg-red-200'))) }}">
                                         <i class="fas 
                                             {{ $schedule->status === 'draft' ? 'fa-pencil-alt' : 
-                                               ($schedule->status === 'confirmed' ? 'fa-check-circle' : 
-                                               ($schedule->status === 'in_progress' ? 'fa-hourglass-half' : 
-                                               ($schedule->status === 'completed' ? 'fa-flag-checkered' : 'fa-ban'))) }} mr-1"></i>
-                                        {{ __('messages.' . $schedule->status) }}
+                                               ($schedule->status === 'confirmed' ? 'fa-check-circle fa-beat-fade' : 
+                                               ($schedule->status === 'in_progress' ? 'fa-hourglass-half fa-spin-pulse' : 
+                                               ($schedule->status === 'completed' ? 'fa-flag-checkered fa-bounce' : 'fa-ban fa-shake'))) }} mr-1"></i>
+                                        <span class="{{ $schedule->status === 'in_progress' ? 'animate-pulse font-bold' : '' }}">
+                                            {{ __('messages.' . $schedule->status) }}
+                                        </span>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -302,22 +308,9 @@
             </div>
             
             <!-- Paginação -->
-            <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <div class="flex-1 flex justify-between items-center">
-                    <div>
-                        <p class="text-sm text-gray-700">
-                            {{ __('messages.showing') }} 
-                            <span class="font-medium">{{ $schedules->firstItem() ?: 0 }}</span> 
-                            {{ __('messages.to') }} 
-                            <span class="font-medium">{{ $schedules->lastItem() ?: 0 }}</span> 
-                            {{ __('messages.of') }} 
-                            <span class="font-medium">{{ $schedules->total() }}</span> 
-                            {{ __('messages.results') }}
-                        </p>
-                    </div>
-                    <div>
-                        {{ $schedules->links() }}
-                    </div>
+            <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6" wire:key="pagination-container-{{ now() }}">
+                <div class="pagination-wrapper">
+                    {{ $schedules->links() }}
                 </div>
             </div>
         </div>

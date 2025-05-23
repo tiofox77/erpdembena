@@ -11,6 +11,7 @@ use App\Models\Mrp\Line;
 use App\Models\Mrp\ProductionDailyPlan;
 use App\Models\Mrp\ProductionOrder;
 use App\Models\Mrp\ProductionSchedule;
+use App\Models\Mrp\Responsible;
 use App\Models\Mrp\Shift;
 use App\Models\SupplyChain\InventoryLocation as Location;
 use App\Models\SupplyChain\Product;
@@ -48,6 +49,11 @@ class ProductionScheduling extends Component
     public $insufficientComponents = [];
     public $maxQuantityPossible = 0;
     public $rawMaterialWarehouses = null;
+    
+    // Estas propriedades já existem no componente, foram mantidas aqui apenas como comentário
+    // public $showDeleteModal = false;
+    // public $scheduleToDelete = null;
+    // public $confirmDelete = false;
 
     /**
      * Computed property to check if raw material warehouses exist
@@ -520,6 +526,7 @@ class ProductionScheduling extends Component
             'schedule.status' => 'required|in:draft,confirmed,in_progress,completed,cancelled',
             'schedule.priority' => 'required|in:low,medium,high,urgent',
             'schedule.line_id' => 'nullable|exists:mrp_lines,id',
+            'schedule.responsible_id' => 'nullable|exists:mrp_responsibles,id',
             'schedule.working_hours_per_day' => 'required|numeric|min:0.5|max:24',
             'schedule.hourly_production_rate' => 'required|numeric|min:0.1',
             'schedule.setup_time' => 'nullable|integer|min:0',
@@ -528,9 +535,25 @@ class ProductionScheduling extends Component
     }
 
     /**
-     * Resetar paginação quando a busca mudar
+     * Resetar paginação quando a busca ou os filtros mudarem
      */
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+    
+    /**
+     * Resetar paginação quando o número de itens por página mudar
+     */
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
+    
+    /**
+     * Resetar paginação quando o tipo de visualização mudar
+     */
+    public function updatingViewType()
     {
         $this->resetPage();
     }
@@ -554,11 +577,7 @@ class ProductionScheduling extends Component
      */
     public function resetFilters()
     {
-        $this->search = '';
-        $this->statusFilter = null;
-        $this->priorityFilter = null;
-        $this->dateFilter = null;
-        $this->productFilter = null;
+        $this->reset(['search', 'statusFilter', 'priorityFilter', 'dateFilter', 'productFilter']);
         $this->resetPage();
     }
 
@@ -1207,7 +1226,7 @@ class ProductionScheduling extends Component
             $this->resetValidation();
             $this->scheduleId = $id;
             // Garantindo que estamos usando os relacionamentos corretos
-            $schedule = ProductionSchedule::with(['product', 'location', 'shifts'])->findOrFail($id);
+            $schedule = ProductionSchedule::with(['product', 'location', 'shifts', 'responsible'])->findOrFail($id);
 
             // Preencher array schedule com todos os campos do modelo
             $this->schedule = [
@@ -1221,7 +1240,7 @@ class ProductionScheduling extends Component
                 'delay_reason' => $schedule->delay_reason,
                 'status' => $schedule->status,
                 'priority' => $schedule->priority,
-                'responsible' => $schedule->responsible ?? '',
+                'responsible_id' => $schedule->responsible_id,
                 'location_id' => $schedule->location_id,
                 'working_hours_per_day' => $schedule->working_hours_per_day,
                 'hourly_production_rate' => $schedule->hourly_production_rate,
@@ -3433,19 +3452,71 @@ class ProductionScheduling extends Component
     }
 
     /**
+     * Abrir modal de confirmação de exclusão de programação
+     *
+     * @param int $id ID da programação a excluir
+     */
+    public function openDeleteModal($id)
+    {
+        try {
+            \Illuminate\Support\Facades\Log::info('=== INÍCIO DO MÉTODO openDeleteModal() ===', ['id' => $id]);
+            
+            // Carregar programação com informações do produto
+            $this->scheduleToDelete = ProductionSchedule::with(['product', 'responsible', 'location'])->find($id);
+            
+            if (!$this->scheduleToDelete) {
+                \Illuminate\Support\Facades\Log::warning('Programação não encontrada para exclusão', ['id' => $id]);
+                $this->dispatch('notify',
+                    type: 'error',
+                    title: __('messages.error'),
+                    message: __('messages.schedule_not_found'));
+                return;
+            }
+            
+            // Verificar se há ordens de produção associadas
+            $relatedOrders = ProductionOrder::where('schedule_id', $id)->get();
+            $this->relatedOrders = $relatedOrders;
+            
+            \Illuminate\Support\Facades\Log::info('Preparando modal de exclusão', [
+                'schedule_id' => $id,
+                'schedule_number' => $this->scheduleToDelete->schedule_number,
+                'related_orders_count' => $relatedOrders->count()
+            ]);
+            
+            // Mostrar modal de confirmação
+            $this->showDeleteModal = true;
+            $this->confirmDelete = false;
+            
+            \Illuminate\Support\Facades\Log::info('=== FIM DO MÉTODO openDeleteModal() ===');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erro ao abrir modal de exclusão', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.error_loading_schedule', ['error' => $e->getMessage()]));
+        }
+    }
+    
+    /**
      * Fechar o modal de exclusão
      */
     public function closeDeleteModal()
     {
-        // Simplificado como em BomManagement
+        \Illuminate\Support\Facades\Log::info('Fechando modal de exclusão');
         $this->showDeleteModal = false;
         $this->scheduleToDelete = null;
-        $this->scheduleId = null;
+        $this->confirmDelete = false;
+        if (isset($this->relatedOrders)) {
+            $this->relatedOrders = [];
+        }
     }
-
+    
     /**
-     * Visualizar programação de produção
-     *
      * @param int $id ID da programação a visualizar
      */
     public function viewSchedule($id)
@@ -3461,7 +3532,8 @@ class ProductionScheduling extends Component
                 'line',
                 'shifts',  // Corrigido para plural conforme relacionamento no model
                 'dailyPlans',
-                'productionOrders'
+                'productionOrders',
+                'responsible'
             ])->find($id);
 
             // Verificar se a propriedade viewingSchedule foi preenchida no render()
@@ -3473,7 +3545,8 @@ class ProductionScheduling extends Component
                     'line',
                     'shifts',
                     'dailyPlans',
-                    'productionOrders'
+                    'productionOrders',
+                    'responsible'
                 ])->find($id);
             }
 
@@ -3904,6 +3977,9 @@ class ProductionScheduling extends Component
 
         // Carregar linhas de produção e turnos
         $productionLines = Line::where('is_active', true)->orderBy('name')->get();
+        
+        // Carregar responsáveis ativos
+        $responsibles = Responsible::where('is_active', true)->orderBy('name')->get();
 
         // Carregar turnos - para o modal de daily plan, usamos apenas os turnos específicos do planejamento
         // definidos na propriedade $this->shifts, mas para outras funcionalidades, carregamos todos os turnos
@@ -3987,6 +4063,7 @@ class ProductionScheduling extends Component
             'locations' => $locations,
             'productionLines' => $productionLines,
             'shifts' => $shifts,
+            'responsibles' => $responsibles,
             'statuses' => $statuses,
             'priorities' => $priorities,
             'relatedOrders' => $relatedOrders,

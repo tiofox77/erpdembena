@@ -112,9 +112,34 @@ class ProductionOrders extends Component
     }
     
     /**
-     * Resetar paginação quando a busca mudar
+     * Resetar paginação quando qualquer filtro mudar
      */
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingPriorityFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingProductFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingLocationFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingPerPage()
     {
         $this->resetPage();
     }
@@ -351,12 +376,7 @@ class ProductionOrders extends Component
      */
     public function resetFilters()
     {
-        $this->search = '';
-        $this->statusFilter = null;
-        $this->priorityFilter = null;
-        $this->dateFilter = null;
-        $this->productFilter = null;
-        $this->locationFilter = null;
+        $this->reset(['search', 'statusFilter', 'priorityFilter', 'dateFilter', 'productFilter', 'locationFilter']);
         $this->resetPage();
     }
     

@@ -10,6 +10,7 @@ use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation as Location;
 use App\Models\Mrp\Line;
 use App\Models\Mrp\Shift;
+use App\Models\Mrp\Responsible;
 use App\Models\Mrp\ProductionScheduleShift;
 use Carbon\Carbon;
 
@@ -64,7 +65,7 @@ class ProductionSchedule extends Model
         'delay_reason',
         'status',
         'priority',
-        'responsible',
+        'responsible_id', // Novo campo com relação ao responsável
         'location_id',
         'working_hours_per_day',
         'hourly_production_rate',
@@ -141,6 +142,14 @@ class ProductionSchedule extends Model
     public function line()
     {
         return $this->belongsTo(Line::class);
+    }
+    
+    /**
+     * Get the responsible person for this schedule.
+     */
+    public function responsible()
+    {
+        return $this->belongsTo(Responsible::class);
     }
     
     // The shift() relationship was removed since it's replaced by the many-to-many shifts() relationship

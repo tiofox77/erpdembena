@@ -721,13 +721,19 @@
             
             @can('mrp.failure_analysis.view')
             <a href="{{ route('mrp.failure-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.failure-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-exclamation-triangle text-gray-500"></i>
+                <i class="fas fa-bug text-gray-500"></i>
                 <span>{{ trans('messages.failure_categories') }}</span>
             </a>
-            
             <a href="{{ route('mrp.failure-root-causes') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.failure-root-causes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-search-plus text-gray-500"></i>
+                <i class="fas fa-search-minus text-gray-500"></i>
                 <span>{{ trans('messages.failure_root_causes') }}</span>
+            </a>
+            @endcan
+            
+            @can('mrp.responsibles.view')
+            <a href="{{ route('mrp.responsibles') }}" class="sidebar-submenu-item {{ request()->routeIs('mrp.responsibles') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-user-tie text-gray-500"></i>
+                <span>{{ trans('messages.responsibles_management') }}</span>
             </a>
             @endcan
         </div>

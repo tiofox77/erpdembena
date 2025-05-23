@@ -279,7 +279,31 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.responsible') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
-                                        {{ $viewingSchedule->responsible ?: __('messages.not_specified') }}
+                                        @if($viewingSchedule->responsible)
+                                            <div class="flex items-center">
+                                                <span class="font-medium text-blue-700">{{ $viewingSchedule->responsible->name }}</span>
+                                                @if($viewingSchedule->responsible->position)
+                                                    <span class="text-xs text-gray-500 ml-2">{{ $viewingSchedule->responsible->position }}</span>
+                                                @endif
+                                            </div>
+                                            @if($viewingSchedule->responsible->department || $viewingSchedule->responsible->email)
+                                                <div class="mt-1 text-xs text-gray-600">
+                                                    @if($viewingSchedule->responsible->department)
+                                                        <span class="inline-block"><i class="fas fa-building mr-1"></i> {{ $viewingSchedule->responsible->department }}</span>
+                                                    @endif
+                                                    @if($viewingSchedule->responsible->email)
+                                                        <span class="inline-block ml-2"><i class="fas fa-envelope mr-1"></i> {{ $viewingSchedule->responsible->email }}</span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            @if(!$viewingSchedule->responsible->is_active)
+                                                <div class="mt-1 text-xs text-yellow-600">
+                                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ __('messages.inactive') }}
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span class="text-gray-500 italic">{{ __('messages.not_specified') }}</span>
+                                        @endif
                                     </dd>
                                 </div>
 
@@ -766,9 +790,13 @@
                                                     {{ __('messages.enter_produced_quantity') }}
                                                 </h3>
                                                 <div class="mt-4">
+                                                    @php
+                                                        // Calcular a soma das quantidades reais dos planos diários
+                                                        $totalActualQuantity = $viewingSchedule->dailyPlans->sum('actual_quantity');
+                                                    @endphp
                                                     <label for="actual_quantity" class="block text-sm font-medium text-gray-700">{{ __('messages.actual_quantity') }}</label>
-                                                    <input type="number" wire:model.defer="schedule.actual_quantity" step="0.001" min="0"
-                                                           class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                    <input type="number" wire:model.defer="schedule.actual_quantity" step="0.001" min="0" value="{{ $totalActualQuantity }}"
+                                                           class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out hover:border-blue-300 focus:shadow-outline-blue">
                                                     
                                                     <div class="mt-4">
                                                         <label for="delay_reason" class="block text-sm font-medium text-gray-700">{{ __('messages.delay_reason') }} ({{ __('messages.if_applicable') }})</label>
