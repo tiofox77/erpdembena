@@ -463,18 +463,7 @@
                     <i class="fas fa-info-circle mr-1 text-blue-400"></i>
                     <span>{{ __('messages.daily_plans_info') }}</span>
                 </div>
-                <div class="flex space-x-2">
-                    <button type="button" wire:click="recalculatePlans" wire:loading.attr="disabled" 
-                        class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 transition-all duration-200 ease-in-out transform hover:scale-105">
-                        <div wire:loading.remove wire:target="recalculatePlans">
-                            <i class="fas fa-calculator mr-2"></i>
-                            {{ __('messages.recalculate') }}
-                        </div>
-                        <div wire:loading wire:target="recalculatePlans">
-                            <i class="fas fa-spinner fa-spin mr-2"></i>
-                            {{ __('messages.calculating') }}...
-                        </div>
-                    </button>
+                <div class="flex">
                     <button type="button" wire:click="closeDailyPlansModal" 
                         class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                         <i class="fas fa-times mr-2"></i>

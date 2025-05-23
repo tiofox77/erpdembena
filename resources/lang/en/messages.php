@@ -2589,6 +2589,7 @@ return [
     'delay_reason' => 'Delay Reason',
     'if_applicable' => 'If Applicable',
     'complete_production' => 'Complete Production',
+    'delete_warning_permanent' => 'This action cannot be undone. The production schedule will be permanently deleted.',
     // Shifts (Turnos)
     'work_shifts' => 'Work Shifts',
     'select_shift' => 'Select a shift',

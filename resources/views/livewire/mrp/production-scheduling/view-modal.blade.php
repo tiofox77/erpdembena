@@ -127,8 +127,10 @@
                                                 <div class="flex justify-between items-center mb-1">
                                                     <span class="text-xs font-medium text-gray-500">{{ __('messages.planned_vs_actual') }}</span>
                                                     @php
+                                                        // Calcular a soma das quantidades reais dos planos diários
+                                                        $totalActualQuantity = $viewingSchedule->dailyPlans->sum('actual_quantity');
                                                         $completionPercent = $viewingSchedule->planned_quantity > 0 
-                                                            ? round(($viewingSchedule->actual_quantity / $viewingSchedule->planned_quantity) * 100, 1)
+                                                            ? round(($totalActualQuantity / $viewingSchedule->planned_quantity) * 100, 1)
                                                             : 0;
                                                     @endphp
                                                     <span class="text-xs font-semibold @if($completionPercent >= 100) text-green-600 @elseif($completionPercent >= 80) text-yellow-600 @else text-red-600 @endif">
@@ -140,7 +142,7 @@
                                                         <i class="fas fa-tasks text-blue-600"></i> {{ number_format($viewingSchedule->planned_quantity, 2) }}
                                                     </span>
                                                     <span class="text-sm font-semibold">
-                                                        <i class="fas fa-flag-checkered text-green-600"></i> {{ number_format($viewingSchedule->actual_quantity, 2) }}
+                                                        <i class="fas fa-flag-checkered text-green-600"></i> {{ number_format($totalActualQuantity, 2) }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -181,15 +183,39 @@
                                             <!-- Produção esperada vs real -->
                                             <div class="bg-white p-2 rounded border border-blue-200">
                                                 <span class="text-xs font-medium text-gray-500 block">{{ __('messages.expected_vs_actual') }}</span>
+                                                @php
+                                                    // Calcular a soma das quantidades reais dos planos diários
+                                                    $totalActualProduction = $viewingSchedule->dailyPlans->sum('actual_quantity');
+                                                    
+                                                    // Calcular a produção esperada baseada no tempo decorrido
+                                                    $startDate = $viewingSchedule->actual_start_date ?? $viewingSchedule->start_date;
+                                                    $startTime = $viewingSchedule->actual_start_time ?? $viewingSchedule->start_time ?? '00:00';
+                                                    $endDate = $viewingSchedule->end_date;
+                                                    $endTime = $viewingSchedule->end_time ?? '23:59';
+                                                    
+                                                    $startDateTime = \Carbon\Carbon::parse($startDate->format('Y-m-d') . ' ' . $startTime);
+                                                    $endDateTime = \Carbon\Carbon::parse($endDate->format('Y-m-d') . ' ' . $endTime);
+                                                    $now = \Carbon\Carbon::now();
+                                                    
+                                                    // Total de minutos planejados para a produção
+                                                    $totalPlannedMinutes = $startDateTime->diffInMinutes($endDateTime);
+                                                    $minutesElapsed = $startDateTime->diffInMinutes($now);
+                                                    
+                                                    // Percentual do tempo decorrido
+                                                    $timePercentage = ($totalPlannedMinutes > 0) ? min(100, max(0, ($minutesElapsed / $totalPlannedMinutes) * 100)) : 0;
+                                                    
+                                                    // Produção esperada baseada no percentual de tempo decorrido
+                                                    $expectedProduction = ($viewingSchedule->planned_quantity * $timePercentage) / 100;
+                                                @endphp
                                                 <div class="flex justify-between items-center mt-1">
-                                                    <span class="text-sm font-medium">{{ number_format($viewingSchedule->estimatedTimeRemaining['expected_production'], 2) }}</span>
+                                                    <span class="text-sm font-medium">{{ number_format($expectedProduction, 2) }}</span>
                                                     <span class="text-xs text-gray-500">vs</span>
-                                                    <span class="text-sm font-medium {{ $viewingSchedule->estimatedTimeRemaining['actual_production'] >= $viewingSchedule->estimatedTimeRemaining['expected_production'] ? 'text-green-600' : 'text-yellow-600' }}">
-                                                        {{ number_format($viewingSchedule->estimatedTimeRemaining['actual_production'], 2) }}
+                                                    <span class="text-sm font-medium {{ $totalActualProduction >= $expectedProduction ? 'text-green-600' : 'text-yellow-600' }}">
+                                                        {{ number_format($totalActualProduction, 2) }}
                                                     </span>
                                                 </div>
                                                 <div class="text-xs mt-1">
-                                                    @if($viewingSchedule->estimatedTimeRemaining['actual_production'] >= $viewingSchedule->estimatedTimeRemaining['expected_production'])
+                                                    @if($totalActualProduction >= $expectedProduction)
                                                         <span class="text-green-600">{{ __('messages.production_on_track') }}</span>
                                                     @else
                                                         <span class="text-yellow-600">{{ __('messages.production_behind') }}</span>
@@ -198,15 +224,65 @@
                                             </div>
                                             
                                             <!-- Tempo estimado para conclusão -->
-                                            <div class="bg-white p-2 rounded border border-blue-200 {{ $viewingSchedule->estimatedTimeRemaining['is_delayed'] ? 'border-red-300 bg-red-50' : '' }}">
+                                            @php
+                                                // Recalcular se está atrasado com base na produção real dos planos diários
+                                                $isDelayed = false;
+                                                $hours = 0;
+                                                $minutes = 0;
+                                                
+                                                // Calcular tempo decorrido em horas desde o início
+                                                $startDate = $viewingSchedule->actual_start_date ?? $viewingSchedule->start_date;
+                                                $startTime = $viewingSchedule->actual_start_time ?? $viewingSchedule->start_time ?? '00:00';
+                                                $startDateTime = \Carbon\Carbon::parse($startDate->format('Y-m-d') . ' ' . $startTime);
+                                                $now = \Carbon\Carbon::now();
+                                                $elapsedHours = max(1, $startDateTime->diffInMinutes($now) / 60); // Em horas, mínimo 1h
+                                                
+                                                if ($viewingSchedule->planned_quantity > 0 && $totalActualProduction > 0) {
+                                                    // Taxa de produção atual por hora
+                                                    $productionRate = $totalActualProduction / $elapsedHours;
+                                                    
+                                                    // Tempo restante estimado
+                                                    $remainingQuantity = $viewingSchedule->planned_quantity - $totalActualProduction;
+                                                    if ($remainingQuantity > 0 && $productionRate > 0) {
+                                                        $remainingTime = $remainingQuantity / $productionRate;
+                                                        $hours = floor($remainingTime);
+                                                        $minutes = round(($remainingTime - $hours) * 60);
+                                                    }
+                                                    
+                                                    // Verificar se ultrapassa o prazo
+                                                    $endDate = $viewingSchedule->end_date;
+                                                    $endTime = $viewingSchedule->end_time ?? '23:59';
+                                                    $endDateTime = \Carbon\Carbon::parse($endDate->format('Y-m-d') . ' ' . $endTime);
+                                                    $hoursUntilDeadline = max(0, $now->diffInMinutes($endDateTime) / 60);
+                                                    
+                                                    $isDelayed = $hours > $hoursUntilDeadline;
+                                                } else {
+                                                    // Usar valores padrão do objeto se disponíveis, ou calcular baseado em datas
+                                                    if (isset($viewingSchedule->estimatedTimeRemaining['hours'])) {
+                                                        $hours = $viewingSchedule->estimatedTimeRemaining['hours'];
+                                                        $minutes = $viewingSchedule->estimatedTimeRemaining['minutes'] ?? 0;
+                                                        $isDelayed = $viewingSchedule->estimatedTimeRemaining['is_delayed'] ?? false;
+                                                    } else {
+                                                        // Se não há dados estimados, calcular baseado no prazo
+                                                        $endDate = $viewingSchedule->end_date;
+                                                        $endTime = $viewingSchedule->end_time ?? '23:59';
+                                                        $endDateTime = \Carbon\Carbon::parse($endDate->format('Y-m-d') . ' ' . $endTime);
+                                                        $diffInHours = $now->diffInHours($endDateTime);
+                                                        $hours = $diffInHours;
+                                                        $minutes = $now->diffInMinutes($endDateTime) % 60;
+                                                        $isDelayed = $now > $endDateTime;
+                                                    }
+                                                }
+                                            @endphp
+                                            <div class="bg-white p-2 rounded border border-blue-200 {{ $isDelayed ? 'border-red-300 bg-red-50' : '' }}">
                                                 <span class="text-xs font-medium text-gray-500 block">{{ __('messages.estimated_completion') }}</span>
                                                 <div class="text-center mt-1">
-                                                    <span class="text-lg font-bold {{ $viewingSchedule->estimatedTimeRemaining['is_delayed'] ? 'text-red-600' : 'text-blue-600' }}">
-                                                        {{ $viewingSchedule->estimatedTimeRemaining['hours'] }}h {{ $viewingSchedule->estimatedTimeRemaining['minutes'] }}m
+                                                    <span class="text-lg font-bold {{ $isDelayed ? 'text-red-600' : 'text-blue-600' }}">
+                                                        {{ $hours }}h {{ $minutes }}m
                                                     </span>
                                                 </div>
                                                 <div class="text-xs mt-1 text-center">
-                                                    @if($viewingSchedule->estimatedTimeRemaining['is_delayed'])
+                                                    @if($isDelayed)
                                                         <span class="text-red-600">{{ __('messages.deadline_passed') }}</span>
                                                     @else
                                                         <span>{{ __('messages.time_remaining') }}</span>
