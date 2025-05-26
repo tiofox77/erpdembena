@@ -352,7 +352,103 @@
                                                                     <dt class="font-medium text-gray-700">{{ $fieldValue->field->label }}:</dt>
                                                                     <dd class="text-gray-600">
                                                                         @if($fieldValue->field->type == 'checkbox')
-                                                                            {{ $fieldValue->value ? __('messages.yes') : __('messages.no') }}
+                                                                             @php
+                                                                                $rawValue = $fieldValue->value;
+                                                                                $selectedValues = [];
+                                                                                
+                                                                                // Processar o valor do checkbox
+                                                                                if (is_string($rawValue)) {
+                                                                                    // Tentar decodificar o JSON
+                                                                                    try {
+                                                                                        $decodedValue = json_decode($rawValue, true);
+                                                                                        if (json_last_error() === JSON_ERROR_NONE) {
+                                                                                            // Se for um objeto JSON válido
+                                                                                            if (is_array($decodedValue)) {
+                                                                                                if (!isset($decodedValue[0])) {
+                                                                                                    // Formato {"a":true,"b":true}
+                                                                                                    foreach ($decodedValue as $key => $isSelected) {
+                                                                                                        if ($isSelected === true || $isSelected === 'true' || 
+                                                                                                            $isSelected === 1 || $isSelected === '1') {
+                                                                                                            $selectedValues[] = $key;
+                                                                                                        }
+                                                                                                    }
+                                                                                                } else {
+                                                                                                    // Formato ["a","b"]
+                                                                                                    $selectedValues = $decodedValue;
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    } catch (\Exception $e) {
+                                                                                        logger()->error('Erro ao processar valor de checkbox: ' . $e->getMessage());
+                                                                                    }
+                                                                                } elseif (is_array($rawValue)) {
+                                                                                    if (!isset($rawValue[0])) {
+                                                                                        // Formato {"a":true,"b":true}
+                                                                                        foreach ($rawValue as $key => $isSelected) {
+                                                                                            if ($isSelected === true || $isSelected === 'true' || 
+                                                                                                $isSelected === 1 || $isSelected === '1') {
+                                                                                                $selectedValues[] = $key;
+                                                                                            }
+                                                                                        }
+                                                                                    } else {
+                                                                                        // Já é um array simples
+                                                                                        $selectedValues = $rawValue;
+                                                                                    }
+                                                                                }
+                                                                                
+                                                                                // Verificar se o campo tem opções (checkbox de múltipla seleção)
+                                                                                $options = $fieldValue->field->options;
+                                                                                if (is_string($options)) {
+                                                                                    $options = json_decode($options, true);
+                                                                                }
+                                                                                
+                                                                                // Usar os valores selecionados para a visualização
+                                                                                $checkboxValue = $selectedValues;
+                                                                                
+                                                                                // Debug para verificar o valor final
+                                                                                logger()->debug('Valor final do checkbox após processamento: ' . json_encode($checkboxValue));
+                                                                            @endphp
+                                                                            
+                                                                            @if(is_array($checkboxValue) && is_array($options) && count($options) > 0)
+                                                                                <!-- Checkbox de múltipla seleção -->
+                                                                                @php
+                                                                                    $hasSelectedOptions = false;
+                                                                                    foreach ($options as $option) {
+                                                                                        if (in_array($option['value'], $checkboxValue)) {
+                                                                                            $hasSelectedOptions = true;
+                                                                                            break;
+                                                                                        }
+                                                                                    }
+                                                                                @endphp
+                                                                                
+                                                                                @if($hasSelectedOptions)
+                                                                                <div class="flex flex-wrap gap-1">
+                                                                                    @foreach($options as $option)
+                                                                                        @if(in_array($option['value'], $checkboxValue))
+                                                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                                                                                <i class="fas fa-check-circle mr-1 text-xs"></i>
+                                                                                                {{ $option['label'] }}
+                                                                                            </span>
+                                                                                        @endif
+                                                                                    @endforeach
+                                                                                </div>
+                                                                                @else
+                                                                                    <span class="text-gray-500 italic">{{ __('messages.none_selected') }}</span>
+                                                                                @endif
+                                                                            @else
+                                                                                <!-- Checkbox simples -->
+                                                                                @if($checkboxValue === true || $checkboxValue === 'true' || $checkboxValue === 1 || $checkboxValue === '1')
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                                                                        <i class="fas fa-check-circle mr-1"></i>
+                                                                                        {{ __('messages.yes') }}
+                                                                                    </span>
+                                                                                @else
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                                                                        <i class="fas fa-times-circle mr-1"></i>
+                                                                                        {{ __('messages.no') }}
+                                                                                    </span>
+                                                                                @endif
+                                                                            @endif
                                                                         @elseif($fieldValue->field->type == 'date' && !empty($fieldValue->value))
                                                                             {{ \Carbon\Carbon::parse($fieldValue->value)->format('d/m/Y') }}
                                                                         @elseif($fieldValue->field->type == 'select')

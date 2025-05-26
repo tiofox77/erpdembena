@@ -151,14 +151,49 @@
                                             @break
                                         
                                         @case('checkbox')
-                                            <div class="mt-2">
-                                                <input 
-                                                    wire:model="formData.{{ $field->name }}" 
-                                                    type="checkbox" 
-                                                    id="{{ $field->name }}"
-                                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
-                                                          @error('formData.' . $field->name) border-red-300 @enderror">
-                                                <label for="{{ $field->name }}" class="ml-2 text-sm text-gray-700">{{ __('messages.yes') }}</label>
+                                            <div class="mt-2 space-y-2">
+                                                @if(isset($field->options) && count($field->options) > 0)
+                                                     <!-- Múltipla seleção com vários checkboxes -->
+                                                    @foreach($field->options as $index => $option)
+                                                        <div class="flex items-center">
+                                                            <input 
+                                                                wire:model="formData.{{ $field->name }}.{{ $option['value'] }}" 
+                                                                type="checkbox" 
+                                                                id="{{ $field->name }}_{{ $option['value'] }}"
+                                                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
+                                                                @error('formData.' . $field->name . '.' . $option['value']) border-red-300 @enderror">
+                                                            <label for="{{ $field->name }}_{{ $option['value'] }}" class="ml-2 text-sm text-gray-700">{{ $option['label'] }}</label>
+                                                        </div>
+                                                    @endforeach
+                                                    @if(config('app.debug'))
+                                                    <div class="mt-1 text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                                                        <span class="font-mono">{{ $field->name }}: {{ json_encode($formData[$field->name] ?? []) }}</span>
+                                                        <div class="mt-1">
+                                                            @foreach($field->options as $option)
+                                                                <div>
+                                                                    {{ $option['label'] }}: {{ isset($formData[$field->name][$option['value']]) ? ($formData[$field->name][$option['value']] ? 'marcado' : 'não marcado') : 'não definido' }}
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                @else
+                                                    <!-- Checkbox único simples -->
+                                                    <div class="flex items-center">
+                                                        <input 
+                                                            wire:model="formData.{{ $field->name }}" 
+                                                            type="checkbox" 
+                                                            id="{{ $field->name }}"
+                                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50
+                                                                  @error('formData.' . $field->name) border-red-300 @enderror">
+                                                        <label for="{{ $field->name }}" class="ml-2 text-sm text-gray-700">{{ $field->label }}</label>
+                                                    </div>
+                                                    @if(config('app.debug'))
+                                                    <div class="mt-1 text-xs text-gray-500">
+                                                        <span class="font-mono">{{ $field->name }}: {{ isset($formData[$field->name]) ? ($formData[$field->name] ? 'true' : 'false') : 'null' }}</span>
+                                                    </div>
+                                                    @endif
+                                                @endif
                                             </div>
                                             @break
                                         
