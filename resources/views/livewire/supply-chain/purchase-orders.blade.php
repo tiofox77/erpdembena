@@ -76,11 +76,25 @@
                             </select>
                         </div>
                         
+                        <!-- Filtro de Status Ativo/Inativo -->
+                        <div>
+                            <label for="activeFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-toggle-on text-gray-500 mr-1"></i>
+                                {{ __('messages.status_active') }}
+                            </label>
+                            <select wire:model.live="activeFilter" id="activeFilter" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="active">{{ __('messages.only_active') }}</option>
+                                <option value="inactive">{{ __('messages.only_inactive') }}</option>
+                                <option value="all">{{ __('messages.all_active_status') }}</option>
+                            </select>
+                        </div>
+                        
                         <!-- Registros por página -->
                         <div>
                             <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">
                                 <i class="fas fa-list-ol text-gray-500 mr-1"></i>
-                                {{ __('messages.items_per_page') }}
+                                {{ __('messages.records_per_page') }}
                             </label>
                             <select wire:model.live="perPage" id="perPage" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
@@ -88,6 +102,75 @@
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Linha de filtros de data -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <!-- Cabeçalho -->
+                        <div class="md:col-span-3 mb-2">
+                            <h3 class="text-sm font-medium text-blue-700 flex items-center">
+                                <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                                {{ __('messages.date_filters') }}
+                            </h3>
+                        </div>
+                        
+                        <!-- Filtro de Campo de Data -->
+                        <div>
+                            <label for="dateField" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-calendar text-gray-500 mr-1"></i>
+                                {{ __('messages.date_field') }}
+                            </label>
+                            <select wire:model.live="dateField" id="dateField" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="order_date">{{ __('messages.order_date') }}</option>
+                                <option value="expected_delivery_date">{{ __('messages.expected_delivery') }}</option>
+                                <option value="delivery_date">{{ __('messages.delivery_date') }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro de Mês -->
+                        <div>
+                            <label for="monthFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-calendar-day text-gray-500 mr-1"></i>
+                                {{ __('messages.month') }}
+                            </label>
+                            <select wire:model.live="monthFilter" id="monthFilter" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="">{{ __('messages.all_months') }}</option>
+                                <option value="1">{{ __('messages.january') }}</option>
+                                <option value="2">{{ __('messages.february') }}</option>
+                                <option value="3">{{ __('messages.march') }}</option>
+                                <option value="4">{{ __('messages.april') }}</option>
+                                <option value="5">{{ __('messages.may') }}</option>
+                                <option value="6">{{ __('messages.june') }}</option>
+                                <option value="7">{{ __('messages.july') }}</option>
+                                <option value="8">{{ __('messages.august') }}</option>
+                                <option value="9">{{ __('messages.september') }}</option>
+                                <option value="10">{{ __('messages.october') }}</option>
+                                <option value="11">{{ __('messages.november') }}</option>
+                                <option value="12">{{ __('messages.december') }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro de Ano -->
+                        <div>
+                            <label for="yearFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-calendar-alt text-gray-500 mr-1"></i>
+                                {{ __('messages.year') }}
+                            </label>
+                            <select wire:model.live="yearFilter" id="yearFilter" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="">{{ __('messages.all_years') }}</option>
+                                @php
+                                    $currentYear = (int)date('Y');
+                                    $startYear = $currentYear - 5;
+                                    $endYear = $currentYear + 2;
+                                @endphp
+                                @for($year = $startYear; $year <= $endYear; $year++)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endfor
                             </select>
                         </div>
                     </div>
@@ -167,6 +250,16 @@
                                 <div class="flex items-center cursor-pointer" wire:click="sortBy('status')">
                                     {{ __('messages.status') }}
                                     @if($sortField === 'status')
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
+                                    @else
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
+                                    @endif
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div class="flex items-center justify-center cursor-pointer" wire:click="sortBy('is_active')">
+                                    {{ __('messages.status_active') }}
+                                    @if($sortField === 'is_active')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
                                         <i class="fas fa-sort ml-1 opacity-50"></i>
@@ -300,6 +393,17 @@
                                               class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors duration-200 ease-in-out text-sm">
                                             <i class="fas fa-plus-circle mr-1"></i>
                                             {{ __('messages.add_shipping_status') }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($order->is_active)
+                                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium leading-none rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i> {{ __('messages.active') }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium leading-none rounded-full bg-gray-100 text-gray-800">
+                                            <i class="fas fa-times-circle mr-1"></i> {{ __('messages.inactive') }}
                                         </span>
                                     @endif
                                 </td>

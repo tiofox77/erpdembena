@@ -25,6 +25,10 @@ class PurchaseOrders extends Component
     public $perPage = 10;
     public $statusFilter = '';
     public $supplierFilter = '';
+    public $activeFilter = 'active'; // Padrão: mostrar apenas ordens ativas
+    public $monthFilter = ''; // Filtro por mês (1-12)
+    public $yearFilter = ''; // Filtro por ano
+    public $dateField = 'order_date'; // Campo de data a ser filtrado (order_date, expected_delivery_date, etc)
     public $sortField = 'order_date';
     public $sortDirection = 'desc';
     
@@ -98,6 +102,26 @@ class PurchaseOrders extends Component
     {
         $this->resetPage();
     }
+    
+    public function updatingActiveFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingMonthFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingYearFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingDateField()
+    {
+        $this->resetPage();
+    }
 
     public function updatingPerPage()
     {
@@ -109,6 +133,10 @@ class PurchaseOrders extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->supplierFilter = '';
+        $this->activeFilter = 'active';
+        $this->monthFilter = '';
+        $this->yearFilter = '';
+        $this->dateField = 'order_date';
         $this->perPage = 10;
         $this->resetPage();
     }
@@ -134,6 +162,23 @@ class PurchaseOrders extends Component
             })
             ->when($this->statusFilter, function($query) {
                 return $query->where('status', $this->statusFilter);
+            })
+            ->when($this->activeFilter, function($query) {
+                if ($this->activeFilter === 'active') {
+                    return $query->where('is_active', true);
+                } elseif ($this->activeFilter === 'inactive') {
+                    return $query->where('is_active', false);
+                }
+                // Se for 'all', não aplica filtro
+                return $query;
+            })
+            // Filtro por mês
+            ->when($this->monthFilter, function($query) {
+                return $query->whereRaw("MONTH({$this->dateField}) = ?", [$this->monthFilter]);
+            })
+            // Filtro por ano
+            ->when($this->yearFilter, function($query) {
+                return $query->whereRaw("YEAR({$this->dateField}) = ?", [$this->yearFilter]);
             })
             ->when($this->supplierFilter, function($query) {
                 return $query->where('supplier_id', $this->supplierFilter);
@@ -488,15 +533,42 @@ class PurchaseOrders extends Component
         try {
             $product = Product::findOrFail($productId);
             
-            $this->orderItems[] = [
-                'product_id' => $product->id,
-                'product_name' => $product->name,
-                'description' => $product->description,
-                'quantity' => 1,
-                'unit_price' => $product->price,
-                'unit_of_measure' => $product->unit_of_measure ?? 'und',
-                'line_total' => $product->price
-            ];
+            // Verificar se o produto já existe na ordem
+            $existingProductIndex = null;
+            foreach ($this->orderItems as $index => $item) {
+                if ($item['product_id'] == $product->id) {
+                    $existingProductIndex = $index;
+                    break;
+                }
+            }
+            
+            // Se o produto já existe, aumentar a quantidade em vez de duplicar
+            if ($existingProductIndex !== null) {
+                // Aumenta a quantidade em 1
+                $this->orderItems[$existingProductIndex]['quantity'] += 1;
+                
+                // Recalcula o total da linha
+                $quantity = $this->orderItems[$existingProductIndex]['quantity'];
+                $unitPrice = $this->orderItems[$existingProductIndex]['unit_price'];
+                $this->orderItems[$existingProductIndex]['line_total'] = $quantity * $unitPrice;
+                
+                // Notificação de atualização de quantidade
+                $message = __('Quantity updated for product: :product', ['product' => $product->name]);
+            } else {
+                // Adicionar novo produto à ordem
+                $this->orderItems[] = [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'description' => $product->description,
+                    'quantity' => 1,
+                    'unit_price' => $product->price,
+                    'unit_of_measure' => $product->unit_of_measure ?? 'und',
+                    'line_total' => $product->price
+                ];
+                
+                // Mensagem para produto adicionado
+                $message = __('Product added to order: :product', ['product' => $product->name]);
+            }
             
             $this->calculateOrderTotal();
             $this->closeProductSelector();
@@ -505,7 +577,7 @@ class PurchaseOrders extends Component
             $this->dispatch('notify', 
                 type: 'success',
                 title: __('messages.success'),
-                message: __('Product added to order: :product', ['product' => $product->name])
+                message: $message
             );
             
         } catch (\Exception $e) {

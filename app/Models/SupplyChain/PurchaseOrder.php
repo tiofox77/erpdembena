@@ -24,6 +24,7 @@ class PurchaseOrder extends Model
         'created_by',
         'approved_by',
         'status',
+        'is_active',
         'order_date',
         'expected_delivery_date',
         'delivery_date',
@@ -196,9 +197,25 @@ class PurchaseOrder extends Model
      */
     public function scopeOverdue($query)
     {
-        return $query->whereIn('status', ['approved', 'ordered', 'partially_received'])
-                     ->whereNotNull('expected_delivery_date')
-                     ->where('expected_delivery_date', '<', now());
+        return $query->where('status', '!=', 'completed')
+            ->where('status', '!=', 'cancelled')
+            ->where('expected_delivery_date', '<', now());
+    }
+    
+    /**
+     * Filter purchase orders by active status
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+    
+    /**
+     * Filter purchase orders by inactive status
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
     }
 
     /**

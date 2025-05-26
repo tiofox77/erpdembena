@@ -2119,7 +2119,8 @@ return [
     'display_field' => 'Display Field',
     'no_sample_data_found_check_records' => 'No sample data found. Please check if there are records in the selected model.',
     'required_field' => 'Required Field',
-    'field_added_successfully' => 'Field added successfully',
+    'product_added_success' => 'Product added successfully.',
+    'quantity_updated_for_product' => 'Quantidade atualizada para produto: :product',
     'field_updated_successfully' => 'Field updated successfully',
     'field_form_submitted' => 'Field form submitted',
     'more_items' => 'more items',
@@ -2658,5 +2659,17 @@ return [
     // Shifts (Turnos)
     'work_shifts' => 'Work Shifts',
     'select_shift' => 'Select a shift',
-    'select_appropriate_shift' => 'Select the appropriate work shift for this production schedule'
+    'select_appropriate_shift' => 'Select the appropriate work shift for this production schedule',
+    
+    // Purchase Orders - Product Management
+    'Product added to order: :product' => 'Product added to order: :product',
+    'Quantity updated for product: :product' => 'Quantity updated for product: :product',
+    
+    // Status ativo/inativo para filtros
+    'status_active' => 'Active Status',
+    'only_active' => 'Only Active',
+    'only_inactive' => 'Only Inactive',
+    'all_active_status' => 'All (Active/Inactive)',
+    'active' => 'Active',
+    'inactive' => 'Inactive'
 ];

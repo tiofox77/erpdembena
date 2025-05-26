@@ -11,7 +11,7 @@
      x-transition:leave="transition ease-in duration-200" 
      x-transition:leave-start="opacity-100" 
      x-transition:leave-end="opacity-0">
-    <div class="relative top-20 mx-auto p-1 w-full max-w-4xl">
+    <div class="relative top-20 mx-auto p-1 w-full sm:w-11/12 md:w-10/12 lg:w-5/6 xl:w-4/5 max-w-7xl">
         <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out" 
              x-transition:enter="transition ease-out duration-300" 
              x-transition:enter-start="transform opacity-0 scale-95" 
@@ -126,6 +126,9 @@
                                             {{ __('messages.product') }}
                                         </th>
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            {{ __('messages.unit') }}
+                                        </th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ __('messages.description') }}
                                         </th>
                                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -148,9 +151,14 @@
                                             <td class="px-4 py-3 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-gray-900">{{ $item['product_name'] }}</div>
                                             </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="text-sm text-gray-700">{{ $item['unit_of_measure'] ?? '—' }}</div>
+                                            </td>
                                             <td class="px-4 py-3">
-                                                <input type="text" wire:model.defer="orderItems.{{ $index }}.description" 
-                                                    class="block w-full py-1 px-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                                <textarea wire:model.defer="orderItems.{{ $index }}.description" 
+                                                    class="block w-full py-1 px-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                    rows="2" style="min-height: 60px; resize: vertical;"
+                                                    placeholder="{{ __('messages.item_description') }}"></textarea>
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap text-right">
                                                 <input type="number" min="1" required
@@ -179,7 +187,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">
+                                            <td colspan="7" class="px-4 py-3 text-center text-sm text-gray-500">
                                                 {{ __('messages.no_items_added') }}
                                             </td>
                                         </tr>
@@ -189,7 +197,7 @@
                                 <tfoot class="bg-gray-50">
                                     <!-- Subtotal -->
                                     <tr>
-                                        <td colspan="4" class="px-4 py-2 text-right font-medium">
+                                        <td colspan="5" class="px-4 py-2 text-right font-medium">
                                             {{ __('messages.subtotal') }}:
                                         </td>
                                         <td class="px-4 py-2 text-right">
@@ -199,7 +207,7 @@
                                     </tr>
                                     <!-- Shipping Cost -->
                                     <tr>
-                                        <td colspan="4" class="px-4 py-2 text-right font-medium">
+                                        <td colspan="5" class="px-4 py-2 text-right font-medium">
                                             {{ __('messages.shipping_cost') }}:
                                         </td>
                                         <td class="px-4 py-2 text-right">
@@ -220,7 +228,7 @@
                                     </tr>
                                     <!-- Order Total -->
                                     <tr class="border-t border-gray-200">
-                                        <td colspan="4" class="px-4 py-3 text-right font-bold">
+                                        <td colspan="5" class="px-4 py-3 text-right font-bold">
                                             {{ __('messages.order_total') }}:
                                         </td>
                                         <td class="px-4 py-3 text-right font-bold text-gray-900">
@@ -230,7 +238,7 @@
                                     </tr>
                                     <!-- Add Item Button -->
                                     <tr>
-                                        <td colspan="6" class="px-4 py-3">
+                                        <td colspan="7" class="px-4 py-3">
                                             <button type="button" wire:click="openProductSelector" 
                                                 class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 transform hover:scale-105">
                                                 <i class="fas fa-plus-circle mr-1.5"></i>
@@ -374,7 +382,7 @@
     x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0">
-    <div class="relative top-20 mx-auto p-1 w-full max-w-4xl">
+    <div class="relative top-20 mx-auto p-1 w-full sm:w-11/12 md:w-10/12 lg:w-5/6 xl:w-4/5 max-w-7xl">
         <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="transform opacity-0 scale-95"
