@@ -2317,8 +2317,9 @@ return [
     'status_in_progress' => 'In Progress',
     'status_completed' => 'Completed',
     'status_cancelled' => 'Cancelled',
-    'daily_plan_updated' => 'Daily plan updated successfully',
-    'failed_to_update_daily_plan' => 'Failed to update daily plan',
+    'daily_plans_saved_successfully' => 'Daily plans saved successfully',
+    'failed_to_save_daily_plans' => 'Failed to save daily plans',
+    'schedule_auto_completed' => 'Production schedule automatically marked as completed because all daily plans are completed',
     'daily_plans' => 'Daily Plans',
     // Chart Labels
     'breakdown_efficiency_chart' => 'Breakdown Impact on Efficiency',

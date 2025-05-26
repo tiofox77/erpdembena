@@ -919,74 +919,10 @@
                     </button>
                     @endif
                     
-                    <!-- Complete Production Button - apenas se status for 'in_progress' -->
+                    <!-- Botão e modal Complete Production removidos para automatização do processo - 
+                    A programação agora é marcada como completa automaticamente quando todos os planos diários são completados -->
                     @if($viewingSchedule->status == 'in_progress')
-                    <div x-data="{ showActualQuantity: false }">
-                        <button type="button" 
-                                @click="showActualQuantity = true"
-                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            {{ __('messages.complete_production') }}
-                        </button>
-                        
-                        <!-- Modal para informar a quantidade produzida -->
-                        <div x-show="showActualQuantity" 
-                             class="fixed z-10 inset-0 overflow-y-auto" 
-                             style="display: none;"
-                             x-transition:enter="ease-out duration-300"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             x-transition:leave="ease-in duration-200"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0">
-                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-                                </div>
-
-                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                        <div class="sm:flex sm:items-start">
-                                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                                    {{ __('messages.enter_produced_quantity') }}
-                                                </h3>
-                                                <div class="mt-4">
-                                                    @php
-                                                        // Calcular a soma das quantidades reais dos planos diários
-                                                        $totalActualQuantity = $viewingSchedule->dailyPlans->sum('actual_quantity');
-                                                    @endphp
-                                                    <label for="actual_quantity" class="block text-sm font-medium text-gray-700">{{ __('messages.actual_quantity') }}</label>
-                                                    <input type="number" wire:model.defer="schedule.actual_quantity" step="0.001" min="0" value="{{ $totalActualQuantity }}"
-                                                           class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out hover:border-blue-300 focus:shadow-outline-blue">
-                                                    
-                                                    <div class="mt-4">
-                                                        <label for="delay_reason" class="block text-sm font-medium text-gray-700">{{ __('messages.delay_reason') }} ({{ __('messages.if_applicable') }})</label>
-                                                        <textarea wire:model.defer="schedule.delay_reason" rows="3"
-                                                                  class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                        <button type="button" wire:click.prevent="completeProduction"
-                                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                            {{ __('messages.save') }}
-                                        </button>
-                                        <button type="button" @click="showActualQuantity = false"
-                                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                            {{ __('messages.cancel') }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Botão removido - Agora o processo é automático -->
                     @endif
                     
                     <!-- Botão de Movimentação Manual de Estoque - apenas se status for 'completed' e não tiver sido movimentado -->                    

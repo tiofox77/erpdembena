@@ -4,6 +4,7 @@ namespace App\Livewire\Mrp;
 
 use App\Livewire\Mrp\CompleteProductionTrait;
 use App\Livewire\Mrp\DailyProductionStockTrait;
+use Illuminate\Support\Facades\Log;
 use App\Models\Mrp\BomDetail;
 use App\Models\Mrp\BomHeader;
 use App\Models\Mrp\FailureCategory;
@@ -2992,6 +2993,16 @@ class ProductionScheduling extends Component
                     type: 'success',
                     title: __('messages.success'),
                     message: __('messages.daily_plan_created'));
+                    
+                // Verificar se todos os planos diários estão completos e atualizar o status da programação
+                if (isset($this->viewingSchedule) && $this->viewingSchedule->id) {
+                    \Illuminate\Support\Facades\Log::info('Verificando status da programação após salvar plano diário individual', [
+                        'schedule_id' => $this->viewingSchedule->id,
+                        'plano_status' => $dailyPlan->status ?? null
+                    ]);
+                    
+                    $this->checkAndUpdateScheduleStatus($this->viewingSchedule->id);
+                }
 
                 return true;
             }
@@ -3178,6 +3189,9 @@ class ProductionScheduling extends Component
                 title: __('messages.success'),
                 message: __('messages.daily_plans_saved_successfully'));
 
+            // Verificar se todos os planos diários estão completos e atualizar o status da programação se necessário
+            $this->checkAndUpdateScheduleStatus($this->viewingSchedule->id);
+            
             // Recarregar dados
             $this->viewDailyPlans($this->viewingSchedule->id);
         } catch (\Exception $e) {
@@ -3190,6 +3204,70 @@ class ProductionScheduling extends Component
                 type: 'error',
                 title: __('messages.error'),
                 message: __('messages.failed_to_save_daily_plans'));
+        }
+    }
+    
+    /**
+     * Verifica se todos os planos diários estão completos e atualiza o status da programação automaticamente
+     * 
+     * @param int $scheduleId ID da programação a ser verificada
+     * @return void
+     */
+    public function checkAndUpdateScheduleStatus($scheduleId)
+    {
+        try {
+            // Buscar a programação
+            $schedule = ProductionSchedule::findOrFail($scheduleId);
+            
+            // Buscar todos os planos diários associados a esta programação
+            $allDailyPlans = ProductionDailyPlan::where('schedule_id', $scheduleId)->get();
+            
+            // Se não houver planos diários, não faz nada
+            if ($allDailyPlans->isEmpty()) {
+                Log::info('Nenhum plano diário encontrado para verificar status da programação', [
+                    'schedule_id' => $scheduleId
+                ]);
+                return;
+            }
+            
+            // Verificar se todos os planos diários estão com status 'completed'
+            $allCompleted = $allDailyPlans->every(function ($plan) {
+                return $plan->status === 'completed';
+            });
+            
+            Log::info('Verificando status dos planos diários', [
+                'schedule_id' => $scheduleId,
+                'total_planos' => $allDailyPlans->count(),
+                'planos_completos' => $allDailyPlans->where('status', 'completed')->count(),
+                'todos_completos' => $allCompleted ? 'Sim' : 'Não'
+            ]);
+            
+            // Se todos os planos diários estiverem completos, atualizar o status da programação
+            if ($allCompleted) {
+                // Verificar se o status atual não é já 'completed'
+                if ($schedule->status !== 'completed') {
+                    // Atualizar o status da programação para 'completed'
+                    $schedule->status = 'completed';
+                    $schedule->save();
+                    
+                    Log::info('Status da programação atualizado automaticamente para COMPLETED', [
+                        'schedule_id' => $scheduleId,
+                        'schedule_number' => $schedule->schedule_number
+                    ]);
+                    
+                    // Notificar o usuário sobre a atualização
+                    $this->dispatch('notify',
+                        type: 'success',
+                        title: __('messages.success'),
+                        message: __('messages.schedule_auto_completed'));
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao verificar status dos planos diários', [
+                'schedule_id' => $scheduleId,
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 
@@ -3465,6 +3543,16 @@ public function updateDailyPlan($index, $data = null)
 
         // Disparar evento para atualizar os gráficos
         $this->dispatch('dailyPlansUpdated');
+        
+        // Verificar se todos os planos diários estão completos e atualizar o status da programação se necessário
+        if (isset($this->viewingSchedule) && $this->viewingSchedule->id) {
+            \Illuminate\Support\Facades\Log::info('Verificando status da programação após atualizar plano diário', [
+                'schedule_id' => $this->viewingSchedule->id,
+                'plano_status' => $data['status'] ?? null
+            ]);
+            
+            $this->checkAndUpdateScheduleStatus($this->viewingSchedule->id);
+        }
 
         return true;
     } catch (\Exception $e) {
