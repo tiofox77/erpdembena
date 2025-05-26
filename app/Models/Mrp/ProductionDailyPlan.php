@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\User;
 use App\Models\Mrp\FailureCategory;
 use App\Models\Mrp\FailureRootCause;
+use App\Models\Mrp\Shift;
+use App\Models\Mrp\ProductionBreakdown;
 
 class ProductionDailyPlan extends Model
 {
@@ -42,6 +44,9 @@ class ProductionDailyPlan extends Model
         'created_by',
         'updated_by',
         'shift_id',
+        'responsible_id',
+        'efficiency',
+        'rejected_quantity',
     ];
 
     /**
@@ -54,6 +59,8 @@ class ProductionDailyPlan extends Model
         'planned_quantity' => 'decimal:2',
         'actual_quantity' => 'decimal:2',
         'defect_quantity' => 'decimal:2',
+        'rejected_quantity' => 'decimal:2',
+        'efficiency' => 'decimal:1',
         'has_breakdown' => 'boolean',
         'failure_root_causes' => 'array',
     ];
@@ -88,6 +95,30 @@ class ProductionDailyPlan extends Model
     public function failureCategory()
     {
         return $this->belongsTo(FailureCategory::class, 'failure_category_id');
+    }
+    
+    /**
+     * Get the shift associated with this daily plan.
+     */
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
+    }
+    
+    /**
+     * Get the responsible person associated with this daily plan.
+     */
+    public function responsible()
+    {
+        return $this->belongsTo(User::class, 'responsible_id');
+    }
+    
+    /**
+     * Get the breakdowns associated with this daily plan.
+     */
+    public function breakdowns()
+    {
+        return $this->hasMany(ProductionBreakdown::class, 'daily_plan_id');
     }
     
     /**

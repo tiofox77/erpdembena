@@ -187,7 +187,7 @@
                                                                     </div>
                                                                 </div>
                                                                 
-                                                                @if(!empty($formData[$field['name']]) && !is_object($formData[$field['name']]))
+                                                                @if(isset($formData[$field['name']]) && !empty($formData[$field['name']]) && !is_object($formData[$field['name']]))
                                                                     <div class="mt-2 border border-blue-100 rounded-md p-2 bg-blue-50 flex items-center justify-between">
                                                                         <div class="flex items-center">
                                                                             <i class="fas fa-file-alt text-blue-500 mr-2"></i>
@@ -198,7 +198,7 @@
                                                                             {{ __('messages.download') }}
                                                                         </a>
                                                                     </div>
-                                                                @elseif(is_object($formData[$field['name']]) && method_exists($formData[$field['name']], 'getClientOriginalName'))
+                                                                @elseif(isset($formData[$field['name']]) && is_object($formData[$field['name']]) && method_exists($formData[$field['name']], 'getClientOriginalName'))
                                                                     <div class="mt-2 border border-blue-100 rounded-md p-2 bg-blue-50 flex items-center justify-between">
                                                                         <div class="flex items-center">
                                                                             <i class="fas fa-file-upload text-green-500 mr-2"></i>

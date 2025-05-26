@@ -318,38 +318,55 @@
 
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="relative rounded-md shadow-sm">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="z-index: 10; height: 100%; display: flex; align-items: center;">
                                                 <i class="fas fa-cubes text-blue-400"></i>
                                             </div>
                                             <input type="number" step="0.01" min="0" 
-                                                class="pl-9 pr-12 border-gray-300 focus:ring-blue-500 focus:border-blue-500 block w-full border rounded-lg transition-all duration-200 text-sm" 
+                                                class="pl-9 pr-12 border-gray-300 focus:ring-blue-500 focus:border-blue-500 block w-full border rounded-lg transition-all duration-200 text-sm {{ isset($plan['id']) ? 'bg-gray-100' : '' }}" 
                                                 style="-moz-appearance: auto; -webkit-appearance: auto; appearance: auto; padding-right: 20px;"
                                                 wire:model.defer="filteredDailyPlans.{{ $index }}.planned_quantity"
-                                                placeholder="0.00">
+                                                placeholder="0.00" 
+                                                {{ isset($plan['id']) ? 'readonly' : '' }}
+                                                title="{{ isset($plan['id']) ? 'Valor não pode ser alterado após salvo' : 'Quantidade planejada' }}">
+                                            @if(isset($plan['id']))
+                                                <div class="text-xs text-gray-500 mt-1">{{ __('messages.not_editable_after_save') }}</div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="relative rounded-md shadow-sm">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="z-index: 10; height: 100%; display: flex; align-items: center;">
                                                 <i class="fas fa-exclamation-circle text-red-400"></i>
                                             </div>
                                             <input type="number" step="0.01" min="0" 
-                                                class="pl-9 pr-12 border-gray-300 focus:ring-red-500 focus:border-red-500 block w-full border rounded-lg transition-all duration-200 text-sm" 
+                                                class="pl-9 pr-12 border-gray-300 focus:ring-red-500 focus:border-red-500 block w-full border rounded-lg transition-all duration-200 text-sm {{ isset($plan['id']) ? 'bg-gray-100' : '' }}" 
                                                 style="-moz-appearance: auto; -webkit-appearance: auto; appearance: auto; padding-right: 20px;"
                                                 wire:model.defer="filteredDailyPlans.{{ $index }}.defect_quantity"
-                                                placeholder="0.00">
+                                                placeholder="0.00"
+                                                {{ isset($plan['id']) ? 'readonly' : '' }}
+                                                title="{{ isset($plan['id']) ? 'Registro já existe e não pode ser editado' : 'Quantidade com defeito' }}"
+                                                oninput="this.value = this.value.match(/^\d*(\.\d{0,2})?$/) ? this.value : this.value.slice(0, -1)">
+                                            @if(isset($plan['id']))
+                                                <div class="text-xs text-gray-500 mt-1">{{ __('messages.record_locked') }}</div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="relative rounded-md shadow-sm">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="z-index: 10; height: 100%; display: flex; align-items: center;">
                                                 <i class="fas fa-check-circle text-green-400"></i>
                                             </div>
                                             <input type="number" step="0.01" min="0" 
-                                                class="pl-9 pr-12 border-gray-300 focus:ring-green-500 focus:border-green-500 block w-full border rounded-lg transition-all duration-200 text-sm" 
+                                                class="pl-9 pr-12 border-gray-300 focus:ring-green-500 focus:border-green-500 block w-full border rounded-lg transition-all duration-200 text-sm {{ isset($plan['id']) ? 'bg-gray-100' : '' }}" 
                                                 style="-moz-appearance: auto; -webkit-appearance: auto; appearance: auto; padding-right: 20px;"
                                                 wire:model.defer="filteredDailyPlans.{{ $index }}.actual_quantity"
-                                                placeholder="0.00">
+                                                placeholder="0.00"
+                                                {{ isset($plan['id']) ? 'readonly' : '' }}
+                                                title="{{ isset($plan['id']) ? 'Registro já existe e não pode ser editado' : 'Quantidade produzida' }}"
+                                                oninput="this.value = this.value.match(/^\d*(\.\d{0,2})?$/) ? this.value : this.value.slice(0, -1)">
+                                            @if(isset($plan['id']))
+                                                <div class="text-xs text-gray-500 mt-1">{{ __('messages.record_locked') }}</div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-sm block md:table-cell before:content-['Status:'] md:before:content-none before:font-medium before:text-gray-700 before:block md:before:hidden">
@@ -416,19 +433,28 @@
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                         <div class="flex space-x-2">
-                                            <button type="button" wire:click.prevent="saveDailyPlan({{ $index }})" 
-                                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-sm"
-                                                    wire:loading.attr="disabled">
-                                                <i class="fas fa-save mr-1 text-blue-200"></i>
-                                                <span wire:loading.remove wire:target="saveDailyPlan({{ $index }})">{{ __('messages.save') }}</span>
-                                                <span wire:loading wire:target="saveDailyPlan({{ $index }})" class="inline-flex items-center">
-                                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                    </svg>
-                                                    {{ __('messages.saving') }}...
-                                                </span>
-                                            </button>
+                                            @if(!isset($plan['id']))
+                                                <button type="button" wire:click.prevent="saveDailyPlan({{ $index }})" 
+                                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-sm"
+                                                        wire:loading.attr="disabled">
+                                                    <i class="fas fa-save mr-1 text-blue-200"></i>
+                                                    <span wire:loading.remove wire:target="saveDailyPlan({{ $index }})">{{ __('messages.save') }}</span>
+                                                    <span wire:loading wire:target="saveDailyPlan({{ $index }})" class="inline-flex items-center">
+                                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        {{ __('messages.saving') }}...
+                                                    </span>
+                                                </button>
+                                            @else
+                                                <button type="button" disabled
+                                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed opacity-60 shadow-sm">
+                                                    <i class="fas fa-lock mr-1"></i>
+                                                    <span>{{ __('messages.record_locked') }}</span>
+                                                </button>
+                                                <div class="text-xs text-gray-500 mt-1">{{ __('messages.saved_plans_cannot_be_edited') }}</div>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

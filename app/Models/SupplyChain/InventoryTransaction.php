@@ -51,6 +51,8 @@ class InventoryTransaction extends Model
     const TYPE_PRODUCTION_ISSUE = 'production_issue';
     const TYPE_RAW_PRODUCTION = 'raw_production';
     const TYPE_PRODUCTION_ORDER = 'production_order';
+    const TYPE_DAILY_PRODUCTION = 'daily_production';
+    const TYPE_DAILY_PRODUCTION_FG = 'daily_production_fg';
     
     /**
      * Constants for adjustment actions
@@ -229,11 +231,11 @@ class InventoryTransaction extends Model
      */
     public function getBackgroundColorClass()
     {
-        if ($this->isStockDecrease()) {
+        if ($this->isStockDecrease() || $this->transaction_type === self::TYPE_DAILY_PRODUCTION) {
             return 'bg-red-50 hover:bg-red-100';
         }
         
-        if ($this->isStockIncrease()) {
+        if ($this->isStockIncrease() || $this->transaction_type === self::TYPE_DAILY_PRODUCTION_FG) {
             return 'bg-green-50 hover:bg-green-100';
         }
         
@@ -241,7 +243,13 @@ class InventoryTransaction extends Model
             return 'bg-indigo-50 hover:bg-indigo-100';
         }
         
-        if ($this->transaction_type === self::TYPE_PRODUCTION) {
+        if (in_array($this->transaction_type, [
+            self::TYPE_PRODUCTION,
+            self::TYPE_PRODUCTION_RECEIPT,
+            self::TYPE_PRODUCTION_ISSUE,
+            self::TYPE_RAW_PRODUCTION,
+            self::TYPE_PRODUCTION_ORDER
+        ])) {
             return 'bg-purple-50 hover:bg-purple-100';
         }
         
@@ -263,7 +271,17 @@ class InventoryTransaction extends Model
             case self::TYPE_TRANSFER:
                 return 'fa-exchange-alt';
             case self::TYPE_PRODUCTION:
+            case self::TYPE_PRODUCTION_RECEIPT:
+            case self::TYPE_PRODUCTION_ISSUE:
                 return 'fa-industry';
+            case self::TYPE_RAW_PRODUCTION:
+                return 'fa-boxes';
+            case self::TYPE_PRODUCTION_ORDER:
+                return 'fa-clipboard-list';
+            case self::TYPE_DAILY_PRODUCTION:
+                return 'fa-arrow-down'; // Consumo de matéria prima (diminuição)
+            case self::TYPE_DAILY_PRODUCTION_FG:
+                return 'fa-arrow-up'; // Adição de produto acabado (aumento)
             default:
                 return 'fa-box';
         }
@@ -274,11 +292,11 @@ class InventoryTransaction extends Model
      */
     public function getIconColorClass()
     {
-        if ($this->isStockDecrease()) {
+        if ($this->isStockDecrease() || $this->transaction_type === self::TYPE_DAILY_PRODUCTION) {
             return 'text-red-600';
         }
         
-        if ($this->isStockIncrease()) {
+        if ($this->isStockIncrease() || $this->transaction_type === self::TYPE_DAILY_PRODUCTION_FG) {
             return 'text-green-600';
         }
         
@@ -286,7 +304,13 @@ class InventoryTransaction extends Model
             return 'text-indigo-600';
         }
         
-        if ($this->transaction_type === self::TYPE_PRODUCTION) {
+        if (in_array($this->transaction_type, [
+            self::TYPE_PRODUCTION,
+            self::TYPE_PRODUCTION_RECEIPT,
+            self::TYPE_PRODUCTION_ISSUE,
+            self::TYPE_RAW_PRODUCTION,
+            self::TYPE_PRODUCTION_ORDER
+        ])) {
             return 'text-purple-600';
         }
         

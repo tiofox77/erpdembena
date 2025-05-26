@@ -94,7 +94,7 @@
                     
                     <!-- Botões de ação -->
                     <div class="flex justify-end space-x-3">
-                        <button wire:click="generateListPdf" 
+                        <button wire:click="generatePdfList" 
                             class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                             <i class="fas fa-file-pdf mr-2"></i>
                             {{ __('messages.generate_list_pdf') }}

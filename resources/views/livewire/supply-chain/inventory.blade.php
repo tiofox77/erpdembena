@@ -190,7 +190,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-bold">
-                                    @if($item->is_out_of_stock)
+                                    @if($item->quantity_on_hand < 0)
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 shadow-sm transform transition-all duration-300 hover:scale-105">
+                                        <i class="fas fa-times-circle mr-1"></i>
+                                        {{ __('messages.out_of_stock') }}
+                                    </span>
+                                    <span class="ml-1 text-red-600 text-base font-bold">{{ $item->quantity_on_hand }}</span>
+                                    <i class="fas fa-exclamation-circle text-red-600 ml-1 animate-pulse transform transition-all duration-500 hover:rotate-12 hover:scale-110"></i>
+                                    @elseif($item->is_out_of_stock)
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 shadow-sm transform transition-all duration-300 hover:scale-105">
                                         <i class="fas fa-times-circle mr-1"></i>
                                         {{ __('messages.out_of_stock') }}
@@ -389,12 +396,12 @@
                                                 <i class="fas fa-industry mr-1"></i>
                                                 {{ __('messages.production') }}
                                             </span>
-                                        @elseif($transaction->transaction_type === 'raw_production')
+                                        @elseif($transaction->transaction_type === 'raw_production' || $transaction->transaction_type === 'daily_production')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-red-200">
                                                 <i class="fas fa-minus-circle mr-1"></i>
                                                 {{ __('messages.raw_material') }}
                                             </span>
-                                        @elseif($transaction->transaction_type === 'production_order')
+                                        @elseif($transaction->transaction_type === 'production_order' || $transaction->transaction_type === 'daily_production_fg')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 shadow transform transition-all duration-300 hover:scale-105 hover:bg-green-200">
                                                 <i class="fas fa-plus-circle mr-1"></i>
                                                 {{ __('messages.production_order') }}
@@ -408,7 +415,7 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($transaction->transaction_type === 'raw_production')
+                                    @if($transaction->transaction_type === 'raw_production' || $transaction->transaction_type === 'daily_production')
                                         <div class="text-sm font-bold text-red-600 flex items-center animate-fadeIn transition-all duration-300 hover:scale-110">
                                             <span class="bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">-</span>
                                             {{ number_format(abs($transaction->quantity), 2) }}
@@ -419,8 +426,8 @@
                                             {{ number_format($transaction->quantity, 2) }}
                                         </div>
                                     @elseif($transaction->quantity < 0)
-                                        <div class="text-sm font-bold text-orange-600 flex items-center animate-pulse transition-all duration-300 hover:scale-110">
-                                            <span class="bg-orange-100 text-orange-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">-</span>
+                                        <div class="text-sm font-bold text-red-600 flex items-center animate-fadeIn transition-all duration-300 hover:scale-110">
+                                            <span class="bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center mr-1">-</span>
                                             {{ number_format(abs($transaction->quantity), 2) }}
                                         </div>
                                     @else
@@ -1149,6 +1156,16 @@
                                                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
                                                         <i class="fas fa-box mr-1"></i>
                                                         {{ __('messages.production_issue') }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'daily_production')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                        <i class="fas fa-arrow-down mr-1"></i>
+                                                        {{ __('messages.raw_material_consumption') ?? 'Raw Material Consumption' }}
+                                                    </span>
+                                                @elseif($transaction->transaction_type === 'daily_production_fg')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                        <i class="fas fa-arrow-up mr-1"></i>
+                                                        {{ __('messages.finished_goods_addition') ?? 'Finished Goods Addition' }}
                                                     </span>
                                                 @else
                                                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">

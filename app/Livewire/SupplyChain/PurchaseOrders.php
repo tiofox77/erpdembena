@@ -1234,6 +1234,103 @@ class PurchaseOrders extends Component
         }
     }
     
+    public function generatePdfList()
+    {
+        Log::info('=== INÍCIO DO MÉTODO generatePdfList ===');
+        
+        try {
+            // Obter as ordens de compra com os filtros aplicados
+            $purchaseOrdersQuery = PurchaseOrder::with(['supplier', 'createdBy', 'items'])
+                ->when($this->search, function($query) {
+                    return $query->where(function($q) {
+                        $q->where('order_number', 'like', '%' . $this->search . '%')
+                        ->orWhereHas('supplier', function($subQuery) {
+                            $subQuery->where('name', 'like', '%' . $this->search . '%');
+                        });
+                    });
+                })
+                ->when($this->statusFilter, function($query) {
+                    return $query->where('status', $this->statusFilter);
+                })
+                ->when($this->supplierFilter, function($query) {
+                    return $query->where('supplier_id', $this->supplierFilter);
+                })
+                ->orderBy($this->sortField, $this->sortDirection);
+            
+            // Não paginamos aqui para exportar todos os resultados filtrados
+            $purchaseOrders = $purchaseOrdersQuery->get();
+            
+            Log::info('Gerando PDF da listagem de ordens de compra', [
+                'quantidade' => $purchaseOrders->count(),
+                'filtros' => [
+                    'search' => $this->search,
+                    'status' => $this->statusFilter,
+                    'supplier' => $this->supplierFilter
+                ]
+            ]);
+            
+            // Calcular os totais
+            $totalOrders = $purchaseOrders->count();
+            $totalValue = $purchaseOrders->sum('total_value');
+            
+            // Obter dados do usuário para incluir no PDF
+            $user = Auth::user();
+            $currentDate = now()->format('d/m/Y H:i:s');
+            
+            // Gerar o PDF usando a view
+            $pdf = PDF::loadView('pdfs.purchase-orders-list', [
+                'purchaseOrders' => $purchaseOrders,
+                'totalOrders' => $totalOrders,
+                'totalValue' => $totalValue,
+                'user' => $user,
+                'currentDate' => $currentDate,
+                'filters' => [
+                    'search' => $this->search,
+                    'status' => $this->statusFilter ? __('messages.' . $this->statusFilter) : __('messages.all_statuses'),
+                    'supplier' => $this->supplierFilter ? Supplier::find($this->supplierFilter)->name : __('messages.all_suppliers')
+                ]
+            ]);
+            
+            // Configurar o PDF
+            $pdf->setPaper('a4', 'landscape');
+            
+            // Gerar um nome de arquivo baseado na data
+            $filename = 'purchase_orders_list_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            Log::info('PDF da listagem de ordens de compra gerado com sucesso', [
+                'filename' => $filename
+            ]);
+            
+            // Mostrar notificação de sucesso
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            Log::info('=== FIM DO MÉTODO generatePdfList ===');
+            
+            // Download do PDF
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar PDF da listagem de ordens de compra', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.error_generating_pdf')
+            );
+            
+            Log::info('=== FIM DO MÉTODO generatePdfList (com erro) ===');
+        }
+    }
+    
     protected function updateOrderStatusBasedOnShippingNote($orderId, $shippingStatus)
     {
         Log::info('Iniciando updateOrderStatusBasedOnShippingNote', [

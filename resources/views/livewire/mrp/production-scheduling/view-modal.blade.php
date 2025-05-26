@@ -20,9 +20,21 @@
                     <i class="fas fa-eye mr-2"></i>
                     {{ __('messages.production_schedule_details') }}
                 </h3>
-                <button @click="$wire.closeViewModal()" class="text-white hover:text-gray-200 focus:outline-none">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+                <div class="flex items-center space-x-3">
+                    @if($viewingSchedule)
+                    <button 
+                        wire:click="generateSchedulePdf({{ $viewingSchedule->id }})"
+                        type="button"
+                        class="inline-flex items-center px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-md transition-all duration-200 ease-in-out transform hover:scale-105"
+                        title="{{ __('messages.generate_pdf') }}">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        {{ __('messages.generate_pdf') }}
+                    </button>
+                    @endif
+                    <button @click="$wire.closeViewModal()" class="text-white hover:text-gray-200 focus:outline-none">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
             </div>
 
             @if($viewingSchedule)
@@ -110,10 +122,18 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.completion') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
+                                        @php
+                                            // Calcular a soma das quantidades reais dos planos diários
+                                            $totalActualQuantity = $viewingSchedule->dailyPlans->sum('actual_quantity');
+                                            // Calcular o percentual de conclusão
+                                            $completionPercentage = $viewingSchedule->planned_quantity > 0 
+                                                ? min(100, round(($totalActualQuantity / $viewingSchedule->planned_quantity) * 100, 1))
+                                                : 0;
+                                        @endphp
                                         <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $viewingSchedule->completionPercentage }}%"></div>
+                                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $completionPercentage }}%"></div>
                                         </div>
-                                        <span class="text-xs">{{ $viewingSchedule->completionPercentage }}%</span>
+                                        <span class="text-xs">{{ $completionPercentage }}%</span>
                                     </dd>
                                 </div>
                                 
@@ -387,6 +407,76 @@
                                     <dt class="text-sm font-medium text-gray-500">{{ __('messages.location') }}:</dt>
                                     <dd class="mt-1 text-sm text-gray-900">
                                         {{ is_object($viewingSchedule->location) ? $viewingSchedule->location->name : ($viewingSchedule->location_name ?: __('messages.not_specified')) }}
+                                    </dd>
+                                </div>
+                                
+                                <!-- Warehouse Raw Materials -->
+                                <div class="sm:col-span-3 mt-4 border border-blue-100 bg-blue-50 p-3 rounded-md">
+                                    <dt class="text-sm font-medium text-blue-700 flex items-center">
+                                        <i class="fas fa-warehouse text-blue-600 mr-2"></i>
+                                        {{ __('messages.warehouse_raw_materials') }}
+                                    </dt>
+                                    <dd class="mt-2">
+                                        @if($viewingSchedule->product && $viewingSchedule->product->bomItems && $viewingSchedule->product->bomItems->count() > 0)
+                                            <div class="overflow-hidden shadow-sm border border-blue-200 rounded-lg bg-white">
+                                                <table class="min-w-full divide-y divide-gray-200">
+                                                    <thead class="bg-blue-50">
+                                                        <tr>
+                                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-blue-700 tracking-wider">{{ __('messages.material_name') }}</th>
+                                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-blue-700 tracking-wider">{{ __('messages.sku') }}</th>
+                                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-blue-700 tracking-wider">{{ __('messages.required_qty') }}</th>
+                                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-blue-700 tracking-wider">{{ __('messages.stock_qty') }}</th>
+                                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-blue-700 tracking-wider">{{ __('messages.status') }}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white divide-y divide-gray-200">
+                                                        @foreach($viewingSchedule->product->bomItems as $bomItem)
+                                                            @php
+                                                                // Calcular a quantidade necessária baseada na quantidade total planejada
+                                                                $requiredQty = $bomItem->quantity * $viewingSchedule->planned_quantity;
+                                                                
+                                                                // Obter estoque atual do componente (matéria-prima)
+                                                                $stockQty = $bomItem->component->getStockQuantity() ?? 0;
+                                                                
+                                                                // Verificar se há estoque suficiente
+                                                                $hasEnoughStock = $stockQty >= $requiredQty;
+                                                            @endphp
+                                                            <tr class="hover:bg-gray-50">
+                                                                <td class="px-3 py-2 whitespace-nowrap text-xs">
+                                                                    <div class="font-medium text-gray-900">{{ $bomItem->component->name }}</div>
+                                                                    @if($bomItem->component->description)
+                                                                        <div class="text-xs text-gray-500 truncate max-w-xs">{{ $bomItem->component->description }}</div>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-500">{{ $bomItem->component->sku }}</td>
+                                                                <td class="px-3 py-2 whitespace-nowrap text-xs font-medium">{{ number_format($requiredQty, 2) }}</td>
+                                                                <td class="px-3 py-2 whitespace-nowrap text-xs font-medium {{ $hasEnoughStock ? 'text-green-600' : 'text-red-600' }}">
+                                                                    {{ number_format($stockQty, 2) }}
+                                                                </td>
+                                                                <td class="px-3 py-2 whitespace-nowrap text-xs">
+                                                                    @if($hasEnoughStock)
+                                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                                            <i class="fas fa-check-circle mr-1"></i>
+                                                                            {{ __('messages.available') }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                                                            <i class="fas fa-exclamation-circle mr-1"></i>
+                                                                            {{ __('messages.insufficient') }}
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        @else
+                                            <div class="text-center py-3 text-sm text-gray-500 bg-white rounded-md border border-gray-200">
+                                                <i class="fas fa-info-circle text-blue-400 mr-1"></i>
+                                                {{ __('messages.no_bom_items_found') }}
+                                            </div>
+                                        @endif
                                     </dd>
                                 </div>
                                 

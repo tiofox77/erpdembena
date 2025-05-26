@@ -161,16 +161,25 @@ class Dashboard extends Component
     protected function getTransactionTypeClass($type)
     {
         switch ($type) {
-            case 'purchase_order_receipt':
+            case 'purchase_receipt':
             case 'inventory_adjustment_increase':
+            case 'daily_production_fg': // Adição de produto acabado
                 return 'bg-green-100 text-green-800';
                 
-            case 'sales_order':
+            case 'sales_issue':
             case 'inventory_adjustment_decrease':
+            case 'daily_production': // Consumo de matéria-prima
                 return 'bg-red-100 text-red-800';
                 
-            case 'internal_transfer':
+            case 'transfer':
                 return 'bg-blue-100 text-blue-800';
+                
+            case 'production':
+            case 'production_receipt':
+            case 'production_issue':
+            case 'production_order':
+            case 'raw_production':
+                return 'bg-purple-100 text-purple-800';
                 
             default:
                 return 'bg-gray-100 text-gray-800';
