@@ -1069,7 +1069,31 @@ class PurchaseOrders extends Component
                             foreach ($submission->fieldValues as $fieldValue) {
                                 if ($fieldValue->field) {
                                     $fieldName = $fieldValue->field->name;
-                                    $this->formData[$fieldName] = $fieldValue->value;
+                                    $fieldType = $fieldValue->field->type;
+                                    $value = $fieldValue->value;
+                                    
+                                    // Tratamento especial para checkboxes
+                                    if ($fieldType === 'checkbox') {
+                                        // Tenta decodificar o JSON se for um array codificado
+                                        if (is_string($value) && !empty($value)) {
+                                            $decoded = json_decode($value, true);
+                                            if (json_last_error() === JSON_ERROR_NONE) {
+                                                $value = $decoded;
+                                            }
+                                        }
+                                        
+                                        // Se for um array vazio, mantém como array
+                                        if ($value === '[]' || $value === '{}') {
+                                            $value = [];
+                                        }
+                                        
+                                        // Se for um valor booleano como string ('1' ou '0')
+                                        if (in_array($value, ['1', '0'], true)) {
+                                            $value = $value === '1';
+                                        }
+                                    }
+                                    
+                                    $this->formData[$fieldName] = $value;
                                 }
                             }
                             // Log para debug
@@ -1101,11 +1125,18 @@ class PurchaseOrders extends Component
     private function initializeEmptyFormFields()
     {
         foreach ($this->customFormFields as $field) {
+            // Inicializa com valor padrão vazio
             $this->formData[$field['name']] = '';
             
-            // Para campos checkbox, inicializa como array
-            if ($field['type'] === 'checkbox' && !empty($field['options'])) {
-                $this->formData[$field['name']] = [];
+            // Para campos checkbox, inicializa de acordo com o tipo
+            if ($field['type'] === 'checkbox') {
+                if (!empty($field['options'])) {
+                    // Para checkboxes múltiplos, inicializa como array vazio
+                    $this->formData[$field['name']] = [];
+                } else {
+                    // Para checkbox único, inicializa como false
+                    $this->formData[$field['name']] = false;
+                }
             }
         }
     }
@@ -1190,10 +1221,23 @@ class PurchaseOrders extends Component
                             }
                         } else {
                             // Para outros tipos de campo
+                            $valueToSave = $value;
+                            
+                            // Tratamento especial para checkboxes
+                            if ($field->type === 'checkbox') {
+                                if (is_array($value)) {
+                                    // Para checkboxes múltiplos, converte para JSON
+                                    $valueToSave = json_encode($value);
+                                } elseif (is_bool($value) || $value === '1' || $value === '0') {
+                                    // Para checkbox único, converte para booleano
+                                    $valueToSave = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+                                }
+                            }
+                            
                             \App\Models\SupplyChain\CustomFormFieldValue::create([
                                 'submission_id' => $submission->id,
                                 'field_id' => $field->id,
-                                'value' => is_array($value) ? json_encode($value) : $value
+                                'value' => $valueToSave
                             ]);
                         }
                     }

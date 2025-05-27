@@ -154,16 +154,185 @@
                                                             @break
                                                             
                                                         @case('checkbox')
+                                                            @php
+                                                                // Verificar se temos opções para o checkbox
+                                                                $hasOptions = !empty($field['options']);
+                                                                $existingValue = $formData[$field['name']] ?? null;
+                                                                
+                                                                // Preparar os valores iniciais dos checkboxes
+                                                                $checkboxValues = [];
+                                                                
+                                                                // Processar valores JSON armazenados na BD
+                                                                if (is_string($existingValue) && \Illuminate\Support\Str::startsWith($existingValue, '{')) {
+                                                                    $decoded = json_decode($existingValue, true);
+                                                                    if (json_last_error() === JSON_ERROR_NONE) {
+                                                                        $checkboxValues = $decoded;
+                                                                        
+                                                                        // Preencher o formData com valores decodificados para o binding do Livewire
+                                                                        if ($hasOptions && !empty($checkboxValues)) {
+                                                                            foreach ($checkboxValues as $key => $value) {
+                                                                                if ($value === true) {
+                                                                                    // Se ainda não está definido no formData, definir agora
+                                                                                    if (!isset($formData[$field['name']][$key])) {
+                                                                                        $formData[$field['name']][$key] = 'true';
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    // Inicializar array vazio se não for um array
+                                                                    $checkboxValues = [];
+                                                                    
+                                                                    // Se for string JSON válida, tentar decodificar
+                                                                    if (is_string($existingValue) && json_validate($existingValue)) {
+                                                                        $decoded = json_decode($existingValue, true);
+                                                                        if (is_array($decoded)) {
+                                                                            $checkboxValues = $decoded;
+                                                                        } elseif ($existingValue === 'true' || $existingValue === '1' || $existingValue === 1) {
+                                                                            $checkboxValues = ['value' => true];
+                                                                        }
+                                                                    } elseif ($existingValue === true || $existingValue === 'true' || $existingValue === '1' || $existingValue === 1) {
+                                                                        $checkboxValues = ['value' => true];
+                                                                    }
+                                                                }
+                                                                
+                                                                // Para debug
+                                                                logger()->debug('Checkbox valores (Purchase Orders):', [
+                                                                    'field' => $field['name'],
+                                                                    'existingValue' => $existingValue,
+                                                                    'checkboxValues' => $checkboxValues,
+                                                                    'formData' => is_array($formData[$field['name']] ?? null) ? $formData[$field['name']] : null
+                                                                ]);
+                                                            @endphp
+                                                            
                                                             <div class="mt-2 space-y-2">
-                                                                @foreach($field['options'] as $option)
+                                                                @if($hasOptions)
+                                                                    <!-- Checkbox com múltiplas opções -->
+                                                                    @foreach($field['options'] as $option)
+                                                                        @php
+                                                                            $optionKey = $option['value'];
+                                                                            $isChecked = isset($checkboxValues[$optionKey]) && $checkboxValues[$optionKey] === true;
+                                                                        @endphp
+                                                                        <div class="flex items-center">
+                                                                            <input type="checkbox" 
+                                                                                id="po_{{ $field['id'] }}_{{ $optionKey }}" 
+                                                                                name="{{ $field['name'] }}[{{ $optionKey }}]" 
+                                                                                value="true"
+                                                                                @if($isChecked) checked @endif
+                                                                                onchange="updatePOCheckboxValue(this, '{{ $field['name'] }}', '{{ $optionKey }}')" 
+                                                                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                                                            <label for="po_{{ $field['id'] }}_{{ $optionKey }}" 
+                                                                                class="ml-2 text-sm text-gray-700">{{ $option['label'] }}</label>
+                                                                        </div>
+                                                                    @endforeach
+                                                                    
+                                                                    <!-- Campo oculto para armazenar o valor completo do JSON -->
+                                                                    <input type="hidden" id="po_{{ $field['name'] }}_json" 
+                                                                           wire:model="formData.{{ $field['name'] }}" 
+                                                                           value="{{ is_string($existingValue) && \Illuminate\Support\Str::startsWith($existingValue, '{') ? $existingValue : json_encode($checkboxValues) }}">
+                                                                    
+                                                                    <script>
+                                                                        /**
+                                                                         * Atualiza o valor de um checkbox e notifica o Livewire
+                                                                         * @param {HTMLInputElement} checkbox - O elemento de checkbox que foi alterado
+                                                                         * @param {string} fieldName - Nome do campo no formulário
+                                                                         * @param {string} optionKey - Chave da opção (para checkboxes múltiplos)
+                                                                         */
+                                                                        function updatePOCheckboxValue(checkbox, fieldName, optionKey) {
+                                                                            try {
+                                                                                const hiddenInput = document.getElementById('po_' + fieldName + '_json');
+                                                                                if (!hiddenInput) {
+                                                                                    console.error('Input oculto não encontrado para o campo:', fieldName);
+                                                                                    return;
+                                                                                }
+                                                                                
+                                                                                let currentValue = {};
+                                                                                
+                                                                                // Tentar decodificar o valor atual do input oculto
+                                                                                if (hiddenInput.value && hiddenInput.value !== 'null' && hiddenInput.value !== '') {
+                                                                                    try {
+                                                                                        currentValue = JSON.parse(hiddenInput.value) || {};
+                                                                                    } catch (e) {
+                                                                                        console.error('Erro ao fazer parse do JSON:', e, 'Valor:', hiddenInput.value);
+                                                                                        currentValue = {};
+                                                                                    }
+                                                                                }
+                                                                                
+                                                                                // Garantir que é um objeto
+                                                                                if (Array.isArray(currentValue) || typeof currentValue !== 'object' || currentValue === null) {
+                                                                                    currentValue = {};
+                                                                                }
+                                                                                
+                                                                                // Atualizar o valor da opção
+                                                                                currentValue[optionKey] = checkbox.checked;
+                                                                                
+                                                                                // Remover valores falsos para otimizar o armazenamento
+                                                                                const cleanedValue = {};
+                                                                                Object.keys(currentValue).forEach(key => {
+                                                                                    if (currentValue[key] === true || currentValue[key] === 'true' || currentValue[key] === 1 || currentValue[key] === '1') {
+                                                                                        cleanedValue[key] = true;
+                                                                                    }
+                                                                                });
+                                                                                
+                                                                                // Criar a representação JSON final
+                                                                                const jsonValue = Object.keys(cleanedValue).length > 0 
+                                                                                    ? JSON.stringify(cleanedValue) 
+                                                                                    : '{}';
+                                                                                
+                                                                                // Atualizar o input oculto
+                                                                                hiddenInput.value = jsonValue;
+                                                                                
+                                                                                // Log para depuração
+                                                                                console.debug('Checkbox atualizado (PO):', {
+                                                                                    field: fieldName,
+                                                                                    option: optionKey,
+                                                                                    checked: checkbox.checked,
+                                                                                    newValue: jsonValue
+                                                                                });
+                                                                                
+                                                                                // Notificar o Livewire diretamente
+                                                                                if (window.Livewire) {
+                                                                                    const component = window.Livewire.find(hiddenInput.closest('[wire\\:id]')?.getAttribute('wire:id'));
+                                                                                    if (component) {
+                                                                                        // Usar o método handleUpdatedCheckbox do Livewire se existir
+                                                                                        if (typeof component.handleUpdatedCheckbox === 'function') {
+                                                                                            component.handleUpdatedCheckbox(fieldName, jsonValue);
+                                                                                        } else {
+                                                                                            // Fallback para atualização direta
+                                                                                            component.set(`formData.${fieldName}`, jsonValue);
+                                                                                        }
+                                                                                    } else {
+                                                                                        console.error('Componente Livewire não encontrado');
+                                                                                    }
+                                                                                } else {
+                                                                                    console.error('Livewire não está disponível');
+                                                                                }
+                                                                            } catch (error) {
+                                                                                console.error('Erro ao atualizar checkbox (PO):', error);
+                                                                                
+                                                                                // Disparar notificação de erro
+                                                                                if (window.Livewire) {
+                                                                                    window.Livewire.dispatch('notify', {
+                                                                                        type: 'error',
+                                                                                        title: 'Erro',
+                                                                                        message: 'Ocorreu um erro ao atualizar o campo. Por favor, tente novamente.'
+                                                                                    });
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    </script>
+                                                                @else
+                                                                    <!-- Checkbox simples -->
                                                                     <div class="flex items-center">
                                                                         <input type="checkbox" 
-                                                                              id="custom_form_field_{{ $field['id'] }}_{{ $option['value'] }}" 
-                                                                              wire:model="formData.{{ $field['name'] }}.{{ $option['value'] }}" 
-                                                                              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
-                                                                        <label for="custom_form_field_{{ $field['id'] }}_{{ $option['value'] }}" class="ml-2 text-sm text-gray-700">{{ $option['label'] }}</label>
+                                                                            id="po_{{ $field['id'] }}" 
+                                                                            wire:model="formData.{{ $field['name'] }}" 
+                                                                            @if($existingValue === true || $existingValue === 'true' || $existingValue === '1' || (is_array($checkboxValues) && isset($checkboxValues['value']) && $checkboxValues['value'] === true)) checked @endif
+                                                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                                                        <label for="po_{{ $field['id'] }}" class="ml-2 text-sm text-gray-700">{{ $field['label'] ?? 'Sim' }}</label>
                                                                     </div>
-                                                                @endforeach
+                                                                @endif
                                                             </div>
                                                             @break
                                                             
@@ -352,103 +521,7 @@
                                                                     <dt class="font-medium text-gray-700">{{ $fieldValue->field->label }}:</dt>
                                                                     <dd class="text-gray-600">
                                                                         @if($fieldValue->field->type == 'checkbox')
-                                                                             @php
-                                                                                $rawValue = $fieldValue->value;
-                                                                                $selectedValues = [];
-                                                                                
-                                                                                // Processar o valor do checkbox
-                                                                                if (is_string($rawValue)) {
-                                                                                    // Tentar decodificar o JSON
-                                                                                    try {
-                                                                                        $decodedValue = json_decode($rawValue, true);
-                                                                                        if (json_last_error() === JSON_ERROR_NONE) {
-                                                                                            // Se for um objeto JSON válido
-                                                                                            if (is_array($decodedValue)) {
-                                                                                                if (!isset($decodedValue[0])) {
-                                                                                                    // Formato {"a":true,"b":true}
-                                                                                                    foreach ($decodedValue as $key => $isSelected) {
-                                                                                                        if ($isSelected === true || $isSelected === 'true' || 
-                                                                                                            $isSelected === 1 || $isSelected === '1') {
-                                                                                                            $selectedValues[] = $key;
-                                                                                                        }
-                                                                                                    }
-                                                                                                } else {
-                                                                                                    // Formato ["a","b"]
-                                                                                                    $selectedValues = $decodedValue;
-                                                                                                }
-                                                                                            }
-                                                                                        }
-                                                                                    } catch (\Exception $e) {
-                                                                                        logger()->error('Erro ao processar valor de checkbox: ' . $e->getMessage());
-                                                                                    }
-                                                                                } elseif (is_array($rawValue)) {
-                                                                                    if (!isset($rawValue[0])) {
-                                                                                        // Formato {"a":true,"b":true}
-                                                                                        foreach ($rawValue as $key => $isSelected) {
-                                                                                            if ($isSelected === true || $isSelected === 'true' || 
-                                                                                                $isSelected === 1 || $isSelected === '1') {
-                                                                                                $selectedValues[] = $key;
-                                                                                            }
-                                                                                        }
-                                                                                    } else {
-                                                                                        // Já é um array simples
-                                                                                        $selectedValues = $rawValue;
-                                                                                    }
-                                                                                }
-                                                                                
-                                                                                // Verificar se o campo tem opções (checkbox de múltipla seleção)
-                                                                                $options = $fieldValue->field->options;
-                                                                                if (is_string($options)) {
-                                                                                    $options = json_decode($options, true);
-                                                                                }
-                                                                                
-                                                                                // Usar os valores selecionados para a visualização
-                                                                                $checkboxValue = $selectedValues;
-                                                                                
-                                                                                // Debug para verificar o valor final
-                                                                                logger()->debug('Valor final do checkbox após processamento: ' . json_encode($checkboxValue));
-                                                                            @endphp
-                                                                            
-                                                                            @if(is_array($checkboxValue) && is_array($options) && count($options) > 0)
-                                                                                <!-- Checkbox de múltipla seleção -->
-                                                                                @php
-                                                                                    $hasSelectedOptions = false;
-                                                                                    foreach ($options as $option) {
-                                                                                        if (in_array($option['value'], $checkboxValue)) {
-                                                                                            $hasSelectedOptions = true;
-                                                                                            break;
-                                                                                        }
-                                                                                    }
-                                                                                @endphp
-                                                                                
-                                                                                @if($hasSelectedOptions)
-                                                                                <div class="flex flex-wrap gap-1">
-                                                                                    @foreach($options as $option)
-                                                                                        @if(in_array($option['value'], $checkboxValue))
-                                                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                                                                <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                                                                                {{ $option['label'] }}
-                                                                                            </span>
-                                                                                        @endif
-                                                                                    @endforeach
-                                                                                </div>
-                                                                                @else
-                                                                                    <span class="text-gray-500 italic">{{ __('messages.none_selected') }}</span>
-                                                                                @endif
-                                                                            @else
-                                                                                <!-- Checkbox simples -->
-                                                                                @if($checkboxValue === true || $checkboxValue === 'true' || $checkboxValue === 1 || $checkboxValue === '1')
-                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                                                        <i class="fas fa-check-circle mr-1"></i>
-                                                                                        {{ __('messages.yes') }}
-                                                                                    </span>
-                                                                                @else
-                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
-                                                                                        <i class="fas fa-times-circle mr-1"></i>
-                                                                                        {{ __('messages.no') }}
-                                                                                    </span>
-                                                                                @endif
-                                                                            @endif
+                                                                            {{ $fieldValue->value ? __('messages.yes') : __('messages.no') }}
                                                                         @elseif($fieldValue->field->type == 'date' && !empty($fieldValue->value))
                                                                             {{ \Carbon\Carbon::parse($fieldValue->value)->format('d/m/Y') }}
                                                                         @elseif($fieldValue->field->type == 'select')

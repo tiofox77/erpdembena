@@ -9,8 +9,10 @@ use App\Models\SupplyChain\CustomFormFieldValue;
 use App\Models\SupplyChain\CustomFormSubmission;
 use App\Models\SupplyChain\ShippingNote;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -28,45 +30,102 @@ class CustomFormSubmissionManager extends Component
     public $submissionId = null;
     public $formField = [];
     
-    protected $listeners = ['openFormSubmission', 'viewFormSubmission'];
+    protected $listeners = [
+        'openFormSubmission', 
+        'viewFormSubmission',
+        'updatedCheckbox' => 'handleUpdatedCheckbox',
+    ];
     
     /**
-     * Carrega uma submissão prévia do formulário para a entidade atual
+     * Atualiza o formData quando um checkbox é alterado via JavaScript
      * 
-     * @param int $entityId ID da entidade (shipping note)
-     * @param int $formId ID do formulário
-     * @return CustomFormSubmission|null
+     * @param string $fieldName
+     * @param string $jsonValue
+     * @return void
      */
-    protected function loadPreviousSubmission($entityId, $formId)
+    public function handleUpdatedCheckbox($fieldName, $jsonValue)
     {
         try {
-            // Buscar a submissão mais recente deste formulário para esta entidade
-            $submission = CustomFormSubmission::where([
-                'entity_id' => $entityId,
-                'form_id' => $formId,
-                'entity_type' => 'shipping_note'
-            ])->latest()->first();
+            logger()->debug('Atualizando checkbox via Livewire', [
+                'field' => $fieldName,
+                'raw_value' => $jsonValue
+            ]);
             
-            if ($submission) {
-                logger()->info('Encontrada submissão anterior para este formulário', [
-                    'submission_id' => $submission->id,
-                    'entity_id' => $entityId,
-                    'form_id' => $formId,
-                    'created_at' => $submission->created_at
-                ]);
+            // Verificar se o campo existe no formulário
+            if (!isset($this->formData[$fieldName])) {
+                logger()->warning('Campo não encontrado no formData', ['field' => $fieldName]);
+                return;
             }
             
-            return $submission;
-        } catch (\Exception $e) {
-            logger()->error('Erro ao buscar submissão anterior: ' . $e->getMessage(), [
-                'exception' => $e,
-                'entity_id' => $entityId,
-                'form_id' => $formId
+            // Decodificar o JSON para garantir que é válido
+            $decodedValue = null;
+            if (!empty($jsonValue) && $jsonValue !== 'null') {
+                $decodedValue = json_decode($jsonValue, true);
+                
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    logger()->error('Erro ao decodificar valor do checkbox', [
+                        'field' => $fieldName,
+                        'value' => $jsonValue,
+                        'error' => json_last_error_msg()
+                    ]);
+                    return;
+                }
+                
+                // Se for um array, garantir que os valores sejam booleanos
+                if (is_array($decodedValue)) {
+                    $normalizedValues = [];
+                    foreach ($decodedValue as $key => $value) {
+                        $normalizedValues[$key] = $this->normalizeCheckboxValue($value);
+                    }
+                    $decodedValue = $normalizedValues;
+                } else {
+                    // Para valores únicos, normalizar para booleano
+                    $decodedValue = $this->normalizeCheckboxValue($decodedValue);
+                }
+            } else {
+                // Se o valor for nulo ou vazio, definir como falso para checkbox simples ou array vazio para múltiplos
+                $decodedValue = is_array($this->formData[$fieldName]) ? [] : false;
+            }
+            
+            // Atualizar o formData com o novo valor
+            $this->formData[$fieldName] = $decodedValue;
+            
+            logger()->debug('Checkbox atualizado com sucesso', [
+                'field' => $fieldName,
+                'normalized_value' => $decodedValue,
+                'raw_value' => $jsonValue
             ]);
-            return null;
+            
+            // Disparar evento para atualizar a UI se necessário
+            $this->dispatch('checkbox-updated', 
+                field: $fieldName, 
+                value: $decodedValue
+            );
+            
+        } catch (\Exception $e) {
+            logger()->error('Erro ao processar atualização de checkbox', [
+                'field' => $fieldName,
+                'value' => $jsonValue,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Disparar notificação de erro para o usuário
+            $this->dispatch('notify', 
+                type: 'error',
+                title: 'Erro',
+                message: 'Ocorreu um erro ao atualizar o campo. Por favor, tente novamente.'
+            );
         }
     }
     
+    /**
+     * Prepara e inicializa o formulário para submissão
+     * 
+     * @param int $shippingNoteId
+     * @param int $customFormId
+     * @return void
+     */
     public function openFormSubmission($shippingNoteId, $customFormId)
     {
         // Log de criação do modal de shipping note
@@ -84,26 +143,11 @@ class CustomFormSubmissionManager extends Component
         // Verificar se o formulário existe
         $form = CustomForm::findOrFail($customFormId);
         
-        // Buscar submissão anterior se existir
-        $previousSubmission = $this->loadPreviousSubmission($shippingNoteId, $customFormId);
-        $previousData = [];
-        
-        // Se encontrou submissão anterior, extrair os dados para pré-preencher o formulário
-        if ($previousSubmission && !empty($previousSubmission->submission_data)) {
-            if (is_string($previousSubmission->submission_data)) {
-                try {
-                    $previousData = json_decode($previousSubmission->submission_data, true) ?: [];
-                } catch (\Exception $e) {
-                    logger()->error('Erro ao decodificar dados da submissão: ' . $e->getMessage());
-                }
-            } else if (is_array($previousSubmission->submission_data)) {
-                $previousData = $previousSubmission->submission_data;
-            }
-            
-            logger()->debug('Dados da submissão anterior carregados', [
-                'previous_data' => $previousData
-            ]);
-        }
+        // Verificar se existe uma submissão anterior para preencher o formulário
+        $existingSubmission = CustomFormSubmission::where('form_id', $customFormId)
+            ->where('shipping_note_id', $shippingNoteId)
+            ->latest()
+            ->first();
         
         // Inicializar os campos do formulário
         foreach ($form->fields as $field) {
@@ -111,8 +155,16 @@ class CustomFormSubmissionManager extends Component
             $hasRelationshipConfig = !empty($field->relationship_config['model']);
             $isRelationshipField = $field->type === 'relationship' || $hasRelationshipConfig;
             
-            // Verificar se há dados anteriores para este campo
-            $hasPreviousValue = !empty($previousData) && array_key_exists($field->name, $previousData);
+            // Valor padrão para o campo
+            $defaultValue = '';
+            
+            // Se temos uma submissão existente, tentar recuperar o valor
+            if ($existingSubmission) {
+                $existingValue = $this->getFieldValueFromSubmission($existingSubmission, $field);
+                if ($existingValue !== null) {
+                    $defaultValue = $existingValue;
+                }
+            }
             
             if ($isRelationshipField) {
                 // Se tem configuração de relacionamento mas não é do tipo relationship, logamos a conversão
@@ -122,100 +174,28 @@ class CustomFormSubmissionManager extends Component
                 
                 // Determinar se é um relacionamento de múltiplos valores ou valor único
                 $isHasMany = ($field->relationship_config['relationship_type'] ?? 'belongsTo') === 'hasMany';
-                
-                // Usar dados anteriores se existirem, caso contrário inicializar vazio
-                $this->formData[$field->name] = $hasPreviousValue ? $previousData[$field->name] : ($isHasMany ? [] : '');
+                $this->formData[$field->name] = $isHasMany ? [] : $defaultValue;
             } else if ($field->type === 'file') {
-                // Para arquivos, mantemos o caminho anterior se existir
-                $this->formData[$field->name] = $hasPreviousValue ? $previousData[$field->name] : '';
-                $this->fileUploads[$field->name] = null; // Upload sempre começa vazio
+                $this->formData[$field->name] = $defaultValue;
+                $this->fileUploads[$field->name] = null;
             } else if ($field->type === 'checkbox') {
-                if (isset($field->options) && count($field->options) > 0) {
-                    // É um checkbox de múltipla seleção
-                    if ($hasPreviousValue) {
-                        $rawValue = $previousData[$field->name];
-                        
-                        // Logar o valor bruto para debug
-                        logger()->debug("Valor bruto do checkbox no banco", [
-                            'campo' => $field->name,
-                            'valor' => is_array($rawValue) ? json_encode($rawValue) : $rawValue,
-                            'tipo' => gettype($rawValue)
-                        ]);
-                        
-                        // Inicializar todos os checkboxes como desmarcados
-                        $checkboxMap = [];
-                        foreach ($field->options as $option) {
-                            $checkboxMap[$option['value']] = false;
-                        }
-                        
-                        // Processar o valor do checkbox no formato {"a":true,"b":true}
-                        if (is_array($rawValue) && !isset($rawValue[0])) {
-                            // Já está no formato de mapa {"a":true,"b":true}
-                            foreach ($rawValue as $key => $value) {
-                                if (isset($checkboxMap[$key]) && ($value === true || $value === 'true' || $value === 1 || $value === '1')) {
-                                    $checkboxMap[$key] = true;
-                                }
-                            }
-                        } 
-                        elseif (is_string($rawValue)) {
-                            // Tentar decodificar como JSON
-                            try {
-                                $decoded = json_decode($rawValue, true);
-                                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                    if (!isset($decoded[0])) {
-                                        // Formato {"a":true,"b":true}
-                                        foreach ($decoded as $key => $value) {
-                                            if (isset($checkboxMap[$key]) && ($value === true || $value === 'true' || $value === 1 || $value === '1')) {
-                                                $checkboxMap[$key] = true;
-                                            }
-                                        }
-                                    } else {
-                                        // Formato ["a","b"]
-                                        foreach ($decoded as $value) {
-                                            if (isset($checkboxMap[$value])) {
-                                                $checkboxMap[$value] = true;
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (\Exception $e) {
-                                logger()->error('Erro ao decodificar valor de checkbox: ' . $e->getMessage());
-                            }
-                        }
-                        
-                        // Atribuir o mapa final ao formData
-                        $this->formData[$field->name] = $checkboxMap;
-                        
-                        // Logar para debug o estado final dos checkboxes
-                        logger()->debug("Estado final dos checkboxes após processamento", [
-                            'campo' => $field->name,
-                            'estado' => $this->formData[$field->name]
-                        ]);
+                // Para checkboxes, garantir que o valor seja tratado corretamente
+                if (!empty($field->options)) {
+                    // Checkbox múltiplo
+                    if (empty($defaultValue)) {
+                        $this->formData[$field->name] = new \stdClass();
+                    } elseif (is_string($defaultValue) && $this->isJson($defaultValue)) {
+                        // Se for uma string JSON, decodificar para objeto
+                        $this->formData[$field->name] = json_decode($defaultValue);
                     } else {
-                        // Inicializar todos desmarcados, mas como mapa
-                        $this->formData[$field->name] = [];
-                        foreach ($field->options as $option) {
-                            $this->formData[$field->name][$option['value']] = false;
-                        }
+                        $this->formData[$field->name] = $defaultValue;
                     }
                 } else {
                     // Checkbox simples
-                    $this->formData[$field->name] = $hasPreviousValue ? 
-                        ($previousData[$field->name] === true || $previousData[$field->name] === 'true' || $previousData[$field->name] === 1 || $previousData[$field->name] === '1') : 
-                        false;
+                    $this->formData[$field->name] = $this->normalizeCheckboxValue($defaultValue);
                 }
             } else {
-                // Campos de texto, número, etc.
-                $this->formData[$field->name] = $hasPreviousValue ? $previousData[$field->name] : '';
-            }
-            
-            // Log para debug
-            if ($hasPreviousValue) {
-                logger()->debug("Campo {$field->name} carregado com valor anterior", [
-                    'field_type' => $field->type,
-                    'previous_value' => $previousData[$field->name],
-                    'loaded_value' => $this->formData[$field->name]
-                ]);
+                $this->formData[$field->name] = $defaultValue;
             }
         }
         
@@ -224,15 +204,378 @@ class CustomFormSubmissionManager extends Component
         // Log quando o modal é exibido
         logger()->info('Modal de shipping note foi criado com sucesso', [
             'shippingNoteId' => $this->shippingNoteId,
-            'customFormId' => $this->customFormId,
-            'formData' => $this->formData
+            'customFormId' => $this->customFormId
         ]);
+    }
+    
+    /**
+     * Recupera o valor de um campo de uma submissão anterior
+     *
+     * @param CustomFormSubmission $submission
+     * @param CustomFormField $field
+     * @return mixed
+     */
+    protected function getFieldValueFromSubmission($submission, $field)
+    {
+        $fieldValue = $submission->values->where('field_id', $field->id)->first();
+        
+        if (!$fieldValue) {
+            return null;
+        }
+        
+        logger()->debug('Obtendo valor de campo de submissão existente', [
+            'field_id' => $field->id,
+            'field_name' => $field->name,
+            'field_type' => $field->type,
+            'raw_value' => $fieldValue->value,
+            'has_options' => !empty($field->options)
+        ]);
+        
+        // Se for um campo de arquivo, retornar o caminho do arquivo
+        if ($field->type === 'file') {
+            return $fieldValue->file_path ? Storage::url($fieldValue->file_path) : null;
+        }
+        
+        // Se for um checkbox, retornar o valor processado
+        if ($field->type === 'checkbox') {
+            if (!empty($field->options)) {
+                // Checkbox múltiplo
+                if (empty($fieldValue->value) || $fieldValue->value === '{}') {
+                    return [];
+                }
+                
+                if (is_string($fieldValue->value) && $this->isJson($fieldValue->value)) {
+                    $decoded = json_decode($fieldValue->value, true);
+                    // Garantir que temos um array associativo com valores booleanos
+                    if (is_array($decoded)) {
+                        $result = [];
+                        foreach ($decoded as $key => $value) {
+                            $result[$key] = $this->normalizeCheckboxValue($value);
+                        }
+                        return $result;
+                    }
+                    return $decoded;
+                }
+                
+                return [];
+            } else {
+                // Checkbox simples
+                return $fieldValue->value === '1' || $fieldValue->value === 'true' || $fieldValue->value === true;
+            }
+        } elseif ($field->type === 'relationship') {
+            return $fieldValue->related_id;
+        } else {
+            return $fieldValue->value;
+        }
+    }
+    
+    /**
+     * Normaliza um valor de checkbox para booleano
+     * 
+     * @param mixed $value
+     * @return bool
+     */
+    protected function normalizeCheckboxValue($value)
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        
+        if (is_numeric($value)) {
+            return (int)$value === 1;
+        }
+        
+        if (is_string($value)) {
+            $value = strtolower(trim($value));
+            return in_array($value, ['true', '1', 'on', 'yes', 'y']);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Verifica se uma string é um JSON válido
+     *
+     * @param string $string
+     * @return boolean
+     */
+    protected function isJson($string)
+    {
+        if (!is_string($string) || empty($string)) {
+            return false;
+        }
+        
+        json_decode($string);
+        return json_last_error() === JSON_ERROR_NONE;
     }
     
     public function viewFormSubmission($submissionId)
     {
         $this->submissionId = $submissionId;
         $this->showSubmissionDetailModal = true;
+    }
+    
+    /**
+     * Fecha o modal e reseta os valores
+     */
+    public function closeModal()
+    {
+        $this->showFormModal = false;
+        $this->showSubmissionDetailModal = false;
+        $this->reset('formData', 'fileUploads');
+    }
+    
+    /**
+     * Processa a submissão do formulário
+     * 
+     * @return void
+     */
+    public function submitForm()
+    {
+        logger()->info('Iniciando submissão do formulário', [
+            'form_id' => $this->customFormId,
+            'shipping_note_id' => $this->shippingNoteId,
+            'formData' => $this->formData
+        ]);
+        
+        try {
+            // Validação básica
+            $this->validate([
+                'shippingNoteId' => 'required',
+                'customFormId' => 'required',
+            ]);
+            
+            // Carregar o formulário e seus campos
+            $form = CustomForm::findOrFail($this->customFormId);
+            $fields = $form->fields;
+            
+            // Preparar regras de validação dinâmicas
+            $validationRules = [];
+            foreach ($fields as $field) {
+                if ($field->is_required && $field->type !== 'file') {
+                    $validationRules['formData.' . $field->name] = 'required';
+                }
+                
+                // Regras específicas por tipo
+                if ($field->type === 'email') {
+                    $validationRules['formData.' . $field->name] .= '|email';
+                } elseif ($field->type === 'number') {
+                    $validationRules['formData.' . $field->name] .= '|numeric';
+                }
+            }
+            
+            // Aplicar validação
+            $this->validate($validationRules);
+            
+            // Criar submissão no banco de dados
+            DB::beginTransaction();
+            
+            $submission = CustomFormSubmission::create([
+                'form_id' => $this->customFormId,
+                'shipping_note_id' => $this->shippingNoteId,
+                'user_id' => auth()->id(),
+                'status' => 'completed',
+            ]);
+            
+            // Salvar valores dos campos
+            foreach ($fields as $field) {
+                $fieldName = $field->name;
+                $fieldValue = $this->formData[$fieldName] ?? null;
+                
+                // Processar campos checkbox de forma especial
+                if ($field->type === 'checkbox') {
+                    logger()->debug('Processando campo checkbox', [
+                        'field' => $fieldName,
+                        'raw_value' => $fieldValue,
+                        'field_type' => gettype($fieldValue),
+                        'has_options' => !empty($field->options)
+                    ]);
+
+                    // Verificar se é um checkbox múltiplo (tem opções definidas)
+                    $hasOptions = !empty($field->options);
+                    
+                    // Se for um checkbox com múltiplas opções
+                    if ($hasOptions) {
+                        $cleanedValues = [];
+                        
+                        // Se o valor for uma string JSON, decodificar primeiro
+                        if (is_string($fieldValue) && $this->isJson($fieldValue)) {
+                            $fieldValue = json_decode($fieldValue, true);
+                            logger()->debug('Valor JSON decodificado', [
+                                'field' => $fieldName,
+                                'decoded' => $fieldValue
+                            ]);
+                        } elseif ($fieldValue === null || $fieldValue === '') {
+                            // Se o valor for nulo ou vazio, inicializar como array vazio
+                            $fieldValue = [];
+                        }
+                        
+                        // Se for array ou objeto, processar cada item
+                        if (is_array($fieldValue) || is_object($fieldValue)) {
+                            // Inicializar array para valores limpos
+                            $cleanedValues = [];
+                            
+                            // Processar cada opção disponível
+                            foreach ($field->options as $option) {
+                                $optionKey = $option['value'];
+                                $isChecked = false;
+                                
+                                // Verificar se a opção está marcada nos valores fornecidos
+                                if (is_array($fieldValue) && array_key_exists($optionKey, $fieldValue)) {
+                                    $isChecked = $this->normalizeCheckboxValue($fieldValue[$optionKey]);
+                                } elseif (is_object($fieldValue) && property_exists($fieldValue, $optionKey)) {
+                                    $isChecked = $this->normalizeCheckboxValue($fieldValue->$optionKey);
+                                }
+                                
+                                // Adicionar apenas se estiver marcado
+                                if ($isChecked) {
+                                    $cleanedValues[$optionKey] = true;
+                                }
+                            }
+                            
+                            // Se não houver valores selecionados, retornar objeto vazio
+                            $fieldValue = empty($cleanedValues) ? '{}' : json_encode($cleanedValues);
+                            
+                            logger()->debug('Checkbox múltiplo processado', [
+                                'field' => $fieldName,
+                                'cleaned_values' => $cleanedValues,
+                                'final_value' => $fieldValue
+                            ]);
+                        } else {
+                            // Se não for array/objeto, inicializar com objeto vazio
+                            $fieldValue = '{}';
+                            logger()->debug('Valor inválido para checkbox múltiplo, usando objeto vazio', [
+                                'field' => $fieldName,
+                                'value' => $fieldValue
+                            ]);
+                        }
+                    } 
+                    // Checkbox simples
+                    else {
+                        $isChecked = $this->normalizeCheckboxValue($fieldValue);
+                        $fieldValue = $isChecked ? 'true' : 'false';
+                        
+                        logger()->debug('Checkbox simples processado', [
+                            'field' => $fieldName,
+                            'raw_value' => $fieldValue,
+                            'is_checked' => $isChecked,
+                            'final_value' => $fieldValue
+                        ]);
+                    }
+                }
+                
+                // Processar campo de arquivo
+                if ($field->type === 'file' && !empty($this->fileUploads[$fieldName])) {
+                    $file = $this->fileUploads[$fieldName];
+                    $fileName = time() . '_' . $file->getClientOriginalName();
+                    $filePath = $file->storeAs('public/custom_forms', $fileName);
+                    
+                    // Armazenar informações do arquivo
+                    CustomFormAttachment::create([
+                        'submission_id' => $submission->id,
+                        'field_id' => $field->id,
+                        'file_path' => $fileName,
+                        'original_filename' => $file->getClientOriginalName(),
+                        'file_size' => $file->getSize(),
+                        'file_type' => $file->getMimeType(),
+                    ]);
+                    
+                    // Não é necessário salvar o caminho do arquivo em CustomFormFieldValue
+                    continue;
+                }
+                
+                // Processar campos relacionais
+                if ($field->type === 'relationship' && !empty($field->relationship_config['model'])) {
+                    $relationType = $field->relationship_config['relationship_type'] ?? 'belongsTo';
+                    
+                    if ($relationType === 'hasMany' && is_array($fieldValue)) {
+                        // Para relacionamentos de muitos, criar múltiplos registros
+                        foreach ($fieldValue as $relatedId) {
+                            if (!empty($relatedId)) {
+                                CustomFormFieldValue::create([
+                                    'submission_id' => $submission->id,
+                                    'field_id' => $field->id,
+                                    'value' => '',
+                                    'related_id' => $relatedId,
+                                ]);
+                            }
+                        }
+                    } else {
+                        // Para relacionamentos de um-para-um
+                        if (!empty($fieldValue)) {
+                            CustomFormFieldValue::create([
+                                'submission_id' => $submission->id,
+                                'field_id' => $field->id,
+                                'value' => '',
+                                'related_id' => $fieldValue,
+                            ]);
+                        }
+                    }
+                } else {
+                    // Para todos os outros tipos de campos
+                    if ($fieldValue !== null) {
+                        // Se for um checkbox múltiplo, já está em formato JSON
+                        if ($field->type === 'checkbox' && !empty($field->options)) {
+                            $storedValue = $fieldValue; // Já está em formato JSON
+                        } 
+                        // Se for array, converter para JSON
+                        elseif (is_array($fieldValue)) {
+                            $storedValue = json_encode($fieldValue);
+                        } 
+                        // Para outros tipos, converter para string
+                        else {
+                            $storedValue = (string) $fieldValue;
+                        }
+                        
+                        logger()->debug('Salvando valor do campo', [
+                            'field' => $field->name,
+                            'type' => $field->type,
+                            'value' => $storedValue
+                        ]);
+                        
+                        CustomFormFieldValue::updateOrCreate(
+                            [
+                                'submission_id' => $submission->id,
+                                'field_id' => $field->id
+                            ],
+                            ['value' => $storedValue]
+                        );
+                    }
+                }
+            }
+            
+            DB::commit();
+            
+            // Atualizar status da shipping note
+            $shippingNote = ShippingNote::find($this->shippingNoteId);
+            if ($shippingNote) {
+                $shippingNote->status = 'form_completed';
+                $shippingNote->save();
+            }
+            
+            // Fechar modal e enviar notificação
+            $this->closeModal();
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.form_submitted_successfully')
+            );
+            
+            // Atualizar a lista de shipping notes se necessário
+            $this->dispatch('refreshShippingNotes');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            logger()->error('Erro ao submeter formulário', [
+                'exception' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.form_submission_error') . ': ' . $e->getMessage()
+            );
+        }
     }
     
     /**
@@ -317,273 +660,6 @@ class CustomFormSubmissionManager extends Component
         }
         
         return $relatedData;
-    }
-    
-    /**
-     * Processa e salva os dados do formulário quando o usuário submete
-     */
-    public function submitForm()
-    {
-        logger()->debug('Processando envio de formulário', [
-            'formData' => $this->formData,
-            'shippingNoteId' => $this->shippingNoteId,
-            'customFormId' => $this->customFormId
-        ]);
-        
-        try {
-            // Carregar o formulário para validação
-            $form = CustomForm::findOrFail($this->customFormId);
-            
-            // Preparar regras de validação
-            $rules = [];
-            $messages = [];
-            
-            // Log dos dados recebidos para depuração
-            logger()->debug('Dados recebidos para processamento:', [
-                'formData' => $this->formData,
-                'fields' => $form->fields->pluck('name', 'type')->toArray()
-            ]);
-            
-            foreach ($form->fields as $field) {
-                // Garantir que todos os campos existam no formData, mesmo que não tenham sido enviados
-                if (!isset($this->formData[$field->name])) {
-                    if ($field->type === 'checkbox') {
-                        // Checkboxes não marcados não são enviados, então definimos explicitamente como false
-                        $this->formData[$field->name] = false;
-                    } else {
-                        // Para outros tipos de campos, inicializar com string vazia
-                        $this->formData[$field->name] = '';
-                    }
-                }
-                
-                // Se o campo for obrigatório
-                if ($field->is_required) {
-                    $rules['formData.' . $field->name] = 'required';
-                    
-                    if ($field->type === 'file') {
-                        // Para campos de arquivo que podem conter strings de caminho já salvas
-                        $rules['formData.' . $field->name] = 'required';
-                    }
-                    
-                    $messages['formData.' . $field->name . '.required'] = __('messages.field_is_required', ['field' => $field->label]);
-                }
-                
-                // Regras específicas por tipo de campo
-                switch ($field->type) {
-                    case 'email':
-                        $rules['formData.' . $field->name] .= '|email';
-                        break;
-                    case 'number':
-                        $rules['formData.' . $field->name] .= '|numeric';
-                        break;
-                    case 'checkbox':
-                        // Verificar se é um checkbox de múltipla seleção ou um checkbox simples
-                        if (isset($field->options) && count($field->options) > 0) {
-                            // É um checkbox de múltipla seleção
-                            if (!isset($this->formData[$field->name]) || !is_array($this->formData[$field->name])) {
-                                $this->formData[$field->name] = [];
-                            }
-                            
-                            // Processar cada opção e garantir que todas as opções existam no array, mesmo que não selecionadas
-                            $selectedOptions = [];
-                            
-                            // Log para debug antes do processamento
-                            logger()->debug("Estado do campo checkbox antes do processamento", [
-                                'field_name' => $field->name,
-                                'field_type' => $field->type,
-                                'formData' => isset($this->formData[$field->name]) ? json_encode($this->formData[$field->name]) : 'não definido'
-                            ]);
-                            
-                            // Verificar se os dados estão no formato esperado (mapa de opções => boolean)
-                            if (isset($this->formData[$field->name]) && is_array($this->formData[$field->name])) {
-                                foreach ($field->options as $option) {
-                                    $optionValue = $option['value'];
-                                    
-                                    // Se a opção está marcada, adicionar ao array de opções selecionadas
-                                    if (isset($this->formData[$field->name][$optionValue]) && 
-                                        ($this->formData[$field->name][$optionValue] === true || 
-                                         $this->formData[$field->name][$optionValue] === 'on' || 
-                                         $this->formData[$field->name][$optionValue] === '1' ||
-                                         $this->formData[$field->name][$optionValue] === 1)) {
-                                        
-                                        $selectedOptions[] = $optionValue;
-                                        
-                                        logger()->debug("Opção marcada: {$optionValue}", [
-                                            'valor' => $this->formData[$field->name][$optionValue]
-                                        ]);
-                                    }
-                                }
-                            }
-                            
-                            // Armazenar apenas as opções selecionadas como um array
-                            $this->formData[$field->name] = $selectedOptions;
-                            
-                            // Log detalhado para depuração após processamento
-                            logger()->debug("Valor final após processamento do checkbox", [
-                                'campo' => $field->name,
-                                'valor_final' => $this->formData[$field->name],
-                                'tipo_valor' => gettype($this->formData[$field->name])
-                            ]);
-                            
-                            // Log para debug de cada campo checkbox de múltipla seleção
-                            logger()->debug("Processando checkbox múltiplo {$field->name}", [
-                                'opções_selecionadas' => $selectedOptions,
-                                'campo' => $field->name,
-                                'label' => $field->label
-                            ]);
-                        } else {
-                            // É um checkbox simples (verdadeiro/falso)
-                            if (isset($this->formData[$field->name])) {
-                                if ($this->formData[$field->name] === 'on' || $this->formData[$field->name] === '1' || $this->formData[$field->name] === true) {
-                                    $this->formData[$field->name] = true;
-                                } else {
-                                    $this->formData[$field->name] = false;
-                                }
-                            } else {
-                                // Se checkbox não está marcado ou não foi enviado
-                                $this->formData[$field->name] = false;
-                            }
-                            
-                            // Log para debug de cada campo checkbox simples
-                            logger()->debug("Processando checkbox simples {$field->name}", [
-                                'valor_final' => $this->formData[$field->name],
-                                'campo' => $field->name,
-                                'label' => $field->label
-                            ]);
-                        }
-                        break;
-                }
-            }
-            
-            // Validar os dados
-            $validatedData = Validator::make(
-                ['formData' => $this->formData],
-                $rules,
-                $messages
-            )->validate();
-            
-            // Criar uma nova submissão de formulário
-            $submission = new CustomFormSubmission([
-                'form_id' => $this->customFormId,
-                'entity_type' => 'shipping_note',
-                'entity_id' => $this->shippingNoteId,
-                'created_by' => Auth::id(),
-                'submission_data' => json_encode($this->formData, JSON_PRETTY_PRINT),
-            ]);
-            
-            // Salvar a submissão
-            $submission->save();
-            
-            // Processar valores de campos em uma tabela separada para facilitar consultas
-            foreach ($this->formData as $fieldName => $value) {
-                $field = $form->fields->where('name', $fieldName)->first();
-                
-                if ($field) {
-                    // Processar upload de arquivos
-                    if ($field->type === 'file' && !empty($this->fileUploads[$fieldName])) {
-                        $file = $this->fileUploads[$fieldName];
-                        $path = $file->store('form-submissions', 'public');
-                        $value = 'storage/' . $path;
-                        
-                        // Registrar o anexo
-                        CustomFormAttachment::create([
-                            'submission_id' => $submission->id,
-                            'field_id' => $field->id,
-                            'file_path' => $path,
-                            'original_name' => $file->getClientOriginalName(),
-                            'file_size' => $file->getSize(),
-                            'mime_type' => $file->getMimeType(),
-                        ]);
-                    }
-                    
-                    // Salvar o valor do campo
-                    // Preparar o valor para salvar no banco de dados
-                    $valueToSave = $value;
-                    
-                    // Tratamento especial para checkboxes
-                    if ($field->type === 'checkbox') {
-                        if (isset($field->options) && count($field->options) > 0) {
-                            // Formatar valor para salvar no formato {"a":true,"b":true}
-                            if (is_array($value)) {
-                                if (!isset($value[0])) {
-                                    // Já está no formato de mapa - manter apenas os valores true
-                                    $valueMap = [];
-                                    foreach ($value as $optionKey => $isSelected) {
-                                        if ($isSelected === true || $isSelected === 'true' || $isSelected === 1 || $isSelected === '1') {
-                                            $valueMap[$optionKey] = true;
-                                        }
-                                    }
-                                    $value = $valueMap;
-                                } else {
-                                    // Converter de array de valores para mapa {"a":true,"b":true}
-                                    $valueMap = [];
-                                    foreach ($field->options as $option) {
-                                        $optionValue = $option['value'];
-                                        $valueMap[$optionValue] = in_array($optionValue, $value);
-                                    }
-                                    $value = $valueMap;
-                                }
-                            } else {
-                                // Se não for array, inicializar vazio
-                                $value = [];
-                            }
-                            
-                            // Salvar o mapa de checkboxes como JSON
-                            $valueToSave = json_encode($value ?: [], JSON_UNESCAPED_UNICODE);
-                            
-                            logger()->debug("Salvando checkbox múltiplo no formato {\"a\":true,\"b\":true}", [
-                                'campo' => $field->name,
-                                'valor_formatado' => $value,
-                                'valor_salvo' => $valueToSave
-                            ]);
-                        } else {
-                            // Checkbox simples - salvar como booleano
-                            $valueToSave = $value ? '1' : '0';
-                        }
-                    } else if (is_array($value)) {
-                        // Outros campos que podem ser arrays
-                        $valueToSave = json_encode($value, JSON_UNESCAPED_UNICODE);
-                    }
-                    
-                    // Criar o registro no banco
-                    CustomFormFieldValue::create([
-                        'submission_id' => $submission->id,
-                        'field_id' => $field->id,
-                        'value' => $valueToSave,
-                    ]);
-                }
-            }
-            
-            // Fechar o modal e notificar usuário
-            $this->showFormModal = false;
-            $this->dispatchBrowserEvent('notify', [
-                'type' => 'success',
-                'message' => __('messages.form_submitted_successfully')
-            ]);
-            
-            // Limpar os dados do formulário
-            $this->reset('formData', 'fileUploads');
-            
-            // Emitir evento para atualizar a lista de submissões
-            $this->dispatch('formSubmitted', $this->shippingNoteId);
-            
-            logger()->info('Formulário enviado com sucesso', [
-                'submission_id' => $submission->id,
-                'form_id' => $this->customFormId,
-                'entity_id' => $this->shippingNoteId
-            ]);
-            
-        } catch (\Exception $e) {
-            logger()->error('Erro ao enviar formulário: ' . $e->getMessage(), [
-                'exception' => $e,
-                'formData' => $this->formData
-            ]);
-            
-            $this->dispatchBrowserEvent('notify', [
-                'type' => 'error',
-                'message' => __('messages.error_submitting_form') . ': ' . $e->getMessage()
-            ]);
-        }
     }
     
     public function render()

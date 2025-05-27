@@ -15,13 +15,7 @@ class CustomFormSubmission extends Model
     protected $fillable = [
         'form_id',
         'entity_id',
-        'entity_type',
         'created_by',
-        'submission_data',
-    ];
-    
-    protected $casts = [
-        'submission_data' => 'array',
     ];
 
     /**

@@ -268,26 +268,77 @@
                     @endif
 
                     <form wire:submit.prevent="processStockIn">
-                        <div class="bg-gray-50 p-4 rounded-md mb-4">
-                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                                <i class="fas fa-tag mr-2 text-blue-500"></i> Part Selection
-                            </h4>
-                            <div>
-                                <label for="part-id" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <i class="fas fa-tools mr-1 text-gray-500"></i> Select Part <span class="text-red-500">*</span>
-                                </label>
-                                <select 
-                                    wire:model="stockIn.equipment_part_id"
-                                    id="part-id"
-                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                                >
-                                    <option value="">-- Select a part --</option>
-                                    @foreach($this->partsForEquipment as $part)
-                                        <option value="{{ $part->id }}">{{ $part->name }} ({{ $part->part_number ?? 'No P/N' }}) - Current Stock: {{ $part->stock_quantity }}</option>
-                                    @endforeach
-                                </select>
-                                @error('stockIn.equipment_part_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        <!-- Selected Part Card -->
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 transition-all duration-300 ease-in-out hover:shadow-md">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                                    <i class="fas fa-tag mr-2 text-blue-500"></i> Selected Part
+                                </h4>
+                                @if($selectedPart)
+                                    <button type="button" 
+                                            wire:click="$set('selectedPart', null); $set('stockIn.equipment_part_id', '')"
+                                            class="text-xs text-red-600 hover:text-red-800 flex items-center">
+                                        <i class="fas fa-times mr-1"></i> Change Part
+                                    </button>
+                                @endif
                             </div>
+                            
+                            @if($selectedPart)
+                                <div class="p-4 bg-blue-50 rounded-md border border-blue-100">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">
+                                                {{ $selectedPart->name }}
+                                                @if($selectedPart->part_number)
+                                                    <span class="text-gray-500 text-xs ml-2">({{ $selectedPart->part_number }})</span>
+                                                @endif
+                                            </p>
+                                            @if($selectedPart->equipment)
+                                                <p class="text-xs text-gray-600 mt-1">
+                                                    <i class="fas fa-tools mr-1"></i> {{ $selectedPart->equipment->name }}
+                                                </p>
+                                            @endif
+                                            <p class="text-xs text-gray-600 mt-1">
+                                                <i class="fas fa-boxes mr-1"></i> 
+                                                {{ $selectedPart->stock_quantity }} in stock
+                                                @if($selectedPart->minimum_stock_level !== null)
+                                                    <span class="ml-2 {{ $selectedPart->stock_quantity <= $selectedPart->minimum_stock_level ? 'text-red-600 font-medium' : 'text-green-600' }}">
+                                                        (Min: {{ $selectedPart->minimum_stock_level }})
+                                                    </span>
+                                                @endif
+                                            </p>
+                                            @if($selectedPart->bar_code)
+                                                <p class="text-xs text-gray-600 mt-1">
+                                                    <i class="fas fa-barcode mr-1"></i> {{ $selectedPart->bar_code }}
+                                                </p>
+                                            @endif
+                                            @if($selectedPart->unit_cost)
+                                                <p class="text-sm font-medium text-blue-700 mt-2">
+                                                    <i class="fas fa-tag mr-1"></i>
+                                                    Unit Cost: ${{ number_format($selectedPart->unit_cost, 2) }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                        <div class="text-green-600">
+                                            <i class="fas fa-check-circle text-2xl"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="text-center py-6 border-2 border-dashed border-gray-300 rounded-md">
+                                    <i class="fas fa-box-open text-gray-300 text-3xl mb-2"></i>
+                                    <p class="text-sm text-gray-500 mb-3">No part selected</p>
+                                    <button type="button" 
+                                            wire:click="openSearchModal"
+                                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        <i class="fas fa-search mr-1"></i> Search Part
+                                    </button>
+                                </div>
+                            @endif
+                            
+                            @error('stockIn.equipment_part_id')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="bg-gray-50 p-4 rounded-md mb-4">
@@ -437,4 +488,6 @@
             </div>
         </div>
     @endif
+    
+    @include('livewire.stocks.part-search-modal')
 </div>

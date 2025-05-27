@@ -28,9 +28,11 @@ class StockOut extends Component
     public $showModal = false;
     public $showDeleteModal = false;
     public $showViewModal = false;
+    public $showSearchModal = false;
     public $isEditing = false;
     public $stockOutId = null;
     public $viewingStockOut = null;
+    public $partSearch = '';
     
     // Form data
     public $stockOut = [
@@ -46,6 +48,9 @@ class StockOut extends Component
         'equipment_part_id' => '',
         'quantity' => 1
     ];
+    
+    // Part for selection in the modal
+    public $selectedPartForModal = null;
 
     protected $listeners = ['refresh' => '$refresh'];
 
@@ -81,8 +86,29 @@ class StockOut extends Component
             'equipment_part_id' => '',
             'quantity' => 1
         ];
+        $this->selectedPartForModal = null;
     }
 
+    public function openSearchModal() {
+        $this->showSearchModal = true;
+        $this->partSearch = '';
+    }
+    
+    public function closeSearchModal() {
+        $this->showSearchModal = false;
+        $this->partSearch = '';
+        $this->selectedPartForModal = null;
+    }
+    
+    public function selectPart($partId) {
+        $this->selectedPartForModal = EquipmentPart::find($partId);
+        
+        if ($this->selectedPartForModal) {
+            $this->newPart['equipment_part_id'] = $this->selectedPartForModal->id;
+            $this->showSearchModal = false;
+        }
+    }
+    
     public function addPart() {
         // Validate the new part
         $this->validate([
@@ -254,9 +280,25 @@ class StockOut extends Component
             ->paginate($this->perPage);
     }
 
-    public function getPartsListProperty() {
-        return EquipmentPart::orderBy('name')
-            ->where('stock_quantity', '>', 0)
+    public function getPartsListProperty()
+    {
+        return EquipmentPart::with('equipment')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getPartsListForSearchProperty()
+    {
+        return EquipmentPart::with('equipment')
+            ->when($this->partSearch, function($query) {
+                $search = '%' . $this->partSearch . '%';
+                return $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', $search)
+                      ->orWhere('part_number', 'like', $search)
+                      ->orWhere('bar_code', 'like', $search);
+                });
+            })
+            ->orderBy('name')
             ->get();
     }
 
@@ -381,8 +423,8 @@ class StockOut extends Component
                               ->orWhere('part_number', 'like', '%' . $this->search . '%')
                               ->orWhere('bac_code', 'like', '%' . $this->search . '%');
                         })
-                        ->orWhere('reason', 'like', '%' . $this->search . '%')
-                        ->orWhere('reference_number', 'like', '%' . $this->search . '%');
+                        ->orWhere('reference_number', 'like', '%' . $this->search . '%')
+                        ->orWhere('reason', 'like', '%' . $this->search . '%');
                     })
                     ->when($this->equipmentPartId, function($query) {
                         return $query->whereHas('items', function($q) {

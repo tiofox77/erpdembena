@@ -453,8 +453,17 @@ use Illuminate\Support\Str;
                     
                     <!-- Opções para select, checkbox, radio -->
                     @if(in_array($currentField['type'], ['select', 'checkbox', 'radio']))
-                    <div class="mb-4 p-4 bg-gray-50 rounded-md">
-                        <h4 class="font-medium text-gray-700 mb-2">{{ __('messages.field_options') }}</h4>
+                    <div class="mt-4 bg-gray-50 p-4 rounded-md">
+                        <h4 class="font-medium text-sm text-gray-700 mb-2">{{ __('messages.options') }}</h4>
+                        
+                        @if($currentField['type'] === 'checkbox')
+                        <div class="mb-3 p-3 bg-blue-50 rounded border border-blue-100">
+                            <p class="text-xs text-blue-600">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                {{ __('messages.checkbox_multiple_options_note') }}
+                            </p>
+                        </div>
+                        @endif
                         
                         <div class="space-y-2 mb-3">
                             @foreach($currentField['options'] as $index => $option)

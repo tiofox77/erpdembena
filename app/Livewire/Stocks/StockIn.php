@@ -24,6 +24,11 @@ class StockIn extends Component
 
     #[Url]
     public $equipmentId = null;
+    
+    // Modals control
+    public $showSearchModal = false;
+    public $partSearch = '';
+    public $selectedPart = null;
 
     public $perPage = 10;
     public $showModal = false;
@@ -79,6 +84,12 @@ class StockIn extends Component
             $this->equipmentId = $equipmentId;
         }
         $this->stockIn['received_date'] = Carbon::now()->format('Y-m-d');
+        
+        // Reset selected part when mounting
+        if (!empty($this->stockIn['equipment_part_id'])) {
+            $this->selectedPart = EquipmentPart::with('equipment')
+                ->find($this->stockIn['equipment_part_id']);
+        }
     }
 
     /**
@@ -137,13 +148,20 @@ class StockIn extends Component
     #[Computed]
     public function equipmentParts()
     {
-        $query = EquipmentPart::query();
-        
-        if ($this->equipmentId) {
-            $query->where('maintenance_equipment_id', $this->equipmentId);
-        }
-        
-        return $query->orderBy('name')->get();
+        return EquipmentPart::query()
+            ->when($this->equipmentId, function($query) {
+                return $query->where('maintenance_equipment_id', $this->equipmentId);
+            })
+            ->when($this->partSearch, function($query) {
+                $search = '%' . $this->partSearch . '%';
+                return $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', $search)
+                      ->orWhere('part_number', 'like', $search)
+                      ->orWhere('bar_code', 'like', $search);
+                });
+            })
+            ->orderBy('name')
+            ->get();
     }
 
     /**
@@ -151,20 +169,43 @@ class StockIn extends Component
      */
     public function openCreateModal($partId = null)
     {
-        $this->reset('stockIn');
+        $this->reset('stockIn', 'selectedPart', 'partSearch');
         $this->stockIn['received_date'] = Carbon::now()->format('Y-m-d');
         
         if ($partId) {
-            $this->stockIn['equipment_part_id'] = $partId;
-            
-            // Get the current unit cost of the part
-            $part = EquipmentPart::find($partId);
-            if ($part && $part->unit_cost) {
-                $this->stockIn['unit_cost'] = $part->unit_cost;
-            }
+            $this->selectPart($partId);
+        } else {
+            $this->showSearchModal = true;
         }
+    }
+    
+    public function openSearchModal()
+    {
+        $this->showSearchModal = true;
+    }
+    
+    public function closeSearchModal()
+    {
+        $this->showSearchModal = false;
+        $this->partSearch = '';
+    }
+    
+    public function selectPart($partId)
+    {
+        $this->selectedPart = EquipmentPart::with('equipment')->find($partId);
         
-        $this->showModal = true;
+        if ($this->selectedPart) {
+            $this->stockIn['equipment_part_id'] = $this->selectedPart->id;
+            
+            // Set unit cost if available
+            if ($this->selectedPart->unit_cost) {
+                $this->stockIn['unit_cost'] = $this->selectedPart->unit_cost;
+            }
+            
+            // Only show the main modal after selection
+            $this->showSearchModal = false;
+            $this->showModal = true;
+        }
     }
 
     /**

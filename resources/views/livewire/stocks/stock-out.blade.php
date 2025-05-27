@@ -306,51 +306,78 @@
                                 <h5 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
                                     <i class="fas fa-plus-circle text-green-500 mr-1"></i> Add Part
                                 </h5>
-                                <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                                    <div class="md:col-span-3">
-                                        <div class="relative">
-                                            <select 
-                                                wire:model.live="newPart.equipment_part_id" 
-                                                class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-md pr-10"
-                                            >
-                                                <option value="">Select Part</option>
-                                                @foreach($this->partsList as $part)
-                                                    <option value="{{ $part->id }}" {{ $part->stock_quantity <= 0 ? 'disabled' : '' }} class="{{ $part->stock_quantity <= 3 ? 'text-orange-600 font-medium' : '' }}">
-                                                        {{ $part->name }} ({{ $part->part_number ?: 'No P/N' }}) - Stock: {{ $part->stock_quantity }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                            </div>
+                                
+                                <!-- Selected Part Card -->
+                                @if($selectedPartForModal)
+                                    <div class="mb-3 p-3 bg-blue-50 rounded-md border border-blue-100 flex justify-between items-start">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">
+                                                {{ $selectedPartForModal->name }}
+                                                @if($selectedPartForModal->part_number)
+                                                    <span class="text-gray-500 text-xs ml-2">({{ $selectedPartForModal->part_number }})</span>
+                                                @endif
+                                            </p>
+                                            <p class="text-xs text-gray-600 mt-1">
+                                                <i class="fas fa-boxes mr-1"></i> 
+                                                {{ $selectedPartForModal->stock_quantity }} in stock
+                                                @if($selectedPartForModal->minimum_stock_level !== null)
+                                                    <span class="ml-2 {{ $selectedPartForModal->stock_quantity <= $selectedPartForModal->minimum_stock_level ? 'text-red-600 font-medium' : 'text-green-600' }}">
+                                                        (Min: {{ $selectedPartForModal->minimum_stock_level }})
+                                                    </span>
+                                                @endif
+                                            </p>
+                                            @if($selectedPartForModal->bar_code)
+                                                <p class="text-xs text-gray-600 mt-1">
+                                                    <i class="fas fa-barcode mr-1"></i> {{ $selectedPartForModal->bar_code }}
+                                                </p>
+                                            @endif
                                         </div>
-                                        @error('newPart.equipment_part_id') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
-                                    </div>
-                                    <div>
-                                        <div class="relative">
-                                            <input 
-                                                wire:model="newPart.quantity" 
-                                                type="number" 
-                                                min="1" 
-                                                class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-md pl-8" 
-                                                placeholder="Qty"
-                                            >
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <i class="fas fa-hashtag text-gray-400 text-xs"></i>
-                                            </div>
-                                        </div>
-                                        @error('newPart.quantity') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
-                                    </div>
-                                    <div>
                                         <button 
-                                            type="button"
-                                            wire:click="addPart"
-                                            class="inline-flex justify-center w-full px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                            type="button" 
+                                            wire:click="$set('selectedPartForModal', null); $set('newPart.equipment_part_id', '')" 
+                                            class="text-xs text-red-600 hover:text-red-800 flex items-center"
                                         >
-                                            <i class="fas fa-plus mr-1"></i> Add
+                                            <i class="fas fa-times mr-1"></i> Change
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="mb-3">
+                                        <button 
+                                            type="button" 
+                                            wire:click="openSearchModal" 
+                                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        >
+                                            <i class="fas fa-search mr-1"></i> Search Part
+                                        </button>
+                                    </div>
+                                @endif
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <div class="md:col-span-3">
+                                        <label for="quantity" class="block text-xs font-medium text-gray-700 mb-1">Quantity <span class="text-red-500">*</span></label>
+                                        <input 
+                                            type="number" 
+                                            id="quantity"
+                                            wire:model="newPart.quantity" 
+                                            min="1" 
+                                            class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                                            placeholder="Enter quantity"
+                                            {{ !$selectedPartForModal ? 'disabled' : '' }}
+                                        >
+                                        @error('newPart.quantity') <span class="text-sm text-red-500">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button 
+                                            type="button" 
+                                            wire:click="addPart" 
+                                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            {{ !$selectedPartForModal ? 'disabled' : '' }}
+                                        >
+                                            <i class="fas fa-plus-circle mr-1"></i> Add
                                         </button>
                                     </div>
                                 </div>
+                                @error('newPart.equipment_part_id') <div class="text-sm text-red-500 mt-1">{{ $message }}</div> @enderror
                             </div>
                             
                             <!-- Selected Parts List -->
@@ -655,4 +682,6 @@
             });
         </script>
     </div>
+
+    @include('livewire.stocks.part-search-modal-stockout')
 </div>
