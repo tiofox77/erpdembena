@@ -2581,7 +2581,9 @@ return [
     'phone' => 'Phone',
     'contact' => 'Contact',
     'record_locked' => 'Record locked',
-    'saved_plans_cannot_be_edited' => 'Saved plans cannot be edited',   
+    'saved_plans_cannot_be_edited' => 'Saved plans cannot be edited', 
+    'select_source_to_see_stock' => 'Select source to see stock',
+    'only_products_with_stock' => 'Show only products with stock',  
     
     // PDF Generation
     'pdf_generated_successfully' => 'PDF generated successfully',

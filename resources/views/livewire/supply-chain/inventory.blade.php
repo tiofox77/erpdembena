@@ -573,18 +573,14 @@
                                     @endif
                                 </label>
                                 <div class="mt-1 overflow-y-auto max-h-48 border border-gray-200 rounded-md">
-                                    @if(count($availableProducts) === 0)
+                                    @if(count($this->filteredProducts) === 0)
                                         <div class="p-4 text-center text-gray-500">
                                             <i class="fas fa-box-open text-gray-300 text-2xl mb-2"></i>
                                             <p>{{ __('messages.no_products_found') }}</p>
                                         </div>
                                     @else
                                         <div class="grid grid-cols-1 divide-y divide-gray-200">
-                                            @foreach($availableProducts->filter(function($product) {
-                                                return empty($this->productSearchQuery) || 
-                                                    stripos($product->name, $this->productSearchQuery) !== false ||
-                                                    stripos($product->sku, $this->productSearchQuery) !== false;
-                                            }) as $product)
+                                            @foreach($this->filteredProducts as $product)
                                                 <label class="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer transition-colors duration-150 @if(in_array($product->id, $selectedProducts)) bg-blue-50 @endif">
                                                     <input type="checkbox" 
                                                         wire:model.live="selectedProducts" 
@@ -798,19 +794,62 @@
                             <h2 class="text-base font-medium text-gray-700">{{ __('messages.product_information') }}</h2>
                         </div>
                         <div class="p-4 space-y-4">
-                            <!-- Product Search -->
-                            <div>
-                                <label for="transferProductSearch" class="block text-sm font-medium text-gray-700 flex items-center">
-                                    <i class="fas fa-search mr-1 text-blue-500"></i>
-                                    {{ __('messages.search_products') }}
-                                </label>
-                                <div class="mt-1 relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-search text-gray-400"></i>
+                            <!-- Filtros e Busca -->
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 transition-all duration-300 ease-in-out hover:shadow-md">
+                                <h5 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                    <i class="fas fa-filter mr-2 text-blue-500"></i> {{ __('messages.filters_and_search') }}
+                                </h5>
+                                
+                                <!-- Busca -->
+                                <div class="mb-3">
+                                    <label for="transferProductSearch" class="block text-sm font-medium text-gray-700 flex items-center">
+                                        <i class="fas fa-search mr-1 text-blue-500"></i>
+                                        {{ __('messages.search_products') }}
+                                    </label>
+                                    <div class="mt-1 relative rounded-md shadow-sm">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-search text-gray-400"></i>
+                                        </div>
+                                        <input type="text" wire:model.live.debounce.300ms="transferProductSearchQuery" id="transferProductSearch"
+                                            class="pl-10 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                            placeholder="{{ __('messages.type_product_name_or_sku') }}">
                                     </div>
-                                    <input type="text" wire:model.live.debounce.300ms="transferProductSearchQuery" id="transferProductSearch"
-                                        class="pl-10 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                        placeholder="{{ __('messages.type_product_name_or_sku') }}">
+                                </div>
+                                
+                                <!-- Filtros -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Filtro de Tipo de Produto -->
+                                    <div>
+                                        <label for="transferProductTypeFilter" class="block text-sm font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-box mr-1 text-blue-500"></i>
+                                            {{ __('messages.product_type') }}
+                                        </label>
+                                        <select id="transferProductTypeFilter" wire:model.live="transferProductTypeFilter"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white">
+                                            <option value="">{{ __('messages.all_types') }}</option>
+                                            <option value="finished_product">{{ __('messages.finished_product') }}</option>
+                                            <option value="raw_material">{{ __('messages.raw_material') }}</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Checkbox para Produtos com Estoque -->
+                                    <div class="flex items-center">
+                                        <div class="flex h-5 items-center mt-4">
+                                            <input id="showOnlyWithStock" type="checkbox" wire:model.live="showOnlyWithStock"
+                                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                {{ empty($transferSourceId) ? 'disabled' : '' }}>
+                                        </div>
+                                        <div class="ml-3 text-sm">
+                                            <label for="showOnlyWithStock" class="font-medium text-gray-700 {{ empty($transferSourceId) ? 'opacity-50' : '' }}">
+                                                {{ __('messages.only_products_with_stock') }}
+                                            </label>
+                                            @if(empty($transferSourceId))
+                                                <p class="text-xs text-amber-600">
+                                                    {{ __('messages.select_source_to_see_stock') }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -829,23 +868,25 @@
                                 </label>
                                 
                                 <div class="mt-1 overflow-y-auto max-h-48 border border-gray-200 rounded-md">
-                                    @if(count($availableProducts) === 0)
+                                    @if(count($this->filteredTransferProducts) === 0)
                                         <div class="p-4 text-center text-gray-500">
                                             <i class="fas fa-box-open text-gray-300 text-2xl mb-2"></i>
                                             <p>{{ __('messages.no_products_found') }}</p>
                                         </div>
                                     @else
                                         <div class="grid grid-cols-1 divide-y divide-gray-200">
-                                            @foreach($availableProducts->filter(function($product) {
-                                                return empty($this->transferProductSearchQuery) || 
-                                                    stripos($product->name, $this->transferProductSearchQuery) !== false ||
-                                                    stripos($product->sku, $this->transferProductSearchQuery) !== false;
-                                            }) as $product)
+                                            @foreach($this->filteredTransferProducts as $product)
                                                 @php
                                                     $sourceStock = $transferSourceId ? 
                                                         $product->inventoryItems->where('location_id', $transferSourceId)->first()?->quantity_on_hand ?? 0 : 0;
+                                                    
+                                                    $stockClass = $sourceStock <= 0 ? 'bg-red-100 text-red-800' :
+                                                                 ($sourceStock <= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800');
+                                                    
+                                                    $stockIcon = $sourceStock <= 0 ? 'fa-times-circle' :
+                                                                ($sourceStock <= 3 ? 'fa-exclamation-triangle' : 'fa-check-circle');
                                                 @endphp
-                                                <label class="flex items-center py-2 px-3 hover:bg-gray-50 @if($sourceStock <= 0) opacity-60 @endif cursor-pointer transition-colors duration-150 @if(in_array($product->id, $selectedTransferProducts)) bg-blue-50 @endif">
+                                                <label class="flex items-center py-3 px-4 hover:bg-blue-50 @if($sourceStock <= 0) opacity-75 @endif cursor-pointer transition-colors duration-200 ease-in-out @if(in_array($product->id, $selectedTransferProducts)) bg-blue-50 border-l-4 border-blue-500 @else border-l-4 border-transparent @endif rounded-md mb-1 shadow-sm hover:shadow-md">
                                                     <input type="checkbox" 
                                                         wire:model.live="selectedTransferProducts" 
                                                         value="{{ $product->id }}" 
@@ -855,17 +896,45 @@
                                                         <div class="text-sm font-medium text-gray-900 flex items-center">
                                                             {{ $product->name }}
                                                             <span class="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{{ $product->sku }}</span>
-                                                        </div>
-                                                        <div class="text-xs @if($sourceStock <= 0) text-red-500 font-medium @elseif($sourceStock < 10) text-yellow-500 @else text-green-600 @endif mt-1">
-                                                            @if($transferSourceId)
-                                                                <i class="fas fa-cubes mr-1"></i> 
-                                                                {{ __('messages.available_stock') }}: {{ $sourceStock }}
-                                                            @else
-                                                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
-                                                                {{ __('messages.select_source_to_see_stock') }}
+                                                            @if($product->product_type === 'finished_product')
+                                                                <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                                                    <i class="fas fa-box-open mr-1"></i>{{ __('messages.finished_product') }}
+                                                                </span>
+                                                            @elseif($product->product_type === 'raw_material')
+                                                                <span class="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                                                                    <i class="fas fa-cubes mr-1"></i>{{ __('messages.raw_material') }}
+                                                                </span>
                                                             @endif
                                                         </div>
+                                                        
+                                                        <div class="mt-2 flex items-center">
+                                                            <span class="{{ $stockClass }} text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                                                                <i class="fas {{ $stockIcon }} mr-1"></i>
+                                                                @if($sourceStock <= 0)
+                                                                    {{ __('messages.out_of_stock') }}
+                                                                @elseif($sourceStock <= 3)
+                                                                    {{ __('messages.low_stock') }}
+                                                                @else
+                                                                    {{ __('messages.in_stock') }}
+                                                                @endif
+                                                            </span>
+                                                            
+                                                            <span class="ml-2 text-xs text-gray-600">
+                                                                <i class="fas fa-boxes mr-1"></i>
+                                                                {{ __('messages.available') }}: <span class="font-semibold">{{ $sourceStock }}</span>
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                    
+                                                    @if(in_array($product->id, $selectedTransferProducts))
+                                                        <div class="ml-2 text-blue-600">
+                                                            <i class="fas fa-check-circle text-xl"></i>
+                                                        </div>
+                                                    @elseif($sourceStock > 0)
+                                                        <div class="ml-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </div>
+                                                    @endif
                                                 </label>
                                             @endforeach
                                         </div>
@@ -891,7 +960,7 @@
                                     {{ __('messages.source_location') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="mt-1">
-                                    <select wire:model="transferSourceId" id="transferSourceId"
+                                    <select wire:model.live="transferSourceId" id="transferSourceId"
                                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
                                         <option value="">{{ __('messages.select_option') }}</option>
                                         @foreach($availableLocations as $location)

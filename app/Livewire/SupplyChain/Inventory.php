@@ -49,6 +49,14 @@ class Inventory extends Component
     // Lista de produtos para o select do modal de ajuste de estoque
     public $availableProducts = [];
     
+    // Busca de produtos nas modais
+    public $productSearchQuery = '';
+    public $transferProductSearchQuery = '';
+    
+    // Filtros para modal de transferência
+    public $showOnlyWithStock = false;
+    public $transferProductTypeFilter = '';
+    
     // For history modal
     public $showHistoryModal = false;
     public $inventoryItemHistory = [];
@@ -164,9 +172,11 @@ class Inventory extends Component
     public function openAdjustmentModal($inventoryItemId = null)
     {
         $this->resetAdjustmentFields();
+        $this->productSearchQuery = ''; // Limpa a busca ao abrir o modal
         
         // Carregar produtos disponíveis
         $this->availableProducts = Product::where('is_active', true)
+            ->with(['inventoryItems'])
             ->orderBy('name')
             ->get();
         
@@ -180,12 +190,27 @@ class Inventory extends Component
             if ($this->adjustmentItem) {
                 $this->selectedProducts = [$this->adjustmentItem->product_id];
                 $this->selectedLocationId = $this->adjustmentItem->location_id;
+                $this->adjustmentQuantities[$this->adjustmentItem->product_id] = $this->adjustmentItem->quantity_on_hand;
             }
         }
-        
+            
         $this->showAdjustmentModal = true;
     }
-
+    
+    public function getFilteredProductsProperty()
+    {
+        if (empty($this->productSearchQuery)) {
+            return $this->availableProducts;
+        }
+        
+        $search = strtolower($this->productSearchQuery);
+        
+        return $this->availableProducts->filter(function($product) use ($search) {
+            return stripos(strtolower($product->name), $search) !== false || 
+                   stripos(strtolower($product->sku), $search) !== false;
+        });
+    }
+    
     public function resetAdjustmentFields()
     {
         $this->adjustmentItem = null;
@@ -200,9 +225,12 @@ class Inventory extends Component
     public function openTransferModal($inventoryItemId = null)
     {
         $this->resetTransferFields();
+        $this->productSearchQuery = ''; // Limpa a busca ao abrir o modal
+        $this->transferProductSearchQuery = ''; // Limpa a busca ao abrir o modal
         
         // Carregar produtos disponíveis
         $this->availableProducts = Product::where('is_active', true)
+            ->with(['inventoryItems'])
             ->orderBy('name')
             ->get();
         
@@ -210,16 +238,48 @@ class Inventory extends Component
         $this->availableLocations = InventoryLocation::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+            
         if ($inventoryItemId) {
             $this->transferItem = InventoryItem::with('product', 'location')->find($inventoryItemId);
             if ($this->transferItem) {
                 $this->selectedTransferProducts = [$this->transferItem->product_id];
                 $this->transferSourceId = $this->transferItem->location_id;
+                $this->transferQuantities[$this->transferItem->product_id] = $this->transferItem->quantity_on_hand;
             }
         }
         
         $this->showTransferModal = true;
+    }
+    
+    public function getFilteredTransferProductsProperty()
+    {
+        $filteredProducts = $this->availableProducts;
+        
+        // Aplicar filtro de busca
+        if (!empty($this->transferProductSearchQuery)) {
+            $search = strtolower($this->transferProductSearchQuery);
+            $filteredProducts = $filteredProducts->filter(function($product) use ($search) {
+                return stripos(strtolower($product->name), $search) !== false || 
+                       stripos(strtolower($product->sku), $search) !== false;
+            });
+        }
+        
+        // Aplicar filtro de tipo de produto
+        if (!empty($this->transferProductTypeFilter)) {
+            $filteredProducts = $filteredProducts->filter(function($product) {
+                return $product->product_type === $this->transferProductTypeFilter;
+            });
+        }
+        
+        // Aplicar filtro para mostrar apenas produtos com estoque
+        if ($this->showOnlyWithStock && !empty($this->transferSourceId)) {
+            $filteredProducts = $filteredProducts->filter(function($product) {
+                $sourceStock = $product->inventoryItems->where('location_id', $this->transferSourceId)->first()?->quantity_on_hand ?? 0;
+                return $sourceStock > 0;
+            });
+        }
+        
+        return $filteredProducts;
     }
 
     public function resetTransferFields()
