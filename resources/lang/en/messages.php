@@ -2673,5 +2673,9 @@ return [
     'only_inactive' => 'Only Inactive',
     'all_active_status' => 'All (Active/Inactive)',
     'active' => 'Active',
-    'inactive' => 'Inactive'
+    'inactive' => 'Inactive',
+    
+    // Other Reference
+    'other_reference' => 'Other Reference',
+    'other_reference_placeholder' => 'Enter additional reference information'
 ];

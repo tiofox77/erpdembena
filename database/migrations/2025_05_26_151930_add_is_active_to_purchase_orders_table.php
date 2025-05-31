@@ -14,7 +14,9 @@ class AddIsActiveToPurchaseOrdersTable extends Migration
     public function up()
     {
         Schema::table('sc_purchase_orders', function (Blueprint $table) {
-            $table->boolean('is_active')->default(true)->after('status');
+            if (!Schema::hasColumn('sc_purchase_orders', 'is_active')) {
+                $table->boolean('is_active')->default(true)->after('status');
+            }
         });
     }
 
@@ -26,7 +28,9 @@ class AddIsActiveToPurchaseOrdersTable extends Migration
     public function down()
     {
         Schema::table('sc_purchase_orders', function (Blueprint $table) {
-            $table->dropColumn('is_active');
+            if (Schema::hasColumn('sc_purchase_orders', 'is_active')) {
+                $table->dropColumn('is_active');
+            }
         });
     }
 }

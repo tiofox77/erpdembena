@@ -46,6 +46,17 @@
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-gray-100"
                                 placeholder="{{ __('messages.auto_generated') }}">
                         </div>
+
+                        <!-- Other Reference -->
+                        <div>
+                            <label for="other_reference" class="block text-sm font-medium text-gray-700">{{ __('messages.other_reference') }}</label>
+                            <input type="text" id="other_reference" wire:model.defer="purchaseOrder.other_reference"
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                placeholder="{{ __('messages.other_reference_placeholder') }}">
+                            @error('purchaseOrder.other_reference')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                         
                         <!-- Fornecedor -->
                         <div>

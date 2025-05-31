@@ -653,6 +653,7 @@ class PurchaseOrders extends Component
                 'purchaseOrder.supplier_id' => 'required',
                 'purchaseOrder.order_date' => 'required|date',
                 'purchaseOrder.expected_delivery_date' => 'required|date',
+                'purchaseOrder.other_reference' => 'nullable|string|max:255',
             ]);
             
             Log::info('Validação passou');
@@ -699,6 +700,7 @@ class PurchaseOrders extends Component
                 $order->supplier_id = $this->purchaseOrder['supplier_id'];
                 $order->order_date = $this->purchaseOrder['order_date'];
                 $order->expected_delivery_date = $this->purchaseOrder['expected_delivery_date'];
+                $order->other_reference = $this->purchaseOrder['other_reference'] ?? null;
                 $order->shipping_amount = floatval($this->purchaseOrder['shipping_amount'] ?? 0);
                 
                 // Removendo campos que não existem na tabela
