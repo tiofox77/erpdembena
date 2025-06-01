@@ -79,7 +79,6 @@
                             <input type="date" 
                                 wire:model.defer="purchaseOrder.order_date" 
                                 id="order_date" 
-                                value="{{ $purchaseOrder['order_date'] ?? '' }}"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             @error('purchaseOrder.order_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -92,7 +91,6 @@
                             <input type="date" 
                                 wire:model.defer="purchaseOrder.expected_delivery_date" 
                                 id="expected_delivery_date" 
-                                value="{{ $purchaseOrder['expected_delivery_date'] ?? '' }}"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             @error('purchaseOrder.expected_delivery_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
