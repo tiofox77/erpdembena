@@ -38,6 +38,8 @@ return [
     'issued' => 'Issued',
     'cancelled' => 'Cancelled',
     'partially_issued' => 'Partially Issued',
+    'ordered' => 'Ordered',
+    'received' => 'Received',
     
     // Request Priority
     'low' => 'Low',

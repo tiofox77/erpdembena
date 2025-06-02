@@ -4275,11 +4275,50 @@ public function updateDailyPlan($index, $data = null)
     {
         \Illuminate\Support\Facades\Log::info('Fechando modal de visualização');
         $this->showViewModal = false;
-        $this->scheduleId = null;
-        $this->selectedSchedule = null;
         $this->viewingSchedule = null;
-        $this->chartHistory = [];
-        $this->breakdownImpact = [];
+        $this->scheduleId = null;
+        $this->breakdownData = null;
+    }
+
+    /**
+     * Inicia a produção mudando o status de confirmed para in_progress
+     *
+     * @return void
+     */
+    public function startProduction()
+    {
+        try {
+            if (!$this->scheduleId) {
+                $this->dispatch('notify', type: 'error', message: __('messages.no_schedule_selected'));
+                return;
+            }
+            
+            $schedule = ProductionSchedule::find($this->scheduleId);
+            
+            if (!$schedule) {
+                $this->dispatch('notify', type: 'error', message: __('messages.schedule_not_found'));
+                return;
+            }
+            
+            if ($schedule->status !== 'confirmed') {
+                $this->dispatch('notify', type: 'error', message: __('messages.only_confirmed_schedules_can_start'));
+                return;
+            }
+            
+            $schedule->status = 'in_progress';
+            $schedule->save();
+            
+            // Atualizar a propriedade viewingSchedule para refletir a mudança de status
+            if ($this->viewingSchedule && $this->viewingSchedule->id == $schedule->id) {
+                $this->viewingSchedule->status = 'in_progress';
+            }
+            
+            $this->dispatch('notify', type: 'success', message: __('messages.production_started'));
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', type: 'error', message: $e->getMessage());
+            Log::error('Erro ao iniciar produção: ' . $e->getMessage());
+        }
     }
 
     /**

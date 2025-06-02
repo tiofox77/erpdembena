@@ -12,6 +12,7 @@ use App\Models\SupplyChain\ProductCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class Inventory extends Component
 {
@@ -128,9 +129,9 @@ class Inventory extends Component
             if ($this->stock_filter === 'low') {
                 $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand <= sc_products.reorder_point')
                                    ->whereRaw('sc_inventory_items.quantity_on_hand > 0');
-            } elseif ($this->stockFilter === 'out') {
+            } elseif ($this->stock_filter === 'out') {
                 $inventoryItemsQuery->where('quantity_on_hand', 0);
-            } elseif ($this->stockFilter === 'in') {
+            } elseif ($this->stock_filter === 'in') {
                 $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand > sc_products.reorder_point');
             }
         }
@@ -591,5 +592,252 @@ class Inventory extends Component
         $this->showHistoryModal = false;
         $this->historyItem = null;
         $this->inventoryItemHistory = [];
+    }
+    
+    /**
+     * Gerar PDF do histórico de transações de um item de inventário
+     *
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|null
+     */
+    public function generateHistoryPdf()
+    {
+        Log::info('=== INÍCIO DO MÉTODO generateHistoryPdf ===');
+        
+        try {
+            if (!$this->historyItem) {
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: __('messages.no_item_selected')
+                );
+                return;
+            }
+            
+            // Obter o item e seu histórico
+            $inventoryItem = $this->historyItem;
+            $transactions = $this->inventoryItemHistory;
+            
+            Log::info('Gerando PDF de histórico de transações', [
+                'item_id' => $inventoryItem->id,
+                'product_id' => $inventoryItem->product_id,
+                'location_id' => $inventoryItem->location_id,
+                'transaction_count' => $transactions->count()
+            ]);
+            
+            // Calcular estatísticas
+            $totalIn = $transactions->where('quantity', '>', 0)->sum('quantity');
+            $totalOut = abs($transactions->where('quantity', '<', 0)->sum('quantity'));
+            $netChange = $totalIn - $totalOut;
+            
+            // Obter dados do usuário para incluir no PDF
+            $user = Auth::user();
+            $currentDate = now()->format('d/m/Y H:i:s');
+            
+            // Gerar o PDF usando a view
+            $pdf = PDF::loadView('pdfs.inventory-history', [
+                'inventoryItem' => $inventoryItem,
+                'transactions' => $transactions,
+                'totalIn' => $totalIn,
+                'totalOut' => $totalOut,
+                'netChange' => $netChange,
+                'user' => $user,
+                'currentDate' => $currentDate
+            ]);
+            
+            // Configurar o PDF
+            $pdf->setPaper('a4', 'portrait');
+            
+            // Gerar um nome de arquivo baseado na data e no produto
+            $productName = str_replace(' ', '_', $inventoryItem->product->name);
+            $filename = 'inventory_history_' . $productName . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            Log::info('PDF do histórico de transações gerado com sucesso', [
+                'filename' => $filename
+            ]);
+            
+            // Mostrar notificação de sucesso
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            Log::info('=== FIM DO MÉTODO generateHistoryPdf ===');
+            
+            // Download do PDF
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar PDF do histórico de transações', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.error_generating_pdf')
+            );
+            
+            Log::info('=== FIM DO MÉTODO generateHistoryPdf (com erro) ===');
+        }
+    }
+    
+    /**
+     * Gerar PDF da listagem de inventário com os filtros aplicados
+     *
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|null
+     */
+    public function generatePdfList()
+    {
+        Log::info('=== INÍCIO DO MÉTODO generatePdfList ===');
+        
+        try {
+            // Obter os itens de inventário com os filtros aplicados
+            $inventoryItemsQuery = InventoryItem::query()
+                ->with(['product', 'product.category', 'location'])
+                ->join('sc_products', 'sc_inventory_items.product_id', '=', 'sc_products.id')
+                ->select('sc_inventory_items.*');
+            
+            if ($this->search) {
+                $inventoryItemsQuery->where(function($query) {
+                    $query->whereHas('product', function($q) {
+                        $q->where('name', 'like', '%' . $this->search . '%')
+                          ->orWhere('sku', 'like', '%' . $this->search . '%');
+                    })
+                    ->orWhereHas('location', function($q) {
+                        $q->where('name', 'like', '%' . $this->search . '%');
+                    });
+                });
+            }
+            
+            if ($this->location_filter) {
+                $inventoryItemsQuery->where('location_id', $this->location_filter);
+            }
+            
+            if ($this->category_filter) {
+                $inventoryItemsQuery->whereHas('product', function($q) {
+                    $q->where('category_id', $this->category_filter);
+                });
+            }
+            
+            if ($this->product_type_filter) {
+                $inventoryItemsQuery->whereHas('product', function($q) {
+                    $q->where('product_type', $this->product_type_filter);
+                });
+            }
+            
+            if ($this->stock_filter) {
+                if ($this->stock_filter === 'low') {
+                    $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand <= sc_products.reorder_point')
+                                       ->whereRaw('sc_inventory_items.quantity_on_hand > 0');
+                } elseif ($this->stock_filter === 'out') {
+                    $inventoryItemsQuery->where('quantity_on_hand', 0);
+                } elseif ($this->stock_filter === 'in') {
+                    $inventoryItemsQuery->whereRaw('sc_inventory_items.quantity_on_hand > sc_products.reorder_point');
+                }
+            }
+            
+            // Não paginamos aqui para exportar todos os resultados filtrados
+            $inventoryItems = $inventoryItemsQuery->get();
+            
+            Log::info('Gerando PDF da listagem de inventário', [
+                'quantidade' => $inventoryItems->count(),
+                'filtros' => [
+                    'search' => $this->search,
+                    'location' => $this->location_filter,
+                    'category' => $this->category_filter,
+                    'stock_level' => $this->stock_filter,
+                    'product_type' => $this->product_type_filter
+                ]
+            ]);
+            
+            // Adicionar flags de status de estoque para cada item
+            foreach ($inventoryItems as $item) {
+                if (!$item->product) {
+                    $item->stock_status = 'unknown';
+                    continue;
+                }
+                
+                if ($item->quantity_on_hand <= 0) {
+                    $item->stock_status = 'out_of_stock';
+                } elseif ($item->quantity_on_hand <= $item->product->reorder_point) {
+                    $item->stock_status = 'low_stock';
+                } else {
+                    $item->stock_status = 'in_stock';
+                }
+            }
+            
+            // Calcular os totais
+            $totalItems = $inventoryItems->count();
+            $totalQuantity = $inventoryItems->sum('quantity_on_hand');
+            $totalValue = $inventoryItems->sum(function($item) {
+                return $item->quantity_on_hand * ($item->unit_cost ?? 0);
+            });
+            
+            // Obter dados de localização e categorias para o relatório
+            $locations = InventoryLocation::orderBy('name')->get();
+            $categories = ProductCategory::orderBy('name')->get();
+            
+            // Obter dados do usuário para incluir no PDF
+            $user = Auth::user();
+            $currentDate = now()->format('d/m/Y H:i:s');
+            
+            // Gerar o PDF usando a view
+            $pdf = PDF::loadView('pdfs.inventory-list', [
+                'inventoryItems' => $inventoryItems,
+                'totalItems' => $totalItems,
+                'totalQuantity' => $totalQuantity,
+                'totalValue' => $totalValue,
+                'user' => $user,
+                'currentDate' => $currentDate,
+                'filters' => [
+                    'search' => $this->search,
+                    'location' => $this->location_filter ? InventoryLocation::find($this->location_filter)->name : __('messages.all_locations'),
+                    'category' => $this->category_filter ? ProductCategory::find($this->category_filter)->name : __('messages.all_categories'),
+                    'stock_level' => $this->stock_filter ? __('messages.' . $this->stock_filter . '_stock') : __('messages.all_stock_levels'),
+                    'product_type' => $this->product_type_filter ? __('messages.' . $this->product_type_filter) : __('messages.all_product_types')
+                ]
+            ]);
+            
+            // Configurar o PDF
+            $pdf->setPaper('a4', 'landscape');
+            
+            // Gerar um nome de arquivo baseado na data
+            $filename = 'inventory_list_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            Log::info('PDF da listagem de inventário gerado com sucesso', [
+                'filename' => $filename
+            ]);
+            
+            // Mostrar notificação de sucesso
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            Log::info('=== FIM DO MÉTODO generatePdfList ===');
+            
+            // Download do PDF
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar PDF da listagem de inventário', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.error_generating_pdf')
+            );
+            
+            Log::info('=== FIM DO MÉTODO generatePdfList (com erro) ===');
+        }
     }
 }

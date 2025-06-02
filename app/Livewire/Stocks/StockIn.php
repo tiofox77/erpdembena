@@ -102,13 +102,21 @@ class StockIn extends Component
     }
 
     /**
-     * Get equipment parts based on equipment filter
+     * Get equipment parts based on equipment filter and search term
      */
     #[Computed]
     public function getPartsForEquipmentProperty()
     {
         return EquipmentPart::when($this->equipmentId, function ($query) {
                 return $query->where('maintenance_equipment_id', $this->equipmentId);
+            })
+            ->when($this->partSearch, function ($query) {
+                $searchTerm = '%' . $this->partSearch . '%';
+                return $query->where(function ($q) use ($searchTerm) {
+                    $q->where('name', 'like', $searchTerm)
+                      ->orWhere('part_number', 'like', $searchTerm)
+                      ->orWhere('bar_code', 'like', $searchTerm);
+                });
             })
             ->orderBy('name')
             ->get();
@@ -123,12 +131,17 @@ class StockIn extends Component
         return StockTransaction::with(['part', 'createdBy'])
             ->where('type', 'stock_in')
             ->when($this->search, function($query) {
-                return $query->whereHas('part', function($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('part_number', 'like', '%' . $this->search . '%');
-                })
-                ->orWhere('supplier', 'like', '%' . $this->search . '%')
-                ->orWhere('invoice_number', 'like', '%' . $this->search . '%');
+                $searchTerm = '%' . $this->search . '%';
+                return $query->where(function($q) use ($searchTerm) {
+                    // Busca em partes relacionadas
+                    $q->whereHas('part', function($subQuery) use ($searchTerm) {
+                        $subQuery->where('name', 'like', $searchTerm)
+                                ->orWhere('part_number', 'like', $searchTerm);
+                    })
+                    // Busca em campos diretos da transação
+                    ->orWhere('supplier', 'like', $searchTerm)
+                    ->orWhere('invoice_number', 'like', $searchTerm);
+                });
             })
             ->when($this->equipmentId, function($query) {
                 return $query->whereHas('part', function($q) {
@@ -361,12 +374,17 @@ class StockIn extends Component
                 $transactions = StockTransaction::with(['part', 'createdBy'])
                     ->where('type', 'stock_in')
                     ->when($this->search, function($query) {
-                        return $query->whereHas('part', function($q) {
-                            $q->where('name', 'like', '%' . $this->search . '%')
-                              ->orWhere('part_number', 'like', '%' . $this->search . '%');
-                        })
-                        ->orWhere('supplier', 'like', '%' . $this->search . '%')
-                        ->orWhere('invoice_number', 'like', '%' . $this->search . '%');
+                        $searchTerm = '%' . $this->search . '%';
+                        return $query->where(function($q) use ($searchTerm) {
+                            // Busca em partes relacionadas
+                            $q->whereHas('part', function($subQuery) use ($searchTerm) {
+                                $subQuery->where('name', 'like', $searchTerm)
+                                        ->orWhere('part_number', 'like', $searchTerm);
+                            })
+                            // Busca em campos diretos da transação
+                            ->orWhere('supplier', 'like', $searchTerm)
+                            ->orWhere('invoice_number', 'like', $searchTerm);
+                        });
                     })
                     ->when($this->equipmentId, function($query) {
                         return $query->whereHas('part', function($q) {
@@ -404,12 +422,17 @@ class StockIn extends Component
         $stockTransactions = StockTransaction::with(['part', 'createdBy'])
             ->where('type', 'stock_in')
             ->when($this->search, function($query) {
-                return $query->whereHas('part', function($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('part_number', 'like', '%' . $this->search . '%');
-                })
-                ->orWhere('supplier', 'like', '%' . $this->search . '%')
-                ->orWhere('invoice_number', 'like', '%' . $this->search . '%');
+                $searchTerm = '%' . $this->search . '%';
+                return $query->where(function($q) use ($searchTerm) {
+                    // Busca em partes relacionadas
+                    $q->whereHas('part', function($subQuery) use ($searchTerm) {
+                        $subQuery->where('name', 'like', $searchTerm)
+                                ->orWhere('part_number', 'like', $searchTerm);
+                    })
+                    // Busca em campos diretos da transação
+                    ->orWhere('supplier', 'like', $searchTerm)
+                    ->orWhere('invoice_number', 'like', $searchTerm);
+                });
             })
             ->when($this->equipmentId, function($query) {
                 return $query->whereHas('part', function($q) {

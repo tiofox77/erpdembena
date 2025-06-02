@@ -576,9 +576,9 @@ class EquipmentPartRequests extends Component
                 'statusOptions' => [
                     'pending' => __('livewire/maintenance/equipment-part-requests.pending'),
                     'approved' => __('livewire/maintenance/equipment-part-requests.approved'),
+                    'received' => __('livewire/maintenance/equipment-part-requests.received'),
                     'rejected' => __('livewire/maintenance/equipment-part-requests.rejected'),
                     'ordered' => __('livewire/maintenance/equipment-part-requests.ordered'),
-                    'received' => __('livewire/maintenance/equipment-part-requests.received'),
                 ],
                 'filters' => [
                     'search' => $this->search,
@@ -606,10 +606,10 @@ class EquipmentPartRequests extends Component
                 'approved_at' => ($status === 'approved') ? now() : $partRequest->approved_at,
             ]);
             
-            $this->dispatch('notify', type: 'success', message: 'Status updated successfully!');
+            $this->dispatch('notify', type: 'success', message: __('livewire/maintenance/equipment-part-requests.status_updated'));
             
         } catch (\Exception $e) {
-            $this->dispatch('notify', type: 'error', message: 'Error: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: __('livewire/maintenance/equipment-part-requests.error_occurred') . ' ' . $e->getMessage());
         }
     }
 
@@ -649,11 +649,11 @@ class EquipmentPartRequests extends Component
         return view('livewire.equipment-part-requests', [
             'requests' => $requests,
             'statusOptions' => [
-                'pending' => 'Pending',
-                'approved' => 'Approved',
-                'rejected' => 'Rejected',
-                'ordered' => 'Ordered',
-                'received' => 'Received',
+                'pending' => __('livewire/maintenance/equipment-part-requests.pending'),
+                'approved' => __('livewire/maintenance/equipment-part-requests.approved'),
+                'received' => __('livewire/maintenance/equipment-part-requests.received'),
+                'rejected' => __('livewire/maintenance/equipment-part-requests.rejected'),
+                'ordered' => __('livewire/maintenance/equipment-part-requests.ordered'),
             ],
         ]);
     }

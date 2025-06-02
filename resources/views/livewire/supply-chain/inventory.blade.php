@@ -16,6 +16,20 @@
                     <i class="fas fa-exchange-alt mr-2"></i>
                     {{ __('messages.transfer_stock') }}
                 </button>
+                <button wire:click="generatePdfList" wire:loading.attr="disabled"
+                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed">
+                    <span wire:loading.remove wire:target="generatePdfList">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        {{ __('messages.generate_pdf') }}
+                    </span>
+                    <span wire:loading wire:target="generatePdfList" class="inline-flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ __('messages.generating') }}
+                    </span>
+                </button>
             </div>
         </div>
 
@@ -1284,11 +1298,28 @@
                 </div>
                 
                 <!-- Rodapé com botões de ação -->
-                <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200">
-                    <button type="button" wire:click="closeHistoryModal" class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                        <i class="fas fa-check mr-2"></i>
-                        {{ __('messages.close') }}
-                    </button>
+                <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-between space-x-3 border-t border-gray-200">
+                    <div>
+                        <button type="button" wire:click="generateHistoryPdf" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                            <span wire:loading.remove wire:target="generateHistoryPdf">
+                                <i class="fas fa-file-pdf mr-2"></i>
+                                {{ __('messages.generate_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="generateHistoryPdf" class="inline-flex items-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {{ __('messages.generating') }}
+                            </span>
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" wire:click="closeHistoryModal" class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                            <i class="fas fa-times mr-2"></i>
+                            {{ __('messages.close') }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

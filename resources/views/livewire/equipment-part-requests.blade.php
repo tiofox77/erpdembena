@@ -243,9 +243,10 @@
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         {{ $request->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
                                            ($request->status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                           ($request->status === 'received' ? 'bg-emerald-100 text-emerald-800' : 
                                            ($request->status === 'rejected' ? 'bg-red-100 text-red-800' : 
                                            ($request->status === 'ordered' ? 'bg-blue-100 text-blue-800' : 
-                                            'bg-purple-100 text-purple-800'))) }}">
+                                            'bg-purple-100 text-purple-800')))) }}">
                                         {{ $statusOptions[$request->status] ?? 'Unknown' }}
                                     </span>
                                 </td>
@@ -266,6 +267,11 @@
                                             </button>
                                             <button wire:click="changeStatus({{ $request->id }}, 'rejected')" class="text-red-600 hover:text-red-900" title="{{ __('messages.reject') }}">
                                                 <i class="fas fa-times"></i>
+                                            </button>
+                                        @endif
+                                        @if($request->status === 'approved')
+                                            <button wire:click="changeStatus({{ $request->id }}, 'received')" class="text-emerald-600 hover:text-emerald-900" title="{{ __('livewire/maintenance/equipment-part-requests.received') }}">
+                                                <i class="fas fa-box"></i>
                                             </button>
                                         @endif
                                         <button wire:click="confirmDelete({{ $request->id }})" class="text-red-600 hover:text-red-900" title="{{ __('messages.delete') }}">
