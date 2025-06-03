@@ -50,7 +50,7 @@
                             </label>
                             <select wire:model.live="status" id="status" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
-                                <option value="">{{ __('livewire/suppliers.all_statuses') }}</option>
+                                <option value="">{{ __('livewire/products.all_statuses') }}</option>
                                 <option value="active">{{ __('livewire/suppliers.active') }}</option>
                                 <option value="inactive">{{ __('livewire/suppliers.inactive') }}</option>
                             </select>
@@ -64,8 +64,8 @@
                             </label>
                             <select wire:model.live="category_id" id="category_id" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
-                                <option value="">{{ __('supplier.select_category') }}</option>
-                                @if(isset($categories) && $categories->count() > 0)
+                                <option value="">{{ __('livewire/products.all_types') }}</option>
+                                @if(isset($categories) && count($categories) > 0)
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
@@ -91,11 +91,13 @@
                     
                     <!-- Botões de ação -->
                     <div class="flex justify-end">
-                        <button wire:click="clearFilters" 
-                            class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                            <i class="fas fa-redo-alt mr-2"></i>
-                            <span wire:loading.remove wire:target="clearFilters">{{ __('livewire/layout.reset_filters') }}</span>
-                            <span wire:loading wire:target="clearFilters">{{ __('livewire/layout.clearing') }}...</span>
+                        <button wire:click="resetFilters" 
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <span wire:loading.remove wire:target="resetFilters">
+                                <i class="fas fa-filter-circle-xmark mr-2"></i>
+                                {{ __('livewire/layout.clear_filters') }}
+                            </span>
+                            <span wire:loading wire:target="resetFilters">{{ __('livewire/layout.clearing') }}...</span>
                         </button>
                     </div>
                 </div>

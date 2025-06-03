@@ -43,46 +43,41 @@
                         
                         <!-- Linha de filtros -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <!-- Status (se existir no componente) -->
-                            @if(property_exists($this, 'statusFilter'))
+                            <!-- Status -->
                             <div>
                                 <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">
                                     <i class="fas fa-toggle-on text-gray-500 mr-1"></i>
                                     {{ __('messages.status') }}
                                 </label>
-                                <select wire:model="statusFilter" id="statusFilter" 
+                                <select wire:model.live="statusFilter" id="statusFilter" 
                                     class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
-                                    <option value="">{{ __('messages.all_statuses') }}</option>
+                                    <option value="">{{ __('messages.all') }}</option>
                                     <option value="active">{{ __('messages.active') }}</option>
                                     <option value="inactive">{{ __('messages.inactive') }}</option>
                                 </select>
                             </div>
-                            @endif
                             
-                            <!-- Tipo (se existir no componente) -->
-                            @if(property_exists($this, 'typeFilter'))
+                            <!-- Tipo -->
                             <div>
                                 <label for="typeFilter" class="block text-sm font-medium text-gray-700 mb-1">
                                     <i class="fas fa-tag text-gray-500 mr-1"></i>
                                     {{ __('messages.type') }}
                                 </label>
-                                <select wire:model="typeFilter" id="typeFilter" 
+                                <select wire:model.live="typeFilter" id="typeFilter" 
                                     class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
-                                    <option value="">{{ __('messages.all_types') }}</option>
-                                    <option value="warehouse">{{ __('messages.warehouse') }}</option>
-                                    <option value="store">{{ __('messages.store') }}</option>
-                                    <option value="other">{{ __('messages.other') }}</option>
+                                    <option value="">{{ __('messages.all') }}</option>
+                                    <option value="raw_material">{{ __('messages.raw_material_warehouse') }}</option>
+                                    <option value="normal">{{ __('messages.normal_warehouse') }}</option>
                                 </select>
                             </div>
-                            @endif
                             
                             <!-- Registros por página -->
                             <div>
                                 <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">
                                     <i class="fas fa-list-ol text-gray-500 mr-1"></i>
-                                    {{ __('messages.per_page') }}
+                                    {{ __('messages.records_per_page') }}
                                 </label>
-                                <select wire:model="perPage" id="perPage" 
+                                <select wire:model.live="perPage" id="perPage" 
                                     class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                     <option value="10">10</option>
                                     <option value="25">25</option>

@@ -265,6 +265,10 @@ return [
     'predictive' => 'Preditiva',
     'conditional' => 'Condicional',
     'other' => 'Outro',
+    'finished_product' => 'Produto Acabado',
+    'raw_material' => 'Matéria Prima',
+    'others' => 'Outros',
+    'all_types' => 'Todos os Tipos',
     
     // Layout
     'livewire/layout.save' => 'Salvar',

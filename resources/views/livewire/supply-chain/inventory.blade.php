@@ -121,8 +121,30 @@
                                 <option value="">{{ __('messages.all_types') }}</option>
                                 <option value="finished_product">{{ __('messages.finished_product') }}</option>
                                 <option value="raw_material">{{ __('messages.raw_material') }}</option>
+                                <option value="others">{{ __('messages.others') }}</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <!-- Linha adicional para paginação e outras opções -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                        <!-- Registros por página -->
+                        <div>
+                            <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-list-ol text-gray-500 mr-1"></i>
+                                {{ __('messages.records_per_page') }}
+                            </label>
+                            <select wire:model.live="perPage" id="perPage" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Espaço para outros filtros futuros -->
+                        <div class="col-span-3"></div>
                     </div>
                     
                     <!-- Botões de ação -->
@@ -304,7 +326,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Seção de Transações Recentes -->
         <div class="mb-20">
             <!-- Card de Transações Recentes -->
@@ -539,7 +561,7 @@
                      x-transition:leave-end="transform opacity-0 scale-95">
                 
                 <!-- Cabeçalho -->
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg px-4 py-3 flex justify-between items-center">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg px-4 py-3 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-white flex items-center">
                         <i class="fas fa-boxes mr-2 animate-pulse"></i>
                         {{ __('messages.adjust_stock') }}
@@ -612,7 +634,8 @@
                                                         <div class="text-xs text-gray-500 mt-1">
                                                             @if($selectedLocationId)
                                                                 <span class="@if($stockQty <= 0) text-red-500 @elseif($stockQty < 10) text-yellow-500 @else text-green-600 @endif">
-                                                                    <i class="fas fa-cubes mr-1"></i> {{ __('messages.current_stock') }}: {{ $stockQty }}
+                                                                    <i class="fas fa-cubes mr-1"></i>
+                                                                    {{ __('messages.current_stock') }}: {{ $stockQty }}
                                                                 </span>
                                                             @endif
                                                         </div>
@@ -685,8 +708,10 @@
                                                     ->where('location_id', $selectedLocationId)
                                                     ->value('quantity_on_hand') ?? 0 : 0;
                                         @endphp
-                                        <label for="quantity_{{ $productId }}" class="block text-sm font-medium text-gray-700">
-                                            {{ __('messages.quantity_for') }} {{ $product->name }} <span class="text-red-500">*</span>
+                                        <label class="block text-sm font-medium text-gray-700">
+                                            {{ $product ? $product->name : '' }} - {{ __('messages.quantity') }} 
+                                            <span class="text-red-500">*</span>
+                                            <span class="text-gray-500 text-sm">({{ __('messages.available') }}: {{ $currentStock }})</span>
                                         </label>
                                         <div class="mt-1 relative rounded-md shadow-sm">
                                             <input type="number" 
@@ -789,7 +814,7 @@
                  x-transition:leave-end="transform opacity-0 scale-95">
                 
                 <!-- Cabeçalho -->
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg px-4 py-3 flex justify-between items-center">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg px-4 py-3 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-white flex items-center">
                         <i class="fas fa-exchange-alt mr-2"></i>
                         {{ __('messages.transfer_stock') }}
@@ -843,6 +868,7 @@
                                             <option value="">{{ __('messages.all_types') }}</option>
                                             <option value="finished_product">{{ __('messages.finished_product') }}</option>
                                             <option value="raw_material">{{ __('messages.raw_material') }}</option>
+                                            <option value="others">{{ __('messages.others') }}</option>
                                         </select>
                                     </div>
                                     
@@ -917,6 +943,10 @@
                                                             @elseif($product->product_type === 'raw_material')
                                                                 <span class="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
                                                                     <i class="fas fa-cubes mr-1"></i>{{ __('messages.raw_material') }}
+                                                                </span>
+                                                            @elseif($product->product_type === 'others')
+                                                                <span class="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
+                                                                    <i class="fas fa-ellipsis-h mr-1"></i>{{ __('messages.others') }}
                                                                 </span>
                                                             @endif
                                                         </div>
@@ -1183,7 +1213,7 @@
                                     @forelse ($inventoryItemHistory as $transaction)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $transaction->created_at->format('d/m/Y') }}</div>
+                                            <div class="text-sm text-gray-900 font-medium">{{ $transaction->created_at->format('d/m/Y') }}</div>
                                             <div class="text-xs text-gray-500">{{ $transaction->created_at->format('H:i') }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -1300,7 +1330,7 @@
                 <!-- Rodapé com botões de ação -->
                 <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-between space-x-3 border-t border-gray-200">
                     <div>
-                        <button type="button" wire:click="generateHistoryPdf" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                        <button wire:click="generateHistoryPdf" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
                             <span wire:loading.remove wire:target="generateHistoryPdf">
                                 <i class="fas fa-file-pdf mr-2"></i>
                                 {{ __('messages.generate_pdf') }}
@@ -1358,4 +1388,99 @@
             </div>
         </div>
     </div>
+    
+    <!-- Script de paginação específico para esta página -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Script de paginação de inventário carregado');
+            
+            // Função para aplicar valor salvo
+            function applyPerPageValue() {
+                const select = document.getElementById('perPage');
+                const savedValue = localStorage.getItem('erpdembena_per_page');
+                
+                console.log('Inventory: Select encontrado:', select ? 'Sim' : 'Não');
+                console.log('Inventory: Valor salvo:', savedValue);
+                
+                if (select && savedValue) {
+                    // Verificar se a opção existe
+                    const optionExists = Array.from(select.options).some(opt => opt.value === savedValue);
+                    
+                    if (optionExists) {
+                        // 1. Diretamente no DOM
+                        select.value = savedValue;
+                        console.log('Inventory: Valor definido no select:', savedValue);
+                        
+                        // 2. Via Alpine.js se disponível
+                        if (window.Alpine) {
+                            console.log('Inventory: Alpine.js encontrado, tentando definir valor');
+                            try {
+                                const wireEl = select.closest('[wire\\:id]');
+                                if (wireEl) {
+                                    Alpine.$data(select).$wire.set('perPage', savedValue);
+                                }
+                            } catch(e) {
+                                console.error('Inventory: Erro ao definir via Alpine:', e);
+                            }
+                        }
+                        
+                        // 3. Via Livewire diretamente
+                        try {
+                            const wireEl = select.closest('[wire\\:id]');
+                            if (wireEl) {
+                                const wireId = wireEl.getAttribute('wire:id');
+                                console.log('Inventory: Componente Livewire encontrado:', wireId);
+                                
+                                if (window.Livewire) {
+                                    console.log('Inventory: Atualizando via Livewire 3');
+                                    window.Livewire.find(wireId).$wire.set('perPage', savedValue);
+                                } else if (window.livewire) {
+                                    console.log('Inventory: Atualizando via Livewire 2');
+                                    window.livewire.find(wireId).set('perPage', savedValue);
+                                }
+                            }
+                        } catch(e) {
+                            console.error('Inventory: Erro ao definir via Livewire:', e);
+                        }
+                        
+                        // 4. Simulando evento de mudança
+                        try {
+                            console.log('Inventory: Disparando evento de mudança');
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        } catch(e) {
+                            console.error('Inventory: Erro ao disparar evento:', e);
+                        }
+                    }
+                }
+            }
+            
+            // Salvar valor quando mudar
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'perPage') {
+                    console.log('Inventory: Salvando valor:', e.target.value);
+                    localStorage.setItem('erpdembena_per_page', e.target.value);
+                }
+            });
+            
+            // Aplicar valor salvo em diferentes momentos
+            applyPerPageValue(); // Imediatamente
+            setTimeout(applyPerPageValue, 500); // Após 500ms
+            setTimeout(applyPerPageValue, 1000); // Após 1s
+            
+            // Quando o Livewire terminar de processar
+            if (window.Livewire) {
+                window.Livewire.hook('message.processed', function() {
+                    console.log('Inventory: Livewire processou mensagem, tentando aplicar valor');
+                    setTimeout(applyPerPageValue, 100);
+                });
+            }
+            
+            // Observar mudanças no DOM
+            const observer = new MutationObserver(function() {
+                setTimeout(applyPerPageValue, 100);
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
 </div>

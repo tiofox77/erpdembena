@@ -94,6 +94,7 @@
                                 <option value="">{{ __('livewire/products.all_types') }}</option>
                                 <option value="finished_product">{{ __('livewire/products.finished_product') }}</option>
                                 <option value="raw_material">{{ __('livewire/products.raw_material') }}</option>
+                                <option value="others">{{ __('livewire/products.others') }}</option>
                             </select>
                         </div>
                         
@@ -192,6 +193,11 @@
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             <i class="fas fa-boxes mr-1"></i>
                                             {{ __('livewire/products.raw_material') }}
+                                        </span>
+                                    @elseif($product->product_type == 'others')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            <i class="fas fa-ellipsis-h mr-1"></i>
+                                            {{ __('livewire/products.others') }}
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -351,9 +357,17 @@
                                             <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 {{ __('livewire/products.finished_product') }}
                                             </span>
-                                        @else
+                                        @elseif($product_type == 'raw_material')
                                             <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                 {{ __('livewire/products.raw_material') }}
+                                            </span>
+                                        @elseif($product_type == 'others')
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                {{ __('livewire/products.others') }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                {{ $product_type ?? '-' }}
                                             </span>
                                         @endif
                                     </p>

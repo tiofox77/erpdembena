@@ -15,7 +15,7 @@
         }
         .header {
             text-align: left;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #ddd;
             display: flex;
@@ -110,6 +110,12 @@
             font-weight: bold;
             margin-bottom: 5px;
         }
+        h3 {
+            margin-top: 10px; 
+            margin-bottom: 5px; 
+            font-size: 14px; 
+            font-weight: bold;
+        }
         .footer {
             text-align: center;
             font-size: 10px;
@@ -144,32 +150,72 @@
 </head>
 <body>
     <div class="header">
-        @php
-            $logoPath = \App\Models\Setting::get('company_logo');
-            $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
-            $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
-            $companyAddress = \App\Models\Setting::get('company_address', '');
-            $companyPhone = \App\Models\Setting::get('company_phone', '');
-            $companyEmail = \App\Models\Setting::get('company_email', '');
-            $companyWebsite = \App\Models\Setting::get('company_website', '');
-            $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
-        @endphp
-        <div style="display: flex; align-items: flex-start;">
-            <div style="margin-right: 20px;">
-                <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
-            </div>
-            <div>
-                <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
-                <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
-                <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
-                <p style="margin: 2px 0; font-size: 9px;">CNPJ: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
-            </div>
-        </div>
-        <div style="margin-top: 15px;">
-            <div class="document-title">{{ __('messages.purchase_order') }}</div>
-            <div>{{ __('messages.order_number') }}: {{ $order->order_number }}</div>
-        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 55%; vertical-align: top; padding-right: 10px;">
+                    @php
+                        $logoPath = \App\Models\Setting::get('company_logo');
+                        $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
+                        $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+                        $companyAddress = \App\Models\Setting::get('company_address', '');
+                        $companyPhone = \App\Models\Setting::get('company_phone', '');
+                        $companyEmail = \App\Models\Setting::get('company_email', '');
+                        $companyWebsite = \App\Models\Setting::get('company_website', '');
+                        $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
+                    @endphp
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="margin-right: 20px; flex-shrink: 0;">
+                            <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+                        </div>
+                        <div>
+                            <h2 style="margin: 0; padding: 0; font-size: 16px;">{{ $companyName }}</h2>
+                            <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                            <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                            <p style="margin: 2px 0; font-size: 9px;">VAT/NIF: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td style="width: 45%; vertical-align: top; padding-left: 10px;">
+                    <h3>{{ __('messages.supplier_info') }}</h3>
+                    <div class="document-info" style="margin-top: 0;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <th style="text-align: left; padding-right: 5px; font-size: 9px; width: 30%;">{{ __('messages.supplier_name') }}:</th>
+                                <td style="font-size: 9px;">{{ $order->supplier->name }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; padding-right: 5px; font-size: 9px;">{{ __('messages.contact_person') }}:</th>
+                                <td style="font-size: 9px;">{{ $order->supplier->contact_person ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; padding-right: 5px; font-size: 9px;">{{ __('messages.address') }}:</th>
+                                <td style="font-size: 9px;">{{ $order->supplier->address ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; padding-right: 5px; font-size: 9px;">{{ __('messages.phone') }}:</th>
+                                <td style="font-size: 9px;">{{ $order->supplier->phone ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; padding-right: 5px; font-size: 9px;">{{ __('messages.email') }}:</th>
+                                <td style="font-size: 9px;">{{ $order->supplier->contact_email ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; padding-right: 5px; font-size: 9px;">{{ __('messages.tax_id') }}:</th>
+                                <td style="font-size: 9px;">{{ $order->supplier->tax_id ?? '-' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+            <tr style="border-top: 1px solid #ddd;">
+                <td colspan="2" style="text-align: center; padding-top: 10px;">
+                    <div class="document-title" style="margin: 0; font-size: 16px;">{{ __('messages.purchase_order') }}</div>
+                    <div style="font-size: 11px;">{{ __('messages.order_number') }}: {{ $order->order_number }}</div>
+                </td>
+            </tr>
+        </table>
     </div>
+
     
     @php
         $isOverdue = false;
@@ -186,35 +232,28 @@
         }
     @endphp
 
-    <div class="document-info">
-        <table>
+    <div class="document-info" style="margin-top: 10px;">
+        <h3>{{ __('messages.order_details') }}</h3>
+        <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
             <tr>
-                <th>{{ __('messages.order_number') }}:</th>
-                <td>{{ $order->order_number }}</td>
-                <th>{{ __('messages.status') }}:</th>
-                <td>
-                    <span class="status-badge status-{{ $order->status }}">
-                        {{ __('messages.status_'.$order->status) }}
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <th>{{ __('messages.supplier') }}:</th>
-                <td>{{ $order->supplier->name }}</td>
-                <th>{{ __('messages.created_by') }}:</th>
-                <td>{{ $order->createdBy ? $order->createdBy->name : '-' }}</td>
-            </tr>
-            <tr>
-                <th>{{ __('messages.order_date') }}:</th>
-                <td>{{ date('d/m/Y', strtotime($order->order_date)) }}</td>
-                <th>{{ __('messages.expected_delivery') }}:</th>
-                <td>
+                <th style="text-align: left; padding-right: 5px; white-space: nowrap;">{{ __('messages.order_date') }}:</th>
+                <td style="padding-right: 15px; white-space: nowrap;">{{ date('d/m/Y', strtotime($order->order_date)) }}</td>
+                
+                <th style="text-align: left; padding-right: 5px; white-space: nowrap;">{{ __('messages.expected_delivery') }}:</th>
+                <td style="padding-right: 15px; white-space: nowrap;">
                     {{ $order->expected_delivery_date ? date('d/m/Y', strtotime($order->expected_delivery_date)) : '-' }}
                     @if($isOverdue)
                         <span style="color: #721c24; font-weight: bold;"> ({{ __('messages.overdue') }})</span>
                     @elseif($isApproaching)
                         <span style="color: #856404; font-weight: bold;"> ({{ __('messages.approaching') }})</span>
                     @endif
+                </td>
+                
+                <th style="text-align: left; padding-right: 5px; white-space: nowrap;">{{ __('messages.status') }}:</th>
+                <td style="white-space: nowrap;">
+                    <span class="status-badge status-{{ $order->status }}" style="font-size: 9px; padding: 2px 4px;">
+                        {{ __('messages.status_'.$order->status) }}
+                    </span>
                 </td>
             </tr>
         </table>
@@ -236,30 +275,6 @@
         <p>{{ $order->notes }}</p>
     </div>
     @endif
-
-    <h3>{{ __('messages.supplier_info') }}</h3>
-    <div class="document-info">
-        <table>
-            <tr>
-                <th>{{ __('messages.supplier_name') }}:</th>
-                <td>{{ $order->supplier->name }}</td>
-                <th>{{ __('messages.contact_person') }}:</th>
-                <td>{{ $order->supplier->contact_person ?? '-' }}</td>
-            </tr>
-            <tr>
-                <th>{{ __('messages.address') }}:</th>
-                <td>{{ $order->supplier->address ?? '-' }}</td>
-                <th>{{ __('messages.phone') }}:</th>
-                <td>{{ $order->supplier->phone ?? '-' }}</td>
-            </tr>
-            <tr>
-                <th>{{ __('messages.email') }}:</th>
-                <td>{{ $order->supplier->contact_email ?? '-' }}</td>
-                <th>{{ __('messages.tax_id') }}:</th>
-                <td>{{ $order->supplier->tax_id ?? '-' }}</td>
-            </tr>
-        </table>
-    </div>
 
     <h3>{{ __('messages.order_items') }}</h3>
     <table class="items-table">

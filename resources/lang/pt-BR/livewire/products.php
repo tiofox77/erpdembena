@@ -109,4 +109,11 @@ return [
     'no_products_found' => 'Nenhum produto encontrado',
     'try_different_search' => 'Tente um termo de busca diferente ou adicione um novo produto',
     'suppliers' => 'Fornecedores',
+    
+    // Product Types
+    'product_type' => 'Tipo de Produto',
+    'all_types' => 'Todos os Tipos',
+    'finished_product' => 'Produto Acabado',
+    'raw_material' => 'Matéria Prima',
+    'others' => 'Outros',
 ];

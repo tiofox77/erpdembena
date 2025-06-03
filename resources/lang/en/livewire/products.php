@@ -17,6 +17,9 @@ return [
     'showing_results' => 'Showing Results',
     'all_statuses' => 'All Statuses',
     'product_list' => 'Product List',
+    'supplier' => 'Supplier',
+    'all_types' => 'All Types',
+    'out_of_stock' => 'Out of Stock',   
     
     // Tabs
     'general_info' => 'General Information',
@@ -57,6 +60,7 @@ return [
     'product_type' => 'Product Type',
     'finished_product' => 'Finished Product',
     'raw_material' => 'Raw Material',
+    'others' => 'Others',
     'primary_supplier' => 'Primary Supplier',
     'tax_type' => 'Tax Type',
     'tax_rate' => 'Tax Rate (%)',

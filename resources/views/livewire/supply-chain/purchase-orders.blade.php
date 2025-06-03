@@ -556,4 +556,99 @@
     @include('livewire.supply-chain.purchase-orders-modals')
     @include('livewire.supply-chain.purchase-orders-modal-view')
     @include('livewire.supply-chain.purchase-orders-modal-shipping')
+    
+    <!-- Script de paginação específico para esta página -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Script de paginação específico carregado');
+            
+            // Função para aplicar valor salvo
+            function applyPerPageValue() {
+                const select = document.getElementById('perPage');
+                const savedValue = localStorage.getItem('erpdembena_per_page');
+                
+                console.log('PO: Select encontrado:', select ? 'Sim' : 'Não');
+                console.log('PO: Valor salvo:', savedValue);
+                
+                if (select && savedValue) {
+                    // Verificar se a opção existe
+                    const optionExists = Array.from(select.options).some(opt => opt.value === savedValue);
+                    
+                    if (optionExists) {
+                        // 1. Diretamente no DOM
+                        select.value = savedValue;
+                        console.log('PO: Valor definido no select:', savedValue);
+                        
+                        // 2. Via Alpine.js se disponível
+                        if (window.Alpine) {
+                            console.log('PO: Alpine.js encontrado, tentando definir valor');
+                            try {
+                                const wireEl = select.closest('[wire\\:id]');
+                                if (wireEl) {
+                                    Alpine.$data(select).$wire.set('perPage', savedValue);
+                                }
+                            } catch(e) {
+                                console.error('PO: Erro ao definir via Alpine:', e);
+                            }
+                        }
+                        
+                        // 3. Via Livewire diretamente
+                        try {
+                            const wireEl = select.closest('[wire\\:id]');
+                            if (wireEl) {
+                                const wireId = wireEl.getAttribute('wire:id');
+                                console.log('PO: Componente Livewire encontrado:', wireId);
+                                
+                                if (window.Livewire) {
+                                    console.log('PO: Atualizando via Livewire 3');
+                                    window.Livewire.find(wireId).$wire.set('perPage', savedValue);
+                                } else if (window.livewire) {
+                                    console.log('PO: Atualizando via Livewire 2');
+                                    window.livewire.find(wireId).set('perPage', savedValue);
+                                }
+                            }
+                        } catch(e) {
+                            console.error('PO: Erro ao definir via Livewire:', e);
+                        }
+                        
+                        // 4. Simulando evento de mudança
+                        try {
+                            console.log('PO: Disparando evento de mudança');
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        } catch(e) {
+                            console.error('PO: Erro ao disparar evento:', e);
+                        }
+                    }
+                }
+            }
+            
+            // Salvar valor quando mudar
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'perPage') {
+                    console.log('PO: Salvando valor:', e.target.value);
+                    localStorage.setItem('erpdembena_per_page', e.target.value);
+                }
+            });
+            
+            // Aplicar valor salvo em diferentes momentos
+            applyPerPageValue(); // Imediatamente
+            setTimeout(applyPerPageValue, 500); // Após 500ms
+            setTimeout(applyPerPageValue, 1000); // Após 1s
+            
+            // Quando o Livewire terminar de processar
+            if (window.Livewire) {
+                window.Livewire.hook('message.processed', function() {
+                    console.log('PO: Livewire processou mensagem, tentando aplicar valor');
+                    setTimeout(applyPerPageValue, 100);
+                });
+            }
+            
+            // Observar mudanças no DOM
+            const observer = new MutationObserver(function() {
+                setTimeout(applyPerPageValue, 100);
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
 </div>

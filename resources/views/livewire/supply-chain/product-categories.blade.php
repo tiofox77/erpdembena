@@ -26,7 +26,7 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
                             </div>
-                            <input wire:model.debounce.300ms="search" id="search" 
+                            <input wire:model.live.debounce.300ms="search" id="search" 
                                 class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out" 
                                 placeholder="{{ __('livewire/product-categories.search_categories') }}" 
                                 type="search">
@@ -38,7 +38,7 @@
                                 <i class="fas fa-list-ol text-gray-500 mr-1"></i>
                                 {{ __('livewire/layout.per_page') }}
                             </label>
-                            <select wire:model="perPage" id="perPage" 
+                            <select wire:model.live="perPage" id="perPage" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="10">10</option>
                                 <option value="25">25</option>

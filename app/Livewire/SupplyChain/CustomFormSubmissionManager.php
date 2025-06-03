@@ -37,85 +37,83 @@ class CustomFormSubmissionManager extends Component
     ];
     
     /**
-     * Atualiza o formData quando um checkbox é alterado via JavaScript
-     * 
-     * @param string $fieldName
-     * @param string $jsonValue
-     * @return void
+     * Manipula a atualização de um checkbox via JavaScript
+     *
+     * @param string $fieldName Nome do campo
+     * @param mixed $value Valor do checkbox
      */
-    public function handleUpdatedCheckbox($fieldName, $jsonValue)
+    public function handleUpdatedCheckbox($fieldName, $value)
     {
         try {
-            logger()->debug('Atualizando checkbox via Livewire', [
-                'field' => $fieldName,
-                'raw_value' => $jsonValue
+            logger()->debug('handleUpdatedCheckbox chamado:', [
+                'fieldName' => $fieldName,
+                'value' => $value,
+                'type' => gettype($value)
             ]);
             
-            // Verificar se o campo existe no formulário
-            if (!isset($this->formData[$fieldName])) {
-                logger()->warning('Campo não encontrado no formData', ['field' => $fieldName]);
-                return;
-            }
-            
-            // Decodificar o JSON para garantir que é válido
-            $decodedValue = null;
-            if (!empty($jsonValue) && $jsonValue !== 'null') {
-                $decodedValue = json_decode($jsonValue, true);
-                
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    logger()->error('Erro ao decodificar valor do checkbox', [
-                        'field' => $fieldName,
-                        'value' => $jsonValue,
-                        'error' => json_last_error_msg()
-                    ]);
-                    return;
-                }
-                
-                // Se for um array, garantir que os valores sejam booleanos
-                if (is_array($decodedValue)) {
-                    $normalizedValues = [];
-                    foreach ($decodedValue as $key => $value) {
-                        $normalizedValues[$key] = $this->normalizeCheckboxValue($value);
+            // Se for string JSON, decodificar
+            if (is_string($value) && $this->isJson($value)) {
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // Filtrar apenas valores true para garantir consistência
+                    $filteredValues = [];
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $key => $val) {
+                            if ($this->normalizeCheckboxValue($val)) {
+                                $filteredValues[$key] = true; // Sempre true para selecionados
+                            }
+                        }
                     }
-                    $decodedValue = $normalizedValues;
+                    
+                    // Atualizar formData com string JSON ou objeto vazio
+                    $this->formData[$fieldName] = !empty($filteredValues) ? json_encode($filteredValues) : '{}';
                 } else {
-                    // Para valores únicos, normalizar para booleano
-                    $decodedValue = $this->normalizeCheckboxValue($decodedValue);
+                    logger()->error('Erro no JSON decode:', ['value' => $value, 'error' => json_last_error_msg()]);
+                    $this->formData[$fieldName] = '{}';
                 }
-            } else {
-                // Se o valor for nulo ou vazio, definir como falso para checkbox simples ou array vazio para múltiplos
-                $decodedValue = is_array($this->formData[$fieldName]) ? [] : false;
+            } 
+            // Se for array ou objeto, processar diretamente
+            elseif (is_array($value) || is_object($value)) {
+                $array = is_object($value) ? (array)$value : $value;
+                $filteredValues = [];
+                foreach ($array as $key => $val) {
+                    if ($this->normalizeCheckboxValue($val)) {
+                        $filteredValues[$key] = true; // Sempre true para selecionados
+                    }
+                }
+                $this->formData[$fieldName] = !empty($filteredValues) ? json_encode($filteredValues) : '{}';
+            } 
+            // Para valores simples (checkbox único)
+            else {
+                $this->formData[$fieldName] = $this->normalizeCheckboxValue($value);
             }
             
-            // Atualizar o formData com o novo valor
-            $this->formData[$fieldName] = $decodedValue;
-            
-            logger()->debug('Checkbox atualizado com sucesso', [
+            // Emitir evento para atualizar a UI
+            $this->dispatch('checkbox-updated', [
                 'field' => $fieldName,
-                'normalized_value' => $decodedValue,
-                'raw_value' => $jsonValue
+                'value' => $this->formData[$fieldName]
             ]);
             
-            // Disparar evento para atualizar a UI se necessário
-            $this->dispatch('checkbox-updated', 
-                field: $fieldName, 
-                value: $decodedValue
-            );
+            logger()->debug('Checkbox atualizado com sucesso:', [
+                'fieldName' => $fieldName,
+                'finalValue' => $this->formData[$fieldName]
+            ]);
             
         } catch (\Exception $e) {
-            logger()->error('Erro ao processar atualização de checkbox', [
-                'field' => $fieldName,
-                'value' => $jsonValue,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            logger()->error('Erro ao processar checkbox:', [
+                'fieldName' => $fieldName,
+                'value' => $value,
+                'error' => $e->getMessage()
             ]);
             
-            // Disparar notificação de erro para o usuário
-            $this->dispatch('notify', 
-                type: 'error',
-                title: 'Erro',
-                message: 'Ocorreu um erro ao atualizar o campo. Por favor, tente novamente.'
-            );
+            // Garantir que o campo tenha um valor válido em caso de erro
+            $this->formData[$fieldName] = '{}';
+            
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'title' => 'Erro',
+                'message' => 'Erro ao atualizar campo checkbox. Por favor, tente novamente.'
+            ]);
         }
     }
     
@@ -128,37 +126,18 @@ class CustomFormSubmissionManager extends Component
      */
     public function openFormSubmission($shippingNoteId, $customFormId)
     {
-        // Log de criação do modal de shipping note
-        logger()->info('Criando modal de shipping note', [
-            'shippingNoteId' => $shippingNoteId,
-            'customFormId' => $customFormId,
-            'user_id' => auth()->id() ?? 'não autenticado'
-        ]);
-        
         $this->reset('formData', 'fileUploads');
-        
         $this->shippingNoteId = $shippingNoteId;
         $this->customFormId = $customFormId;
         
-        // Verificar se o formulário existe
         $form = CustomForm::findOrFail($customFormId);
-        
-        // Verificar se existe uma submissão anterior para preencher o formulário
         $existingSubmission = CustomFormSubmission::where('form_id', $customFormId)
             ->where('shipping_note_id', $shippingNoteId)
             ->latest()
             ->first();
         
-        // Inicializar os campos do formulário
         foreach ($form->fields as $field) {
-            // Verificar se o campo tem configuração de relacionamento, independente do tipo declarado
-            $hasRelationshipConfig = !empty($field->relationship_config['model']);
-            $isRelationshipField = $field->type === 'relationship' || $hasRelationshipConfig;
-            
-            // Valor padrão para o campo
             $defaultValue = '';
-            
-            // Se temos uma submissão existente, tentar recuperar o valor
             if ($existingSubmission) {
                 $existingValue = $this->getFieldValueFromSubmission($existingSubmission, $field);
                 if ($existingValue !== null) {
@@ -166,29 +145,37 @@ class CustomFormSubmissionManager extends Component
                 }
             }
             
-            if ($isRelationshipField) {
-                // Se tem configuração de relacionamento mas não é do tipo relationship, logamos a conversão
-                if ($hasRelationshipConfig && $field->type !== 'relationship') {
-                    logger()->info('Campo ' . $field->name . ' tem configuração de relacionamento mas não é do tipo relationship. Tratando como relacionamento.');
-                }
-                
-                // Determinar se é um relacionamento de múltiplos valores ou valor único
-                $isHasMany = ($field->relationship_config['relationship_type'] ?? 'belongsTo') === 'hasMany';
-                $this->formData[$field->name] = $isHasMany ? [] : $defaultValue;
-            } else if ($field->type === 'file') {
-                $this->formData[$field->name] = $defaultValue;
-                $this->fileUploads[$field->name] = null;
-            } else if ($field->type === 'checkbox') {
-                // Para checkboxes, garantir que o valor seja tratado corretamente
+            if ($field->type === 'checkbox') {
                 if (!empty($field->options)) {
-                    // Checkbox múltiplo
-                    if (empty($defaultValue)) {
-                        $this->formData[$field->name] = new \stdClass();
+                    // Checkbox múltiplo - garantir que seja um objeto/array com apenas valores true
+                    if (empty($defaultValue) || $defaultValue === '{}' || $defaultValue === '[]') {
+                        $this->formData[$field->name] = '{}'; // String JSON vazia
                     } elseif (is_string($defaultValue) && $this->isJson($defaultValue)) {
-                        // Se for uma string JSON, decodificar para objeto
-                        $this->formData[$field->name] = json_decode($defaultValue);
+                        // Se for JSON válido, decodificar e filtrar apenas valores true
+                        $decoded = json_decode($defaultValue, true);
+                        if (is_array($decoded)) {
+                            $filteredValues = [];
+                            foreach ($decoded as $key => $value) {
+                                if ($this->normalizeCheckboxValue($value)) {
+                                    $filteredValues[$key] = true; // Sempre true para selecionados
+                                }
+                            }
+                            $this->formData[$field->name] = !empty($filteredValues) ? json_encode($filteredValues) : '{}';
+                        } else {
+                            $this->formData[$field->name] = '{}';
+                        }
+                    } elseif (is_array($defaultValue) || is_object($defaultValue)) {
+                        // Se for array/objeto, processar e filtrar
+                        $array = is_object($defaultValue) ? (array)$defaultValue : $defaultValue;
+                        $filteredValues = [];
+                        foreach ($array as $key => $value) {
+                            if ($this->normalizeCheckboxValue($value)) {
+                                $filteredValues[$key] = true; // Sempre true para selecionados
+                            }
+                        }
+                        $this->formData[$field->name] = !empty($filteredValues) ? json_encode($filteredValues) : '{}';
                     } else {
-                        $this->formData[$field->name] = $defaultValue;
+                        $this->formData[$field->name] = '{}';
                     }
                 } else {
                     // Checkbox simples
@@ -199,13 +186,13 @@ class CustomFormSubmissionManager extends Component
             }
         }
         
-        $this->showFormModal = true;
-    
-        // Log quando o modal é exibido
-        logger()->info('Modal de shipping note foi criado com sucesso', [
-            'shippingNoteId' => $this->shippingNoteId,
-            'customFormId' => $this->customFormId
+        logger()->debug('Form data inicializado:', [
+            'shipping_note_id' => $shippingNoteId,
+            'form_id' => $customFormId,
+            'formData' => $this->formData
         ]);
+        
+        $this->showFormModal = true;
     }
     
     /**
@@ -400,66 +387,50 @@ class CustomFormSubmissionManager extends Component
                         
                         // Se o valor for uma string JSON, decodificar primeiro
                         if (is_string($fieldValue) && $this->isJson($fieldValue)) {
-                            $fieldValue = json_decode($fieldValue, true);
-                            logger()->debug('Valor JSON decodificado', [
-                                'field' => $fieldName,
-                                'decoded' => $fieldValue
-                            ]);
-                        } elseif ($fieldValue === null || $fieldValue === '') {
-                            // Se o valor for nulo ou vazio, inicializar como array vazio
-                            $fieldValue = [];
-                        }
-                        
-                        // Se for array ou objeto, processar cada item
-                        if (is_array($fieldValue) || is_object($fieldValue)) {
-                            // Inicializar array para valores limpos
-                            $cleanedValues = [];
-                            
-                            // Processar cada opção disponível
-                            foreach ($field->options as $option) {
-                                $optionKey = $option['value'];
-                                $isChecked = false;
-                                
-                                // Verificar se a opção está marcada nos valores fornecidos
-                                if (is_array($fieldValue) && array_key_exists($optionKey, $fieldValue)) {
-                                    $isChecked = $this->normalizeCheckboxValue($fieldValue[$optionKey]);
-                                } elseif (is_object($fieldValue) && property_exists($fieldValue, $optionKey)) {
-                                    $isChecked = $this->normalizeCheckboxValue($fieldValue->$optionKey);
-                                }
-                                
-                                // Adicionar apenas se estiver marcado
-                                if ($isChecked) {
-                                    $cleanedValues[$optionKey] = true;
+                            $decodedValue = json_decode($fieldValue, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decodedValue)) {
+                                // Filtrar apenas valores true
+                                foreach ($decodedValue as $key => $value) {
+                                    if ($this->normalizeCheckboxValue($value)) {
+                                        $cleanedValues[$key] = true;
+                                    }
                                 }
                             }
-                            
-                            // Se não houver valores selecionados, retornar objeto vazio
-                            $fieldValue = empty($cleanedValues) ? '{}' : json_encode($cleanedValues);
-                            
-                            logger()->debug('Checkbox múltiplo processado', [
+                            logger()->debug('Valor JSON decodificado e filtrado', [
                                 'field' => $fieldName,
-                                'cleaned_values' => $cleanedValues,
-                                'final_value' => $fieldValue
+                                'decoded' => $decodedValue,
+                                'cleaned' => $cleanedValues
                             ]);
-                        } else {
-                            // Se não for array/objeto, inicializar com objeto vazio
-                            $fieldValue = '{}';
-                            logger()->debug('Valor inválido para checkbox múltiplo, usando objeto vazio', [
-                                'field' => $fieldName,
-                                'value' => $fieldValue
-                            ]);
+                        } elseif ($fieldValue === null || $fieldValue === '' || $fieldValue === '{}') {
+                            // Se o valor for nulo, vazio ou objeto JSON vazio, não há valores selecionados
+                            $cleanedValues = [];
+                        } elseif (is_array($fieldValue) || is_object($fieldValue)) {
+                            // Se for array ou objeto, processar diretamente
+                            $array = is_object($fieldValue) ? (array)$fieldValue : $fieldValue;
+                            foreach ($array as $key => $value) {
+                                if ($this->normalizeCheckboxValue($value)) {
+                                    $cleanedValues[$key] = true;
+                                }
+                            }
                         }
-                    } 
-                    // Checkbox simples
-                    else {
+                        
+                        // Salvar como JSON (objeto vazio se nenhuma opção selecionada)
+                        $fieldValue = empty($cleanedValues) ? '{}' : json_encode($cleanedValues);
+                        
+                        logger()->debug('Checkbox múltiplo processado', [
+                            'field' => $fieldName,
+                            'cleaned_values' => $cleanedValues,
+                            'final_json' => $fieldValue
+                        ]);
+                    } else {
+                        // Checkbox simples - normalizar para string 'true' ou 'false'
                         $isChecked = $this->normalizeCheckboxValue($fieldValue);
                         $fieldValue = $isChecked ? 'true' : 'false';
                         
                         logger()->debug('Checkbox simples processado', [
                             'field' => $fieldName,
-                            'raw_value' => $fieldValue,
-                            'is_checked' => $isChecked,
-                            'final_value' => $fieldValue
+                            'normalized_value' => $isChecked,
+                            'stored_value' => $fieldValue
                         ]);
                     }
                 }

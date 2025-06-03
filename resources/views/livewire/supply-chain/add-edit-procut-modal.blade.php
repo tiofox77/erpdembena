@@ -123,6 +123,7 @@
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm">
                                                     <option value="finished_product">{{ __('livewire/products.finished_product') }}</option>
                                                     <option value="raw_material">{{ __('livewire/products.raw_material') }}</option>
+                                                    <option value="others">{{ __('livewire/products.others') }}</option>
                                                 </select>
                                                 @error('product_type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                                             </div>

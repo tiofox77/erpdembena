@@ -30,6 +30,9 @@
     <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script src="{{ asset('js/toastr.min.js') }}"></script>
     
+    <!-- Script para memória de paginação -->
+    <script src="{{ asset('js/pagination-memory.js') }}"></script>
+    
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 

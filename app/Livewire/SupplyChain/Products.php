@@ -108,7 +108,7 @@ class Products extends Component
             'lead_time_days' => 'required|integer|min:0',
             'is_stockable' => 'boolean',
             'is_active' => 'boolean',
-            'product_type' => 'required|in:finished_product,raw_material',
+            'product_type' => 'required|in:finished_product,raw_material,others',
             'primary_supplier_id' => 'nullable|exists:sc_suppliers,id',
             'tax_type' => 'required|in:standard,reduced,exempt',
             'tax_rate' => 'required|numeric|min:0|max:100',

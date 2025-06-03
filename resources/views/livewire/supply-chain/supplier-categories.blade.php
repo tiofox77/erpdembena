@@ -67,11 +67,13 @@
                 </div>
                 
                 <div class="flex justify-end mt-4">
-                    <button wire:click="clearFilters" 
-                        class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                        <i class="fas fa-redo-alt mr-2"></i>
-                        <span wire:loading.remove wire:target="clearFilters">{{ __('supplier.reset_filters') }}</span>
-                        <span wire:loading wire:target="clearFilters">
+                    <button wire:click="resetFilters" 
+                        class="inline-flex items-center px-3 py-2 bg-gray-200 hover:bg-gray-300 border border-transparent rounded-md text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                        <span wire:loading.remove wire:target="resetFilters">
+                            <i class="fas fa-redo-alt mr-2"></i>
+                            {{ __('livewire/layout.reset') }}
+                        </span>
+                        <span wire:loading wire:target="resetFilters">
                             <i class="fas fa-spinner fa-spin mr-1"></i> {{ __('supplier.clearing') }}...
                         </span>
                     </button>

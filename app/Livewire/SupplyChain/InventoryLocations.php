@@ -32,6 +32,8 @@ class InventoryLocations extends Component
     public $perPage = 10;
     public $sortField = 'name';
     public $sortDirection = 'asc';
+    public $statusFilter = ''; // Filtro de status (ativo/inativo)
+    public $typeFilter = ''; // Filtro de tipo (raw_material_warehouse)
     public $showModal = false;
     public $showConfirmDelete = false;
     public $showViewModal = false;
@@ -216,7 +218,7 @@ class InventoryLocations extends Component
 
     public function resetFilters()
     {
-        $this->reset(['search', 'sortField', 'sortDirection']);
+        $this->reset(['search', 'sortField', 'sortDirection', 'statusFilter', 'typeFilter']);
         $this->sortField = 'name';
         $this->sortDirection = 'asc';
         $this->resetPage();
@@ -283,6 +285,7 @@ class InventoryLocations extends Component
     {
         $query = InventoryLocation::query();
         
+        // Aplicar filtro de busca
         if (!empty($this->search)) {
             $query->where(function ($q) {
                 $q->where('name', 'like', '%' . $this->search . '%')
@@ -290,6 +293,20 @@ class InventoryLocations extends Component
                   ->orWhere('city', 'like', '%' . $this->search . '%')
                   ->orWhere('manager', 'like', '%' . $this->search . '%');
             });
+        }
+        
+        // Aplicar filtro de status
+        if ($this->statusFilter !== '') {
+            $query->where('is_active', $this->statusFilter == 'active');
+        }
+        
+        // Aplicar filtro de tipo
+        if ($this->typeFilter !== '') {
+            if ($this->typeFilter == 'raw_material') {
+                $query->where('is_raw_material_warehouse', true);
+            } else if ($this->typeFilter == 'normal') {
+                $query->where('is_raw_material_warehouse', false);
+            }
         }
         
         $locations = $query->withCount('inventoryItems')
