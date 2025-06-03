@@ -1,6 +1,11 @@
 <?php
 
 return [
+    // Traduções para o filtro de formulários personalizados
+    'custom_forms' => 'Formulários Personalizados',
+    'all_forms' => 'Todos os Formulários',
+    'form_status' => 'Status do Formulário',
+    'all_statuses' => 'Todos os Status',
     // Recursos de validação e ajuda do formulário
     'please_fix_errors' => 'Por favor, corrija os erros no formulário antes de enviar.',
     'resource_name_help' => 'Digite um nome claro e único para o recurso.',

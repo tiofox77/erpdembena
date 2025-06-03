@@ -163,16 +163,6 @@
                                     title="Generate PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </button>
-                                <button wire:click="editStockOut({{ $stockOut->id }})" 
-                                    class="text-indigo-600 hover:text-indigo-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-indigo-100"
-                                    title="Edit Stock Out">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button wire:click="confirmDelete({{ $stockOut->id }})" 
-                                    class="text-red-600 hover:text-red-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-100"
-                                    title="Delete Stock Out">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>

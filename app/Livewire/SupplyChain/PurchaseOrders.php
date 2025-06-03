@@ -10,6 +10,8 @@ use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\PurchaseOrder;
 use App\Models\SupplyChain\PurchaseOrderItem;
 use App\Models\SupplyChain\ShippingNote;
+use App\Models\SupplyChain\CustomForm;
+use App\Models\SupplyChain\CustomFormSubmission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +31,8 @@ class PurchaseOrders extends Component
     public $monthFilter = ''; // Filtro por mês (1-12)
     public $yearFilter = ''; // Filtro por ano
     public $dateField = 'order_date'; // Campo de data a ser filtrado (order_date, expected_delivery_date, etc)
+    public $customFormFilter = ''; // Filtro por formulário personalizado
+    public $customFormStatusFilter = ''; // Filtro por status de formulário personalizado
     public $sortField = 'order_date';
     public $sortDirection = 'desc';
     
@@ -122,6 +126,16 @@ class PurchaseOrders extends Component
     {
         $this->resetPage();
     }
+    
+    public function updatingCustomFormFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingCustomFormStatusFilter()
+    {
+        $this->resetPage();
+    }
 
     public function updatingPerPage()
     {
@@ -137,6 +151,8 @@ class PurchaseOrders extends Component
         $this->monthFilter = '';
         $this->yearFilter = '';
         $this->dateField = 'order_date';
+        $this->customFormFilter = '';
+        $this->customFormStatusFilter = '';
         $this->perPage = 10;
         $this->resetPage();
     }
@@ -182,6 +198,43 @@ class PurchaseOrders extends Component
             })
             ->when($this->supplierFilter, function($query) {
                 return $query->where('supplier_id', $this->supplierFilter);
+            })
+            ->when($this->customFormFilter, function($query) {
+                $query = $query->whereHas('shippingNotes', function($q) {
+                    $q->where('custom_form_id', $this->customFormFilter);
+                });
+                
+                // Se tiver filtro de status, aplicar um filtro adicional
+                if ($this->customFormStatusFilter) {
+                    // Obter o ID do campo configurado como campo de status
+                    $statusFieldId = DB::table('sc_custom_forms')
+                        ->where('id', $this->customFormFilter)
+                        ->whereRaw('JSON_EXTRACT(status_display_config, "$.enabled") = true')
+                        ->value(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(status_display_config, "$.field_id"))'));
+                    
+                    if ($statusFieldId) {
+                        // Obter IDs das shipping notes que têm o status selecionado
+                        $shippingNoteIds = DB::table('sc_custom_form_submissions as s')
+                            ->join('sc_custom_form_field_values as v', 's.id', '=', 'v.submission_id')
+                            ->where('s.form_id', $this->customFormFilter)
+                            ->where('v.field_id', $statusFieldId)
+                            ->where('v.value', $this->customFormStatusFilter)
+                            ->pluck('s.entity_id')
+                            ->toArray();
+                        
+                        // Filtrar purchase orders que tenham shipping notes com os IDs filtrados
+                        if (!empty($shippingNoteIds)) {
+                            $query->whereHas('shippingNotes', function($q) use ($shippingNoteIds) {
+                                $q->whereIn('id', $shippingNoteIds);
+                            });
+                        } else {
+                            // Se não encontrar nenhum registro com este status, força retornar vazio
+                            $query->whereRaw('1 = 0');
+                        }
+                    }
+                }
+                
+                return $query;
             })
             ->orderBy($this->sortField, $this->sortDirection);
         
