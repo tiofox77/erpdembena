@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class FailureCause extends Model
+{
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'category_id',
+        'name',
+        'description',
+        'is_active'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Get the category that this failure cause belongs to.
+     */
+    public function category()
+    {
+        return $this->belongsTo(FailureCauseCategory::class, 'category_id');
+    }
+
+    /**
+     * Get the corrective maintenance records associated with this failure cause.
+     */
+    public function correctiveMaintenances()
+    {
+        return $this->hasMany(MaintenanceCorrective::class, 'failure_cause_id');
+    }
+
+    /**
+     * Scope a query to only include active failure causes.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+}

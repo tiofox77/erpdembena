@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Processamento de Folha de Pagamento - ERPDEMBENA</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .toc-link {
+            display: block;
+            padding: 0.5rem;
+            color: #4a5568;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+        }
+        .toc-link:hover {
+            background-color: #f7fafc;
+            color: #4299e1;
+        }
+        .toc-link.active {
+            border-left-color: #4299e1;
+            color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #4299e1;
+            color: white;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(to right, #e2e8f0, #4299e1, #e2e8f0);
+            margin: 2rem 0;
+        }
+        .note-box {
+            background-color: #ebf8ff;
+            border-left: 4px solid #4299e1;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.25rem;
+        }
+        .warning-box {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.25rem;
+        }
+        img {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.25rem;
+            max-width: 100%;
+        }
+        img.screenshot {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">
+                <i class="fas fa-file-invoice-dollar text-blue-500 mr-2"></i>
+                Manual de Processamento de Folha de Pagamento
+            </h1>
+            <a href="../" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-arrow-left mr-2"></i> Voltar ao Sistema
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+            <!-- Sumário -->
+            <div class="lg:col-span-3">
+                <div class="sticky top-6 bg-white p-4 rounded-lg shadow">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-900">Sumário</h2>
+                    <nav class="toc">
+                        <a href="#introducao" class="toc-link">1. Introdução</a>
+                        <a href="#conceitos-basicos" class="toc-link">2. Conceitos Básicos</a>
+                        <a href="#periodos-pagamento" class="toc-link">3. Períodos de Pagamento</a>
+                        <a href="#itens-folha" class="toc-link">4. Itens da Folha</a>
+                        <a href="#processamento" class="toc-link">5. Processamento da Folha</a>
+                        <a href="#aprovacao" class="toc-link">6. Aprovação e Fechamento</a>
+                        <a href="#relatorios" class="toc-link">7. Relatórios</a>
+                        <a href="#dicas" class="toc-link">8. Dicas e Melhores Práticas</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Conteúdo principal -->
+            <div class="lg:col-span-9 mt-8 lg:mt-0">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <section id="introducao" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">1. Introdução</h2>
+                        <p class="mb-4">
+                            Este manual tem como objetivo orientar os usuários do sistema ERPDEMBENA sobre como realizar o processamento de folha de pagamento de forma eficiente e precisa. Processamento de folha é uma tarefa crítica que requer atenção aos detalhes e compreensão de todos os elementos envolvidos.
+                        </p>
+                        <p class="mb-4">
+                            A folha de pagamento no sistema ERPDEMBENA foi desenvolvida para facilitar todo o ciclo, desde a definição de períodos de pagamento, cadastro de itens (como salários, bônus e descontos), até o processamento final e geração de relatórios.
+                        </p>
+                        <div class="note-box">
+                            <p class="font-medium"><i class="fas fa-info-circle text-blue-500 mr-1"></i> Importante:</p>
+                            <p>Antes de iniciar o processamento da folha, certifique-se de que todos os dados de funcionários estão atualizados no sistema, incluindo informações bancárias e de situação contratual.</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="conceitos-basicos" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">2. Conceitos Básicos</h2>
+                        <p class="mb-4">
+                            Antes de iniciar o processamento da folha, é importante compreender alguns conceitos fundamentais:
+                        </p>
+                        <div class="grid md:grid-cols-2 gap-6 mt-6">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-blue-700 mb-2"><i class="fas fa-calendar-alt mr-2"></i>Período de Pagamento</h3>
+                                <p>Intervalo de tempo sobre o qual a folha é calculada, geralmente mensal.</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-blue-700 mb-2"><i class="fas fa-list-alt mr-2"></i>Itens da Folha</h3>
+                                <p>Elementos que compõem a remuneração, como salário base, bônus, horas extras e descontos.</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-blue-700 mb-2"><i class="fas fa-calculator mr-2"></i>Processamento</h3>
+                                <p>Cálculo de todos os valores devidos ao funcionário e aplicação de impostos.</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-blue-700 mb-2"><i class="fas fa-file-invoice mr-2"></i>Relatórios</h3>
+                                <p>Documentos gerados para consulta e comprovação dos pagamentos realizados.</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">Fluxo de Trabalho</h3>
+                        <p class="mb-4">
+                            O processo de folha de pagamento segue tipicamente este fluxo:
+                        </p>
+                        <ol class="list-decimal pl-6 space-y-2 mb-4">
+                            <li>Configuração do período de pagamento</li>
+                            <li>Cadastro ou atualização de itens de folha</li>
+                            <li>Processamento da folha para cada funcionário</li>
+                            <li>Revisão e aprovação dos valores</li>
+                            <li>Geração de relatórios e comprovantes</li>
+                            <li>Fechamento do período</li>
+                        </ol>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="periodos-pagamento" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">3. Períodos de Pagamento</h2>
+                        <p class="mb-4">
+                            Os períodos de pagamento definem o intervalo para o qual a folha será processada. É essencial configurar corretamente estes períodos antes de iniciar o processamento.
+                        </p>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">3.1 Acessando Períodos de Pagamento</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> No menu lateral, acesse <strong>"Human Resources" > "Payroll Periods"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Você verá a lista de períodos já cadastrados no sistema</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">3.2 Criando um Novo Período</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> Clique no botão <strong>"New Period"</strong> no canto superior direito</p>
+                            <p class="mb-2"><span class="step-number">2</span> Preencha os campos do formulário:</p>
+                            <ul class="list-disc pl-10 space-y-2 mb-4">
+                                <li><strong>Name:</strong> Nome do período (ex: "Abril 2025")</li>
+                                <li><strong>Start Date:</strong> Data inicial do período</li>
+                                <li><strong>End Date:</strong> Data final do período</li>
+                                <li><strong>Payment Date:</strong> Data prevista para pagamento</li>
+                                <li><strong>Status:</strong> Status inicial do período (normalmente "Open")</li>
+                                <li><strong>Remarks:</strong> Observações adicionais (opcional)</li>
+                            </ul>
+                            <p class="mb-2"><span class="step-number">3</span> Clique em <strong>"Save"</strong> para criar o período</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">3.3 Gerenciando Períodos</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Cada período pode estar em um dos seguintes estados:</p>
+                            <ul class="list-disc pl-10 space-y-2 mb-4">
+                                <li><strong>Open:</strong> Período aberto para inclusão de itens e processamento</li>
+                                <li><strong>Processing:</strong> Folha está sendo processada, validações estão em andamento</li>
+                                <li><strong>Closed:</strong> Período encerrado após pagamento, não permite mais alterações</li>
+                            </ul>
+                            <p class="mb-2">Para editar um período, clique no ícone de lápis <i class="fas fa-edit text-blue-500"></i> na coluna de ações.</p>
+                        </div>
+
+                        <div class="warning-box">
+                            <p class="font-medium"><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i> Atenção:</p>
+                            <p>Um período marcado como "Closed" não pode mais receber novas entradas ou modificações. Certifique-se de que todos os dados estão corretos antes de fechar um período.</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="itens-folha" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">4. Itens da Folha</h2>
+                        <p class="mb-4">
+                            Os itens da folha de pagamento incluem todos os valores que compõem a remuneração dos funcionários, incluindo salários, bônus, horas extras, bem como deduções e impostos.
+                        </p>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">4.1 Acessando Itens da Folha</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> No menu lateral, acesse <strong>"Human Resources" > "Payroll Items"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Você verá a lista de itens já cadastrados, com filtros por tipo e período</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">4.2 Criando um Novo Item</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> Clique no botão <strong>"New Item"</strong> no canto superior direito</p>
+                            <p class="mb-2"><span class="step-number">2</span> Preencha os campos do formulário:</p>
+                            <ul class="list-disc pl-10 space-y-2 mb-4">
+                                <li><strong>Payroll:</strong> Selecione o funcionário e período ao qual o item se aplica</li>
+                                <li><strong>Type:</strong> Tipo do item (listado abaixo)</li>
+                                <li><strong>Description:</strong> Descrição detalhada do item</li>
+                                <li><strong>Amount:</strong> Valor do item</li>
+                                <li><strong>Is Taxable:</strong> Marque se o item deve ser considerado para cálculo de impostos</li>
+                            </ul>
+                            <p class="mb-2"><span class="step-number">3</span> Clique em <strong>"Save"</strong> para criar o item</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">4.3 Tipos de Itens</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">O sistema permite os seguintes tipos de itens:</p>
+                            <div class="overflow-x-auto mt-4">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exemplo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Allowance</span></td>
+                                            <td class="px-6 py-4">Subsídios ou abonos adicionais</td>
+                                            <td class="px-6 py-4">Auxílio transporte, auxílio alimentação</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Bonus</span></td>
+                                            <td class="px-6 py-4">Pagamentos extras por desempenho</td>
+                                            <td class="px-6 py-4">Bônus anual, premiação por metas</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">Overtime</span></td>
+                                            <td class="px-6 py-4">Horas extras trabalhadas</td>
+                                            <td class="px-6 py-4">Horas extras a 50%, horas extras a 100%</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Deduction</span></td>
+                                            <td class="px-6 py-4">Descontos diversos</td>
+                                            <td class="px-6 py-4">Adiantamentos, faltas, danos a equipamentos</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Tax</span></td>
+                                            <td class="px-6 py-4">Impostos sobre o salário</td>
+                                            <td class="px-6 py-4">IRRF, impostos locais</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Social Security</span></td>
+                                            <td class="px-6 py-4">Contribuições para seguridade social</td>
+                                            <td class="px-6 py-4">INSS, previdência complementar</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="note-box">
+                            <p class="font-medium"><i class="fas fa-info-circle text-blue-500 mr-1"></i> Dica:</p>
+                            <p>Utilize a opção "Is Taxable" apenas para itens que devem ser incluídos no cálculo de impostos. Itens como reembolsos normalmente não são tributáveis.</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="processamento" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">5. Processamento da Folha</h2>
+                        <p class="mb-4">
+                            Após configurar os períodos e cadastrar os itens, é hora de processar a folha de pagamento para cada funcionário.
+                        </p>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">5.1 Acessando o Processamento</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> No menu lateral, acesse <strong>"Human Resources" > "Payroll Processing"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Selecione o período de pagamento que deseja processar</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">5.2 Iniciando um Novo Processamento</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> Clique no botão <strong>"New Payroll"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Selecione o funcionário para o qual deseja processar a folha</p>
+                            <p class="mb-2"><span class="step-number">3</span> Escolha o período de pagamento correspondente</p>
+                            <p class="mb-2"><span class="step-number">4</span> O sistema carregará automaticamente o salário base do funcionário</p>
+                            <p class="mb-2"><span class="step-number">5</span> Adicione outros itens necessários (bônus, horas extras, etc.)</p>
+                            <p class="mb-2"><span class="step-number">6</span> O sistema calculará automaticamente os impostos baseados nos itens tributáveis</p>
+                            <p class="mb-2"><span class="step-number">7</span> Verifique o valor líquido calculado e clique em <strong>"Save"</strong></p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">5.3 Processamento em Lote</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Para processar múltiplos funcionários de uma vez:</p>
+                            <p class="mb-2"><span class="step-number">1</span> Na tela principal de processamento, clique em <strong>"Batch Processing"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Selecione o período e o departamento (opcional)</p>
+                            <p class="mb-2"><span class="step-number">3</span> Marque os funcionários que deseja incluir no processamento</p>
+                            <p class="mb-2"><span class="step-number">4</span> Clique em <strong>"Process Selected"</strong></p>
+                            <p class="mb-2"><span class="step-number">5</span> O sistema processará todos os funcionários selecionados usando dados padrão</p>
+                            <p class="mb-2"><span class="step-number">6</span> Após o processamento em lote, revise individualmente cada folha para ajustes específicos</p>
+                        </div>
+
+                        <div class="warning-box">
+                            <p class="font-medium"><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i> Importante:</p>
+                            <p>O processamento em lote é uma ferramenta poderosa, mas requer revisão manual posterior para garantir que todos os casos específicos foram tratados corretamente.</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="aprovacao" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">6. Aprovação e Fechamento</h2>
+                        <p class="mb-4">
+                            Após o processamento, a folha deve passar por um processo de verificação, aprovação e fechamento.
+                        </p>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">6.1 Verificação</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> Acesse a lista de processamentos para o período atual</p>
+                            <p class="mb-2"><span class="step-number">2</span> Revise cada folha processada, verificando valores e cálculos</p>
+                            <p class="mb-2"><span class="step-number">3</span> Utilize os filtros para identificar casos excepcionais ou valores anormais</p>
+                            <p class="mb-2"><span class="step-number">4</span> Para cada folha, clique no ícone de visualização <i class="fas fa-eye text-blue-500"></i> para verificar os detalhes</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">6.2 Aprovação</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Uma vez verificadas, as folhas precisam ser aprovadas:</p>
+                            <p class="mb-2"><span class="step-number">1</span> Na tela de processamento, selecione as folhas a serem aprovadas</p>
+                            <p class="mb-2"><span class="step-number">2</span> Clique no botão <strong>"Approve Selected"</strong></p>
+                            <p class="mb-2"><span class="step-number">3</span> Confirme a ação quando solicitado</p>
+                            <p class="mb-2"><span class="step-number">4</span> Após aprovação, as folhas não poderão mais ser modificadas sem autorização especial</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">6.3 Fechamento do Período</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Após todas as folhas serem aprovadas e os pagamentos realizados:</p>
+                            <p class="mb-2"><span class="step-number">1</span> Acesse <strong>"Human Resources" > "Payroll Periods"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Localize o período atual e clique no ícone de edição <i class="fas fa-edit text-blue-500"></i></p>
+                            <p class="mb-2"><span class="step-number">3</span> Altere o status para <strong>"Closed"</strong></p>
+                            <p class="mb-2"><span class="step-number">4</span> Adicione observações relevantes se necessário</p>
+                            <p class="mb-2"><span class="step-number">5</span> Clique em <strong>"Save"</strong> para confirmar o fechamento</p>
+                        </div>
+
+                        <div class="note-box">
+                            <p class="font-medium"><i class="fas fa-lock text-blue-500 mr-1"></i> Segurança:</p>
+                            <p>Apenas usuários com permissões adequadas podem aprovar folhas e fechar períodos. Isso garante a segregação de funções e aumenta a segurança do processo.</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="relatorios" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">7. Relatórios</h2>
+                        <p class="mb-4">
+                            O sistema oferece diversos relatórios para auxiliar na gestão da folha de pagamento e atender requisitos legais.
+                        </p>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">7.1 Relatórios Disponíveis</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Os principais relatórios disponíveis são:</p>
+                            <ul class="list-disc pl-10 space-y-2 mb-4">
+                                <li><strong>Resumo da Folha:</strong> Visão geral de todos os pagamentos do período</li>
+                                <li><strong>Recibos de Pagamento:</strong> Comprovantes individuais para cada funcionário</li>
+                                <li><strong>Relatório de Encargos:</strong> Detalhamento de impostos e contribuições</li>
+                                <li><strong>Relatório por Departamento:</strong> Resumo agrupado por departamento</li>
+                                <li><strong>Histórico de Pagamentos:</strong> Evolução dos pagamentos por funcionário</li>
+                            </ul>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">7.2 Gerando Relatórios</h3>
+                        <div class="mb-4">
+                            <p class="mb-2"><span class="step-number">1</span> No menu lateral, acesse <strong>"Human Resources" > "Reports"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Selecione o tipo de relatório desejado</p>
+                            <p class="mb-2"><span class="step-number">3</span> Configure os filtros (período, departamento, funcionário, etc.)</p>
+                            <p class="mb-2"><span class="step-number">4</span> Clique em <strong>"Generate Report"</strong></p>
+                            <p class="mb-2"><span class="step-number">5</span> O relatório será exibido na tela, com opções para exportar para PDF ou Excel</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">7.3 Recibos de Pagamento</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Para gerar recibos individuais:</p>
+                            <p class="mb-2"><span class="step-number">1</span> Na tela de processamento da folha, selecione o funcionário</p>
+                            <p class="mb-2"><span class="step-number">2</span> Clique no botão <strong>"Generate Pay Slip"</strong></p>
+                            <p class="mb-2"><span class="step-number">3</span> O recibo será gerado em formato PDF</p>
+                            <p class="mb-2"><span class="step-number">4</span> Você pode imprimir ou enviar digitalmente para o funcionário</p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">7.4 Exportação de Dados</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Para exportar dados para outros sistemas:</p>
+                            <p class="mb-2"><span class="step-number">1</span> Na tela de relatórios, selecione <strong>"Data Export"</strong></p>
+                            <p class="mb-2"><span class="step-number">2</span> Escolha o formato de saída (CSV, Excel, XML)</p>
+                            <p class="mb-2"><span class="step-number">3</span> Configure os filtros e campos a serem incluídos</p>
+                            <p class="mb-2"><span class="step-number">4</span> Clique em <strong>"Export"</strong> para baixar o arquivo</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section id="dicas" class="mb-10">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">8. Dicas e Melhores Práticas</h2>
+                        <p class="mb-4">
+                            Para garantir um processamento de folha eficiente e sem erros, siga estas recomendações:
+                        </p>
+
+                        <div class="grid md:grid-cols-2 gap-6 mt-6">
+                            <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2"><i class="fas fa-calendar-check text-blue-500 mr-2"></i>Planejamento</h3>
+                                <p>Estabeleça um calendário de processamento de folha com todas as datas importantes, incluindo prazos para entrada de dados, aprovação e pagamento.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2"><i class="fas fa-tasks text-blue-500 mr-2"></i>Checklist</h3>
+                                <p>Crie um checklist para cada ciclo de processamento, garantindo que nenhum passo importante seja esquecido.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2"><i class="fas fa-sync-alt text-blue-500 mr-2"></i>Atualizações</h3>
+                                <p>Mantenha os dados dos funcionários sempre atualizados, especialmente informações bancárias e alterações salariais.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2"><i class="fas fa-shield-alt text-blue-500 mr-2"></i>Backup</h3>
+                                <p>Realize backups regulares dos dados de folha de pagamento, especialmente antes e depois de cada processamento.</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">8.1 Evitando Erros Comuns</h3>
+                        <div class="mb-4">
+                            <ul class="list-disc pl-10 space-y-2 mb-4">
+                                <li><strong>Verificação Dupla:</strong> Sempre verifique os valores e cálculos antes da aprovação final</li>
+                                <li><strong>Teste de Validação:</strong> Use os relatórios de resumo para identificar discrepâncias</li>
+                                <li><strong>Documentação:</strong> Documente todas as alterações manuais feitas na folha</li>
+                                <li><strong>Treinamento:</strong> Garanta que todos os usuários do sistema estejam devidamente treinados</li>
+                            </ul>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-3">8.2 Segurança e Confidencialidade</h3>
+                        <div class="mb-4">
+                            <p class="mb-2">Lembre-se que informações de folha de pagamento são altamente confidenciais:</p>
+                            <ul class="list-disc pl-10 space-y-2 mb-4">
+                                <li>Nunca compartilhe senhas de acesso ao sistema</li>
+                                <li>Utilize sempre computadores seguros para processar a folha</li>
+                                <li>Documente quem aprovou cada folha e quando</li>
+                                <li>Limite o acesso aos relatórios apenas aos usuários autorizados</li>
+                                <li>Mantenha-se atualizado sobre as melhores práticas de segurança</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-blue-50 p-6 rounded-lg border border-blue-200 mt-6">
+                            <h3 class="text-xl font-semibold text-blue-700 mb-3"><i class="fas fa-lightbulb mr-2"></i>Dica Final</h3>
+                            <p class="mb-2">Estabeleça uma rotina regular de auditoria da folha de pagamento, verificando aleatoriamente alguns processamentos para garantir a precisão e conformidade com as políticas da empresa e a legislação aplicável.</p>
+                        </div>
+                    </section>
+
+                    <div class="section-divider"></div>
+
+                    <section class="mb-10 text-center">
+                        <p class="text-gray-600">
+                            Este manual foi criado para auxiliar no uso do sistema ERPDEMBENA.<br>
+                            Para mais informações ou suporte, entre em contato com a equipe de TI.
+                        </p>
+                        <p class="text-gray-500 text-sm mt-4">
+                            Última atualização: Abril 2025
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Script para ativar o link do sumário conforme a rolagem da página
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('section[id]');
+            const tocLinks = document.querySelectorAll('.toc-link');
+            
+            function highlightTocLink() {
+                let scrollPosition = window.scrollY + 100;
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+                    
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        tocLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === '#' + sectionId) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', highlightTocLink);
+            highlightTocLink(); // Executar uma vez ao carregar
+            
+            // Scroll suave para os links do sumário
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    window.scrollTo({
+                        top: targetSection.offsetTop - 20,
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Completo do Módulo de RH - ERP Dembena</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary-color: #f59e0b;
+            --text-color: #374151;
+            --light-bg: #f3f4f6;
+            --white: #ffffff;
+            --gray-light: #e5e7eb;
+            --gray: #9ca3af;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+            background-color: var(--light-bg);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            font-size: 2rem;
+        }
+        
+        .top-bar {
+            background-color: var(--primary-dark);
+            color: var(--white);
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .top-bar .container {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .top-bar span {
+            margin-left: 20px;
+        }
+        
+        .content {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            border-bottom: 2px solid var(--gray-light);
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin: 2rem 0 1rem;
+            font-size: 1.5rem;
+        }
+        
+        h3 {
+            color: var(--secondary-color);
+            margin: 1.5rem 0 1rem;
+            font-size: 1.2rem;
+        }
+        
+        p, li {
+            margin-bottom: 1rem;
+        }
+        
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .index {
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .index h2 {
+            margin-top: 0;
+        }
+        
+        .index ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+        
+        .index li {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .index li:last-child {
+            border-bottom: none;
+        }
+        
+        .index li i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        .step {
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .step-number {
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--secondary-color);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: var(--shadow);
+        }
+        
+        .illustration {
+            background-color: var(--white);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-light);
+        }
+        
+        .illustration img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .illustration-caption {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+        
+        .section-image {
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .step h3 {
+            display: flex;
+            align-items: center;
+            margin-top: 0;
+        }
+        
+        .step h3 i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .tip {
+            background-color: #e0f2fe;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .tip i {
+            color: var(--primary-color);
+            margin-right: 10px;
+        }
+        
+        footer {
+            background-color: var(--primary-dark);
+            color: var(--white);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .footer-content p {
+            margin-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            header .container {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .logo {
+                margin-bottom: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            h2 {
+                font-size: 1.3rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <span><i class="fas fa-calendar-alt"></i> Atualizado em: Abril 2025</span>
+            <span><i class="fas fa-language"></i> Idioma: Português</span>
+            <span><i class="fas fa-print"></i> <a href="javascript:window.print();" class="text-white">Imprimir Guia</a></span>
+            <span><i class="fas fa-file-pdf"></i> <a href="#" class="text-white">Baixar PDF</a></span>
+        </div>
+    </div>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-users"></i> ERP Dembena
+            </div>
+            <div>
+                <h1 style="color: white; margin: 0; border: none; padding: 0;">Guia Completo do Módulo de RH</h1>
+            </div>
+            <div>
+                <a href="/" class="btn btn-light btn-sm"><i class="fas fa-home"></i> Voltar ao ERP</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <div class="index">
+                <h2><i class="fas fa-list"></i> Índice</h2>
+                <ul>
+                    <li><i class="fas fa-info-circle"></i> <a href="#introducao">1. Introdução ao Módulo de RH</a></li>
+                    <li><i class="fas fa-sign-in-alt"></i> <a href="#acesso">2. Acesso ao Módulo</a></li>
+                    <li><i class="fas fa-user-plus"></i> <a href="#cadastro">3. Cadastro e Gestão de Funcionários</a></li>
+                    <li><i class="fas fa-file-alt"></i> <a href="#documentos">4. Gerenciamento de Documentos</a></li>
+                    <li><i class="fas fa-calendar-minus"></i> <a href="#licencas">5. Licenças e Ausências</a></li>
+                    <li><i class="fas fa-chart-line"></i> <a href="#avaliacoes">6. Avaliações de Desempenho</a></li>
+                    <li><i class="fas fa-file-invoice"></i> <a href="#relatorios">7. Relatórios de RH</a></li>
+                    <li><i class="fas fa-lightbulb"></i> <a href="#dicas">8. Dicas e Boas Práticas</a></li>
+                </ul>
+            </div>
+
+            <div id="introducao" class="section">
+                <h2>1. Introdução ao Módulo de RH</h2>
+                <p>
+                    O módulo de Recursos Humanos do ERP Dembena foi desenvolvido para centralizar e facilitar todas as atividades 
+                    relacionadas à gestão de pessoal. Por meio dele, você pode gerenciar funcionários, documentos, licenças, 
+                    avaliações e gerar relatórios detalhados.
+                </p>
+                <div class="section-image">
+                    <img src="/images/hr-guide/dashboard.svg" alt="Visão geral do módulo de RH">
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-3 text-center mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                                <h5>Gestão de Funcionários</h5>
+                                <p class="small">Cadastro completo, histórico profissional e dados pessoais.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                                <h5>Documentos</h5>
+                                <p class="small">Armazenamento seguro de todos os documentos relacionados aos funcionários.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                                <h5>Licenças e Ausências</h5>
+                                <p class="small">Gestão completa de férias, licenças médicas e outras ausências.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                                <h5>Avaliações</h5>
+                                <p class="small">Ferramentas para acompanhar o desempenho dos funcionários.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tip">
+                    <i class="fas fa-info-circle"></i> <strong>Importante:</strong> O módulo de RH é integrado com outros módulos do sistema,
+                    como Folha de Pagamento e Controle de Acesso, permitindo uma gestão completa de recursos humanos.
+                </div>
+            </div>
+
+            <div id="acesso" class="section">
+                <h2>2. Acesso ao Módulo</h2>
+                <div class="section-image">
+                    <img src="/images/hr-guide/dashboard.svg" alt="Tela de login e acesso ao módulo de RH">
+                </div>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3><i class="fas fa-sign-in-alt"></i> Como acessar o módulo de RH:</h3>
+                    <ol>
+                        <li>Faça login no sistema ERP Dembena com suas credenciais</li>
+                        <li>No menu lateral esquerdo, localize e clique em "RH" ou "Recursos Humanos"</li>
+                        <li>Você será direcionado para a página principal do módulo de RH, que exibe um painel com resumo dos dados principais</li>
+                    </ol>
+                    <div class="illustration">
+                        <img src="/images/hr-guide/menu-access.svg" alt="Ilustração do menu lateral com opção de RH destacada">
+                        <div class="illustration-caption">Fig. 1: Localização da opção "Recursos Humanos" no menu lateral</div>
+                    </div>
+                </div>
+                <div class="tip">
+                    <i class="fas fa-shield-alt"></i> <strong>Segurança:</strong> Certifique-se de que você possui as permissões adequadas
+                    para acessar este módulo. Caso contrário, entre em contato com o administrador do sistema.
+                </div>
+            </div>
+
+            <div id="cadastro" class="section">
+                <h2>3. Cadastro e Gestão de Funcionários</h2>
+                
+                <div class="section-image">
+                    <img src="/images/hr-guide/employees.svg" alt="Tela de gestão de funcionários">
+                </div>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3><i class="fas fa-user-plus"></i> 3.1 Adicionar um novo funcionário:</h3>
+                    <ol>
+                        <li>Na página principal do módulo RH, clique no botão "Adicionar Funcionário"</li>
+                        <li>Preencha o formulário com os dados pessoais do funcionário:
+                            <ul>
+                                <li>Nome completo</li>
+                                <li>Data de nascimento</li>
+                                <li>Gênero</li>
+                                <li>Número de identificação/CPF</li>
+                                <li>Endereço completo</li>
+                                <li>Informações de contato (telefone, e-mail)</li>
+                            </ul>
+                        </li>
+                        <li>Preencha os dados profissionais:
+                            <ul>
+                                <li>Cargo</li>
+                                <li>Departamento</li>
+                                <li>Data de admissão</li>
+                                <li>Supervisor direto</li>
+                                <li>Tipo de contrato</li>
+                                <li>Salário</li>
+                            </ul>
+                        </li>
+                        <li>Clique em "Salvar" para adicionar o funcionário ao sistema</li>
+                    </ol>
+                    <div class="illustration">
+                        <img src="/images/hr-guide/employee-form.svg" alt="Formulário de cadastro de novo funcionário">
+                        <div class="illustration-caption">Fig. 2: Formulário para cadastro de um novo funcionário</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3><i class="fas fa-user-edit"></i> 3.2 Editar dados de um funcionário:</h3>
+                    <ol>
+                        <li>Na lista de funcionários, localize o funcionário desejado</li>
+                        <li>Clique no ícone de edição (lápis) ao lado do nome do funcionário</li>
+                        <li>Atualize os campos necessários</li>
+                        <li>Clique em "Atualizar" para salvar as alterações</li>
+                    </ol>
+                    <div class="illustration">
+                        <img src="/images/hr-guide/employees.svg" alt="Lista de funcionários com botões de ação">
+                        <div class="illustration-caption">Fig. 3: Lista de funcionários com botões de ação, incluindo o botão de edição</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-user-slash"></i> 3.3 Desativar ou reativar um funcionário:</h3>
+                    <ol>
+                        <li>Na lista de funcionários, localize o funcionário desejado</li>
+                        <li>Para desativar: Clique no ícone de status e selecione a opção para desativar</li>
+                        <li>Confirme a ação na mensagem que aparecerá</li>
+                        <li>Para reativar: Acesse a aba "Inativos", localize o funcionário e clique no ícone de status para reativar</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="documentos" class="section">
+                <h2>4. Gerenciamento de Documentos</h2>
+                <div class="section-image">
+                    <img src="/images/hr-guide/documents.svg" alt="Tela de gerenciamento de documentos">
+                </div>
+                
+                <div class="step">
+                    <h3><i class="fas fa-file-upload"></i> 4.1 Adicionar documentos a um funcionário:</h3>
+                    <ol>
+                        <li>Na lista de funcionários, clique no nome do funcionário desejado para acessar seu perfil</li>
+                        <li>Na página do perfil, acesse a aba "Documentos"</li>
+                        <li>Clique no botão "Adicionar Documento"</li>
+                        <li>No modal que se abre, preencha:
+                            <ul>
+                                <li>Título do documento (ex: Carteira de Trabalho, Certificado, etc.)</li>
+                                <li>Selecione o arquivo do seu computador (formatos aceitos: PDF, JPG, PNG)</li>
+                                <li>Data de expiração (se aplicável)</li>
+                                <li>Observações (campo opcional)</li>
+                            </ul>
+                        </li>
+                        <li>Clique em "Enviar" para adicionar o documento</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-file-download"></i> 4.2 Visualizar ou baixar documentos:</h3>
+                    <ol>
+                        <li>Na página do perfil do funcionário, acesse a aba "Documentos"</li>
+                        <li>Na lista de documentos, clique no ícone de visualização para abrir o documento</li>
+                        <li>Para baixar, clique no ícone de download ao lado do documento desejado</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-trash-alt"></i> 4.3 Excluir documentos:</h3>
+                    <ol>
+                        <li>Na lista de documentos, localize o documento a ser excluído</li>
+                        <li>Clique no ícone de exclusão (lixeira)</li>
+                        <li>Confirme a exclusão na mensagem que aparecerá</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="licencas" class="section">
+                <h2>5. Licenças e Ausências</h2>
+                <div class="section-image">
+                    <img src="/images/hr-guide/leaves.svg" alt="Tela de gerenciamento de licenças e ausências">
+                </div>
+                
+                <div class="illustration my-4">
+                    <img src="/images/hr-guide/leave-flow.svg" alt="Fluxo de solicitação e aprovação de licenças">
+                    <div class="illustration-caption">Fig. 4: Fluxo de solicitação e aprovação de licenças</div>
+                </div>
+                
+                <div class="step">
+                    <h3><i class="fas fa-calendar-plus"></i> 5.1 Registrar nova licença ou ausência:</h3>
+                    <ol>
+                        <li>Na página principal do módulo RH, acesse a aba "Licenças"</li>
+                        <li>Clique no botão "Registrar Licença"</li>
+                        <li>No formulário, preencha:
+                            <ul>
+                                <li>Selecione o funcionário</li>
+                                <li>Tipo de licença (férias, licença médica, licença maternidade, etc.)</li>
+                                <li>Data de início</li>
+                                <li>Data de término</li>
+                                <li>Motivo ou observações</li>
+                                <li>Anexos (se necessário, como atestados médicos)</li>
+                            </ul>
+                        </li>
+                        <li>Clique em "Salvar" para registrar a licença</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-check-square"></i> 5.2 Aprovar ou rejeitar solicitações de licença:</h3>
+                    <ol>
+                        <li>Na aba "Licenças", acesse a seção "Pendentes"</li>
+                        <li>Revise os detalhes da solicitação clicando no ícone de visualização</li>
+                        <li>Para aprovar: Clique no botão "Aprovar"</li>
+                        <li>Para rejeitar: Clique no botão "Rejeitar" e informe o motivo</li>
+                        <li>A situação da licença será atualizada no sistema</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-history"></i> 5.3 Consultar histórico de licenças:</h3>
+                    <ol>
+                        <li>Na aba "Licenças", use os filtros disponíveis para pesquisar por:
+                            <ul>
+                                <li>Funcionário</li>
+                                <li>Período</li>
+                                <li>Tipo de licença</li>
+                                <li>Status (aprovada, rejeitada, pendente)</li>
+                            </ul>
+                        </li>
+                        <li>O sistema exibirá todas as licenças que correspondem aos filtros aplicados</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="avaliacoes" class="section">
+                <h2>6. Avaliações de Desempenho</h2>
+                <div class="section-image">
+                    <img src="/images/hr-guide/performance.svg" alt="Tela de avaliações de desempenho">
+                </div>
+                
+                <div class="step">
+                    <h3><i class="fas fa-award"></i> 6.1 Criar um novo ciclo de avaliação:</h3>
+                    <ol>
+                        <li>Na página principal do módulo RH, acesse a aba "Desempenho"</li>
+                        <li>Clique no botão "Novo Ciclo de Avaliação"</li>
+                        <li>Configure o ciclo:
+                            <ul>
+                                <li>Nome do ciclo (ex: "Avaliação Anual 2025")</li>
+                                <li>Período de avaliação (data de início e fim)</li>
+                                <li>Departamentos e funcionários participantes</li>
+                                <li>Critérios de avaliação</li>
+                            </ul>
+                        </li>
+                        <li>Clique em "Criar Ciclo" para iniciar</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-clipboard-check"></i> 6.2 Preencher avaliações:</h3>
+                    <ol>
+                        <li>Na aba "Desempenho", selecione o ciclo de avaliação atual</li>
+                        <li>Localize o funcionário a ser avaliado e clique em "Avaliar"</li>
+                        <li>Preencha cada critério com a pontuação apropriada</li>
+                        <li>Adicione comentários e feedback para cada seção</li>
+                        <li>Clique em "Salvar" para registrar a avaliação</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-thumbs-up"></i> 6.3 Revisão e aprovação final:</h3>
+                    <ol>
+                        <li>Depois que todas as avaliações forem preenchidas, acesse "Revisão Final"</li>
+                        <li>Revise cada avaliação e faça ajustes se necessário</li>
+                        <li>Após a aprovação final, as avaliações ficam disponíveis para visualização pelos gestores</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="relatorios" class="section">
+                <h2>7. Relatórios de RH</h2>
+                <div class="section-image">
+                    <img src="/images/hr-guide/reports.svg" alt="Tela de relatórios de RH">
+                </div>
+                
+                <div class="step">
+                    <h3><i class="fas fa-file-alt"></i> 7.1 Gerar relatórios:</h3>
+                    <ol>
+                        <li>Na página principal do módulo RH, acesse a aba "Relatórios"</li>
+                        <li>Selecione o tipo de relatório desejado:
+                            <ul>
+                                <li>Folha de pagamento</li>
+                                <li>Relatório de assiduidade</li>
+                                <li>Relatório de turnover</li>
+                                <li>Relatório de desempenho</li>
+                                <li>Relatório de documentos expirados/a expirar</li>
+                            </ul>
+                        </li>
+                        <li>Configure os parâmetros do relatório (período, departamentos, etc.)</li>
+                        <li>Clique em "Gerar Relatório"</li>
+                    </ol>
+                </div>
+
+                <div class="step">
+                    <h3><i class="fas fa-file-export"></i> 7.2 Exportar relatórios:</h3>
+                    <ol>
+                        <li>Após gerar o relatório, clique em uma das opções de exportação:
+                            <ul>
+                                <li>PDF</li>
+                                <li>Excel</li>
+                                <li>CSV</li>
+                            </ul>
+                        </li>
+                        <li>O arquivo será baixado automaticamente para seu computador</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="dicas" class="section">
+                <h2>8. Dicas e Boas Práticas</h2>
+                
+                <div class="tip">
+                    <i class="fas fa-sync-alt"></i> <strong>Mantenha os dados atualizados:</strong> Revise e atualize regularmente as informações dos funcionários.
+                </div>
+                
+                <div class="tip">
+                    <i class="fas fa-cloud-upload-alt"></i> <strong>Backup de documentos:</strong> Embora o sistema armazene os documentos, mantenha cópias de segurança dos arquivos importantes.
+                </div>
+                
+                <div class="tip">
+                    <i class="fas fa-bell"></i> <strong>Notificações:</strong> Configure alertas para datas importantes, como vencimento de documentos ou aniversários.
+                </div>
+                
+                <div class="tip">
+                    <i class="fas fa-lock"></i> <strong>Segurança:</strong> Não compartilhe suas credenciais de acesso e certifique-se de sair do sistema após o uso.
+                </div>
+                
+                <div class="tip">
+                    <i class="fas fa-chalkboard-teacher"></i> <strong>Treinamento:</strong> Ofereça treinamento regular para novos usuários do módulo de RH.
+                </div>
+                
+                <div class="tip">
+                    <i class="fas fa-headset"></i> <strong>Suporte:</strong> Em caso de dúvidas ou problemas, contate o suporte técnico através da opção "Suporte" no menu principal.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <p>Este guia foi criado para auxiliar no uso completo do módulo de RH do ERP Dembena.</p>
+                <p>Para informações mais específicas ou suporte técnico, entre em contato com a equipe de TI ou consulte a documentação completa do sistema.</p>
+                <p>&copy; 2025 ERP Dembena - Todos os direitos reservados</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Adicionar comportamento de rolagem suave para links internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

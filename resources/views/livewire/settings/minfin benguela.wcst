@@ -1,0 +1,391 @@
+<document unique_id="7ad59838-3e9f-4843-9434-93d309cb359c" version="12" os="windows" original_document_path="C:\Users\foxmsi\Videos\minfin benguela.wcst">
+	<open_windows>
+		<vamWindowGlass frame="182,60,1738,1019" window_class="1937007191" asset_icon_scale="0.6" asset_icon_updateFPS="15" selected_layer="1836282929" vam_main_splitter="0.493467" eWindow_win_showcmd="3"/>
+	</open_windows>
+	<vam_state master_audio_shown="1000" preview_audio_monitor="0" master_audio_monitor="1" show_preview_edit_panel="0" live_shown="1" preview_shown="1" live_preview_split_closed_percent="0.425421" live_preview_split_open_percent="0.75" master_audio_mute="0" transition_2_unique_id="SCTransitionPlane" transition_0_unique_id="-- CUT --" transition_1_unique_id="-- SMOOTH --"/>
+	<chroma_key_data/>
+	<advanced_output>
+		<output_list output_last_selected="16271890-c8f3-4e44-9859-8cb4f10b29e2">
+			<output output_enabled="1" output_type="1" output_url="C:\Users\foxmsi\Downloads\BENGUELA DIA 1\MyStream.mp4" output_autoinfilename="1" output_branding="Record To Disk MP4 Brand" output_display_name="Gravar no disco – MP4" output_display_group_name="Gravar no disco – MP4" output_guid="82396ed4-c3f3-4fa9-9821-46b11775ad80" unique_id="2" output_presetname="Default: 1080p30 (5Mbps) NVIDIA NVENC H.264" audio_output_track_mask="1" flash_streaming_delay="0" output_user_name="Gravar no disco – MP4" output_settings_complete="1" output_id="16271890-c8f3-4e44-9859-8cb4f10b29e2"/>
+			<output output_enabled="1" output_type="2" output_transport="7" output_url="rtmp://a.rtmp.youtube.com/live2" output_location="6kmt-8hbs-sa8f-9fsj-6661" output_branding="Servidor RTMP" output_display_name="Servidor RTMP" output_display_group_name="Servidor RTMP" output_guid="f68d3a2b-176b-472d-b42e-5185ebe3f443" unique_id="3" output_presetname="Default: 1080p30 (5Mbps) NVIDIA NVENC H.264" audio_output_track_mask="1" output_location_with_bitrate="6kmt-8hbs-sa8f-9fsj-6661" impersonate_fme_2_5="0" flash_user_agent="Wirecast/FM 1.0" flash_streaming_delay="0" output_user_name="Servidor RTMP" output_settings_complete="1" output_id="42d10d59-e1dd-4a6f-a2ca-13057acb6d09"/>
+			<output replay_quality="standard" replay_audio_enabled="0" replay_record_folder="C:\Users\foxmsi\Videos" replay_limit_record_duration="1" replaydialog_record_unit="1" replay_max_record_duration="60000" replay_shot_default_duration="30" replay_shot_default_speed="1" replay_create_in_layer="1" replay_create_in_playlist="" replay_show_preview="1" replay_shot_template_asset_id="" replay_create_from_template="0" replay_activate_on_broadcast="0" replay_activate_on_record="0" replay_prompt_delete_shot="1" replay_keep_record_on_delete_shot="0" replay_mute_audio="0" replay_program_replay_enabled="0" output_guid="a44243bf-ebc0-4a6e-904d-f5a784868083" output_presetname="a44243bf-ebc0-4a6e-904d-f5a784868083" output_type="6" output_enabled="1" unique_id="4"/>
+		</output_list>
+	</advanced_output>
+	<output_presets>
+		<preset output_presetname="Default: 1080p30 (5Mbps) NVIDIA NVENC H.264" show_in_gui="1" group="Flash">
+			<movie format="Flash" output_system="">
+				<track type="1986618479" mo_width="1920" mo_height="1080" colourspace="846624121" mo_enabled="1" codecname="NVidia H.264" fps="30" compressed="1" timescale="3000" target_bit_rate="5000" profile="1751738216" limit_bit_rate="0" key_frame_rate="60" timecode_interval="30" timecode_on="0" FlashVideoDisableH264BFrames="0" codec_quality="" x264_gpu_on="0" x264_commandline="" absolute_time_stamps="0" key_frame_aligned="0" strict_cbr="0" main_concept="1"/>
+				<track type="1635083375" bps="16" busses="1" channels="2" samplerate="48000" mo_enabled="1" codecname="MPEG-4 Audio" target_bit_rate="192" timescale="48000"/>
+			</movie>
+		</preset>
+		<preset output_presetname="WirecastInternalVirtualCameraPreset" show_in_gui="0" group="VirtualCamera">
+			<movie format="Virtual Camera" output_system="virtual-capture">
+				<track type="1986618479" mo_width="1920" mo_height="1080" colourspace="846624121" mo_enabled="1" codecname="H.264" fps="15" compressed="1" timescale="1500" target_bit_rate="500" profile="1835100526" limit_bit_rate="0" key_frame_rate="240" timecode_interval="30" timecode_on="0" FlashVideoDisableH264BFrames="0" codec_quality="" x264_gpu_on="0" x264_commandline="" absolute_time_stamps="0" key_frame_aligned="0" strict_cbr="0" match_canvas="0" horizontal_flip="0" main_concept="1"/>
+				<track type="1635083375" bps="16" busses="1" channels="2" samplerate="48000" mo_enabled="0" codecname="MPEG-4 Audio" target_bit_rate="128" timescale="48000" output_virtual_microphone="0"/>
+			</movie>
+		</preset>
+		<preset output_presetname="a44243bf-ebc0-4a6e-904d-f5a784868083" show_in_gui="0" group="Replay">
+			<movie format="Replay" output_system="replay">
+				<track type="1986618479" mo_width="640" mo_height="480" colourspace="846624121" mo_enabled="1" codecname="H.264" fps="30" compressed="1" timescale="3000" target_bit_rate="500" profile="1835100526" limit_bit_rate="0" key_frame_rate="240" timecode_interval="30" timecode_on="0" FlashVideoDisableH264BFrames="0" codec_quality="" x264_gpu_on="0" x264_commandline="" absolute_time_stamps="0" key_frame_aligned="0" strict_cbr="0" main_concept="1"/>
+				<track type="1635083375" bps="16" busses="1" channels="2" samplerate="48000" mo_enabled="1" codecname="MPEG-4 Audio" target_bit_rate="128" timescale="48000"/>
+			</movie>
+		</preset>
+		<preset output_presetname="net.telestream.NDIOutput" show_in_gui="0" group="NDIOutput">
+			<movie format="NDIOutput" output_system="NDIOutput" output_sdk_preset_xml="ndiout_preset_token" output_sdk_guid="731827d7-378d-409f-9871-75ec9d509562" is_dynamic="1">
+				<track type="1986618479" mo_width="100" mo_height="100" colourspace="846624121" mo_enabled="1" codecname="H.264" fps="15" compressed="1" timescale="1500" target_bit_rate="500" profile="1835100526" limit_bit_rate="0" key_frame_rate="240" timecode_interval="30" timecode_on="0" FlashVideoDisableH264BFrames="0" codec_quality="" x264_gpu_on="0" x264_commandline="" absolute_time_stamps="0" key_frame_aligned="0" strict_cbr="0" main_concept="1"/>
+				<track type="1635083375" bps="16" busses="1" channels="2" samplerate="48000" mo_enabled="1" codecname="MPEG-4 Audio" target_bit_rate="128" timescale="48000"/>
+			</movie>
+		</preset>
+	</output_presets>
+	<iso_outputs/>
+	<multimonitor/>
+	<volume value="1"/>
+	<preview_volume value="1"/>
+	<auto_live value="0"/>
+	<flip_flop value="0"/>
+	<output_annotations/>
+	<transition_duration/>
+	<visual_style/>
+	<single_output/>
+	<layer_names/>
+	<layer_scales/>
+	<layer_heights layer_2="223" layer_1="139"/>
+	<layer_visible/>
+	<sections/>
+	<aspectRatio type="825243696"/>
+	<shot_key_map/>
+	<source_group_counters>
+		<group guid="D82F793C-6F5B-3376-F53B-EF2ED8CE7F28" value="1"/>
+	</source_group_counters>
+	<transition_interpolator value="-- SMOOTH --"/>
+	<ptz_settings/>
+	<shotsLiveWhenSaved>
+		<xml_tag vaLayerIndex="0" beLayerEnum="1" vaLayerEnum="1836282928" unique_id="d664105b-d748-456c-8e4a-cb4e9e260318_shot"/>
+		<xml_tag vaLayerIndex="1" beLayerEnum="2" vaLayerEnum="1836282929" unique_id="55e8094f-7bbc-43aa-a5b2-17f6ac6042e4_shot"/>
+		<xml_tag vaLayerIndex="2" beLayerEnum="3" vaLayerEnum="1836282930" unique_id="49d3e3bf-800f-4750-8a35-7eb4c3368b35_shot"/>
+	</shotsLiveWhenSaved>
+	<source_sdk_settings/>
+	<social_media/>
+	<source_configurations>
+		<source factoryGUID="D82F793C-6F5B-3376-F53B-EF2ED8CE7F28" manuallyAddedSource="1" template_instance_id="" prettyname="Cor Sólida 1" unique_id="08029c59-e6bf-4eeb-a8ab-fd2e75262f6f" localizedDisplayName="Cor Sólida" groupGUID="D82F793C-6F5B-3376-F53B-EF2ED8CE7F28" localizedGroupingName="Cor Sólida" productionFlags="1" categories="32">
+			<xml_tag constrained_width="640" constrained_height="480" web_width="640" web_height="480" widget_settings="{&quot;_renderer&quot;:{&quot;client_height&quot;:true,&quot;client_width&quot;:true,&quot;constrained_geometry&quot;:{&quot;height&quot;:true,&quot;width&quot;:true},&quot;height_constrained&quot;:false,&quot;width_constrained&quot;:false},&quot;colors&quot;:{&quot;backgroundColor&quot;:&quot;#FFFFFFFF&quot;,&quot;gradientColor1&quot;:&quot;#FFFFFF&quot;,&quot;gradientColor2&quot;:&quot;#000000&quot;},&quot;gradientAngle&quot;:&quot;0.00&quot;,&quot;gradientEnabled&quot;:false,&quot;gradientType&quot;:0,&quot;solidEnabled&quot;:true}" unique_id="08029c59-e6bf-4eeb-a8ab-fd2e75262f6f" width_constrained="0" height_constrained="0"/>
+		</source>
+	</source_configurations>
+	<game_overlay_position/>
+	<assets>
+		<asset name="Camada Vazia" unique_id="d664105b-d748-456c-8e4a-cb4e9e260318_shot" type="shot" media-type="9" blank_shot="1" created_for_layer="5"/>
+		<asset name="Camada Vazia" unique_id="55e8094f-7bbc-43aa-a5b2-17f6ac6042e4_shot" type="shot" media-type="9" blank_shot="1" created_for_layer="1"/>
+		<asset name="Camada Vazia" unique_id="bb366978-290e-4b55-8616-4ce980009605_shot" type="shot" media-type="9" sort_on_normal="0" created_for_layer="2" blank_shot="1"/>
+		<asset name="Camada Vazia" unique_id="73b3f98f-3207-4f58-9641-5c5788639365_shot" type="shot" media-type="9" blank_shot="1" created_for_layer="3"/>
+		<asset name="Camada Vazia" unique_id="1a21e174-ab1b-49ec-a8cf-23103d681f11_shot" type="shot" media-type="9" blank_shot="1" created_for_layer="4"/>
+		<asset media-type="2" type="vaSourcesManager" url="vaSourcesManager::URL" unique_id="DirectShowVideo:\\?\usb#vid_1e4e&amp;pid_710f&amp;mi_00#6&amp;27cbe658&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" name="FEELWORLD USB3.0 Capture [1]" video_tracks="1" audio_tracks="0" video_scaling_preference="1" sourceGUID="1797DA84-CE0E-46F0-9104-51BF75D1C4C4" square_pixel_height="1080" previous_square_pixel_height="720" square_pixel_width="1920" previous_square_pixel_width="1280" raster_type="2037741171"/>
+		<asset name="FEELWORLD USB3.0 Capture [1]" unique_id="49d3e3bf-800f-4750-8a35-7eb4c3368b35_shot" type="shot" media-type="9" sort_on_normal="1" audio_tracks="0" video_tracks="1" still_image_tracks="0" veil_track_count="0" alpha_track_count="0" created_for_layer="2"/>
+		<asset name="01 - Manuel Nunes Júnior.png" url="C:\Users\foxmsi\Downloads\DIA 1\01 - Manuel Nunes Júnior.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="88cce4bd-ef25-4215-bbe4-ce0dc3b72904_01 - Manuel Nunes Júnior.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="02 - Vera Daves.png" url="C:\Users\foxmsi\Downloads\DIA 1\02 - Vera Daves.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="48578abe-f1c3-4a1f-99e3-8847c58f829a_02 - Vera Daves.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="03 - Sérgio Calundungo.png" url="C:\Users\foxmsi\Downloads\DIA 1\03 - Sérgio Calundungo.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="1c293a88-c895-4c3a-8f0a-71df98e01e6a_03 - Sérgio Calundungo.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="04 - Manuel Cabral.png" url="C:\Users\foxmsi\Downloads\DIA 1\04 - Manuel Cabral.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="e98512fe-0ca3-4e1e-a6be-7d1696e98558_04 - Manuel Cabral.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="05 - Ayrton Lucas.png" url="C:\Users\foxmsi\Downloads\DIA 1\05 - Ayrton Lucas.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="4a3cfb44-2068-46a7-935b-389ae48ca441_05 - Ayrton Lucas.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="06 - Ottoniel Santos.png" url="C:\Users\foxmsi\Downloads\DIA 1\06 - Ottoniel Santos.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="d6a24e04-d5a2-4e05-9e15-24384a67f0a2_06 - Ottoniel Santos.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="07 - Osvaldo Ngoloimwe.png" url="C:\Users\foxmsi\Downloads\DIA 1\07 - Osvaldo Ngoloimwe.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="b0cbf3b4-6925-40fd-a184-e6ca2df9cafa_07 - Osvaldo Ngoloimwe.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="08 -  Vera Daves.png" url="C:\Users\foxmsi\Downloads\DIA 1\08 -  Vera Daves.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="1724cc65-1f9f-4b7e-b4b6-836b4a108ca0_08 -  Vera Daves.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="09 - Sílvio Custódio.png" url="C:\Users\foxmsi\Downloads\DIA 1\09 - Sílvio Custódio.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="0b3a8dc1-8fc1-4456-90ea-3a148bd2c9f7_09 - Sílvio Custódio.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="10 - Juciene de Sousa.png" url="C:\Users\foxmsi\Downloads\DIA 1\10 - Juciene de Sousa.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="54759125-a462-446b-b8a6-e01d59bdb413_10 - Juciene de Sousa.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="11 - Cláudio Costa.png" url="C:\Users\foxmsi\Downloads\DIA 1\11 - Cláudio Costa.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="90696bc7-3d56-4c09-bb16-348f90298417_11 - Cláudio Costa.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="12 - Alexandre Amorim.png" url="C:\Users\foxmsi\Downloads\DIA 1\12 - Alexandre Amorim.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="6fba7341-4d96-45a5-b65c-47afd4f8d1be_12 - Alexandre Amorim.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="13 - Edilson Coelho.png" url="C:\Users\foxmsi\Downloads\DIA 1\13 - Edilson Coelho.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="e0ca3efd-ae3d-42e4-9f48-9fd004ea74c8_13 - Edilson Coelho.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="14 - Edna Mascarenhas.png" url="C:\Users\foxmsi\Downloads\DIA 1\14 - Edna Mascarenhas.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="57f8a056-0939-43d4-a8d0-478ecc958c3b_14 - Edna Mascarenhas.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="15 -  Patrício Neto.png" url="C:\Users\foxmsi\Downloads\DIA 1\15 -  Patrício Neto.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="b7fdd037-b04d-4186-9272-b40f517ff1e5_15 -  Patrício Neto.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="16 - Adérito Mazango.png" url="C:\Users\foxmsi\Downloads\DIA 1\16 - Adérito Mazango.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="70864a35-e21c-4b12-bb8d-d0239fffec14_16 - Adérito Mazango.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="17 - Isaac Xiquita.png" url="C:\Users\foxmsi\Downloads\DIA 1\17 - Isaac Xiquita.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="c16e7394-39b8-47c9-89d9-7ec23498db54_17 - Isaac Xiquita.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="18 -  António Manuel.png" url="C:\Users\foxmsi\Downloads\DIA 1\18 -  António Manuel.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="1fe3a241-13fc-4846-9797-7f96f363238f_18 -  António Manuel.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset name="DIA 1.psd" url="C:\Users\foxmsi\Downloads\DIA 1\DIA 1.psd" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="b3bce54d-a244-4480-9111-f423377e5958_DIA 1.psd" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017"/>
+		<asset media-type="4" type="vaSourcesManager" url="vaSourcesManager::URL" unique_id="DirectShowAudio:Microfone (HD USB Audio Device):0" name="Microfone (HD USB Audio Device)" video_tracks="1" audio_tracks="1" video_scaling_preference="1" previous_square_pixel_width="1280" raster_type="0" previous_square_pixel_height="720" square_pixel_height="720" sourceGUID="1797DA84-CE0E-46F0-9104-51BF75D1C4C4" square_pixel_width="1280"/>
+		<asset media-type="4" type="vaSourcesManager" url="vaSourcesManager::URL" unique_id="DirectShowVideo:\\?\usb#vid_345f&amp;pid_2130&amp;mi_00#6&amp;38ba446d&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" name="Hagibis" video_tracks="1" audio_tracks="1" video_scaling_preference="1" raster_type="0" square_pixel_width="1920" square_pixel_height="1080" sourceGUID="1797DA84-CE0E-46F0-9104-51BF75D1C4C4"/>
+		<asset name="TELA CHEIA" unique_id="578f1a27-fa8b-4c22-97e1-277e0c3664fe_shot" type="shot" media-type="9" sort_on_normal="2" audio_tracks="1" video_tracks="1" still_image_tracks="0" veil_track_count="0" alpha_track_count="0" created_for_layer="2"/>
+		<asset name="01 - Manuel Nunes Júnior.png" url="C:\Users\foxmsi\Downloads\DIA 1_\01 - Manuel Nunes Júnior.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="1ed28112-24e4-4245-b7a1-693c72389943_01 - Manuel Nunes Júnior.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="01 - Manuel Nunes Júnior.png" unique_id="36b2466d-7f92-4134-9d3c-9b357d1ed708_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="02 - Vera Daves.png" url="C:\Users\foxmsi\Downloads\DIA 1_\02 - Vera Daves.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="73fb017a-1711-415c-81b9-970d513b10ce_02 - Vera Daves.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="02 - Vera Daves.png" unique_id="fc5e8b23-dd1d-4dc6-8be7-aeec07db7f0e_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="03 - Sérgio Calundungo.png" url="C:\Users\foxmsi\Downloads\DIA 1_\03 - Sérgio Calundungo.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="75c1b2c5-da12-4671-a3da-34af483dc501_03 - Sérgio Calundungo.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="03 - Sérgio Calundungo.png" unique_id="9007dbf8-f093-4927-afef-c34e0cd92d43_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="04 - Manuel Cabral.png" url="C:\Users\foxmsi\Downloads\DIA 1_\04 - Manuel Cabral.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="31eefd94-2877-47cd-b933-606e235ba62a_04 - Manuel Cabral.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="04 - Manuel Cabral.png" unique_id="fbc4ee3e-07ab-441b-a47b-ed740be81ded_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="05 - Ayrton Lucas.png" url="C:\Users\foxmsi\Downloads\DIA 1_\05 - Ayrton Lucas.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="fd3f3027-3384-4cdf-a4f7-5c32be8a492a_05 - Ayrton Lucas.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="05 - Ayrton Lucas.png" unique_id="939bed82-601a-4b21-83e5-ef1973a51e80_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="06 - Ottoniel Santos.png" url="C:\Users\foxmsi\Downloads\DIA 1_\06 - Ottoniel Santos.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="973d456d-5ac5-4678-9424-e2a86318caab_06 - Ottoniel Santos.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="06 - Ottoniel Santos.png" unique_id="90c5d0fc-249b-480c-b75c-0753c2bd0854_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="07 - Osvaldo Ngoloimwe.png" url="C:\Users\foxmsi\Downloads\DIA 1_\07 - Osvaldo Ngoloimwe.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="32d44e3b-3af5-4cee-ba0f-718c31e49893_07 - Osvaldo Ngoloimwe.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="07 - Osvaldo Ngoloimwe.png" unique_id="4fcd48f5-2a7a-44c9-862e-198c05b7eaba_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="08 -  Vera Daves.png" url="C:\Users\foxmsi\Downloads\DIA 1_\08 -  Vera Daves.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="85c599fc-a467-43eb-a81c-4f155ac30630_08 -  Vera Daves.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="08 -  Vera Daves.png" unique_id="c4809386-cf88-49bb-80bf-820dd19a34d2_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="09 - Sílvio Custódio.png" url="C:\Users\foxmsi\Downloads\DIA 1_\09 - Sílvio Custódio.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="24340bd4-9e45-4eb4-9240-ebe2fd875e83_09 - Sílvio Custódio.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="09 - Sílvio Custódio.png" unique_id="f7aa91ea-6c78-4b2b-b644-b6c7522b46af_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="10 - Juciene de Sousa.png" url="C:\Users\foxmsi\Downloads\DIA 1_\10 - Juciene de Sousa.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="6fe2adac-7def-42e9-b1f9-cdd382e5632a_10 - Juciene de Sousa.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="10 - Juciene de Sousa.png" unique_id="8f1d91e6-af86-4fe3-a986-6e6103484d83_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="11 - Cláudio Costa.png" url="C:\Users\foxmsi\Downloads\DIA 1_\11 - Cláudio Costa.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="229e3d00-a5d7-441e-8c4d-bf11cd7b4525_11 - Cláudio Costa.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="11 - Cláudio Costa.png" unique_id="42d6c822-e27a-4caa-ac81-ffd8d708bc00_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="12 - Alexandre Amorim.png" url="C:\Users\foxmsi\Downloads\DIA 1_\12 - Alexandre Amorim.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="c01632df-c4b6-461c-842b-bf6c02b84afd_12 - Alexandre Amorim.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="12 - Alexandre Amorim.png" unique_id="4bb30aec-3fa4-401a-a7a1-726839f2c268_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="13 - Edilson Coelho.png" url="C:\Users\foxmsi\Downloads\DIA 1_\13 - Edilson Coelho.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="d19d7b39-4986-41b4-bca0-1ca16a5105c3_13 - Edilson Coelho.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="13 - Edilson Coelho.png" unique_id="85437b56-4c10-4259-b8b4-0e39e46faac3_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="14 - Edna Mascarenhas.png" url="C:\Users\foxmsi\Downloads\DIA 1_\14 - Edna Mascarenhas.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="9314a7db-1aec-4d5b-8343-fdc6adfc9200_14 - Edna Mascarenhas.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="14 - Edna Mascarenhas.png" unique_id="afe75486-7343-4efe-85bf-62d61e2b66ec_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="15 -  Patrício Neto.png" url="C:\Users\foxmsi\Downloads\DIA 1_\15 -  Patrício Neto.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="5b7e12aa-d584-4598-9ec8-2822a8f23759_15 -  Patrício Neto.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="15 -  Patrício Neto.png" unique_id="87e76281-f303-47d7-b2f1-fa692e57c28f_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="16 - Adérito Mazango.png" url="C:\Users\foxmsi\Downloads\DIA 1_\16 - Adérito Mazango.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="5dcad9bb-74a1-4f12-b88a-f20bdff680b6_16 - Adérito Mazango.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="16 - Adérito Mazango.png" unique_id="ba146ddb-c272-476c-8d13-7b2e438bf56c_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="17 - Isaac Xiquita.png" url="C:\Users\foxmsi\Downloads\DIA 1_\17 - Isaac Xiquita.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="e8fb48b3-9420-47df-a221-61e13f235476_17 - Isaac Xiquita.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="17 - Isaac Xiquita.png" unique_id="b03bed31-592d-464a-8e3b-8783a4d2c8b4_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="18 -  António Manuel.png" url="C:\Users\foxmsi\Downloads\DIA 1_\18 -  António Manuel.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="8874b9b5-05d9-4166-9f4a-1b271b66f725_18 -  António Manuel.png" alpha_track_count="1" square_pixel_height="1080" downsizable_img="0" raster_type="1919378017" square_pixel_width="1920"/>
+		<asset name="18 -  António Manuel.png" unique_id="d92a0308-a124-46db-a90a-342937e30504_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg" url="C:\Users\foxmsi\Downloads\WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="71037056-25fc-42ff-b76b-9f2c39b6ba56_WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg" alpha_track_count="1" square_pixel_width="1280" raster_type="1919378017" square_pixel_height="720" downsizable_img="0"/>
+		<asset name="WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg" unique_id="ea85c1c0-823c-4f2e-9937-66809ac2dd4a_shot" type="shot" media-type="9" sort_on_normal="3" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1" created_for_layer="2"/>
+		<asset name="WhatsApp Image 2025-03-31 at 5.32.03 PM.jpeg" url="C:\Users\foxmsi\Downloads\WhatsApp Image 2025-03-31 at 5.32.03 PM.jpeg" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="d5d972d3-b523-4a91-b894-3164d9764121_WhatsApp Image 2025-03-31 at 5.32.03 PM.jpeg" alpha_track_count="1" square_pixel_width="1280" square_pixel_height="720" downsizable_img="0" raster_type="1919378017"/>
+		<asset media-type="2" type="vaSourcesManager" url="vaSourcesManager::URL" unique_id="08029c59-e6bf-4eeb-a8ab-fd2e75262f6f" name="Cor Sólida 1" video_tracks="1" audio_tracks="0" video_scaling_preference="2" video_scaling_contents_gravity_preference="1" alpha_track_count="1" sourceGUID="D82F793C-6F5B-3376-F53B-EF2ED8CE7F28" raster_type="1380401729"/>
+		<asset name="Cópia de FEELWORLD USB3.0 Capture [1]" unique_id="6417bbd5-078b-4751-bed4-ff35a022a599" type="shot" media-type="9" sort_on_normal="4" audio_tracks="0" video_tracks="1" still_image_tracks="0" veil_track_count="0" alpha_track_count="0" created_for_layer="2"/>
+		<asset name="WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg" unique_id="548af324-3e7f-4c5d-a005-05548cccc5e9_shot" type="shot" media-type="9" created_for_layer="5" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg" unique_id="2a8ee681-292a-42c6-a062-d62ff6940186_shot" type="shot" media-type="9" created_for_layer="2" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+		<asset name="Vera Daves de Sousa.png" url="C:\Users\foxmsi\Downloads\Vera Daves de Sousa.png" type="file" media-type="1" still_image_tracks="1" video_scaling_preference="1" video_scaling_to_natural_size="1" unique_id="0944dca1-3011-4983-a45b-846252dbf25e_Vera Daves de Sousa.png" alpha_track_count="1" square_pixel_width="1920" square_pixel_height="1080" raster_type="1919378017"/>
+		<asset name="Vera Daves de Sousa.png" unique_id="674e4d59-3d78-4ad3-a0e6-5dcab8ff0513_shot" type="shot" media-type="9" created_for_layer="1" audio_tracks="0" video_tracks="0" still_image_tracks="1" veil_track_count="0" alpha_track_count="1"/>
+	</assets>
+	<chroma_key_configurations>
+		<chroma_key_configuration unique_id="DirectShowVideo:\\?\usb#vid_1e4e&amp;pid_710f&amp;mi_00#6&amp;27cbe658&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" timestamp="9" ck_active="0" method="0" ck_key_cb="98.9007" ck_key_cr="91.2211" ck_key_cutoff="1.3" ck_edge_blend_active="1" ck_luma_clip_hi="0" ck_black_clip="0" ck_source_encoding="876229170" ck_source_encoding_width="0" ck_source_display="0" luma_white_min="200" luma_white_max="255" luma_black_min="0" luma_black_max="15" edge_coloring="0.15" spill_suppression="0.8" solidify="0.2" alpha_min="0" alpha_max="30" ck_source_user_color_value="0,0,0" chroma_config_id="1000"/>
+	</chroma_key_configurations>
+	<shots>
+		<shot event_type="2" unique_id="d664105b-d748-456c-8e4a-cb4e9e260318_shot"/>
+		<shot event_type="2" unique_id="55e8094f-7bbc-43aa-a5b2-17f6ac6042e4_shot"/>
+		<shot event_type="2" unique_id="bb366978-290e-4b55-8616-4ce980009605_shot"/>
+		<shot event_type="2" unique_id="73b3f98f-3207-4f58-9641-5c5788639365_shot"/>
+		<shot event_type="2" unique_id="1a21e174-ab1b-49ec-a8cf-23103d681f11_shot"/>
+		<shot event_type="2" unique_id="49d3e3bf-800f-4750-8a35-7eb4c3368b35_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" obj_trans="0" unique_id="DirectShowAudio:Microfone (HD USB Audio Device):0">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="10" unique_id="one_quad">
+				<event event_type="2" channel_id="1" scale_ratio="1" obj_pos="-6.4373e-07,0" obj_normcrop_lt="-1,-1" obj_normcrop_rb="1,1" chroma_config_id="1000" obj_contrast="90.4348" obj_gamma="1.0058" unique_id="DirectShowVideo:\\?\usb#vid_1e4e&amp;pid_710f&amp;mi_00#6&amp;27cbe658&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="578f1a27-fa8b-4c22-97e1-277e0c3664fe_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" obj_trans="0" unique_id="DirectShowAudio:Microfone (HD USB Audio Device):0">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="10" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="DirectShowVideo:\\?\usb#vid_345f&amp;pid_2130&amp;mi_00#6&amp;38ba446d&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="36b2466d-7f92-4134-9d3c-9b357d1ed708_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="1ed28112-24e4-4245-b7a1-693c72389943_01 - Manuel Nunes Júnior.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="fc5e8b23-dd1d-4dc6-8be7-aeec07db7f0e_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="73fb017a-1711-415c-81b9-970d513b10ce_02 - Vera Daves.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="9007dbf8-f093-4927-afef-c34e0cd92d43_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="75c1b2c5-da12-4671-a3da-34af483dc501_03 - Sérgio Calundungo.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="fbc4ee3e-07ab-441b-a47b-ed740be81ded_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="31eefd94-2877-47cd-b933-606e235ba62a_04 - Manuel Cabral.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="939bed82-601a-4b21-83e5-ef1973a51e80_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="fd3f3027-3384-4cdf-a4f7-5c32be8a492a_05 - Ayrton Lucas.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="90c5d0fc-249b-480c-b75c-0753c2bd0854_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="973d456d-5ac5-4678-9424-e2a86318caab_06 - Ottoniel Santos.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="4fcd48f5-2a7a-44c9-862e-198c05b7eaba_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="32d44e3b-3af5-4cee-ba0f-718c31e49893_07 - Osvaldo Ngoloimwe.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="c4809386-cf88-49bb-80bf-820dd19a34d2_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="85c599fc-a467-43eb-a81c-4f155ac30630_08 -  Vera Daves.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="f7aa91ea-6c78-4b2b-b644-b6c7522b46af_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="24340bd4-9e45-4eb4-9240-ebe2fd875e83_09 - Sílvio Custódio.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="8f1d91e6-af86-4fe3-a986-6e6103484d83_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="6fe2adac-7def-42e9-b1f9-cdd382e5632a_10 - Juciene de Sousa.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479" action_flags="24" ro_playhead="0" action_time="35933333" action_duration="0"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="42d6c822-e27a-4caa-ac81-ffd8d708bc00_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="229e3d00-a5d7-441e-8c4d-bf11cd7b4525_11 - Cláudio Costa.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="4bb30aec-3fa4-401a-a7a1-726839f2c268_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="c01632df-c4b6-461c-842b-bf6c02b84afd_12 - Alexandre Amorim.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="85437b56-4c10-4259-b8b4-0e39e46faac3_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="d19d7b39-4986-41b4-bca0-1ca16a5105c3_13 - Edilson Coelho.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="afe75486-7343-4efe-85bf-62d61e2b66ec_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="9314a7db-1aec-4d5b-8343-fdc6adfc9200_14 - Edna Mascarenhas.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="87e76281-f303-47d7-b2f1-fa692e57c28f_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="5b7e12aa-d584-4598-9ec8-2822a8f23759_15 -  Patrício Neto.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="ba146ddb-c272-476c-8d13-7b2e438bf56c_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="5dcad9bb-74a1-4f12-b88a-f20bdff680b6_16 - Adérito Mazango.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="b03bed31-592d-464a-8e3b-8783a4d2c8b4_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="e8fb48b3-9420-47df-a221-61e13f235476_17 - Isaac Xiquita.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="d92a0308-a124-46db-a90a-342937e30504_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="8874b9b5-05d9-4166-9f4a-1b271b66f725_18 -  António Manuel.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="ea85c1c0-823c-4f2e-9937-66809ac2dd4a_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" obj_trans="0" unique_id="DirectShowAudio:Microfone (HD USB Audio Device):0">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="10" unique_id="one_quad">
+				<event event_type="2" channel_id="1" scale_ratio="1" ro_user_scale="1.07754,1.07754" unique_id="d5d972d3-b523-4a91-b894-3164d9764121_WhatsApp Image 2025-03-31 at 5.32.03 PM.jpeg">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="15">
+				<event event_type="2" channel_id="1" scaling_mode="65538" scale_ratio="1.87727" obj_pos="0.262305,0.123875" ro_user_scale="3.21956,1.71502" unique_id="08029c59-e6bf-4eeb-a8ab-fd2e75262f6f">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="20" unique_id="one_quad">
+				<event event_type="2" channel_id="1" layer_z_order="10" scale_ratio="0.999999" ro_user_scale="0.749557,0.749558" obj_pos="-2.71014,0.123875" obj_crop_left_top="498.321,0" obj_crop_right_bottom="806.4,-0" obj_normcrop_lt="-0.480916,-1" obj_normcrop_rb="0.16,1" unique_id="DirectShowVideo:\\?\usb#vid_1e4e&amp;pid_710f&amp;mi_00#6&amp;27cbe658&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="25" unique_id="one_quad">
+				<event event_type="2" channel_id="1" layer_z_order="5" scale_ratio="1" obj_pos="0.876475,0.123876" ro_user_scale="0.749558,0.749558" saved_obj_trans="1" unique_id="DirectShowVideo:\\?\usb#vid_345f&amp;pid_2130&amp;mi_00#6&amp;38ba446d&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="6417bbd5-078b-4751-bed4-ff35a022a599">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" scale_ratio="1" ro_user_scale="1.07754,1.07754" layer_z_order="5" unique_id="d5d972d3-b523-4a91-b894-3164d9764121_WhatsApp Image 2025-03-31 at 5.32.03 PM.jpeg">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="10" unique_id="one_quad">
+				<event event_type="2" channel_id="1" scale_ratio="1" ro_user_scale="0.288246,0.288246" unique_id="DirectShowVideo:\\?\usb#vid_1e4e&amp;pid_710f&amp;mi_00#6&amp;27cbe658&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" obj_pos="-2.4108,0.0770036">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="15">
+				<event event_type="2" channel_id="1" scale_ratio="1" obj_pos="1.1729,0" ro_user_scale="0.674194,0.674194" unique_id="DirectShowVideo:\\?\usb#vid_345f&amp;pid_2130&amp;mi_00#6&amp;38ba446d&amp;0&amp;0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+			<event event_type="4" zorder="20" unique_id="one_quad">
+				<event event_type="2" channel_id="1" obj_trans="0" unique_id="DirectShowAudio:Microfone (HD USB Audio Device):0">
+					<event event_type="1" channel_id="1" ro_media_type="1635083375"/>
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="548af324-3e7f-4c5d-a005-05548cccc5e9_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" scale_ratio="1" obj_pos="0.0536476,0.0357648" ro_user_scale="1.0149,1.0149" unique_id="71037056-25fc-42ff-b76b-9f2c39b6ba56_WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="2a8ee681-292a-42c6-a062-d62ff6940186_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" scale_ratio="1" obj_pos="-0.0544941,-0.0223337" ro_user_scale="1.0402,1.0402" unique_id="71037056-25fc-42ff-b76b-9f2c39b6ba56_WhatsApp Image 2025-03-31 at 4.53.40 PM.jpeg">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+		<shot event_type="2" unique_id="674e4d59-3d78-4ad3-a0e6-5dcab8ff0513_shot">
+			<event event_type="4" zorder="5" unique_id="one_quad">
+				<event event_type="2" channel_id="1" unique_id="0944dca1-3011-4983-a45b-846252dbf25e_Vera Daves de Sousa.png">
+					<event event_type="1" channel_id="1" ro_media_type="1986618479"/>
+				</event>
+			</event>
+		</shot>
+	</shots>
+</document>

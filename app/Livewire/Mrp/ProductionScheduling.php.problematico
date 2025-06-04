@@ -1,0 +1,1130 @@
+<?php
+
+namespace App\Livewire\Mrp;
+
+use Livewire\Component;
+use Livewire\WithPagination;
+use App\Models\Mrp\ProductionSchedule;
+use App\Models\Mrp\ProductionOrder;
+use App\Models\SupplyChain\Product;
+use App\Models\SupplyChain\InventoryLocation as Location;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+
+class ProductionScheduling extends Component
+{
+    use WithPagination;
+    
+    // Propriedades do componente
+    public $search = '';
+    public $sortField = 'start_date';
+    public $sortDirection = 'asc';
+    public $perPage = 10;
+    public $currentTab = 'list';
+    public $viewType = 'table'; // Tipo de visualização (tabela ou calendário)
+    
+    // Propriedades para modal
+    public $showModal = false;
+    public $showDeleteModal = false;
+    public $showOrdersModal = false;
+    public $showViewModal = false; // Modal de visualização
+    public $editMode = false;
+    public $scheduleId = null;
+    public $scheduleToDelete = null; // Programacao a ser excluída
+    public $confirmDelete = false; // Confirmação de exclusão
+    
+    // Propriedades do formulário
+    public $schedule = [
+        'product_id' => '',
+        'schedule_number' => '',
+        'start_date' => '',
+        'end_date' => '',
+        'planned_quantity' => '',
+        'status' => 'draft',
+        'priority' => 'medium',
+        'responsible' => '',
+        'location_id' => '',  // ID da localização de inventário da supply chain
+        'notes' => ''
+    ];
+    
+    // Propriedades de filtro
+    public $statusFilter = null;
+    public $priorityFilter = null;
+    public $dateFilter = null;
+    public $productFilter = null;
+    
+    // Propriedades do calendário
+    public $calendarView = 'month';
+    public $calendarDate = null;
+    public $calendarEvents = [];
+    public $calendarTitle = '';
+    public $calendarDayNames = [];
+    public $calendarWeeks = [];
+    public $calendarDays = [];
+    
+    /**
+     * Mount component
+     */
+    public function mount()
+    {
+        $this->calendarDate = date('Y-m-d');
+        $this->updateCalendarTitle();
+        $this->setupCalendarDayNames();
+        $this->loadCalendarEvents();
+    }
+    
+    /**
+     * Regras de validação
+     */
+    protected function rules()
+    {
+        return [
+            'schedule.product_id' => 'required|exists:sc_products,id',
+            'schedule.schedule_number' => [
+                'required',
+                'string',
+                'max:50',
+                $this->editMode
+                    ? Rule::unique('mrp_production_schedules', 'schedule_number')->ignore($this->scheduleId)
+                    : Rule::unique('mrp_production_schedules', 'schedule_number'),
+            ],
+            'schedule.start_date' => 'required|date',
+            'schedule.end_date' => 'required|date|after_or_equal:schedule.start_date',
+            'schedule.planned_quantity' => 'required|numeric|min:0.001',
+            'schedule.status' => ['required', Rule::in(['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'])],
+            'schedule.priority' => ['required', Rule::in(['low', 'medium', 'high', 'urgent'])],
+            'schedule.responsible' => 'nullable|string|max:100',
+            'schedule.location_id' => 'required|exists:sc_inventory_locations,id',
+            'schedule.notes' => 'nullable|string|max:1000',
+        ];
+    }
+    
+    /**
+     * Resetar paginação quando a busca mudar
+     */
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+    
+    /**
+     * Ordenar por coluna
+     */
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
+        
+        $this->sortField = $field;
+    }
+    
+    /**
+     * Resetar filtros
+     */
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->statusFilter = null;
+        $this->priorityFilter = null;
+        $this->dateFilter = null;
+        $this->productFilter = null;
+        $this->resetPage();
+    }
+    
+    /**
+     * Alterar a visualização da aba
+     */
+    public function setTab($tab)
+    {
+        $this->currentTab = $tab;
+        
+        if ($tab === 'calendar') {
+            // Garantir que os dias da semana estão configurados
+            $this->setupCalendarDayNames();
+            
+            // Verificar se a data do calendário está definida
+            if (!$this->calendarDate) {
+                $this->calendarDate = date('Y-m-d');
+            }
+            
+            // Atualizar título do calendário
+            $this->updateCalendarTitle();
+            
+            // Inicializar o calendário
+            $this->loadCalendarEvents();
+        }
+    }
+    
+    /**
+     * Alterar a visualização do calendário
+     */
+    public function setCalendarView($view)
+    {
+        $this->calendarView = $view;
+        $this->loadCalendarEvents();
+    }
+    
+    /**
+     * Avançar para o próximo mês no calendário
+     */
+    public function nextMonth()
+    {
+        $date = date('Y-m-d', strtotime($this->calendarDate . ' +1 month'));
+        $this->calendarDate = $date;
+        $this->updateCalendarTitle();
+        $this->loadCalendarEvents();
+    }
+    
+    /**
+     * Voltar para o mês anterior no calendário
+     */
+    public function previousMonth()
+    {
+        $date = date('Y-m-d', strtotime($this->calendarDate . ' -1 month'));
+        $this->calendarDate = $date;
+        $this->updateCalendarTitle();
+        $this->loadCalendarEvents();
+    }
+    
+    /**
+     * Atualizar o título do calendário baseado na data atual
+     */
+    private function updateCalendarTitle()
+    {
+        setlocale(LC_TIME, 'pt_BR.utf8', 'Portuguese_Brazil');
+        $month = ucfirst(date('F Y', strtotime($this->calendarDate)));
+        $this->calendarTitle = $month;
+    }
+    
+    /**
+     * Configurar os nomes dos dias da semana para o calendário
+     */
+    private function setupCalendarDayNames()
+    {
+        $this->calendarDayNames = [
+            __('messages.sunday_short'),
+            __('messages.monday_short'),
+            __('messages.tuesday_short'),
+            __('messages.wednesday_short'),
+            __('messages.thursday_short'),
+            __('messages.friday_short'),
+            __('messages.saturday_short')
+        ];
+    }
+    
+    /**
+     * Carregar eventos para o calendário
+     */
+    public function loadCalendarEvents()
+    {
+        // Atualizar o título do calendário
+        $this->updateCalendarTitle();
+        
+        // Garantir que os dias da semana estão configurados
+        if (empty($this->calendarDayNames)) {
+            $this->setupCalendarDayNames();
+        }
+        
+        // Definir datas para o calendário
+        $year = date('Y', strtotime($this->calendarDate));
+        $month = date('m', strtotime($this->calendarDate));
+        
+        // Primeiro dia do mês
+        $firstDayOfMonth = $year . '-' . $month . '-01';
+        // Último dia do mês
+        $lastDayOfMonth = date('Y-m-t', strtotime($firstDayOfMonth));
+        
+        // Dia da semana do primeiro dia (0 = domingo, 6 = sábado)
+        $firstDayOfWeek = (int)date('w', strtotime($firstDayOfMonth));
+        
+        // Gerar dias para o calendário
+        $this->calendarDays = [];
+        
+        // Adicionar dias do mês anterior para completar a primeira semana
+        for ($i = 0; $i < $firstDayOfWeek; $i++) {
+            $date = date('Y-m-d', strtotime($firstDayOfMonth . ' -' . ($firstDayOfWeek - $i) . ' days'));
+            $day = date('j', strtotime($date));
+            
+            $this->calendarDays[] = [
+                'date' => $date,
+                'day' => $day,
+                'isCurrentMonth' => false,
+                'isToday' => $date === date('Y-m-d'),
+                'events' => []
+            ];
+        }
+        
+        // Adicionar dias do mês atual
+        $daysInMonth = (int)date('t', strtotime($firstDayOfMonth));
+        
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = $year . '-' . $month . '-' . sprintf('%02d', $day);
+            
+            $this->calendarDays[] = [
+                'date' => $date,
+                'day' => $day,
+                'isCurrentMonth' => true,
+                'isToday' => $date === date('Y-m-d'),
+                'events' => []
+            ];
+        }
+        
+        // Adicionar dias do próximo mês para completar a última semana (6 semanas)
+        $remainingDays = 42 - count($this->calendarDays);
+        
+        for ($day = 1; $day <= $remainingDays; $day++) {
+            $date = date('Y-m-d', strtotime($lastDayOfMonth . ' +' . $day . ' days'));
+            
+            $this->calendarDays[] = [
+                'date' => $date,
+                'day' => $day,
+                'isCurrentMonth' => false,
+                'isToday' => $date === date('Y-m-d'),
+                'events' => []
+            ];
+        }
+        
+        // Organizar dias em semanas
+        $this->calendarWeeks = array_chunk($this->calendarDays, 7);
+        
+        // Buscar eventos entre as datas do calendário
+        $start = $this->calendarDays[0]['date'];
+        $end = end($this->calendarDays)['date'];
+        
+        try {
+            $schedules = ProductionSchedule::with(['product'])
+                ->where(function($query) use ($start, $end) {
+                    $query->whereBetween('start_date', [$start, $end])
+                          ->orWhereBetween('end_date', [$start, $end]);
+                })
+                ->get();
+            
+            // Associar eventos aos dias do calendário
+            foreach ($schedules as $schedule) {
+                $startDate = max(strtotime($schedule->start_date), strtotime($start));
+                $endDate = min(strtotime($schedule->end_date), strtotime($end));
+                $currentDate = $startDate;
+                
+                while ($currentDate <= $endDate) {
+                    $formattedDate = date('Y-m-d', $currentDate);
+                    
+                    $event = [
+                        'id' => $schedule->id,
+                        'title' => $schedule->product ? $schedule->product->name : 'Produto não definido',
+                        'status' => $schedule->status,
+                        'priority' => $schedule->priority
+                    ];
+                    
+                    // Adicionar evento à data correspondente no calendário
+                    foreach ($this->calendarDays as &$day) {
+                        if ($day['date'] === $formattedDate) {
+                            if (!isset($day['events'])) {
+                                $day['events'] = [];
+                            }
+                            $day['events'][] = $event;
+                            break;
+                        }
+                    }
+                    
+                    $currentDate = strtotime('+1 day', $currentDate);
+                }
+            }
+            
+            // Ordenar eventos por prioridade
+            foreach ($this->calendarDays as &$day) {
+                if (isset($day['events']) && !empty($day['events'])) {
+                    usort($day['events'], function($a, $b) {
+                        $priorityOrder = ['urgent' => 1, 'high' => 2, 'medium' => 3, 'low' => 4];
+                        return ($priorityOrder[$a['priority']] ?? 5) <=> ($priorityOrder[$b['priority']] ?? 5);
+                    });
+                }
+            }
+        } catch (\Exception $e) {
+            // Em caso de erro, pelo menos garantir que o calendário seja exibido
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.calendar_load_error'),
+                message: __('messages.calendar_events_load_error', ['error' => $e->getMessage()])
+            );
+        }
+    }
+    
+    /**
+     * Gerar número de programação
+     */
+    public function generateScheduleNumber()
+    {
+        if (empty($this->schedule['product_id'])) {
+            return;
+        }
+        
+        $product = Product::find($this->schedule['product_id']);
+        if (!$product) {
+            return;
+        }
+        
+        // Gerar número sequencial
+        $lastSchedule = ProductionSchedule::orderBy('id', 'desc')->first();
+        $lastId = $lastSchedule ? $lastSchedule->id + 1 : 1;
+        
+        // Formato: SCH-AAAAMMDD-XXXX (XXXX = número sequencial)
+        $this->schedule['schedule_number'] = 'SCH-' . date('Ymd') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+        
+        // Definir datas padrão
+        if (empty($this->schedule['start_date'])) {
+            $this->schedule['start_date'] = date('Y-m-d');
+        }
+        
+        if (empty($this->schedule['end_date'])) {
+            $this->schedule['end_date'] = date('Y-m-d', strtotime('+7 days'));
+        }
+    }
+    
+    /**
+     * Abrir modal para criar nova programação
+     */
+    public function create()
+    {
+        try {
+            \Illuminate\Support\Facades\Log::info('create method called');
+            $this->resetValidation();
+            $this->reset('schedule');
+            $schedule = [
+                'product_id' => '',
+                'schedule_number' => $this->generateScheduleNumber(),
+                'start_date' => date('Y-m-d'),
+                'end_date' => date('Y-m-d', strtotime('+7 days')),
+                'planned_quantity' => '',
+                'status' => 'draft',
+                'priority' => 'medium',
+                'responsible' => '',
+                'location_id' => '',
+                'notes' => ''
+            ];
+            $this->schedule = $schedule;
+            $this->editMode = false;
+            $this->showModal = true;
+            
+            \Illuminate\Support\Facades\Log::info('Modal should be visible now', [
+                'showModal' => $this->showModal,
+                'schedule' => $this->schedule
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error in create method', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Alias para o método create - usado pelos botões na interface
+     */
+    public function openCreateModal()
+    {
+        // Add debug log
+        \Illuminate\Support\Facades\Log::info('openCreateModal called');
+        
+        try {
+            // Verificar se existem produtos e localizações
+            $firstProduct = \App\Models\SupplyChain\Product::first();
+            $firstLocation = \App\Models\SupplyChain\InventoryLocation::first();
+            
+            \Illuminate\Support\Facades\Log::info('Valores para inicialização', [
+                'produto' => $firstProduct ? $firstProduct->id : 'Nenhum produto encontrado',
+                'localização' => $firstLocation ? $firstLocation->id : 'Nenhuma localização encontrada'
+            ]);
+            
+            $this->resetValidation();
+            $this->reset('schedule');
+            
+            // Inicializa primeiro com o product_id para que o generateScheduleNumber funcione
+            $this->schedule = [
+                'product_id' => $firstProduct ? $firstProduct->id : '',
+            ];
+            
+            // Agora geramos o número de programação após definir o product_id
+            $this->generateScheduleNumber();
+            \Illuminate\Support\Facades\Log::info('Número de programação gerado', ['numero' => $this->schedule['schedule_number'] ?? 'Não gerado']);
+            
+            // Completa a inicialização com os demais valores
+            $this->schedule = array_merge($this->schedule, [
+                'start_date' => date('Y-m-d'),
+                'end_date' => date('Y-m-d', strtotime('+7 days')),
+                'planned_quantity' => '1', // Valor padrão
+                'status' => 'draft',
+                'priority' => 'medium',
+                'location_id' => $firstLocation ? $firstLocation->id : '',
+                'responsible' => '',
+                'notes' => ''
+            ]);
+            
+            // Garantir que o schedule_number existe
+            if (empty($this->schedule['schedule_number'])) {
+                // Gerar manualmente se o método normal falhou
+                $lastSchedule = \App\Models\Mrp\ProductionSchedule::orderBy('id', 'desc')->first();
+                $lastId = $lastSchedule ? $lastSchedule->id + 1 : 1;
+                $this->schedule['schedule_number'] = 'SCH-' . date('Ymd') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+                
+                \Illuminate\Support\Facades\Log::info('Número de programação gerado manualmente', 
+                    ['numero' => $this->schedule['schedule_number']]);
+            }
+            
+            $this->editMode = false;
+            $this->showModal = true;
+            
+            \Illuminate\Support\Facades\Log::info('Modal iniciado com dados', [
+                'showModal' => $this->showModal,
+                'editMode' => $this->editMode,
+                'schedule' => $this->schedule
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error in openCreateModal', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+        }
+    }
+} catch (\Exception $e) {
+    // Em caso de erro, pelo menos garantir que o calendário seja exibido
+    $this->dispatch('notify',
+        type: 'error',
+        title: __('messages.calendar_load_error'),
+        message: __('messages.calendar_events_load_error', ['error' => $e->getMessage()])
+    );
+}
+
+/**
+ * Gerar número de programação
+ */
+public function generateScheduleNumber()
+{
+    if (empty($this->schedule['product_id'])) {
+        return;
+    }
+        
+    $product = Product::find($this->schedule['product_id']);
+    if (!$product) {
+        return;
+    }
+        
+    // Gerar número sequencial
+    $lastSchedule = ProductionSchedule::orderBy('id', 'desc')->first();
+    $lastId = $lastSchedule ? $lastSchedule->id + 1 : 1;
+        
+    // Formato: SCH-AAAAMMDD-XXXX (XXXX = número sequencial)
+    $this->schedule['schedule_number'] = 'SCH-' . date('Ymd') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+        
+    // Definir datas padrão
+    if (empty($this->schedule['start_date'])) {
+        $this->schedule['start_date'] = date('Y-m-d');
+    }
+        
+    if (empty($this->schedule['end_date'])) {
+        $this->schedule['end_date'] = date('Y-m-d', strtotime('+7 days'));
+    }
+}
+
+/**
+ * Abrir modal para criar nova programação
+ */
+public function create()
+{
+    try {
+        \Illuminate\Support\Facades\Log::info('create method called');
+        $this->resetValidation();
+        $this->reset('schedule');
+        $schedule = [
+            'product_id' => '',
+            'schedule_number' => $this->generateScheduleNumber(),
+            'start_date' => date('Y-m-d'),
+            'end_date' => date('Y-m-d', strtotime('+7 days')),
+            'planned_quantity' => '',
+            'status' => 'draft',
+            'priority' => 'medium',
+            'responsible' => '',
+            'location_id' => '',
+            'notes' => ''
+        ];
+        $this->schedule = $schedule;
+        $this->editMode = false;
+        $this->showModal = true;
+            
+        \Illuminate\Support\Facades\Log::info('Modal should be visible now', [
+            'showModal' => $this->showModal,
+            'schedule' => $this->schedule
+        ]);
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Error in create method', [
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+}
+
+/**
+ * Alias para o método create - usado pelos botões na interface
+ */
+public function openCreateModal()
+{
+    // Add debug log
+    \Illuminate\Support\Facades\Log::info('openCreateModal called');
+        
+    try {
+        // Verificar se existem produtos e localizações
+        $firstProduct = \App\Models\SupplyChain\Product::first();
+        $firstLocation = \App\Models\SupplyChain\InventoryLocation::first();
+            
+        \Illuminate\Support\Facades\Log::info('Valores para inicialização', [
+            'produto' => $firstProduct ? $firstProduct->id : 'Nenhum produto encontrado',
+            'localização' => $firstLocation ? $firstLocation->id : 'Nenhuma localização encontrada'
+        ]);
+            
+        $this->resetValidation();
+        $this->reset('schedule');
+            
+        // Inicializa primeiro com o product_id para que o generateScheduleNumber funcione
+        $this->schedule = [
+            'product_id' => $firstProduct ? $firstProduct->id : '',
+        ];
+            
+        // Agora geramos o número de programação após definir o product_id
+        $this->generateScheduleNumber();
+        \Illuminate\Support\Facades\Log::info('Número de programação gerado', ['numero' => $this->schedule['schedule_number'] ?? 'Não gerado']);
+            
+        // Completa a inicialização com os demais valores
+        $this->schedule = array_merge($this->schedule, [
+            'start_date' => date('Y-m-d'),
+            'end_date' => date('Y-m-d', strtotime('+7 days')),
+            'planned_quantity' => '1', // Valor padrão
+            'status' => 'draft',
+            'priority' => 'medium',
+            'location_id' => $firstLocation ? $firstLocation->id : '',
+            'responsible' => '',
+            'notes' => ''
+        ]);
+            
+        // Garantir que o schedule_number existe
+        if (empty($this->schedule['schedule_number'])) {
+            // Gerar manualmente se o método normal falhou
+            $lastSchedule = \App\Models\Mrp\ProductionSchedule::orderBy('id', 'desc')->first();
+            $lastId = $lastSchedule ? $lastSchedule->id + 1 : 1;
+            $this->schedule['schedule_number'] = 'SCH-' . date('Ymd') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+                
+            \Illuminate\Support\Facades\Log::info('Número de programação gerado manualmente', 
+                ['numero' => $this->schedule['schedule_number']]);
+        }
+            
+        $this->editMode = false;
+        $this->showModal = true;
+            
+        \Illuminate\Support\Facades\Log::info('Modal iniciado com dados', [
+            'showModal' => $this->showModal,
+            'editMode' => $this->editMode,
+            'schedule' => $this->schedule
+        ]);
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Error in openCreateModal', [
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+}
+
+/**
+ * Abrir modal para criar agendamento em uma data específica
+ * 
+ * @param string $date Data no formato Y-m-d
+ */
+public function openCreateModalForDate($date)
+{
+    // Add debug log
+    \Illuminate\Support\Facades\Log::info('openCreateModalForDate called', ['date' => $date]);
+        
+    try {
+        // Verificar se existem produtos e localizações
+        $firstProduct = \App\Models\SupplyChain\Product::first();
+        $firstLocation = \App\Models\SupplyChain\InventoryLocation::first();
+            
+        \Illuminate\Support\Facades\Log::info('Valores para inicialização no calendário', [
+            'produto' => $firstProduct ? $firstProduct->id : 'Nenhum produto encontrado',
+            'localização' => $firstLocation ? $firstLocation->id : 'Nenhuma localização encontrada'
+        ]);
+            
+        $this->resetValidation();
+        $this->reset('schedule');
+            
+        // Inicializa primeiro com o product_id para que o generateScheduleNumber funcione
+        $this->schedule = [
+            'product_id' => $firstProduct ? $firstProduct->id : '',
+        ];
+            
+        // Agora geramos o número de programação após definir o product_id
+        $this->generateScheduleNumber();
+        \Illuminate\Support\Facades\Log::info('Número de programação gerado para calendário', ['numero' => $this->schedule['schedule_number'] ?? 'Não gerado']);
+            
+        // Completa a inicialização com os demais valores
+        $this->schedule = array_merge($this->schedule, [
+            'start_date' => $date,
+            'end_date' => date('Y-m-d', strtotime($date . ' +7 days')),
+            'planned_quantity' => '1', // Valor padrão
+            'status' => 'draft',
+            'priority' => 'medium',
+            'location_id' => $firstLocation ? $firstLocation->id : '',
+            'responsible' => '',
+            'notes' => ''
+        ]);
+            
+        // Garantir que o schedule_number existe
+        if (empty($this->schedule['schedule_number'])) {
+            // Gerar manualmente se o método normal falhou
+            $lastSchedule = \App\Models\Mrp\ProductionSchedule::orderBy('id', 'desc')->first();
+            $lastId = $lastSchedule ? $lastSchedule->id + 1 : 1;
+            $this->schedule['schedule_number'] = 'SCH-' . date('Ymd') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+                
+            \Illuminate\Support\Facades\Log::info('Número de programação gerado manualmente para calendário', 
+                ['numero' => $this->schedule['schedule_number']]);
+        }
+            
+        $this->editMode = false;
+        $this->showModal = true;
+            
+        \Illuminate\Support\Facades\Log::info('Modal do calendário iniciado com dados', [
+            'showModal' => $this->showModal,
+            'editMode' => $this->editMode,
+            'schedule' => $this->schedule
+        ]);
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Error in openCreateModalForDate', [
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+}
+
+/**
+ * Carregar e abrir modal para editar programação
+ */
+public function edit($id)
+{
+    try {
+        $this->scheduleId = $id;
+        $schedule = ProductionSchedule::with(['location'])->findOrFail($id);
+            
+        $this->schedule = [
+            'product_id' => $schedule->product_id,
+            'schedule_number' => $schedule->schedule_number,
+            'start_date' => $schedule->start_date->format('Y-m-d'),
+            'end_date' => $schedule->end_date->format('Y-m-d'),
+            'planned_quantity' => $schedule->planned_quantity,
+            'status' => $schedule->status,
+            'priority' => $schedule->priority,
+            'responsible' => $schedule->responsible,
+            'location_id' => $schedule->location_id,
+            'notes' => $schedule->notes
+        ];
+            
+        $this->editMode = true;
+        $this->showModal = true;
+    } catch (\Exception $e) {
+        $this->dispatch('notify', [
+            'type' => 'error',
+            'title' => 'Erro ao carregar programação',
+            'message' => 'Ocorreu um erro ao tentar carregar a programação: ' . $e->getMessage()
+        ]);
+    }
+} 
+/* Visualizar ordens de produção relacionadas */
+public function viewOrders($id)
+{
+    $this->scheduleId = $id;
+    $this->showOrdersModal = true;
+}
+    
+/**
+ * Visualizar produção detalhada
+ */
+public function view($id)
+{
+    $this->scheduleId = $id;
+    $this->showViewModal = true;
+}
+
+/**
+ * Confirmar exclusão de programação
+ */
+public function confirmDelete($id)
+{
+    $this->scheduleId = $id;
+    $this->scheduleToDelete = ProductionSchedule::with(['product'])->findOrFail($id);
+    $this->confirmDelete = false; // Resetar confirmação a cada nova solicitação de exclusão
+    $this->showDeleteModal = true;
+}
+    
+    /**
+     * Excluir programação
+     */
+    public function delete()
+    {
+        // Validar confirmação
+        if (!$this->confirmDelete) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.confirmation_required'),
+                message: __('messages.please_confirm_deletion')
+            );
+            return;
+        }
+        
+        if (!$this->scheduleToDelete) {
+            $this->scheduleToDelete = ProductionSchedule::findOrFail($this->scheduleId);
+        }
+        
+        try {
+            // Verificar se existem ordens relacionadas
+            $relatedOrdersCount = ProductionOrder::where('schedule_id', $this->scheduleId)->count();
+            
+            if ($relatedOrdersCount > 0) {
+                $this->dispatch('notify',
+                    type: 'error',
+                    title: __('messages.delete_error'),
+                    message: __('messages.cannot_delete_schedule_with_orders', ['count' => $relatedOrdersCount])
+                );
+                
+                $this->closeModal();
+                return;
+            }
+            
+            // Excluir programação
+            $this->scheduleToDelete->delete();
+            
+            $this->dispatch('notify',
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.production_schedule_deleted')
+            );
+            
+            $this->scheduleToDelete = null;
+            $this->closeModal();
+            
+            // Recarregar dados do calendário se estiver na visualização de calendário
+            if ($this->currentTab === 'calendar') {
+                $this->loadCalendarEvents();
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.error_deleting_schedule', ['error' => $e->getMessage()])
+            );
+        }
+    }    
+    /**
+     * Fechar modais
+     */
+    public function closeModal()
+    {
+        \Illuminate\Support\Facades\Log::info('closeModal called');
+        $this->resetValidation();
+        $this->reset(['showModal', 'showDeleteModal', 'showOrdersModal', 'showViewModal', 'editMode']);
+        $this->scheduleId = null;
+        $this->scheduleToDelete = null;
+        $this->confirmDelete = false;
+        \Illuminate\Support\Facades\Log::info('Modal state after closing', [
+            'showModal' => $this->showModal,
+            'editMode' => $this->editMode
+        ]);
+    }
+    
+    /**
+     * Salvar programação (criar ou atualizar)
+     */
+    public function save()
+    {
+        \Illuminate\Support\Facades\Log::info('save method called');
+        // Removida a validação daqui para permitir que as validações funcionem corretamente nos métodos update() e store()
+        
+        // Se estiver em modo de edição, atualizar
+        if ($this->editMode) {
+            $this->update();
+        } else {
+            // Senão, criar novo
+            $this->store();
+        }
+    }
+
+    /**
+     * Atualizar programação existente
+     */
+    public function update()
+    {
+        try {
+            $schedule = ProductionSchedule::findOrFail($this->scheduleId);
+            
+            $schedule->product_id = $this->schedule['product_id'];
+            $schedule->schedule_number = $this->schedule['schedule_number'];
+            $schedule->start_date = $this->schedule['start_date'];
+            $schedule->end_date = $this->schedule['end_date'];
+            $schedule->planned_quantity = $this->schedule['planned_quantity'];
+            $schedule->status = $this->schedule['status'];
+            $schedule->priority = $this->schedule['priority'];
+            $schedule->responsible = $this->schedule['responsible'];
+            $schedule->location_id = $this->schedule['location_id'];
+            $schedule->notes = $this->schedule['notes'];
+            $schedule->updated_by = Auth::id();
+            
+            $schedule->save();
+            
+            $this->dispatch('notify',
+                type: 'success',
+                title: __('messages.schedule_updated'),
+                message: __('messages.production_schedule_updated')
+            );
+        } catch (\Exception $e) {
+            $this->dispatch('notify',
+                type: 'error',
+                title: __('messages.error'),
+                message: __('messages.error_updating_schedule', ['error' => $e->getMessage()])
+            );
+        }
+    }
+
+    /**
+     * Store new production schedule
+     */
+    public function store()
+    {
+        \Illuminate\Support\Facades\Log::info('=== INÍCIO DO MÉTODO STORE ===');
+        \Illuminate\Support\Facades\Log::info('Dados do schedule antes da validação:', [
+            'schedule' => $this->schedule,
+            'editMode' => $this->editMode,
+            'showModal' => $this->showModal
+        ]);
+        
+        // Verificar se os dados básicos estão presentes
+        if (!isset($this->schedule) || !is_array($this->schedule)) {
+            \Illuminate\Support\Facades\Log::error('Erro básico: schedule não está definido ou não é um array');
+            $this->addError('schedule', 'Os dados da programação não foram inicializados corretamente');
+            return false;
+        }
+        
+        // Verificar se existem produtos no banco
+        $productsCount = \App\Models\SupplyChain\Product::count();
+        \Illuminate\Support\Facades\Log::info('Verificação de produtos disponíveis', ['count' => $productsCount]);
+        
+        // Verificar se existem localizações no banco
+        $locationsCount = \App\Models\SupplyChain\InventoryLocation::count();
+        \Illuminate\Support\Facades\Log::info('Verificação de localizações disponíveis', ['count' => $locationsCount]);
+        
+        // Log das regras de validação
+        \Illuminate\Support\Facades\Log::info('Regras de validação', ['rules' => $this->rules()]);
+        
+        // Validate the input - não envolva em try/catch para que as mensagens de erro apareçam automaticamente
+        \Illuminate\Support\Facades\Log::info('Iniciando validação...');
+        $this->validate();
+        \Illuminate\Support\Facades\Log::info('Validação concluída com sucesso');
+        
+        // Log detalhado dos dados após validação
+        \Illuminate\Support\Facades\Log::info('Valores após validação:', [
+            'product_id' => isset($this->schedule['product_id']) ? $this->schedule['product_id'] : 'não definido',
+            'schedule_number' => isset($this->schedule['schedule_number']) ? $this->schedule['schedule_number'] : 'não definido',
+            'start_date' => isset($this->schedule['start_date']) ? $this->schedule['start_date'] : 'não definido',
+            'end_date' => isset($this->schedule['end_date']) ? $this->schedule['end_date'] : 'não definido',
+            'planned_quantity' => isset($this->schedule['planned_quantity']) ? $this->schedule['planned_quantity'] : 'não definido',
+            'location_id' => isset($this->schedule['location_id']) ? $this->schedule['location_id'] : 'não definido'
+        ]);
+        
+        try {
+            // Verificar relações antes de criar
+            \Illuminate\Support\Facades\Log::info('Verificando existência do produto', ['product_id' => $this->schedule['product_id']]);
+            $product = \App\Models\SupplyChain\Product::findOrFail($this->schedule['product_id']);
+            
+            \Illuminate\Support\Facades\Log::info('Verificando existência da localização', ['location_id' => $this->schedule['location_id']]);
+            $location = \App\Models\SupplyChain\InventoryLocation::findOrFail($this->schedule['location_id']);
+            
+            // Create a new schedule
+            \Illuminate\Support\Facades\Log::info('Criando nova instância de ProductionSchedule');
+            $schedule = new ProductionSchedule();
+            $schedule->product_id = $this->schedule['product_id'];
+            $schedule->schedule_number = $this->schedule['schedule_number'] ?? $this->generateScheduleNumber();
+            $schedule->start_date = $this->schedule['start_date'];
+            $schedule->end_date = $this->schedule['end_date'];
+            $schedule->planned_quantity = $this->schedule['planned_quantity'];
+            $schedule->status = $this->schedule['status'];
+            $schedule->priority = $this->schedule['priority'];
+            $schedule->responsible = $this->schedule['responsible'] ?? null;
+            $schedule->location_id = $this->schedule['location_id'];
+            $schedule->notes = $this->schedule['notes'] ?? null;
+            $schedule->created_by = Auth::id();
+            
+            \Illuminate\Support\Facades\Log::info('Objeto ProductionSchedule preparado para salvar', [
+                'dados' => $schedule->toArray()
+            ]);
+            
+            // Tentar salvar o registro
+            $schedule->save();
+            \Illuminate\Support\Facades\Log::info('ProductionSchedule salvo com sucesso', ['id' => $schedule->id]);
+            
+            // Limpar formulário e fechar modal
+            $this->schedule = [
+                'product_id' => '',
+                'schedule_number' => '',
+                'start_date' => '',
+                'end_date' => '',
+                'planned_quantity' => '',
+                'status' => 'draft',
+                'priority' => 'medium',
+                'responsible' => '',
+                'location_id' => '',
+                'notes' => ''
+            ];
+            $this->showModal = false;
+            
+            // Recarregar eventos do calendário se estiver na visualização de calendário
+            if ($this->currentTab === 'calendar') {
+                $this->loadCalendarEvents();
+            }
+            
+            // Mensagem de sucesso
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'title' => __('messages.success'),
+                'message' => __('messages.schedule_created_successfully')
+            ]);
+            
+            \Illuminate\Support\Facades\Log::info('=== FIM DO MÉTODO STORE ===');
+            return true;
+            
+        } catch (\Illuminate\Database\QueryException $qe) {
+            \Illuminate\Support\Facades\Log::error('Erro de SQL ao salvar ProductionSchedule', [
+                'sql' => $qe->getSql(),
+                'bindings' => $qe->getBindings(),
+                'code' => $qe->getCode(),
+                'message' => $qe->getMessage()
+            ]);
+            $this->addError('database', 'Erro de banco de dados: ' . $qe->getMessage());
+            \Illuminate\Support\Facades\Log::info('=== FIM DO MÉTODO STORE - ERRO ===');
+            return false;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('=== ERRO NO MÉTODO STORE ===', [
+                'exception_class' => get_class($e),
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Adicionar erro para exibir na interface
+            $this->addError('general', $e->getMessage());
+            
+            // Error notification
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'title' => __('messages.error'),
+                'message' => __('messages.schedule_creation_error', ['error' => $e->getMessage()])
+            ]);
+            
+            \Illuminate\Support\Facades\Log::info('=== FIM DO MÉTODO STORE - ERRO ===');
+            return false;
+        }
+    }
+    
+    /**
+     * Carregar dados para a view
+     */
+    public function render()
+    {
+        // Se estiver na aba de calendário, carregar eventos
+        if ($this->currentTab === 'calendar' && empty($this->calendarEvents)) {
+            $this->loadCalendarEvents();
+        }
+        
+        // Construir a consulta para a listagem
+        $query = ProductionSchedule::with(['product', 'location'])
+            ->when($this->search, function ($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('schedule_number', 'like', "%{$search}%")
+                      ->orWhere('responsible', 'like', "%{$search}%")
+                      ->orWhereHas('product', function ($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->when($this->statusFilter, function ($query, $status) {
+                $query->where('status', $status);
+            })
+            ->when($this->priorityFilter, function ($query, $priority) {
+                $query->where('priority', $priority);
+            })
+            ->when($this->dateFilter, function ($query, $date) {
+                $query->whereDate('start_date', '<=', $date)
+                      ->whereDate('end_date', '>=', $date);
+            })
+            ->when($this->productFilter, function ($query, $productId) {
+                $query->where('product_id', $productId);
+            })
+            ->orderBy($this->sortField, $this->sortDirection);
+        
+        $schedules = $query->paginate($this->perPage);
+        
+        // Carregar dados para selects
+        $products = Product::where('type', 'finished')->orderBy('name')->get();
+        
+        // Carregar localizações de inventário da supply chain
+        $locations = Location::orderBy('name')->get();
+        
+        // Carregar ordens de produção se estiver visualizando
+        $relatedOrders = [];
+        $selectedSchedule = null;
+        
+        if ($this->showOrdersModal && $this->scheduleId) {
+            $relatedOrders = ProductionOrder::where('schedule_id', $this->scheduleId)
+                ->with(['product'])
+                ->get();
+                
+            $selectedSchedule = ProductionSchedule::with(['product', 'location'])
+                ->find($this->scheduleId);
+        }
+        
+        // Visualizar detalhes da programação selecionada
+        $viewingSchedule = null;
+        if ($this->showViewModal && $this->scheduleId) {
+            $viewingSchedule = ProductionSchedule::with(['product', 'location'])
+                ->find($this->scheduleId);
+        }
+        
+        // Definições para os selects
+        $statuses = [
+            'draft' => 'Rascunho',
+            'confirmed' => 'Confirmada',
+            'in_progress' => 'Em Andamento',
+            'completed' => 'Concluída',
+            'cancelled' => 'Cancelada'
+        ];
+        
+        $priorities = [
+            'low' => 'Baixa',
+            'medium' => 'Média',
+            'high' => 'Alta',
+            'urgent' => 'Urgente'
+        ];
+        
+        return view('livewire.mrp.production-scheduling', [
+            'schedules' => $schedules,
+            'products' => $products,
+            'locations' => $locations,
+            'statuses' => $statuses,
+            'priorities' => $priorities,
+            'relatedOrders' => $relatedOrders,
+            'selectedSchedule' => $selectedSchedule,
+            'viewingSchedule' => $viewingSchedule
+        ])->layout('layouts.livewire', [
+            'title' => 'Programação de Produção'
+        ]);
+    }
+}

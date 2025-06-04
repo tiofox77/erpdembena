@@ -1,0 +1,31 @@
+/* Basic CSS for the app layout */
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background-color: #f8fafc;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.card {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: #4a6cf7;
+    border-color: #4a6cf7;
+}
+
+.btn-primary:hover {
+    background-color: #3a59d6;
+    border-color: #3a59d6;
+}
