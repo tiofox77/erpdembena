@@ -811,13 +811,6 @@
             </a>
             @endcan
             
-            @can('supplychain.shipping.view')
-            <a href="{{ route('supply-chain.shipping-notes') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.shipping-notes') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-shipping-fast text-gray-500"></i>
-                <span>{{ trans('messages.shipping_notes') }}</span>
-            </a>
-            @endcan
-            
             @can('supplychain.forms.manage')
             <a href="{{ route('supply-chain.custom-forms') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.custom-forms') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-file-alt text-gray-500"></i>

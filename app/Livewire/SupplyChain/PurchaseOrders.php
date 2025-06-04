@@ -457,8 +457,6 @@ class PurchaseOrders extends Component
         
         if(!$order) {
             return $this->dispatch('notify', type: 'error', title: __('messages.error'), message: __('messages.purchase_order_not_found'));
-            $this->dispatch('notify', type: 'error', title: __('messages.access_denied'), message: __('messages.no_permission'));
-            
         }
         
         if(in_array($order->status, ['completed', 'cancelled'])) {
@@ -1130,29 +1128,39 @@ class PurchaseOrders extends Component
                                     
                                     // Tratamento especial para checkboxes
                                     if ($fieldType === 'checkbox') {
-                                        // Tenta decodificar o JSON se for um array codificado
-                                        if (is_string($value) && !empty($value)) {
-                                            $decoded = json_decode($value, true);
-                                            if (json_last_error() === JSON_ERROR_NONE) {
-                                                $value = $decoded;
+                                        if (!empty($fieldValue->field->options)) {
+                                            // Checkbox múltiplo - inicializar como array para wire:model
+                                            $checkboxArray = [];
+                                            
+                                            if (!empty($value) && $value !== '{}' && $value !== '[]') {
+                                                if (is_string($value)) {
+                                                    $decoded = json_decode($value, true);
+                                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                        // Converter apenas valores true para o formato do wire:model
+                                                        foreach ($fieldValue->field->options as $option) {
+                                                            $optionKey = $option['value'];
+                                                            $checkboxArray[$optionKey] = isset($decoded[$optionKey]) && $decoded[$optionKey] === true;
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                // Inicializar todas as opções como false
+                                                foreach ($fieldValue->field->options as $option) {
+                                                    $checkboxArray[$option['value']] = false;
+                                                }
                                             }
+                                            
+                                            $this->formData[$fieldName] = $checkboxArray;
+                                        } else {
+                                            // Checkbox simples - converter string para boolean
+                                            $this->formData[$fieldName] = ($value === '1' || $value === true || $value === 'true');
                                         }
-                                        
-                                        // Se for um array vazio, mantém como array
-                                        if ($value === '[]' || $value === '{}') {
-                                            $value = [];
-                                        }
-                                        
-                                        // Se for um valor booleano como string ('1' ou '0')
-                                        if (in_array($value, ['1', '0'], true)) {
-                                            $value = $value === '1';
-                                        }
+                                    } else {
+                                        $this->formData[$fieldName] = $value;
                                     }
-                                    
-                                    $this->formData[$fieldName] = $value;
                                 }
                             }
-                            // Log para debug
+                            // Log para depuração
                             \Illuminate\Support\Facades\Log::info('Carregando dados do formulário personalizado', [
                                 'form_id' => $formId,
                                 'shipping_note_id' => $existingShippingNote->id,
@@ -1181,18 +1189,22 @@ class PurchaseOrders extends Component
     private function initializeEmptyFormFields()
     {
         foreach ($this->customFormFields as $field) {
-            // Inicializa com valor padrão vazio
-            $this->formData[$field['name']] = '';
-            
             // Para campos checkbox, inicializa de acordo com o tipo
             if ($field['type'] === 'checkbox') {
                 if (!empty($field['options'])) {
-                    // Para checkboxes múltiplos, inicializa como array vazio
-                    $this->formData[$field['name']] = [];
+                    // Para checkboxes múltiplos, inicializa array com todas as opções como false
+                    $checkboxArray = [];
+                    foreach ($field['options'] as $option) {
+                        $checkboxArray[$option['value']] = false;
+                    }
+                    $this->formData[$field['name']] = $checkboxArray;
                 } else {
                     // Para checkbox único, inicializa como false
                     $this->formData[$field['name']] = false;
                 }
+            } else {
+                // Para outros tipos, inicializa com valor padrão vazio
+                $this->formData[$field['name']] = '';
             }
         }
     }
@@ -1281,12 +1293,24 @@ class PurchaseOrders extends Component
                             
                             // Tratamento especial para checkboxes
                             if ($field->type === 'checkbox') {
-                                if (is_array($value)) {
-                                    // Para checkboxes múltiplos, converte para JSON
-                                    $valueToSave = json_encode($value);
-                                } elseif (is_bool($value) || $value === '1' || $value === '0') {
-                                    // Para checkbox único, converte para booleano
-                                    $valueToSave = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+                                if (!empty($field->options)) {
+                                    // Checkbox múltiplo - processar array do wire:model
+                                    if (is_array($value)) {
+                                        $cleanedValues = [];
+                                        foreach ($value as $key => $val) {
+                                            // Normalizar valor do checkbox
+                                            if ($val === true || $val === 'true' || $val === '1' || $val === 1) {
+                                                $cleanedValues[$key] = true;
+                                            }
+                                        }
+                                        $valueToSave = empty($cleanedValues) ? '{}' : json_encode($cleanedValues);
+                                    } else {
+                                        // Se não for array, manter como está (compatibilidade)
+                                        $valueToSave = $value;
+                                    }
+                                } else {
+                                    // Checkbox simples - converter para string booleana
+                                    $valueToSave = ($value === true || $value === 'true' || $value === '1' || $value === 1) ? '1' : '0';
                                 }
                             }
                             
@@ -1294,6 +1318,14 @@ class PurchaseOrders extends Component
                                 'submission_id' => $submission->id,
                                 'field_id' => $field->id,
                                 'value' => $valueToSave
+                            ]);
+                            
+                            // Log para depuração
+                            \Illuminate\Support\Facades\Log::info('Campo salvo (PO):', [
+                                'field_name' => $fieldName,
+                                'field_type' => $field->type,
+                                'original_value' => $value,
+                                'saved_value' => $valueToSave
                             ]);
                         }
                     }

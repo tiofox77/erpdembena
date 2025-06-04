@@ -13,6 +13,12 @@
                 </button>
             </div>
             <div class="p-6">
+                @if (session()->has('message'))
+                    <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                        {{ session('message') }}
+                    </div>
+                @endif
+                
                 <form wire:submit.prevent="submitForm">
                     @if(isset($fields) && $fields->count() > 0)
                         <div class="space-y-6">
@@ -196,128 +202,28 @@
                                              
                                              <div class="mt-2 space-y-2">
                                                  @if($hasOptions)
-                                                     <!-- Checkbox com múltiplas opções -->
+                                                     <!-- Checkbox com múltiplas opções usando wire:model diretamente -->
                                                      @foreach($field->options as $option)
                                                          @php
                                                              $optionKey = $option['value'];
-                                                             $isChecked = isset($checkboxValues[$optionKey]) && ($checkboxValues[$optionKey] === true);
+                                                             $wireModelPath = "formData.{$field->name}.{$optionKey}";
                                                          @endphp
                                                          <div class="flex items-center">
                                                              <input type="checkbox" 
                                                                  id="{{ $field->id }}_{{ $optionKey }}" 
-                                                                 name="{{ $field->name }}[{{ $optionKey }}]" 
-                                                                 value="true"
-                                                                 data-field="{{ $field->name }}"
-                                                                 data-option="{{ $optionKey }}"
-                                                                 @if($isChecked) checked @endif
-                                                                 onchange="updateCheckboxValue(this, '{{ $field->name }}', '{{ $optionKey }}')" 
+                                                                 wire:model.live="{{ $wireModelPath }}"
                                                                  class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
                                                              <label for="{{ $field->id }}_{{ $optionKey }}" 
                                                                  class="ml-2 text-sm text-gray-700">{{ $option['label'] }}</label>
                                                          </div>
                                                      @endforeach
                                                      
-                                                     <!-- Campo oculto para armazenar o valor completo do JSON -->
-                                                     <input type="hidden" id="{{ $field->name }}_json" 
-                                                            wire:model="formData.{{ $field->name }}" 
-                                                            value="{{ !empty($checkboxValues) ? json_encode($checkboxValues) : '{}' }}">
-                                                     
-                                                     <script>
-                                                         function updateCheckboxValue(checkbox, fieldName, optionKey) {
-                                                             try {
-                                                                 const hiddenInput = document.getElementById(fieldName + '_json');
-                                                                 let currentValue = {};
-                                                                 
-                                                                 // Parse do valor atual
-                                                                 if (hiddenInput.value && hiddenInput.value !== 'null' && hiddenInput.value !== '{}') {
-                                                                     try {
-                                                                         currentValue = JSON.parse(hiddenInput.value) || {};
-                                                                     } catch (e) {
-                                                                         console.warn('Erro ao fazer parse do JSON, usando objeto vazio:', e);
-                                                                         currentValue = {};
-                                                                     }
-                                                                 }
-                                                                 
-                                                                 // Atualizar o valor da opção - apenas true para selecionados
-                                                                 if (checkbox.checked) {
-                                                                     currentValue[optionKey] = true;
-                                                                 } else {
-                                                                     delete currentValue[optionKey];
-                                                                 }
-                                                                 
-                                                                 // Preparar o valor JSON final
-                                                                 const jsonValue = Object.keys(currentValue).length > 0 
-                                                                     ? JSON.stringify(currentValue) 
-                                                                     : '{}';
-                                                                 
-                                                                 // Atualizar o input oculto
-                                                                 hiddenInput.value = jsonValue;
-                                                                 
-                                                                 console.debug('Checkbox atualizado:', {
-                                                                     field: fieldName,
-                                                                     option: optionKey,
-                                                                     checked: checkbox.checked,
-                                                                     currentValues: currentValue,
-                                                                     jsonValue: jsonValue
-                                                                 });
-                                                                 
-                                                                 // Notificar o Livewire
-                                                                 if (window.Livewire) {
-                                                                     const component = window.Livewire.find(checkbox.closest('[wire\\:id]')?.getAttribute('wire:id'));
-                                                                     if (component) {
-                                                                         component.call('handleUpdatedCheckbox', fieldName, jsonValue);
-                                                                     } else {
-                                                                         console.error('Componente Livewire não encontrado');
-                                                                     }
-                                                                 } else {
-                                                                     console.error('Livewire não está disponível');
-                                                                 }
-                                                             } catch (error) {
-                                                                 console.error('Erro ao atualizar checkbox:', error);
-                                                                 
-                                                                 if (window.Livewire) {
-                                                                     window.Livewire.dispatch('notify', {
-                                                                         type: 'error',
-                                                                         title: 'Erro',
-                                                                         message: 'Erro ao atualizar campo. Tente novamente.'
-                                                                     });
-                                                                 }
-                                                             }
-                                                         }
-                                                         
-                                                         // Inicialização quando Livewire estiver pronto
-                                                         document.addEventListener('livewire:initialized', function() {
-                                                             window.Livewire.on('checkbox-updated', ({ field, value }) => {
-                                                                 console.debug('Evento checkbox-updated:', { field, value });
-                                                                 
-                                                                 const checkboxes = document.querySelectorAll(`[data-field="${field}"]`);
-                                                                 checkboxes.forEach(checkbox => {
-                                                                     const optionKey = checkbox.getAttribute('data-option');
-                                                                     
-                                                                     if (optionKey) {
-                                                                         let isChecked = false;
-                                                                         try {
-                                                                             const values = typeof value === 'string' ? JSON.parse(value) : value;
-                                                                             isChecked = values && values[optionKey] === true;
-                                                                         } catch (e) {
-                                                                             console.error('Erro ao processar valor do checkbox:', e);
-                                                                         }
-                                                                         checkbox.checked = isChecked;
-                                                                     } else {
-                                                                         checkbox.checked = value === true || value === 'true' || value === 1 || value === '1';
-                                                                     }
-                                                                 });
-                                                             });
-                                                         });
-                                                     </script>
-                                                     
                                                  @else
                                                      <!-- Checkbox simples -->
                                                      <div class="flex items-center">
                                                          <input type="checkbox" 
                                                              id="{{ $field->id }}" 
-                                                             wire:model="formData.{{ $field->name }}" 
-                                                             @if($existingValue === true || $existingValue === 'true' || $existingValue === '1' || (is_array($checkboxValues) && isset($checkboxValues['value']) && $checkboxValues['value'] === true)) checked @endif
+                                                             wire:model.live="formData.{{ $field->name }}" 
                                                              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
                                                          <label for="{{ $field->id }}" class="ml-2 text-sm text-gray-700">{{ $field->label }}</label>
                                                      </div>
@@ -350,8 +256,7 @@
                                                 x-on:livewire-upload-error="uploading = false"
                                                 x-on:livewire-upload-progress="progress = $event.detail.progress">
                                                 <div class="mt-1 flex items-center">
-                                                    <input 
-                                                        type="file" 
+                                                    <input type="file" 
                                                         id="{{ $field->name }}" 
                                                         wire:model.live="formData.{{ $field->name }}"
                                                         class="block w-full text-sm text-gray-500
@@ -449,6 +354,13 @@
                         </div>
                         
                         <div class="flex justify-end space-x-2 mt-6">
+                            <!-- Botão de Debug -->
+                            <button type="button" wire:click="debugFormData" 
+                                class="inline-flex items-center px-3 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                                <i class="fas fa-bug mr-1"></i>
+                                Debug
+                            </button>
+                            
                             <button type="button" wire:click="closeModal" 
                                 class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 {{ __('messages.cancel') }}

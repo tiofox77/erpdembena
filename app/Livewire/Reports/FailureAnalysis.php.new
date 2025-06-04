@@ -1,0 +1,750 @@
+<?php
+
+namespace App\Livewire\Reports;
+
+use Livewire\Component;
+use App\Models\MaintenanceEquipment as Equipment;
+use App\Models\MaintenanceArea as Area;
+use App\Models\MaintenanceLine as Line;
+use App\Models\MaintenanceCorrective as Corrective;
+use App\Models\FailureMode;
+use App\Models\FailureCause;
+use App\Models\FailureModeCategory;
+use App\Models\FailureCauseCategory;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class FailureAnalysis extends Component
+{
+    // Filters
+    public $dateRange = 'month';
+    public $startDate;
+    public $endDate;
+    public $selectedArea = 'all';
+    public $selectedLine = 'all';
+    public $selectedEquipment = 'all';
+    public $sortField = 'date';
+    public $sortDirection = 'desc';
+
+    // Modal control
+    public $showDetailModal = false;
+    public $selectedFailure = null;
+
+    // Data properties
+    public $areas = [];
+    public $lines = [];
+    public $equipment = [];
+    public $failureRecords = [];
+    public $totalFailures = 0;
+    public $topFailureCause = '';
+    public $topFailureCauseCount = 0;
+    public $mostFailingEquipment = '';
+    public $mostFailingEquipmentCount = 0;
+    public $averageDowntime = 0;
+    public $identifiedPatterns = [];
+
+    // Chart data
+    public $failureCausesData = [];
+    public $failuresByEquipmentData = [];
+    public $failuresOverTimeData = [];
+    public $failureImpactData = [];
+    public $categoriesDistributionData = [];
+
+    // Initialize the component
+    public function mount()
+    {
+        // Set default date range based on current selection
+        $this->setDateRange();
+        
+        // Load areas, lines and equipment for filters
+        $this->loadFilterOptions();
+    }
+
+    // Listeners for Livewire events
+    protected $listeners = [
+        'refreshFailureAnalysis' => '$refresh',
+        'dateRangeSelected' => 'setCustomDateRange'
+    ];
+
+    // Set date range based on current selection
+    public function setDateRange()
+    {
+        $now = Carbon::now();
+        
+        switch ($this->dateRange) {
+            case 'week':
+                $this->startDate = $now->startOfWeek()->format('Y-m-d');
+                $this->endDate = $now->endOfWeek()->format('Y-m-d');
+                break;
+            case 'month':
+                $this->startDate = $now->startOfMonth()->format('Y-m-d');
+                $this->endDate = $now->endOfMonth()->format('Y-m-d');
+                break;
+            case 'quarter':
+                $this->startDate = $now->startOfQuarter()->format('Y-m-d');
+                $this->endDate = $now->endOfQuarter()->format('Y-m-d');
+                break;
+            case 'year':
+                $this->startDate = $now->startOfYear()->format('Y-m-d');
+                $this->endDate = $now->endOfYear()->format('Y-m-d');
+                break;
+            case 'custom':
+                // If custom, dates should be set by the user
+                if (!$this->startDate) $this->startDate = $now->subMonth()->format('Y-m-d');
+                if (!$this->endDate) $this->endDate = $now->format('Y-m-d');
+                break;
+        }
+    }
+
+    // Set custom date range
+    public function setCustomDateRange($startDate, $endDate)
+    {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->dateRange = 'custom';
+    }
+
+    // Load filter options
+    public function loadFilterOptions()
+    {
+        try {
+            // Load areas for filter
+            $this->areas = Area::orderBy('name')->get()->toArray();
+            
+            // Load lines based on selected area
+            $this->lines = $this->selectedArea !== 'all'
+                ? Line::where('area_id', $this->selectedArea)->orderBy('name')->get()->toArray()
+                : Line::orderBy('name')->get()->toArray();
+            
+            // Load equipment based on selected line
+            $this->equipment = $this->selectedLine !== 'all'
+                ? Equipment::where('line_id', $this->selectedLine)->orderBy('name')->get()->toArray()
+                : ($this->selectedArea !== 'all'
+                    ? Equipment::whereHas('line', function ($query) {
+                        $query->where('area_id', $this->selectedArea);
+                    })->orderBy('name')->get()->toArray()
+                    : Equipment::orderBy('name')->get()->toArray());
+            
+        } catch (\Exception $e) {
+            Log::error('Error loading filter options: ' . $e->getMessage());
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'error',
+                'message' => 'Erro ao carregar opções de filtro'
+            ]);
+        }
+    }
+
+    // Updated lifecycle hooks for filter changes
+    public function updatedSelectedArea()
+    {
+        $this->selectedLine = 'all';
+        $this->selectedEquipment = 'all';
+        $this->loadFilterOptions();
+    }
+
+    public function updatedSelectedLine()
+    {
+        $this->selectedEquipment = 'all';
+        $this->loadFilterOptions();
+    }
+
+    public function updatedDateRange()
+    {
+        $this->setDateRange();
+    }
+
+    // Load failure data based on selected filters
+    protected function loadFailureData()
+    {
+        $query = Corrective::query()
+            ->with(['equipment', 'equipment.line', 'equipment.line.area', 'failureMode', 'failureCause', 'requestedBy'])
+            ->whereBetween('date', [$this->startDate, $this->endDate]);
+
+        // Apply area filter
+        if ($this->selectedArea !== 'all') {
+            $query->whereHas('equipment.line.area', function ($q) {
+                $q->where('id', $this->selectedArea);
+            });
+        }
+
+        // Apply line filter
+        if ($this->selectedLine !== 'all') {
+            $query->whereHas('equipment.line', function ($q) {
+                $q->where('id', $this->selectedLine);
+            });
+        }
+
+        // Apply equipment filter
+        if ($this->selectedEquipment !== 'all') {
+            $query->where('equipment_id', $this->selectedEquipment);
+        }
+
+        // Apply sorting
+        $query->orderBy($this->sortField, $this->sortDirection);
+
+        return $query->get();
+    }
+
+    // Generate statistics from the loaded data
+    protected function generateStatistics($failures)
+    {
+        $this->totalFailures = $failures->count();
+
+        if ($this->totalFailures > 0) {
+            // Calculate most common failure cause
+            $causeCounts = $failures->groupBy('failure_cause_id')
+                ->map(function ($group) {
+                    return [
+                        'id' => $group->first()->failure_cause_id,
+                        'name' => $group->first()->failureCause ? $group->first()->failureCause->name : 'Desconhecido',
+                        'count' => $group->count()
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values();
+
+            if ($causeCounts->isNotEmpty()) {
+                $topCause = $causeCounts->first();
+                $this->topFailureCause = $topCause['name'];
+                $this->topFailureCauseCount = $topCause['count'];
+            }
+
+            // Calculate equipment with most failures
+            $equipmentCounts = $failures->groupBy('equipment_id')
+                ->map(function ($group) {
+                    return [
+                        'id' => $group->first()->equipment_id,
+                        'name' => $group->first()->equipment ? $group->first()->equipment->name : 'Desconhecido',
+                        'count' => $group->count()
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values();
+
+            if ($equipmentCounts->isNotEmpty()) {
+                $topEquipment = $equipmentCounts->first();
+                $this->mostFailingEquipment = $topEquipment['name'];
+                $this->mostFailingEquipmentCount = $topEquipment['count'];
+            }
+
+            // Calculate average downtime
+            $totalDowntime = $failures->sum('downtime_minutes');
+            $this->averageDowntime = $this->totalFailures > 0 
+                ? round($totalDowntime / $this->totalFailures, 1) 
+                : 0;
+        }
+    }
+
+    // Calculate data for failure causes chart
+    protected function calculateFailureCauses($failures)
+    {
+        try {
+            if ($failures->isEmpty()) {
+                $this->failureCausesData = $this->getEmptyChartData('Sem dados de causas');
+                return;
+            }
+
+            $causeGroups = $failures->groupBy(function ($failure) {
+                return $failure->failureCause ? $failure->failureCause->name : 'Desconhecido';
+            });
+
+            $labels = [];
+            $data = [];
+            $backgroundColor = [];
+            $borderColor = [];
+
+            foreach ($causeGroups as $cause => $group) {
+                $labels[] = $cause;
+                $data[] = $group->count();
+                
+                // Generate colors
+                $color = $this->generateRandomColor();
+                $backgroundColor[] = $color . '80'; // With opacity
+                $borderColor[] = $color;
+            }
+
+            $this->failureCausesData = [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Causas de Falhas',
+                        'data' => $data,
+                        'backgroundColor' => $backgroundColor,
+                        'borderColor' => $borderColor,
+                        'borderWidth' => 1
+                    ]
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error calculating failure causes chart: ' . $e->getMessage());
+            $this->failureCausesData = $this->getEmptyChartData('Erro: ' . $e->getMessage());
+        }
+    }
+
+    // Calculate data for failures by equipment chart
+    protected function calculateFailuresByEquipment($failures)
+    {
+        try {
+            if ($failures->isEmpty()) {
+                $this->failuresByEquipmentData = $this->getEmptyChartData('Sem dados de equipamentos');
+                return;
+            }
+
+            $equipmentGroups = $failures->groupBy(function ($failure) {
+                return $failure->equipment ? $failure->equipment->name : 'Desconhecido';
+            });
+
+            $labels = [];
+            $data = [];
+            $backgroundColor = [];
+            $borderColor = [];
+
+            foreach ($equipmentGroups as $equipment => $group) {
+                $labels[] = $equipment;
+                $data[] = $group->count();
+                
+                // Generate colors
+                $color = $this->generateRandomColor();
+                $backgroundColor[] = $color . '80'; // With opacity
+                $borderColor[] = $color;
+            }
+
+            $this->failuresByEquipmentData = [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Falhas por Equipamento',
+                        'data' => $data,
+                        'backgroundColor' => $backgroundColor,
+                        'borderColor' => $borderColor,
+                        'borderWidth' => 1
+                    ]
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error calculating failures by equipment chart: ' . $e->getMessage());
+            $this->failuresByEquipmentData = $this->getEmptyChartData('Erro: ' . $e->getMessage());
+        }
+    }
+
+    // Calculate data for failures over time chart
+    protected function calculateFailuresOverTime($failures)
+    {
+        try {
+            if ($failures->isEmpty()) {
+                $this->failuresOverTimeData = $this->getEmptyChartData('Sem dados de período');
+                return;
+            }
+
+            // Group failures by date
+            $failuresByDate = $failures->groupBy(function ($failure) {
+                return Carbon::parse($failure->date)->format('Y-m-d');
+            })->map->count();
+
+            // Create date range for chart
+            $startDate = Carbon::parse($this->startDate);
+            $endDate = Carbon::parse($this->endDate);
+            $dateRange = collect();
+
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $dateKey = $date->format('Y-m-d');
+                $dateRange[$dateKey] = $failuresByDate[$dateKey] ?? 0;
+            }
+
+            $labels = array_keys($dateRange->toArray());
+            $data = array_values($dateRange->toArray());
+
+            $this->failuresOverTimeData = [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Falhas ao Longo do Tempo',
+                        'data' => $data,
+                        'fill' => false,
+                        'borderColor' => '#4F46E5',
+                        'tension' => 0.4
+                    ]
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error calculating failures over time chart: ' . $e->getMessage());
+            $this->failuresOverTimeData = $this->getEmptyChartData('Erro: ' . $e->getMessage());
+        }
+    }
+
+    // Calculate data for failure impact chart
+    protected function calculateFailureImpact($failures)
+    {
+        try {
+            if ($failures->isEmpty()) {
+                $this->failureImpactData = $this->getEmptyChartData('Sem dados de impacto');
+                return;
+            }
+
+            // Group by impact level (using downtime as proxy for impact)
+            $impactLevels = [
+                'Baixo (< 30min)' => 0,
+                'Médio (30-120min)' => 0,
+                'Alto (2-8h)' => 0,
+                'Crítico (> 8h)' => 0
+            ];
+
+            foreach ($failures as $failure) {
+                $downtime = (int) $failure->downtime_minutes;
+                
+                if ($downtime < 30) {
+                    $impactLevels['Baixo (< 30min)']++;
+                } elseif ($downtime < 120) {
+                    $impactLevels['Médio (30-120min)']++;
+                } elseif ($downtime < 480) {
+                    $impactLevels['Alto (2-8h)']++;
+                } else {
+                    $impactLevels['Crítico (> 8h)']++;
+                }
+            }
+
+            $labels = array_keys($impactLevels);
+            $data = array_values($impactLevels);
+
+            $this->failureImpactData = [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Impacto das Falhas',
+                        'data' => $data,
+                        'backgroundColor' => [
+                            '#10B981', // Green for low
+                            '#FBBF24', // Yellow for medium
+                            '#F59E0B', // Orange for high
+                            '#EF4444'  // Red for critical
+                        ],
+                        'borderColor' => [
+                            '#059669',
+                            '#D97706',
+                            '#B45309',
+                            '#B91C1C'
+                        ],
+                        'borderWidth' => 1
+                    ]
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error calculating failure impact chart: ' . $e->getMessage());
+            $this->failureImpactData = $this->getEmptyChartData('Erro: ' . $e->getMessage());
+        }
+    }
+
+    // Calculate distribution by categories
+    protected function calculateCategoriesDistribution($failures)
+    {
+        try {
+            if ($failures->isEmpty()) {
+                $this->categoriesDistributionData = $this->getEmptyChartData('Sem dados de categorias');
+                return;
+            }
+
+            // Get mode categories distribution
+            $modeCategories = $failures->groupBy(function ($failure) {
+                    return $failure->failureMode && $failure->failureMode->category 
+                        ? $failure->failureMode->category->name 
+                        : 'Sem Categoria';
+                })
+                ->map->count()
+                ->toArray();
+
+            $modeCategoryLabels = array_keys($modeCategories);
+            $modeCategoryData = array_values($modeCategories);
+            $modeCategoryColors = array_map(function() {
+                return $this->generateRandomColor() . '80';
+            }, $modeCategoryLabels);
+            
+            // Get cause categories distribution
+            $causeCategories = $failures->groupBy(function ($failure) {
+                    return $failure->failureCause && $failure->failureCause->category 
+                        ? $failure->failureCause->category->name 
+                        : 'Sem Categoria';
+                })
+                ->map->count()
+                ->toArray();
+
+            $causeCategoryLabels = array_keys($causeCategories);
+            $causeCategoryData = array_values($causeCategories);
+            $causeCategoryColors = array_map(function() {
+                return $this->generateRandomColor() . '80';
+            }, $causeCategoryLabels);
+
+            $this->categoriesDistributionData = [
+                'mode' => [
+                    'labels' => $modeCategoryLabels,
+                    'datasets' => [
+                        [
+                            'label' => 'Distribuição por Categoria de Modo',
+                            'data' => $modeCategoryData,
+                            'backgroundColor' => $modeCategoryColors,
+                            'borderWidth' => 1
+                        ]
+                    ]
+                ],
+                'cause' => [
+                    'labels' => $causeCategoryLabels,
+                    'datasets' => [
+                        [
+                            'label' => 'Distribuição por Categoria de Causa',
+                            'data' => $causeCategoryData,
+                            'backgroundColor' => $causeCategoryColors,
+                            'borderWidth' => 1
+                        ]
+                    ]
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error calculating categories distribution chart: ' . $e->getMessage());
+            $this->categoriesDistributionData = $this->getEmptyChartData('Erro: ' . $e->getMessage());
+        }
+    }
+
+    // Analyze patterns in failure data
+    protected function analyzePatterns($failures)
+    {
+        $this->identifiedPatterns = [];
+        
+        if ($failures->isEmpty()) {
+            return;
+        }
+        
+        try {
+            // Pattern 1: Recurring equipment failures (same equipment, same cause)
+            $recurringFailures = $failures->groupBy(['equipment_id', 'failure_cause_id'])
+                ->filter(function ($group) {
+                    return $group->count() >= 3; // Consider recurring if 3+ occurrences
+                });
+            
+            foreach ($recurringFailures as $equipmentId => $causeGroups) {
+                foreach ($causeGroups as $causeId => $occurrences) {
+                    $equipment = $occurrences->first()->equipment ? $occurrences->first()->equipment->name : 'Desconhecido';
+                    $cause = $occurrences->first()->failureCause ? $occurrences->first()->failureCause->name : 'Desconhecido';
+                    
+                    $this->identifiedPatterns[] = [
+                        'type' => 'recurring_failure',
+                        'title' => "Falha Recorrente: {$equipment}",
+                        'description' => "O equipamento '{$equipment}' apresentou a mesma causa de falha '{$cause}' {$occurrences->count()} vezes no período analisado.",
+                        'count' => $occurrences->count(),
+                        'severity' => $occurrences->count() >= 5 ? 'high' : 'medium',
+                        'equipment' => $equipment,
+                        'cause' => $cause
+                    ];
+                }
+            }
+            
+            // Pattern 2: Area-wide problems (multiple equipment in same area, similar causes)
+            $areaIssues = $failures->groupBy(function ($failure) {
+                return $failure->equipment && $failure->equipment->line && $failure->equipment->line->area 
+                    ? $failure->equipment->line->area->id 
+                    : 'unknown';
+            });
+            
+            foreach ($areaIssues as $areaId => $areaFailures) {
+                if ($areaId === 'unknown') continue;
+                
+                $causeGroups = $areaFailures->groupBy('failure_cause_id');
+                
+                foreach ($causeGroups as $causeId => $causeFailures) {
+                    if ($causeFailures->count() >= 5) { // Area problem if same cause in 5+ cases
+                        $affectedEquipment = $causeFailures->pluck('equipment.name')->unique()->filter()->implode(', ');
+                        $area = $causeFailures->first()->equipment->line->area->name ?? 'Desconhecido';
+                        $cause = $causeFailures->first()->failureCause ? $causeFailures->first()->failureCause->name : 'Desconhecido';
+                        
+                        $this->identifiedPatterns[] = [
+                            'type' => 'area_problem',
+                            'title' => "Problema na Área: {$area}",
+                            'description' => "A área '{$area}' apresenta múltiplos equipamentos com falhas relacionadas a '{$cause}'.",
+                            'count' => $causeFailures->count(),
+                            'severity' => 'high',
+                            'area' => $area,
+                            'cause' => $cause,
+                            'equipment' => $affectedEquipment
+                        ];
+                    }
+                }
+            }
+            
+            // Pattern 3: Time-based patterns (failures increasing over time)
+            if ($failures->count() >= 10) {
+                $dateFormat = 'Y-m-d';
+                $startDate = Carbon::parse($this->startDate);
+                $endDate = Carbon::parse($this->endDate);
+                $halfPoint = $startDate->copy()->addDays($startDate->diffInDays($endDate) / 2);
+                
+                $firstHalf = $failures->filter(function ($failure) use ($halfPoint, $dateFormat) {
+                    return Carbon::parse($failure->date)->format($dateFormat) <= $halfPoint->format($dateFormat);
+                })->count();
+                
+                $secondHalf = $failures->count() - $firstHalf;
+                
+                if ($secondHalf > $firstHalf * 1.5) {
+                    $this->identifiedPatterns[] = [
+                        'type' => 'increasing_trend',
+                        'title' => 'Tendência de Aumento',
+                        'description' => 'Identificada tendência de aumento significativo na frequência de falhas ao longo do período.',
+                        'count' => $secondHalf - $firstHalf,
+                        'severity' => 'medium',
+                        'first_half' => $firstHalf,
+                        'second_half' => $secondHalf
+                    ];
+                }
+            }
+            
+            // Sort patterns by severity and count
+            usort($this->identifiedPatterns, function ($a, $b) {
+                if ($a['severity'] === $b['severity']) {
+                    return $b['count'] - $a['count'];
+                }
+                return $a['severity'] === 'high' ? -1 : 1;
+            });
+            
+        } catch (\Exception $e) {
+            Log::error('Error analyzing failure patterns: ' . $e->getMessage());
+        }
+    }
+
+    // Set empty state for all data elements
+    protected function setEmptyState()
+    {
+        $this->totalFailures = 0;
+        $this->topFailureCause = 'N/A';
+        $this->topFailureCauseCount = 0;
+        $this->mostFailingEquipment = 'N/A';
+        $this->mostFailingEquipmentCount = 0;
+        $this->averageDowntime = 0;
+        $this->identifiedPatterns = [];
+        $this->failureRecords = [];
+        
+        // Empty chart data
+        $this->failureCausesData = $this->getEmptyChartData('Sem dados');
+        $this->failuresByEquipmentData = $this->getEmptyChartData('Sem dados');
+        $this->failuresOverTimeData = $this->getEmptyChartData('Sem dados');
+        $this->failureImpactData = $this->getEmptyChartData('Sem dados');
+        $this->categoriesDistributionData = $this->getEmptyChartData('Sem dados');
+    }
+    
+    // Helper function to generate empty chart data
+    protected function getEmptyChartData($message = 'Sem dados')
+    {
+        return [
+            'labels' => [$message],
+            'datasets' => [
+                [
+                    'label' => 'Sem dados disponíveis',
+                    'data' => [0],
+                    'backgroundColor' => ['#CBD5E1'],
+                    'borderColor' => ['#94A3B8'],
+                    'borderWidth' => 1
+                ]
+            ]
+        ];
+    }
+    
+    // Helper function to generate random colors for charts
+    protected function generateRandomColor()
+    {
+        $colors = [
+            '#4F46E5', // Indigo
+            '#2563EB', // Blue
+            '#7C3AED', // Violet
+            '#DB2777', // Pink
+            '#059669', // Green
+            '#D97706', // Amber
+            '#DC2626', // Red
+            '#4338CA', // Indigo dark
+            '#1D4ED8', // Blue dark
+            '#9333EA', // Purple
+            '#C026D3', // Fuchsia
+            '#065F46', // Green dark
+            '#B45309', // Amber dark
+            '#991B1B', // Red dark
+        ];
+        
+        return $colors[array_rand($colors)];
+    }
+
+    // Show failure details modal
+    public function showFailureDetails($failureId)
+    {
+        try {
+            $this->selectedFailure = Corrective::with([
+                'equipment', 
+                'equipment.line', 
+                'equipment.line.area', 
+                'failureMode', 
+                'failureCause',
+                'requestedBy',
+                'solvedBy'
+            ])->findOrFail($failureId);
+            
+            $this->showDetailModal = true;
+            
+        } catch (\Exception $e) {
+            Log::error('Error showing failure details: ' . $e->getMessage());
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'error',
+                'message' => 'Erro ao carregar detalhes da falha'
+            ]);
+        }
+    }
+    
+    // Close modal
+    public function closeModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedFailure = null;
+    }
+
+    // Main render method
+    public function render()
+    {
+        try {
+            Log::info('FailureAnalysis: Starting to load data');
+            
+            // Load failure data based on filters
+            $failures = $this->loadFailureData();
+            
+            // Store failures for table display
+            $this->failureRecords = $failures;
+            
+            if ($failures->isNotEmpty()) {
+                Log::info('FailureAnalysis: Found ' . $failures->count() . ' failure records');
+                
+                // Generate statistics
+                $this->generateStatistics($failures);
+                
+                // Calculate data for all charts
+                $this->calculateFailureCauses($failures);
+                $this->calculateFailuresByEquipment($failures);
+                $this->calculateFailuresOverTime($failures);
+                $this->calculateFailureImpact($failures);
+                $this->calculateCategoriesDistribution($failures);
+                $this->analyzePatterns($failures);
+                
+                Log::info('FailureAnalysis: All charts and analyses generated successfully');
+            } else {
+                Log::info('FailureAnalysis: No failure records found for the selected filters');
+                $this->setEmptyState();
+            }
+            
+            return view('livewire.reports.failure-analysis');
+            
+        } catch (\Exception $e) {
+            Log::error('Error in FailureAnalysis render method: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            
+            $this->dispatchBrowserEvent('showToast', [
+                'type' => 'error',
+                'message' => 'Erro ao processar relatório de análise de falhas'
+            ]);
+            
+            $this->setEmptyState();
+            return view('livewire.reports.failure-analysis');
+        }
+    }
+}

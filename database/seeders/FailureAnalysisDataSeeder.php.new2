@@ -1,0 +1,121 @@
+    /**
+     * Garantir que existam áreas para testes
+     */
+    private function ensureAreas()
+    {
+        // Usar áreas de manutenção existentes ou criar IDs fictícios para teste
+        $areaIds = [];
+        $areas = MaintenanceArea::all();
+        
+        if ($areas->count() > 0) {
+            foreach ($areas as $area) {
+                $areaIds[] = $area->id;
+            }
+        } else {
+            // Criar IDs fictícios para testes se não houver áreas
+            $areaIds = [1, 2, 3, 4, 5];
+        }
+        
+        return $areaIds;
+    }
+    
+    /**
+     * Garantir que existam linhas para testes
+     */
+    private function ensureLines($areaIds)
+    {
+        // Usar linhas existentes ou criar IDs fictícios para teste
+        $lineIds = [];
+        $lines = MaintenanceLine::all();
+        
+        if ($lines->count() > 0) {
+            foreach ($lines as $line) {
+                $lineIds[] = $line->id;
+            }
+        } else {
+            // Criar IDs fictícios para testes se não houver linhas
+            $lineIds = [1, 2, 3, 4, 5, 6, 7, 8];
+        }
+        
+        return $lineIds;
+    }
+    
+    /**
+     * Garantir que existam equipamentos para testes
+     */
+    private function ensureEquipment($areaIds, $lineIds)
+    {
+        $equipment = [
+            [
+                'name' => 'Torno CNC',
+                'type' => 'Máquina de Usinagem',
+                'model' => 'TC-5000'
+            ],
+            [
+                'name' => 'Fresadora',
+                'type' => 'Máquina de Usinagem',
+                'model' => 'FR-2000'
+            ],
+            [
+                'name' => 'Prensa Hidráulica',
+                'type' => 'Conformação',
+                'model' => 'PH-400'
+            ],
+            [
+                'name' => 'Esteira Transportadora',
+                'type' => 'Transporte',
+                'model' => 'ET-100'
+            ],
+            [
+                'name' => 'Robô de Solda',
+                'type' => 'Soldagem',
+                'model' => 'RS-750'
+            ],
+            [
+                'name' => 'Máquina de Injeção',
+                'type' => 'Moldagem',
+                'model' => 'MI-800'
+            ],
+            [
+                'name' => 'Empacotadora Automática',
+                'type' => 'Embalagem',
+                'model' => 'EA-250'
+            ],
+            [
+                'name' => 'Robô Manipulador',
+                'type' => 'Manipulação',
+                'model' => 'RM-300'
+            ],
+            [
+                'name' => 'Máquina de Corte a Laser',
+                'type' => 'Corte',
+                'model' => 'CL-1200'
+            ],
+            [
+                'name' => 'Centro de Usinagem',
+                'type' => 'Usinagem',
+                'model' => 'CU-800'
+            ]
+        ];
+        
+        $equipmentIds = [];
+        
+        foreach ($equipment as $index => $equip) {
+            $exists = MaintenanceEquipment::where('name', $equip['name'] . ' ' . $equip['model'])->first();
+            if (!$exists) {
+                $equipmentIds[] = MaintenanceEquipment::create([
+                    'name' => $equip['name'] . ' ' . $equip['model'],
+                    'area_id' => $areaIds[$index % count($areaIds)],
+                    'line_id' => $lineIds[$index % count($lineIds)],
+                    'serial_number' => 'SN' . str_pad($index + 1, 5, '0', STR_PAD_LEFT),
+                    'status' => 'active',
+                    'last_maintenance' => Carbon::now()->subMonths(rand(1, 6)),
+                    'notes' => 'Equipamento ' . $equip['name'] . ' modelo ' . $equip['model'] . ' tipo ' . $equip['type']
+                ])->id;
+            } else {
+                $equipmentIds[] = $exists->id;
+            }
+        }
+        
+        return $equipmentIds;
+    }

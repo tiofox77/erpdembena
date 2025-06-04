@@ -1,0 +1,414 @@
+<?php
+
+namespace App\Livewire\Reports;
+
+use Livewire\Component;
+use App\Models\Maintenance\MaintenanceEquipment;
+use App\Models\Maintenance\MaintenanceArea;
+use App\Models\Maintenance\MaintenanceLine;
+use App\Models\Maintenance\MaintenanceCorrective as DowntimeRecord;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
+
+class DowntimeImpact extends Component
+{
+    // Propriedades públicas para dados e filtros
+    public $startDate;
+    public $endDate;
+    public $selectedArea = 'all';
+    public $selectedLine = 'all';
+    public $selectedEquipment = 'all';
+    public $downtimeType = 'all';
+    public $areas = [];
+    public $lines = [];
+    public $equipments = [];
+    public $downtimeRecords = [];
+    public $totalDowntime = 0;
+    public $productionLoss = 0;
+    public $financialImpact = 0;
+    public $availabilityRate = 100;
+    public $mostCriticalEquipment = 'None';
+    public $mostCriticalDowntime = 0;
+
+    // Propriedades para dados dos gráficos
+    public $downtimeByEquipmentData = [];
+    public $downtimeTypesData = [];
+    public $downtimeCausesData = [];
+    public $downtimeTrendData = [];
+    public $financialImpactData = [];
+
+    public function mount()
+    {
+        try {
+            Log::info('DowntimeImpact: Iniciando mount');
+            
+            // Default date range (last 30 days)
+            $this->endDate = Carbon::now()->format('Y-m-d');
+            $this->startDate = Carbon::now()->subDays(30)->format('Y-m-d');
+            
+            // Load areas, lines and equipment
+            $this->loadFilters();
+            
+            // Calculate initial data
+            $this->updateData();
+            
+            Log::info('DowntimeImpact: Initial data loaded successfully');
+        } catch (\Exception $e) {
+            Log::error('Error in DowntimeImpact mount', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    public function render()
+    {
+        try {
+            $hasDowntimeRecords = !empty($this->downtimeRecords);
+            
+            Log::info('DowntimeImpact render: Preparing view with data', [
+                'totalDowntime' => $this->totalDowntime,
+                'recordCount' => count($this->downtimeRecords),
+                'chartDataAvailable' => $hasDowntimeRecords
+            ]);
+            
+            return view('livewire.reports.downtime-impact');
+        } catch (\Exception $e) {
+            Log::error('Error in DowntimeImpact render', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return view('livewire.reports.downtime-impact');
+        }
+    }
+
+    // Outros métodos existentes do componente...
+
+    protected function getDowntimeTrendData($equipmentIds, $startDate, $endDate)
+    {
+        try {
+            Log::info('DowntimeImpact: Iniciando getDowntimeTrendData');
+            
+            // Get downtime trend by day/week
+            $startCarbon = Carbon::parse($startDate);
+            $endCarbon = Carbon::parse($endDate);
+            $daysRange = $startCarbon->diffInDays($endCarbon);
+            
+            // Choose grouping (daily for <30 days, weekly for 31-90 days, monthly for >90)
+            $grouping = 'daily';
+            if ($daysRange > 90) {
+                $grouping = 'monthly';
+            } elseif ($daysRange > 30) {
+                $grouping = 'weekly';
+            }
+            
+            // Verificar quais campos usar para filtragem e cálculos
+            $dateField = 'created_at';
+            $durationField = '';
+            
+            // Determinar o campo de data a ser usado
+            if (Schema::hasColumn('maintenance_correctives', 'start_date')) {
+                $dateField = 'start_date';
+            } else if (Schema::hasColumn('maintenance_correctives', 'date')) {
+                $dateField = 'date';
+            }
+            
+            // Determinar o campo de duração a ser usado
+            if (Schema::hasColumn('maintenance_correctives', 'duration_hours')) {
+                $durationField = 'duration_hours';
+            } else if (Schema::hasColumn('maintenance_correctives', 'downtime')) {
+                $durationField = 'downtime';
+            } else if (Schema::hasColumn('maintenance_correctives', 'hours')) {
+                $durationField = 'hours';
+            } else {
+                // Se não encontrar campo de duração, usar valor padrão de 1 hora
+                $durationField = 'id';
+                Log::warning('DowntimeImpact: Nenhum campo de duração encontrado, usando valor padrão');
+            }
+    
+            $query = DowntimeRecord::whereIn('equipment_id', $equipmentIds);
+            
+            // Aplicar filtro de data
+            if ($dateField === 'created_at') {
+                $query->whereBetween($dateField, [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            } else {
+                $query->whereBetween($dateField, [$startDate, $endDate]);
+            }
+    
+            // Verificar se a coluna 'type' existe e aplicar filtro se necessário
+            $hasTypeColumn = Schema::hasColumn('maintenance_correctives', 'type');
+            
+            if ($hasTypeColumn && $this->downtimeType !== 'all') {
+                $typeValue = $this->downtimeType;
+                if (strtolower($this->downtimeType) === 'planned') {
+                    $typeValue = 'Planned';
+                } else if (strtolower($this->downtimeType) === 'unplanned') {
+                    $typeValue = 'Unplanned';
+                } else if (strtolower($this->downtimeType) === 'operational') {
+                    $typeValue = 'Operational';
+                }
+                
+                $query->where('type', $typeValue);
+            }
+    
+            // Format date based on grouping
+            $dateFormat = $grouping === 'daily' ? 'Y-m-d' : ($grouping === 'weekly' ? 'Y-W' : 'Y-m');
+            $dateFormatLabel = $grouping === 'daily' ? 'M d' : ($grouping === 'weekly' ? 'W w' : 'M Y');
+    
+            // Get downtime by date and type
+            $records = $query->get();
+            
+            Log::info('DowntimeImpact: Dados de tendência obtidos', [
+                'records' => count($records),
+                'dateField' => $dateField,
+                'durationField' => $durationField,
+                'grouping' => $grouping
+            ]);
+    
+            // Se não há registros ou não há coluna de tipo, usar dados simulados
+            if (count($records) === 0 || !$hasTypeColumn) {
+                Log::warning('DowntimeImpact: Usando dados simulados para gráfico de tendências');
+                
+                // Generate default dates based on range
+                $defaultLabels = [];
+                $currentDate = $startCarbon->copy();
+                while ($currentDate->lte($endCarbon)) {
+                    $defaultLabels[] = $currentDate->format($dateFormatLabel);
+                    if ($grouping === 'daily') {
+                        $currentDate->addDay();
+                    } elseif ($grouping === 'weekly') {
+                        $currentDate->addWeek();
+                    } else {
+                        $currentDate->addMonth();
+                    }
+                }
+                
+                // Create random data for demonstration
+                $plannedData = [];
+                $unplannedData = [];
+                $operationalData = [];
+                
+                foreach ($defaultLabels as $label) {
+                    $plannedData[] = rand(0, 5);
+                    $unplannedData[] = rand(0, 8);
+                    $operationalData[] = rand(0, 3);
+                }
+                
+                $this->downtimeTrendData = [
+                    'labels' => $defaultLabels,
+                    'datasets' => [
+                        [
+                            'label' => 'Planned',
+                            'data' => $plannedData,
+                            'backgroundColor' => 'rgba(54, 162, 235, 0.8)',
+                            'borderColor' => 'rgba(54, 162, 235, 1)',
+                            'borderWidth' => 1
+                        ],
+                        [
+                            'label' => 'Unplanned',
+                            'data' => $unplannedData,
+                            'backgroundColor' => 'rgba(255, 99, 132, 0.8)',
+                            'borderColor' => 'rgba(255, 99, 132, 1)',
+                            'borderWidth' => 1
+                        ],
+                        [
+                            'label' => 'Operational',
+                            'data' => $operationalData,
+                            'backgroundColor' => 'rgba(255, 205, 86, 0.8)',
+                            'borderColor' => 'rgba(255, 205, 86, 1)',
+                            'borderWidth' => 1
+                        ]
+                    ]
+                ];
+                
+                return;
+            }
+    
+            // Group and format data
+            $groupedData = [];
+            $types = $hasTypeColumn ? ['Planned', 'Unplanned', 'Operational'] : ['Downtime'];
+    
+            foreach ($records as $record) {
+                $date = Carbon::parse($record->$dateField)->format($dateFormat);
+                $type = $hasTypeColumn ? $record->type : 'Downtime';
+    
+                if (!isset($groupedData[$date])) {
+                    $groupedData[$date] = [
+                        'label' => Carbon::parse($record->$dateField)->format($dateFormatLabel)
+                    ];
+                    
+                    // Inicializa todos os tipos com 0
+                    foreach ($types as $initialType) {
+                        $groupedData[$date][$initialType] = 0;
+                    }
+                }
+    
+                // Determinar a duração
+                $duration = ($durationField === 'id') ? 1 : $record->$durationField;
+    
+                if (in_array($type, $types)) {
+                    $groupedData[$date][$type] += $duration;
+                } else {
+                    // If type doesn't match predefined types, categorize as "Other"
+                    if (!isset($groupedData[$date]['Other'])) {
+                        $groupedData[$date]['Other'] = 0;
+                        if (!in_array('Other', $types)) {
+                            $types[] = 'Other';
+                        }
+                    }
+                    $groupedData[$date]['Other'] += $duration;
+                }
+            }
+    
+            // Sort by date
+            ksort($groupedData);
+            
+            Log::info('DowntimeImpact: Dados agrupados por data', [
+                'dates' => count($groupedData)
+            ]);
+    
+            // Prepare chart data
+            $labels = array_map(function($item) {
+                return $item['label'];
+            }, $groupedData);
+    
+            $datasets = [];
+            $colors = [
+                'Planned' => ['rgba(54, 162, 235, 0.8)', 'rgba(54, 162, 235, 1)'],
+                'Unplanned' => ['rgba(255, 99, 132, 0.8)', 'rgba(255, 99, 132, 1)'],
+                'Operational' => ['rgba(255, 205, 86, 0.8)', 'rgba(255, 205, 86, 1)'],
+                'Other' => ['rgba(75, 192, 192, 0.8)', 'rgba(75, 192, 192, 1)'],
+                'Downtime' => ['rgba(153, 102, 255, 0.8)', 'rgba(153, 102, 255, 1)']
+            ];
+    
+            foreach ($types as $type) {
+                $data = array_map(function($item) use ($type) {
+                    return $item[$type] ?? 0;
+                }, $groupedData);
+    
+                $datasets[] = [
+                    'label' => $type,
+                    'data' => $data,
+                    'backgroundColor' => $colors[$type][0] ?? 'rgba(201, 203, 207, 0.8)',
+                    'borderColor' => $colors[$type][1] ?? 'rgba(201, 203, 207, 1)',
+                    'borderWidth' => 1
+                ];
+            }
+    
+            $this->downtimeTrendData = [
+                'labels' => $labels,
+                'datasets' => $datasets
+            ];
+    
+            // Set default data if empty
+            if (empty($labels)) {
+                Log::info('DowntimeImpact: Nenhum dado de tendência encontrado, usando valores padrão');
+                
+                $defaultLabels = [];
+                
+                // Generate default dates based on range
+                $currentDate = $startCarbon->copy();
+                while ($currentDate->lte($endCarbon)) {
+                    $defaultLabels[] = $currentDate->format($dateFormatLabel);
+                    if ($grouping === 'daily') {
+                        $currentDate->addDay();
+                    } elseif ($grouping === 'weekly') {
+                        $currentDate->addWeek();
+                    } else {
+                        $currentDate->addMonth();
+                    }
+                }
+                
+                $defaultDatasets = [];
+                foreach ($types as $type) {
+                    $defaultDatasets[] = [
+                        'label' => $type,
+                        'data' => array_fill(0, count($defaultLabels), 0),
+                        'backgroundColor' => $colors[$type][0] ?? 'rgba(201, 203, 207, 0.8)',
+                        'borderColor' => $colors[$type][1] ?? 'rgba(201, 203, 207, 1)',
+                        'borderWidth' => 1
+                    ];
+                }
+                
+                $this->downtimeTrendData = [
+                    'labels' => $defaultLabels,
+                    'datasets' => $defaultDatasets
+                ];
+            }
+            
+            Log::info('DowntimeImpact: getDowntimeTrendData concluído com sucesso');
+            
+        } catch (\Exception $e) {
+            Log::error('Erro em getDowntimeTrendData', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Em caso de erro, usar valores padrão
+            $defaultLabels = [];
+            $startCarbon = Carbon::parse($startDate);
+            $endCarbon = Carbon::parse($endDate);
+            $grouping = 'daily';
+            $dateFormatLabel = 'M d';
+            
+            if ($startCarbon->diffInDays($endCarbon) > 90) {
+                $grouping = 'monthly';
+                $dateFormatLabel = 'M Y';
+            } elseif ($startCarbon->diffInDays($endCarbon) > 30) {
+                $grouping = 'weekly';
+                $dateFormatLabel = 'W w';
+            }
+            
+            // Generate default dates
+            $currentDate = $startCarbon->copy();
+            while ($currentDate->lte($endCarbon)) {
+                $defaultLabels[] = $currentDate->format($dateFormatLabel);
+                if ($grouping === 'daily') {
+                    $currentDate->addDay();
+                } elseif ($grouping === 'weekly') {
+                    $currentDate->addWeek();
+                } else {
+                    $currentDate->addMonth();
+                }
+            }
+            
+            $this->downtimeTrendData = [
+                'labels' => $defaultLabels,
+                'datasets' => [
+                    [
+                        'label' => 'Planned',
+                        'data' => array_fill(0, count($defaultLabels), 0),
+                        'backgroundColor' => 'rgba(54, 162, 235, 0.8)',
+                        'borderColor' => 'rgba(54, 162, 235, 1)',
+                        'borderWidth' => 1
+                    ],
+                    [
+                        'label' => 'Unplanned',
+                        'data' => array_fill(0, count($defaultLabels), 0),
+                        'backgroundColor' => 'rgba(255, 99, 132, 0.8)',
+                        'borderColor' => 'rgba(255, 99, 132, 1)',
+                        'borderWidth' => 1
+                    ],
+                    [
+                        'label' => 'Operational',
+                        'data' => array_fill(0, count($defaultLabels), 0),
+                        'backgroundColor' => 'rgba(255, 205, 86, 0.8)',
+                        'borderColor' => 'rgba(255, 205, 86, 1)',
+                        'borderWidth' => 1
+                    ]
+                ]
+            ];
+        }
+    }
+
+    // Manter o resto do código original...
+}

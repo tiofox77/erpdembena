@@ -333,9 +333,6 @@ Route::middleware(['auth'])->group(function () {
         // Goods Receipts Management
         Route::middleware(['permission:supplychain.goods_receipts.view'])->get('/goods-receipts', App\Livewire\SupplyChain\GoodsReceipts::class)->name('goods-receipts');
         
-        // Shipping Notes Management
-        Route::middleware(['permission:supplychain.shipping.view'])->get('/shipping-notes', App\Livewire\SupplyChain\ShippingNotes::class)->name('shipping-notes');
-        
         // Custom Forms Management
         Route::middleware(['permission:supplychain.forms.manage'])->get('/custom-forms', App\Livewire\SupplyChain\CustomFormsPage::class)->name('custom-forms');
     });
