@@ -43,6 +43,9 @@
                                 <p class="text-sm text-gray-600">
                                     {{ __('messages.supplier') }}: {{ $viewingOrder->supplier->name ?? '-' }}
                                 </p>
+                                <p class="text-sm text-gray-600">
+                                    {{ __('messages.other_reference') }}: {{ $viewingOrder->other_reference ?? '-' }}
+                                </p>
                             </div>
                             <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
                                 @if($viewingOrder->status == 'draft') bg-gray-100 text-gray-800
@@ -316,7 +319,11 @@
                                                     @elseif($note->status == 'customs_clearance') fas fa-clipboard-check
                                                     @elseif($note->status == 'delivered') fas fa-check-circle
                                                     @endif mr-1 text-xs"></i>
-                                                {{ __('messages.shipping_status_'.$note->status) }}
+                                                @if($note->status == 'custom_form' && $note->customForm)
+                                                    {{ $note->customForm->name }}
+                                                @else
+                                                    {{ __('messages.shipping_status_'.$note->status) }}
+                                                @endif
                                             </div>
                                             <span class="text-sm text-gray-500 whitespace-nowrap">
                                                 {{ $note->created_at->format('d/m/Y H:i') }}
@@ -496,18 +503,28 @@
                                         @endif
                                     </div>
                                     
-                                    <div class="mt-2 text-xs text-gray-500 flex items-center">
-                                        <i class="fas fa-user-edit text-gray-400 mr-1"></i>
-                                        {{ __('messages.by') }}: 
-                                        <span class="font-medium ml-1">
-                                            @if($note->created_by)
-                                                {{ optional(\App\Models\User::find($note->created_by))->name ?? $note->created_by }}
-                                            @elseif($note->updated_by)
-                                                {{ optional(\App\Models\User::find($note->updated_by))->name ?? $note->updated_by }}
-                                            @else
-                                                -
-                                            @endif
-                                        </span>
+                                    <div class="mt-2 text-xs text-gray-500">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-user-plus text-gray-400 mr-1"></i>
+                                            {{ __('messages.created_by') }}: 
+                                            <span class="font-medium ml-1">
+                                                @if($note->created_by)
+                                                    {{ optional(\App\Models\User::find($note->created_by))->name ?? $note->created_by }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </span>
+                                            <span class="text-gray-400 mx-2">|</span>
+                                            <i class="fas fa-user-edit text-gray-400 mr-1"></i>
+                                            {{ __('messages.updated_by') }}: 
+                                            <span class="font-medium ml-1">
+                                                @if($note->updated_by)
+                                                    {{ optional(\App\Models\User::find($note->updated_by))->name ?? $note->updated_by }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             @empty
@@ -536,11 +553,32 @@
             </div>
             
             <!-- Botões de Ação -->
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end">
-                <button @click="show = false"
-                    class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    {{ __('messages.close') }}
-                </button>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
+                <div>
+                    @if($viewingOrder && $viewingOrder->shippingNotes->isNotEmpty())
+                        <button 
+                            wire:click="generateShippingNotesPDF({{ $viewingOrder->id }})"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-red-50 text-base font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                            <span wire:loading.remove wire:target="generateShippingNotesPDF">
+                                <i class="fas fa-file-pdf mr-2"></i>
+                                {{ __('messages.generate_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="generateShippingNotesPDF" class="inline-flex items-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-red-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {{ __('messages.generating_pdf') }}
+                            </span>
+                    @endif
+                </div>
+                <div>
+                    <button @click="show = false"
+                        class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        {{ __('messages.close') }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>

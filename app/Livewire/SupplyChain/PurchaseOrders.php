@@ -1235,6 +1235,7 @@ class PurchaseOrders extends Component
             // Criar a nota de envio
             $note = new ShippingNote();
             $note->purchase_order_id = $this->viewingOrderId;
+            $note->created_by = Auth::id(); // Define o usuário que criou a nota
             
             // Se for um formulário personalizado
             if ($this->renderCustomForm && $this->selectedCustomForm) {
@@ -1244,6 +1245,9 @@ class PurchaseOrders extends Component
                 
                 // Gerar uma nota automática com o nome do formulário
                 $note->note = "Formulário: {$this->selectedCustomForm->name}";
+                
+                // Definir updated_by e created_by para registrar quem criou esta nota
+                $note->updated_by = Auth::id();
                 
                 // Salvar a shipping note primeiro para obter o ID
                 $note->save();
@@ -1370,6 +1374,11 @@ class PurchaseOrders extends Component
             // Definir outros campos comuns a todos os tipos de nota
             $note->attachment_url = null; // Campo de anexo não é mais utilizado
             $note->updated_by = Auth::id();
+            
+            // Garantir que created_by também esteja definido para fluxos alternativos
+            if (empty($note->created_by)) {
+                $note->created_by = Auth::id();
+            }
             
             // Para status padrão, salvar agora. Para formulários personalizados, já foi salvo acima
             if (!($this->renderCustomForm && $this->selectedCustomForm)) {
@@ -1583,6 +1592,271 @@ class PurchaseOrders extends Component
                 'trace' => $e->getTraceAsString()
             ]);
             throw $e;
+        }
+    }
+    
+    /**
+     * Gera PDF dos shipping notes da ordem de compra
+     * 
+     * @param int|null $orderId ID da ordem de compra (opcional se viewingOrder estiver definido)
+     * @return mixed Response com download do PDF ou null
+     */
+    public function generateShippingNotesPDF($orderId = null)
+    {
+        // Validações de ID da ordem de compra
+        try {
+            // Debug para diagnóstico do problema
+            \Log::info('=== INICIANDO GERAÇÃO DE PDF ===');
+            \Log::info('Tentando gerar PDF para ordem ID: ' . ($orderId ?? 'null'));
+            
+            // Se não foi passado ID específico, tenta usar o viewingOrder atual
+            if (empty($orderId) && !empty($this->viewingOrder) && !empty($this->viewingOrder->id)) {
+                $orderId = $this->viewingOrder->id;
+                \Log::info('Usando ID da viewingOrder: ' . $orderId);
+            }
+            
+            // Verifica se o ID da ordem é válido
+            if (empty($orderId)) {
+                \Log::warning('Falha: ID da ordem vazio ou inválido');
+                $this->dispatch('notify', type: 'error', title: __('messages.error'), message: __('messages.order_not_found'));
+                return null;
+            }
+
+            // Carrega a ordem com relacionamentos necessários
+            \Log::info('Carregando ordem #' . $orderId . ' com relacionamentos');
+            $order = \App\Models\SupplyChain\PurchaseOrder::with([
+                'supplier'
+            ])->find($orderId);
+
+            // Verifica se a ordem existe
+            if (empty($order)) {
+                \Log::warning('Falha: Ordem #' . $orderId . ' não encontrada');
+                $this->dispatch('notify', type: 'error', title: __('messages.error'), message: __('messages.order_not_found'));
+                return null;
+            }
+
+            \Log::info('Ordem #' . $orderId . ' encontrada com sucesso');
+
+            // Carrega shipping notes com a mesma lógica do modal, adicionando a relação createdByUser também (se existir)
+            $relations = ['updatedByUser', 'createdByUser', 'customForm', 'formSubmission', 'formSubmission.fieldValues', 'formSubmission.fieldValues.field'];
+            
+            \Log::info('Carregando shipping notes com as relações necessárias para o PDF', [
+                'relations' => $relations
+            ]);
+            
+            $shippingNotes = \App\Models\SupplyChain\ShippingNote::where('purchase_order_id', $orderId)
+                ->with($relations)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Verifica se existem shipping notes
+            if ($shippingNotes->isEmpty()) {
+                \Log::warning('Falha: Ordem #' . $orderId . ' não possui shipping notes');
+                $this->dispatch('notify', type: 'warning', title: __('messages.warning'), message: __('messages.no_shipping_notes_to_export'));
+                return null;
+            }
+
+            \Log::info('Encontradas ' . $shippingNotes->count() . ' shipping notes');
+
+            // Prepara dados formatados para o PDF
+            $shippingNotesForPDF = [];
+            foreach ($shippingNotes as $note) {
+                // Informações sobre formulário personalizado, se houver
+                $formData = null;
+                if ($note->status == 'custom_form' && $note->custom_form_id) {
+                    // Resetamos os dados de formulário para começar fresco
+                    $formData = null;
+                    
+                    // Carregar novamente o formulário e submissão para garantir
+                    $customForm = \App\Models\SupplyChain\CustomForm::find($note->custom_form_id);
+                    
+                    if ($customForm) {
+                        // Buscar a submissão do formulário diretamente do banco de dados para evitar problemas de carregamento lazy
+                        $submission = \App\Models\SupplyChain\CustomFormSubmission::where('form_id', $note->custom_form_id)
+                            ->where('entity_id', $note->id)
+                            ->with(['fieldValues.field'])
+                            ->first();
+                        
+                        \Log::info("Buscando formulário e submissão para nota #{$note->id}", [
+                            'form_id' => $note->custom_form_id,
+                            'form_name' => $customForm->name,
+                            'submission_found' => $submission ? 'sim' : 'não'
+                        ]);
+                        
+                        if ($submission) {
+                            // Inicializa estrutura do formulário para o PDF
+                            $formData = [
+                                'name' => $customForm->name,
+                                'fields' => []
+                            ];
+                            
+                            // Carrega os valores dos campos e conte para diagnóstico
+                            $fieldValues = $submission->fieldValues;
+                            \Log::info("Encontrados {$fieldValues->count()} valores de campos na submissão #{$submission->id}");
+                            
+                            // Processar cada campo do formulário
+                            foreach ($fieldValues as $fieldValue) {
+                                // Garantir que o campo exista
+                                if (!$fieldValue->field) {
+                                    \Log::warning("Campo não encontrado para o valor ID: {$fieldValue->id}");
+                                    continue;
+                                }
+                                
+                                // Extrair informações do campo
+                                $field = $fieldValue->field;
+                                $value = $fieldValue->value;
+                                $type = $field->type;
+                                $options = $field->options;
+                                
+                                \Log::debug("Campo encontrado: {$field->name} ({$field->label})", [
+                                    'id' => $field->id,
+                                    'type' => $type,
+                                    'value' => is_string($value) ? $value : json_encode($value)
+                                ]);
+                                
+                                // Processar opções para checkbox e select
+                                if (in_array($type, ['checkbox', 'select', 'radio']) && !empty($options)) {
+                                    if (is_string($options)) {
+                                        try {
+                                            $decodedOptions = json_decode($options, true);
+                                            if (json_last_error() === JSON_ERROR_NONE) {
+                                                $options = $decodedOptions;
+                                            }
+                                        } catch (\Exception $e) {
+                                            \Log::error("Erro ao decodificar opções: {$e->getMessage()}");
+                                        }
+                                    }
+                                }
+                                
+                                // Adicionar ao array de campos
+                                $formData['fields'][] = [
+                                    'id' => $field->id,
+                                    'name' => $field->name,
+                                    'label' => $field->label,
+                                    'type' => $type,
+                                    'value' => $value,
+                                    'options' => $options
+                                ];
+                            }
+                            
+                            \Log::info("Formulário processado para PDF com " . count($formData['fields']) . " campos");
+                        } else {
+                            \Log::error("Submissão não encontrada para nota #{$note->id} com form_id {$note->custom_form_id}");
+                            // Criar um formulário vazio para mostrar pelo menos o nome
+                            $formData = [
+                                'name' => $customForm->name,
+                                'fields' => [],
+                                'error' => 'Submissão de formulário não encontrada'
+                            ];
+                        }
+                    } else {
+                        \Log::error("Formulário personalizado ID {$note->custom_form_id} não encontrado");
+                    }
+                }
+                
+                // Buscar corretamente o nome do usuário que criou ou atualizou a nota
+                $userName = 'N/A';
+                $userId = null;
+                
+                // Se temos informação do criador, usar o relacionamento createdByUser
+                if ($note->created_by && $note->createdByUser) {
+                    $userName = $note->createdByUser->name;
+                    $userId = $note->created_by;
+                    \Log::info('Shipping note #' . $note->id . ' criada por: ' . $userName);
+                } 
+                // Caso contrário, se temos informação de quem atualizou, usar essa
+                elseif ($note->updated_by && $note->updatedByUser) {
+                    $userName = $note->updatedByUser->name;
+                    $userId = $note->updated_by;
+                    \Log::info('Shipping note #' . $note->id . ' atualizada por: ' . $userName);
+                }
+                
+                // Debug dos dados do formulário antes de enviar para o PDF
+                if ($formData) {
+                    \Log::debug("Dados do formulário para PDF da nota #{$note->id}", [
+                        'form_name' => $formData['name'],
+                        'fields_count' => count($formData['fields']),
+                        'fields_sample' => array_slice($formData['fields'], 0, 3) // Amostra dos primeiros 3 campos
+                    ]);
+                }
+                
+                $shippingNotesForPDF[] = [
+                    'id' => $note->id,
+                    'status' => $note->status,
+                    'note' => $note->note,
+                    'created_at' => $note->created_at ? $note->created_at->format('d/m/Y H:i') : null,
+                    'updated_at' => $note->updated_at ? $note->updated_at->format('d/m/Y H:i') : null,
+                    'created_by' => $userName,
+                    'created_by_id' => $userId,
+                    'attachment' => $note->attachment_url, 
+                    'custom_form' => $formData
+                ];
+            }
+
+            // Dados completos para o PDF
+            $viewData = [
+                'order' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number ?? 'N/A',
+                    'supplier_name' => isset($order->supplier) ? $order->supplier->name : 'N/A',
+                    'status' => $order->status ?? 'N/A',
+                    'order_date' => $order->order_date ? $order->order_date->format('d/m/Y') : 'N/A',
+                ],
+                'shippingNotes' => $shippingNotesForPDF,
+                'date_generated' => now()->format('d/m/Y H:i')
+            ];
+
+            \Log::info('Dados completos preparados para o PDF. Gerando PDF...');
+            
+            try {
+                // Registra os relacionamentos que serão utilizados no template para diagnóstico
+                \Log::info('Preparando para carregar o template PDF com ' . count($shippingNotesForPDF) . ' notas');
+                
+                // Gera o PDF usando DomPDF com timeout estendido
+                $pdf = \PDF::loadView('livewire.supply-chain.shipping-notes-pdf', $viewData);
+                $pdf->setPaper('A4', 'portrait');
+                \Log::info('Template carregado com sucesso no DomPDF');
+            }
+            catch (\Throwable $pdfEx) {
+                \Log::error('Erro ao carregar template PDF: ' . $pdfEx->getMessage());
+                \Log::error($pdfEx->getTraceAsString());
+                $this->dispatch('notify', type: 'error', title: __('messages.error'), message: __('messages.pdf_generation_failed') . ': ' . $pdfEx->getMessage());
+                return null;
+            }
+
+            // Nome do arquivo seguro
+            $orderNumber = $order->order_number ?? 'unknown';
+            $filename = 'shipping-notes-' . $orderNumber . '-' . date('Y-m-d') . '.pdf';
+            \Log::info('Filename gerado: ' . $filename);
+
+            try {
+                // Gera o conteúdo do PDF
+                $pdfContent = $pdf->output();
+                \Log::info('PDF gerado com sucesso! Tamanho: ' . strlen($pdfContent) . ' bytes');
+
+                // Retorna o PDF para download
+                return response()->streamDownload(function() use ($pdfContent) {
+                    echo $pdfContent;
+                }, $filename, [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            }
+            catch (\Throwable $outputEx) {
+                \Log::error('Erro ao gerar output do PDF: ' . $outputEx->getMessage());
+                \Log::error($outputEx->getTraceAsString());
+                $this->dispatch('notify', type: 'error', title: __('messages.error'), message: 'Erro na geração: ' . $outputEx->getMessage());
+                return null;
+            }
+
+        } catch (\Throwable $e) {
+            // Log de erro sem depender de viewingOrder
+            \Log::error('Erro ao gerar PDF dos shipping notes: ' . $e->getMessage(), [
+                'order_id' => $orderId ?? 'null',
+                'error' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', type: 'error', title: __('messages.error'), message: __('messages.pdf_generation_failed'));
+            return null;
         }
     }
 }

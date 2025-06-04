@@ -16,6 +16,7 @@ class ShippingNote extends Model
         'status',
         'note',
         'attachment_url',
+        'created_by',
         'updated_by',
         'custom_form_id',
         'form_data'
@@ -127,6 +128,14 @@ class ShippingNote extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    /**
+     * Relacionamento com o usuário que criou a nota
+     */
+    public function createdByUser()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
