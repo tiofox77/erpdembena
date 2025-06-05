@@ -224,18 +224,10 @@
                          x-transition:leave-start="opacity-100 transform scale-100" 
                          x-transition:leave-end="opacity-0 transform scale-95">
                         <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                            <div class="bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-3">
-                                <h2 class="text-lg font-medium text-white flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-shipping-fast mr-2"></i>
-                                        {{ __('messages.shipping_tracking') }}
-                                    </div>
-                                    @if($viewingOrder->expected_delivery_date)
-                                    <span class="text-xs bg-white bg-opacity-20 text-white px-2 py-1 rounded-full border border-white border-opacity-30 flex items-center">
-                                        <i class="fas fa-calendar-alt mr-1"></i>
-                                        {{ __('messages.expected_delivery') }}: {{ date('d/m/Y', strtotime($viewingOrder->expected_delivery_date)) }}
-                                    </span>
-                                    @endif
+                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+                                <h2 class="text-lg font-medium text-white flex items-center">
+                                    <i class="fas fa-shipping-fast mr-2"></i>
+                                    {{ __('messages.shipping_tracking') }}
                                 </h2>
                             </div>
                             
@@ -278,12 +270,11 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Status do Envio com Barra de Progresso e Timeline visual -->
-                                <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <!-- Status do Envio com Barra de Progresso -->
+                                <div class="mb-4">
                                     @php
                                         $shippingProgress = 0;
                                         $latestShippingNote = null;
-                                        $lastUpdateDate = null;
                                         
                                         // Obter todas as shipping notes desta ordem
                                         $shippingNotes = \App\Models\SupplyChain\ShippingNote::where('purchase_order_id', $viewingOrder->id)
@@ -292,7 +283,6 @@
                                             
                                         if ($shippingNotes->count() > 0) {
                                             $latestShippingNote = $shippingNotes->first();
-                                            $lastUpdateDate = $latestShippingNote->created_at;
                                             
                                             // Calcular progresso com base no status mais recente
                                             $progressMap = [
@@ -311,177 +301,67 @@
                                             ];
                                             
                                             $shippingProgress = $progressMap[$latestShippingNote->status] ?? 10;
-                                            
-                                            // Mapear os status para títulos mais amigáveis (já traduzidos)
-                                            $statusTitles = [
-                                                'order_placed' => __('messages.shipping_status_order_placed'),
-                                                'proforma_invoice_received' => __('messages.shipping_status_proforma_invoice_received'),
-                                                'payment_completed' => __('messages.shipping_status_payment_completed'),
-                                                'du_in_process' => __('messages.shipping_status_du_in_process'),
-                                                'goods_acquired' => __('messages.shipping_status_goods_acquired'),
-                                                'shipped_to_port' => __('messages.shipping_status_shipped_to_port'),
-                                                'shipping_line_booking_confirmed' => __('messages.shipping_status_shipping_line_booking_confirmed'),
-                                                'container_loaded' => __('messages.shipping_status_container_loaded'),
-                                                'on_board' => __('messages.shipping_status_on_board'),
-                                                'arrived_at_port' => __('messages.shipping_status_arrived_at_port'),
-                                                'customs_clearance' => __('messages.shipping_status_customs_clearance'),
-                                                'delivered' => __('messages.shipping_status_delivered')
-                                            ];
                                         }
                                     @endphp
                                     
-                                    <!-- Status atual e última atualização -->
-                                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
-                                        <div>
-                                            <h4 class="text-sm font-medium text-gray-500">{{ __('messages.current_status') }}</h4>
-                                            @if($latestShippingNote)
-                                                <p class="text-lg font-semibold text-gray-800">
-                                                    {{ __('messages.shipping_status_'.$latestShippingNote->status) }}
-                                                </p>
-                                            @else
-                                                <p class="text-lg font-semibold text-gray-600">{{ __('messages.no_shipping_info') }}</p>
-                                            @endif
-                                        </div>
-                                        
-                                        @if($lastUpdateDate)
-                                        <div class="mt-2 sm:mt-0 bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs flex items-center">
-                                            <i class="far fa-clock mr-1"></i>
-                                            {{ __('messages.last_update') }}: {{ $lastUpdateDate->format('d/m/Y H:i') }}
-                                        </div>
-                                        @endif
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="text-sm font-medium text-gray-700">{{ __('messages.shipping_progress') }}</p>
+                                        <p class="text-sm font-medium text-gray-700">{{ $shippingProgress }}%</p>
                                     </div>
-                                    
-                                    <!-- Barra de progresso principal -->
-                                    <div class="mb-4">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <p class="text-sm font-medium text-gray-700">{{ __('messages.shipping_progress') }}</p>
-                                            <div class="flex items-center">
-                                                <p class="text-sm font-medium mr-2 {{ $shippingProgress == 100 ? 'text-green-700' : 'text-amber-700' }}">{{ $shippingProgress }}%</p>
-                                                @if($shippingProgress == 100)
-                                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                                                        <i class="fas fa-check-circle mr-1"></i>
-                                                        {{ __('messages.completed') }}
-                                                    </span>
-                                                @elseif($shippingProgress > 0)
-                                                    <span class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                                                        <i class="fas fa-shipping-fast mr-1"></i>
-                                                        {{ __('messages.in_transit') }}
-                                                    </span>
-                                                @else
-                                                    <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                                                        <i class="fas fa-hourglass-start mr-1"></i>
-                                                        {{ __('messages.waiting') }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                            <div class="h-3 rounded-full {{ $shippingProgress == 100 ? 'bg-green-600' : ($shippingProgress > 50 ? 'bg-amber-600' : 'bg-amber-500') }}" 
-                                                style="width: {{ $shippingProgress }}%; transition: width 1s ease-in-out;"></div>
-                                        </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="h-2.5 rounded-full {{ $shippingProgress == 100 ? 'bg-green-600' : 'bg-amber-600' }}" style="width: {{ $shippingProgress }}%"></div>
                                     </div>
-                                    
-                                    <!-- Detalhes sobre a etapa atual (apenas se houver shipping notes) -->
-                                    @if($latestShippingNote)
-                                    <div class="mt-3 p-3 border-t border-gray-200 pt-3">
-                                        <div class="flex items-center mb-1 gap-2">
-                                            <div class="w-8 h-8 rounded-full {{ $shippingProgress == 100 ? 'bg-green-100' : 'bg-amber-100' }} flex items-center justify-center">
-                                                <i class="{{ $shippingProgress == 100 ? 'fas fa-check text-green-600' : 'fas fa-truck-loading text-amber-600' }}"></i>
-                                            </div>
-                                            <h5 class="text-sm font-medium text-gray-700">{{ __('messages.shipping_details') }}</h5>
-                                        </div>
-                                        <div class="ml-10 text-sm text-gray-600">
-                                            <p>{{ $latestShippingNote->note }}</p>
-                                        </div>
-                                    </div>
-                                    @endif
                                 </div>
                                 
-                                <!-- Lista de Atualizações de Envio - Timeline -->
-                                <div class="mb-4">
-                                    <h3 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                                        <i class="fas fa-history mr-2 text-gray-500"></i>
-                                        {{ __('messages.shipping_history') }}
-                                    </h3>
-
-                                    <!-- Timeline vertical com atualizações de envio -->
-                                    <div class="relative mt-3">
-                                        <!-- Linha vertical da timeline -->
-                                        <div class="absolute left-5 top-0 h-full w-0.5 bg-gradient-to-b from-amber-500 to-gray-300"></div>
-                                        
-                                        <div class="space-y-5">
-                                            @forelse($shippingNotes as $index => $note)
-                                            <!-- Item da timeline -->
-                                            <div class="relative flex items-start group">
-                                                <!-- Círculo do marco na timeline -->
-                                                <div class="absolute left-5 transform -translate-x-1/2">
-                                                    <div class="w-10 h-10 rounded-full 
-                                                        @if($note->status == 'order_placed') bg-gray-100
-                                                        @elseif($note->status == 'proforma_invoice_received') bg-purple-100
-                                                        @elseif($note->status == 'payment_completed') bg-blue-100
-                                                        @elseif($note->status == 'du_in_process') bg-indigo-100
-                                                        @elseif($note->status == 'goods_acquired') bg-teal-100
-                                                        @elseif($note->status == 'shipped_to_port') bg-amber-100
-                                                        @elseif($note->status == 'shipping_line_booking_confirmed') bg-yellow-100
-                                                        @elseif($note->status == 'container_loaded') bg-orange-100
-                                                        @elseif($note->status == 'on_board') bg-red-100
-                                                        @elseif($note->status == 'arrived_at_port') bg-rose-100
-                                                        @elseif($note->status == 'customs_clearance') bg-pink-100
-                                                        @elseif($note->status == 'delivered') bg-green-100
-                                                        @endif 
-                                                        border-2 {{ $index === 0 ? 'border-amber-500 shadow-md' : 'border-gray-300' }}
-                                                        flex items-center justify-center transition-all duration-200 ease-in-out">
-                                                        <i class="
-                                                            @if($note->status == 'order_placed') fas fa-shopping-cart text-gray-600
-                                                            @elseif($note->status == 'proforma_invoice_received') fas fa-file-invoice text-purple-600
-                                                            @elseif($note->status == 'payment_completed') fas fa-money-check-alt text-blue-600
-                                                            @elseif($note->status == 'du_in_process') fas fa-file-contract text-indigo-600
-                                                            @elseif($note->status == 'goods_acquired') fas fa-box-open text-teal-600
-                                                            @elseif($note->status == 'shipped_to_port') fas fa-truck-loading text-amber-600
-                                                            @elseif($note->status == 'shipping_line_booking_confirmed') fas fa-calendar-check text-yellow-600
-                                                            @elseif($note->status == 'container_loaded') fas fa-truck-moving text-orange-600
-                                                            @elseif($note->status == 'on_board') fas fa-ship text-red-600
-                                                            @elseif($note->status == 'arrived_at_port') fas fa-anchor text-rose-600
-                                                            @elseif($note->status == 'customs_clearance') fas fa-clipboard-check text-pink-600
-                                                            @elseif($note->status == 'delivered') fas fa-check-circle text-green-600
-                                                            @endif"></i>
-                                                    </div>
+                                <!-- Lista de Atualizações de Envio -->
+                                <div class="divide-y divide-gray-200">
+                                    @forelse($shippingNotes as $note)
+                                    <div class="py-4">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mr-4">
+                                                <div class="w-10 h-10 rounded-full 
+                                                    @if($note->status == 'order_placed') bg-gray-100
+                                                    @elseif($note->status == 'proforma_invoice_received') bg-purple-100
+                                                    @elseif($note->status == 'payment_completed') bg-blue-100
+                                                    @elseif($note->status == 'du_in_process') bg-indigo-100
+                                                    @elseif($note->status == 'goods_acquired') bg-teal-100
+                                                    @elseif($note->status == 'shipped_to_port') bg-amber-100
+                                                    @elseif($note->status == 'shipping_line_booking_confirmed') bg-yellow-100
+                                                    @elseif($note->status == 'container_loaded') bg-orange-100
+                                                    @elseif($note->status == 'on_board') bg-red-100
+                                                    @elseif($note->status == 'arrived_at_port') bg-rose-100
+                                                    @elseif($note->status == 'customs_clearance') bg-pink-100
+                                                    @elseif($note->status == 'delivered') bg-green-100
+                                                    @endif flex items-center justify-center">
+                                                    <i class="
+                                                        @if($note->status == 'order_placed') fas fa-shopping-cart text-gray-600
+                                                        @elseif($note->status == 'proforma_invoice_received') fas fa-file-invoice text-purple-600
+                                                        @elseif($note->status == 'payment_completed') fas fa-money-check-alt text-blue-600
+                                                        @elseif($note->status == 'du_in_process') fas fa-file-contract text-indigo-600
+                                                        @elseif($note->status == 'goods_acquired') fas fa-box-open text-teal-600
+                                                        @elseif($note->status == 'shipped_to_port') fas fa-truck-loading text-amber-600
+                                                        @elseif($note->status == 'shipping_line_booking_confirmed') fas fa-calendar-check text-yellow-600
+                                                        @elseif($note->status == 'container_loaded') fas fa-truck-moving text-orange-600
+                                                        @elseif($note->status == 'on_board') fas fa-ship text-red-600
+                                                        @elseif($note->status == 'arrived_at_port') fas fa-anchor text-rose-600
+                                                        @elseif($note->status == 'customs_clearance') fas fa-clipboard-check text-pink-600
+                                                        @elseif($note->status == 'delivered') fas fa-check-circle text-green-600
+                                                        @endif"></i>
                                                 </div>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex justify-between">
+                                                    <p class="text-sm font-medium text-gray-900">
+                                                        {{ __('messages.shipping_status_'.$note->status) }}
+                                                    </p>
+                                                    <p class="text-sm text-gray-500">
+                                                        {{ $note->created_at->format('d/m/Y H:i') }}
+                                                    </p>
+                                                </div>
+                                                <p class="text-sm text-gray-700 mt-1 whitespace-pre-line">{{ $note->note }}</p>
                                                 
-                                                <!-- Conteúdo da atualização -->
-                                                <div class="ml-12 bg-white p-3 rounded-lg border {{ $index === 0 ? 'border-amber-200 shadow' : 'border-gray-200' }} 
-                                                         hover:border-amber-300 hover:shadow transition-all duration-200 ease-in-out w-full">
-                                                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                                                        <h4 class="text-sm font-semibold text-gray-900 mb-1">
-                                                            {{ __('messages.shipping_status_'.$note->status) }}
-                                                        </h4>
-                                                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full inline-flex items-center mb-2 sm:mb-0">
-                                                            <i class="far fa-clock mr-1"></i>
-                                                            {{ $note->created_at->format('d/m/Y H:i') }}
-                                                        </span>
-                                                    </div>
-                                                    
-                                                    <!-- Detalhes da nota -->
-                                                    <div class="text-sm text-gray-700 mt-1 border-t pt-2 border-gray-100">
-                                                        <p class="whitespace-pre-line">{{ $note->note }}</p>
-                                                        
-                                                        @if(isset($note->reference_number) && $note->reference_number)
-                                                        <div class="mt-2 text-xs bg-gray-50 rounded px-2 py-1 flex items-center">
-                                                            <i class="fas fa-hashtag mr-1 text-gray-500"></i>
-                                                            <span>{{ __('messages.reference_number') }}: <span class="font-medium">{{ $note->reference_number }}</span></span>
-                                                        </div>
-                                                        @endif
-                                                        
-                                                        @if(isset($note->tracking_number) && $note->tracking_number)
-                                                        <div class="mt-1 text-xs bg-blue-50 rounded px-2 py-1 flex items-center">
-                                                            <i class="fas fa-barcode mr-1 text-blue-500"></i>
-                                                            <span>{{ __('messages.tracking_number') }}: <span class="font-medium text-blue-700">{{ $note->tracking_number }}</span></span>
-                                                        </div>
-                                                        @endif
-                                                    </div>
-                                                    
-                                                    <!-- Dados de Formulário Personalizado -->
-                                                    @if($note->status == 'custom_form' && $note->custom_form_id)
+                                                <!-- Dados de Formulário Personalizado -->
+                                                @if($note->status == 'custom_form' && $note->custom_form_id)
                                                     @php
                                                         $customForm = \App\Models\SupplyChain\CustomForm::find($note->custom_form_id);
                                                         $submission = \App\Models\SupplyChain\CustomFormSubmission::where('entity_id', $note->id)
@@ -536,6 +416,19 @@
                                                                                         
                                                                                         if (is_array($options)) {
                                                                                             foreach ($options as $option) {
+                                                                                                if (isset($option['value']) && $option['value'] == $fieldValue->value) {
+                                                                                                    $displayValue = $option['label'];
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    @endphp
+                                                                                    <span>
+                                                                                        <i class="fas fa-tag mr-1 text-blue-500"></i>
+                                                                                        {{ $displayValue }}
+                                                                                    </span>
+                                                                                @elseif($fieldValue->field->type == 'file' && !empty($fieldValue->value))
+                                                                                    <div class="flex flex-wrap items-center gap-2">
                                                                                         <div class="inline-flex items-center max-w-xs bg-gray-100 text-gray-800 text-xs rounded-full px-3 py-1 border border-gray-200">
                                                                                             <i class="fas fa-file mr-1 text-blue-500"></i>
                                                                                             <span class="truncate">
@@ -596,11 +489,12 @@
                                         </div>
                                     </div>
                                     @empty
-                                        <div class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                            <i class="fas fa-shipping-fast text-gray-400 text-3xl mb-3"></i>
-                                            <p class="text-gray-500">{{ __('messages.no_shipping_updates') }}</p>
-                                            <p class="text-xs text-gray-400 mt-1">{{ __('messages.shipping_updates_appear_here') }}</p>
+                                    <div class="py-4 flex justify-center items-center flex-col">
+                                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                                            <i class="fas fa-ship text-gray-400 text-lg"></i>
                                         </div>
+                                        <p class="text-sm text-gray-500">{{ __('messages.no_shipping_updates') }}</p>
+                                    </div>
                                     @endforelse
                                 </div>
                                 
