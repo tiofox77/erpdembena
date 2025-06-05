@@ -803,6 +803,22 @@
                 <span>{{ trans('messages.purchase_orders') }}</span>
             </a>
             @endcan
+            
+            @can('supplychain.reports.view')
+            <!-- Reports Submenu -->
+            <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="supplyChainReportsMenu">
+                <i class="fas fa-chart-bar text-gray-500"></i>
+                <span class="font-semibold">{{ trans('messages.reports') }}</span>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('supply-chain.reports.*') ? 'active' : '' }}"></i>
+            </div>
+            
+            <div class="sidebar-nested-submenu {{ request()->routeIs('supply-chain.reports.*') ? 'active' : '' }}" id="supplyChainReportsSubmenu">
+                <a href="{{ route('supply-chain.reports.inventory-management') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('supply-chain.reports.inventory-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-boxes text-gray-500"></i>
+                    <span class="font-semibold">{{ trans('messages.inventory_management') }}</span>
+                </a>
+            </div>
+            @endcan
 
             @can('supplychain.goods_receipts.view')
             <a href="{{ route('supply-chain.goods-receipts') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.goods-receipts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -1205,6 +1221,7 @@
             setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
             setupMenuToggle('mrpMenu', 'mrpSubmenu');
             setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
+            setupMenuToggle('supplyChainReportsMenu', 'supplyChainReportsSubmenu');
             setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
             setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
             setupMenuToggle('stocksMenu', 'stocksSubmenu');
@@ -1223,6 +1240,7 @@
                 // Reconfigurar todos os menus
                 setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
                 setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
+                setupMenuToggle('supplyChainReportsMenu', 'supplyChainReportsSubmenu');
                 setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
                 setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
                 setupMenuToggle('stocksMenu', 'stocksSubmenu');

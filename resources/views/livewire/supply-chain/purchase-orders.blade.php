@@ -342,10 +342,18 @@
                         @forelse ($purchaseOrders as $order)
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">{{ $order->order_number }}</div>
+                                    <div wire:click="editOrder({{ $order->id }})" class="flex items-center text-sm font-medium text-blue-700 cursor-pointer hover:text-blue-900 hover:bg-blue-50 transition-all duration-150 ease-in-out px-2 py-1 rounded border-b-2 border-blue-400 shadow-sm hover:shadow">
+                                        <i class="fas fa-edit mr-1 text-xs opacity-70"></i>
+                                        {{ $order->order_number }}
+                                        <i class="fas fa-external-link-alt ml-1 text-xs opacity-70"></i>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $order->other_reference }}</div>
+                                    <div wire:click="viewOrder({{ $order->id }})" class="flex items-center text-sm font-medium text-purple-700 cursor-pointer hover:text-purple-900 hover:bg-purple-50 transition-all duration-150 ease-in-out px-2 py-1 rounded border-b-2 border-purple-400 shadow-sm hover:shadow">
+                                        <i class="fas fa-eye mr-1 text-xs opacity-70"></i>
+                                        {{ $order->other_reference }}
+                                        <i class="fas fa-external-link-alt ml-1 text-xs opacity-70"></i>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $order->supplier->name }}</div>

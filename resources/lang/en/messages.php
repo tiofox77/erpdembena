@@ -130,6 +130,47 @@ return [
     'shortage' => 'Shortage',
     'not_started' => 'Not started',
     'no_materials_defined' => 'No materials defined for this production order.',
+
+    'filter_instructions' => 'Filter Instructions',
+
+    'search_products_sku_batch' => 'Search Products SKU Batch',
+    'location' => 'Location',
+    'all_locations' => 'All Locations',
+    'warehouse_type' => 'Warehouse Type',
+
+    'all_warehouses' => 'All Warehouses',
+    'category' => 'Category',
+    'all_categories' => 'All Categories',
+    'product_type' => 'Product Type',
+    'all_types' => 'All Types',
+    'stock_status' => 'Stock Status',
+
+    'all_stock' => 'All Stock',
+    'expiry_date_filter' => 'Expiry Date Filter',
+
+    'all_expiry_dates' => 'All Expiry Dates',
+    'summary_view' => 'Summary View',
+    'general_statistics' => 'General Statistics',
+    'inventory_stats' => 'Inventory Stats',
+    'reorder_level' => 'Reorder Level',
+
+    'low_stock' => 'Low Stock',
+    'out_of_stock' => 'Out of Stock',
+    'value_statistics' => 'Value Statistics',
+    'raw_material_value' => 'Raw Material Value',
+    'finished_product_value' => 'Finished Product Value',
+    'stock_health' => 'Stock Health',
+    'expiring_soon' => 'Expiring Soon',
+    'total_inventory_items' => 'Total Inventory Items',
+    'total_stock_quantity' => 'Total Stock Quantity',
+    'total_inventory_value' => 'Total Inventory Value',
+    'items_below_min_level' => 'Items Below Min Level',
+    'items_with_zero_stock' => 'Items With Zero Stock',
+    'charts' => 'Charts',
+
+
+
+
     // Geral
     'save' => 'Save',
     'cancel' => 'Cancel',

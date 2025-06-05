@@ -335,5 +335,11 @@ Route::middleware(['auth'])->group(function () {
         
         // Custom Forms Management
         Route::middleware(['permission:supplychain.forms.manage'])->get('/custom-forms', App\Livewire\SupplyChain\CustomFormsPage::class)->name('custom-forms');
+        
+        // Reports Section
+        Route::prefix('reports')->name('reports.')->middleware(['permission:supplychain.reports.view'])->group(function() {
+            // Inventory Management Report
+            Route::get('/inventory-management', App\Livewire\SupplyChain\Reports\InventoryManagement::class)->name('inventory-management');
+        });
     });
 });
