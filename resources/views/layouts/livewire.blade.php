@@ -739,6 +739,35 @@
                 <span>{{ trans('messages.responsibles_management') }}</span>
             </a>
             @endcan
+            
+            @canany(['mrp.reports.raw_material'])
+            <!-- Reports Dropdown Menu -->
+            <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="mrpReportsMenu">
+                <i class="fas fa-chart-line text-gray-500"></i>
+                <span class="font-semibold">{{ trans('messages.reports') }}</span>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+            </div>
+            
+            <!-- Reports Submenu -->
+            <div class="sidebar-nested-submenu" id="mrpReportsSubmenu">
+                @can('mrp.reports.raw_material')
+                <a href="{{ route('mrp.raw-material-report') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('mrp.raw-material-report') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-boxes text-gray-500"></i>
+                    <span>{{ trans('messages.raw_material_report') }}</span>
+                </a>
+                @endcan
+                
+                <!-- Add more report links here as needed -->
+                <!--
+                @can('mrp.reports.another_report')
+                <a href="#" class="sidebar-nested-submenu-item hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-chart-pie text-gray-500"></i>
+                    <span>Another Report</span>
+                </a>
+                @endcan
+                -->
+            </div>
+            @endcanany
         </div>
         @endcanany
 
@@ -816,6 +845,10 @@
                 <a href="{{ route('supply-chain.reports.inventory-management') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('supply-chain.reports.inventory-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-boxes text-gray-500"></i>
                     <span class="font-semibold">{{ trans('messages.inventory_management') }}</span>
+                </a>
+                <a href="{{ route('supply-chain.reports.raw-material') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('supply-chain.reports.raw-material') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-flask text-gray-500"></i>
+                    <span class="font-semibold">{{ trans('messages.raw_material_report') }}</span>
                 </a>
             </div>
             @endcan
@@ -1220,9 +1253,12 @@
             // Configurar menus
             setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
             setupMenuToggle('mrpMenu', 'mrpSubmenu');
+            setupMenuToggle('mrpReportsMenu', 'mrpReportsSubmenu');
             setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
             setupMenuToggle('supplyChainReportsMenu', 'supplyChainReportsSubmenu');
-            setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
+            setupMenuToggle('hrMenu', 'hrSubmenu');
+            setupMenuToggle('settingsMenu', 'settingsSubmenu');
+            setupMenuToggle('userManagementMenu', 'userManagementSubmenu');
             setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
             setupMenuToggle('stocksMenu', 'stocksSubmenu');
             setupMenuToggle('partsMenu', 'partsSubmenu');
@@ -1239,6 +1275,8 @@
                 
                 // Reconfigurar todos os menus
                 setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
+                setupMenuToggle('mrpMenu', 'mrpSubmenu');
+                setupMenuToggle('mrpReportsMenu', 'mrpReportsSubmenu');
                 setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
                 setupMenuToggle('supplyChainReportsMenu', 'supplyChainReportsSubmenu');
                 setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');

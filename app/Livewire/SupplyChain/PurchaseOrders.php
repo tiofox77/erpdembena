@@ -31,6 +31,8 @@ class PurchaseOrders extends Component
     public $monthFilter = ''; // Filtro por mês (1-12)
     public $yearFilter = ''; // Filtro por ano
     public $dateField = 'order_date'; // Campo de data a ser filtrado (order_date, expected_delivery_date, etc)
+    public $startDate = ''; // Filtro de data inicial para range
+    public $endDate = ''; // Filtro de data final para range
     public $customFormFilter = ''; // Filtro por formulário personalizado
     public $customFormStatusFilter = ''; // Filtro por status de formulário personalizado
     public $sortField = 'order_date';
@@ -137,6 +139,16 @@ class PurchaseOrders extends Component
         $this->resetPage();
     }
 
+    public function updatingStartDate()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingEndDate()
+    {
+        $this->resetPage();
+    }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -151,6 +163,8 @@ class PurchaseOrders extends Component
         $this->monthFilter = '';
         $this->yearFilter = '';
         $this->dateField = 'order_date';
+        $this->startDate = '';
+        $this->endDate = '';
         $this->customFormFilter = '';
         $this->customFormStatusFilter = '';
         $this->perPage = 10;
@@ -195,6 +209,13 @@ class PurchaseOrders extends Component
             // Filtro por ano
             ->when($this->yearFilter, function($query) {
                 return $query->whereRaw("YEAR({$this->dateField}) = ?", [$this->yearFilter]);
+            })
+            // Filtro por intervalo de datas (date range)
+            ->when($this->startDate, function($query) {
+                return $query->whereDate($this->dateField, '>=', $this->startDate);
+            })
+            ->when($this->endDate, function($query) {
+                return $query->whereDate($this->dateField, '<=', $this->endDate);
             })
             ->when($this->supplierFilter, function($query) {
                 return $query->where('supplier_id', $this->supplierFilter);

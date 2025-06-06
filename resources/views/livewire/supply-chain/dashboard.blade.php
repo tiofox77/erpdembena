@@ -66,6 +66,49 @@
         </div>
         
         <!-- Seção de Gráficos e Tendências -->
+        <!-- Reports Quick Access -->
+        <div class="mb-8">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-lg">
+                <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-700 flex items-center">
+                        <i class="fas fa-file-alt text-indigo-600 mr-2"></i>
+                        {{ __('messages.reports_quick_access') }}
+                    </h2>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Inventory Management Report -->
+                        <a href="{{ route('supply-chain.reports.inventory-management') }}" class="flex items-center p-3 rounded-lg border border-blue-100 bg-blue-50 hover:bg-blue-100 transition-colors duration-200">
+                            <div class="flex-shrink-0 rounded-full bg-blue-500 p-2 text-white">
+                                <i class="fas fa-warehouse"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-gray-700">{{ __('messages.inventory_management_report') }}</h3>
+                                <p class="text-xs text-gray-500">{{ __('messages.inventory_status_overview') }}</p>
+                            </div>
+                            <div class="ml-auto text-blue-500">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Raw Material Stock Report -->
+                        <a href="{{ route('supply-chain.reports.raw-material') }}" class="flex items-center p-3 rounded-lg border border-green-100 bg-green-50 hover:bg-green-100 transition-colors duration-200">
+                            <div class="flex-shrink-0 rounded-full bg-green-500 p-2 text-white">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-gray-700">{{ __('messages.raw_material_report') }}</h3>
+                                <p class="text-xs text-gray-500">{{ __('messages.raw_materials_stock_overview') }}</p>
+                            </div>
+                            <div class="ml-auto text-green-500">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Gráfico de Ordens de Compra por Status -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-lg">

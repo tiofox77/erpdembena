@@ -2360,6 +2360,32 @@ return [
     'others' => 'Others',
     'updated_at' => 'Updated At',
     
+    // Date Range Filter
+    'start_date' => 'Start Date',
+    'end_date' => 'End Date',
+    'date_range' => 'Date Range',
+    'filtered_by_date' => 'Filtered by date range',
+    
+    // Raw Material Report
+    'raw_material_report' => 'Raw Material Stock Report',
+    'raw_material_report_description' => 'Comprehensive view of raw material inventory across warehouses, purchase orders, and production schedules.',
+    'raw_materials_stock_overview' => 'Raw materials stock status and reorder quantities',
+    'reports_quick_access' => 'Reports Quick Access',
+    'inventory_status_overview' => 'Inventory status by location and category',
+    'raw_materials_list' => 'Raw Materials List',
+    'search_raw_materials_placeholder' => 'Search by name, SKU or description...',
+    'current_stock' => 'Current Stock',
+    'po_stock' => 'PO Stock',
+    'consumed_quantity' => 'Consumed Quantity',
+    'planned_quantity' => 'Planned Quantity',
+    'reorder_point' => 'Reorder Point',
+    'reorder_quantity' => 'Reorder Quantity',
+    'unit_of_measure' => 'Unit of Measure',
+    'no_raw_materials_found' => 'No raw materials found',
+    'export_to_excel' => 'Export to Excel',
+    'export_to_pdf' => 'Export to PDF',
+    'name' => 'Name',
+
     // PDF - Shipping Notes Report
     'shipping_notes_report' => 'Shipping Notes Report',
     'purchase_order_information' => 'Purchase Order Information',

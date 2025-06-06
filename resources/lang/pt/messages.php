@@ -757,6 +757,32 @@ return [
     'generating_pdf' => 'Gerando PDF...',
     'not_available' => 'Não disponível',
     
+    // Date Range Filter
+    'start_date' => 'Data Inicial',
+    'end_date' => 'Data Final',
+    'date_range' => 'Intervalo de Datas',
+    'filtered_by_date' => 'Filtrado por intervalo de datas',
+    
+    // Raw Material Report
+    'raw_material_report' => 'Relatório de Estoque de Matéria-Prima',
+    'raw_material_report_description' => 'Visão abrangente do inventário de matéria-prima em armazéns, ordens de compra e agendamentos de produção.',
+    'raw_materials_stock_overview' => 'Status de estoque e quantidades de reposição de matérias-primas',
+    'reports_quick_access' => 'Acesso Rápido aos Relatórios',
+    'inventory_status_overview' => 'Status de inventário por localização e categoria',
+    'raw_materials_list' => 'Lista de Matérias-Primas',
+    'search_raw_materials_placeholder' => 'Buscar por nome, SKU ou descrição...',
+    'current_stock' => 'Estoque Atual',
+    'po_stock' => 'Estoque em OC',
+    'consumed_quantity' => 'Quantidade Consumida',
+    'planned_quantity' => 'Quantidade Planejada',
+    'reorder_point' => 'Ponto de Reposição',
+    'reorder_quantity' => 'Quantidade de Reposição',
+    'unit_of_measure' => 'Unidade de Medida',
+    'no_raw_materials_found' => 'Nenhuma matéria-prima encontrada',
+    'export_to_excel' => 'Exportar para Excel',
+    'export_to_pdf' => 'Exportar para PDF',
+    'name' => 'Nome',
+    
     // Status de envio
     'shipping_status_pending' => 'Pendente',
     'shipping_status_shipped' => 'Enviado',

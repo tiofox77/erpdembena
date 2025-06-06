@@ -300,6 +300,9 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-categories', App\Livewire\Mrp\FailureCategories::class)->name('failure-categories');
         Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-root-causes', App\Livewire\Mrp\FailureRootCauses::class)->name('failure-root-causes');
         
+        // Reports
+        Route::middleware(['permission:mrp.reports.raw_material'])->get('/reports/raw-material', App\Livewire\Mrp\Reports\RawMaterialReport::class)->name('raw-material-report');
+        
         // Responsibles Management
         Route::middleware(['permission:mrp.responsibles.view'])->get('/responsibles', App\Livewire\Mrp\Responsibles::class)->name('responsibles');
     });
@@ -340,6 +343,9 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('reports')->name('reports.')->middleware(['permission:supplychain.reports.view'])->group(function() {
             // Inventory Management Report
             Route::get('/inventory-management', App\Livewire\SupplyChain\Reports\InventoryManagement::class)->name('inventory-management');
+            
+            // Raw Material Report
+            Route::get('/raw-material', App\Livewire\mrp\Reports\RawMaterialReport::class)->name('raw-material');
         });
     });
 });

@@ -105,6 +105,34 @@
                             </select>
                         </div>
                         
+                        <!-- Date Range Filter - Start Date -->
+                        <div>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-calendar-day text-gray-500 mr-1"></i>
+                                {{ __('messages.start_date') }}
+                            </label>
+                            <input 
+                                type="date" 
+                                wire:model.live="startDate" 
+                                id="startDate" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out"
+                            >
+                        </div>
+                        
+                        <!-- Date Range Filter - End Date -->
+                        <div>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-calendar-day text-gray-500 mr-1"></i>
+                                {{ __('messages.end_date') }}
+                            </label>
+                            <input 
+                                type="date" 
+                                wire:model.live="endDate" 
+                                id="endDate" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out"
+                            >
+                        </div>
+                        
                         <!-- Filtro de Status do Formulário Personalizado (aparece apenas quando um formulário é selecionado) -->
                         @if($customFormFilter)
                         <div>
@@ -159,12 +187,21 @@
                     
                     <!-- Linha de filtros de data -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                        <!-- Cabeçalho -->
-                        <div class="md:col-span-3 mb-2">
-                            <h3 class="text-sm font-medium text-blue-700 flex items-center">
-                                <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
-                                {{ __('messages.date_filters') }}
-                            </h3>
+                        <div class="flex justify-between items-center">
+                            <button wire:click="resetFilters" 
+                                class="text-sm text-blue-600 hover:text-blue-800 focus:outline-none flex items-center">
+                                <i class="fas fa-undo text-xs mr-1"></i>
+                                {{ __('messages.reset_filters') }}
+                            </button>
+                            @if($startDate || $endDate)
+                                <div class="text-xs text-gray-600 bg-gray-100 rounded-full px-3 py-1">
+                                    <i class="fas fa-filter mr-1 text-blue-500"></i>
+                                    {{ __('messages.filtered_by_date') }}: 
+                                    {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : '∞' }} 
+                                    <i class="fas fa-arrow-right mx-1 text-xs"></i> 
+                                    {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d/m/Y') : '∞' }}
+                                </div>
+                            @endif
                         </div>
                         
                         <!-- Filtro de Campo de Data -->
