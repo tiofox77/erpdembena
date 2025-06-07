@@ -843,12 +843,16 @@
             
             <div class="sidebar-nested-submenu {{ request()->routeIs('supply-chain.reports.*') ? 'active' : '' }}" id="supplyChainReportsSubmenu">
                 <a href="{{ route('supply-chain.reports.inventory-management') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('supply-chain.reports.inventory-management') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                    <i class="fas fa-boxes text-gray-500"></i>
-                    <span class="font-semibold">{{ trans('messages.inventory_management') }}</span>
+                    <i class="fas fa-boxes mr-2"></i>
+                    <span>{{ trans('messages.inventory_management_report') }}</span>
+                </a>
+                <a href="{{ route('supply-chain.reports.stock-movement') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('supply-chain.reports.stock-movement') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-exchange-alt mr-2"></i>
+                    <span>{{ trans('messages.stock_movement_report') }}</span>
                 </a>
                 <a href="{{ route('supply-chain.reports.raw-material') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('supply-chain.reports.raw-material') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                    <i class="fas fa-flask text-gray-500"></i>
-                    <span class="font-semibold">{{ trans('messages.raw_material_report') }}</span>
+                    <i class="fas fa-cubes mr-2"></i>
+                    <span>{{ trans('messages.raw_material_report') }}</span>
                 </a>
             </div>
             @endcan

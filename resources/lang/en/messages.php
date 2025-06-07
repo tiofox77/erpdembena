@@ -2359,6 +2359,9 @@ return [
     'raw_material' => 'Raw Material',
     'others' => 'Others',
     'updated_at' => 'Updated At',
+    'inventory_management_report' => 'Inventory Management Report',
+    'stock_movement_report' => 'Stock Movement Report',
+    'supplier_categories' => 'Supplier Categories',
     
     // Date Range Filter
     'start_date' => 'Start Date',

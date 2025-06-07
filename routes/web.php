@@ -344,6 +344,9 @@ Route::middleware(['auth'])->group(function () {
             // Inventory Management Report
             Route::get('/inventory-management', App\Livewire\SupplyChain\Reports\InventoryManagement::class)->name('inventory-management');
             
+            // Stock Movement Report
+            Route::get('/stock-movement', App\Livewire\SupplyChain\Reports\StockMovementReport::class)->name('stock-movement');
+            
             // Raw Material Report
             Route::get('/raw-material', App\Livewire\mrp\Reports\RawMaterialReport::class)->name('raw-material');
         });
