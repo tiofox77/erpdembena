@@ -10,11 +10,20 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-2">
-            <button type="button" wire:click="createRootCause" 
-                class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                <i class="fas fa-plus mr-2 animate-pulse"></i>
-                {{ __('messages.add_failure_root_cause') }}
-            </button>
+            @can('failure_root_causes.create')
+                <button type="button" wire:click="createRootCause" 
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-plus mr-2 animate-pulse"></i>
+                    {{ __('messages.add_failure_root_cause') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75"
+                    title="{{ __('messages.no_permission_to_add') }}">
+                    <i class="fas fa-plus mr-2"></i>
+                    {{ __('messages.add_failure_root_cause') }}
+                </button>
+            @endcan
         </div>
     </div>
 
@@ -208,18 +217,44 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
-                                    <button wire:click="editRootCause({{ $rootCause->id }})" 
-                                        class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button wire:click="toggleActive({{ $rootCause->id }})" 
-                                        class="{{ $rootCause->is_active ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900' }} transition-colors duration-150 transform hover:scale-110">
-                                        <i class="fas {{ $rootCause->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
-                                    </button>
-                                    <button wire:click="confirmDelete({{ $rootCause->id }})" 
-                                        class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    @can('failure_root_causes.edit')
+                                        <button wire:click="editRootCause({{ $rootCause->id }})" 
+                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.edit') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @else
+                                        <button class="text-gray-400 cursor-not-allowed" disabled
+                                            title="{{ __('messages.no_edit_permission') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('failure_root_causes.toggle')
+                                        <button wire:click="toggleActive({{ $rootCause->id }})" 
+                                            class="{{ $rootCause->is_active ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900' }} transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ $rootCause->is_active ? __('messages.deactivate') : __('messages.activate') }}">
+                                            <i class="fas {{ $rootCause->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
+                                        </button>
+                                    @else
+                                        <button class="text-gray-400 cursor-not-allowed" disabled
+                                            title="{{ __('messages.no_permission_to_toggle') }}">
+                                            <i class="fas {{ $rootCause->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('failure_root_causes.delete')
+                                        <button wire:click="confirmDelete({{ $rootCause->id }})" 
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.delete') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @else
+                                        <button class="text-gray-400 cursor-not-allowed" disabled
+                                            title="{{ __('messages.no_delete_permission') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
@@ -372,19 +407,49 @@
                             <i class="fas fa-times mr-2"></i>
                             {{ __('messages.cancel') }}
                         </button>
-                        <button type="submit" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
-                            <span wire:loading.remove>
-                                <i class="fas {{ $editMode ? 'fa-save' : 'fa-plus-circle' }} mr-2"></i>
-                                {{ $editMode ? __('messages.update') : __('messages.save') }}
-                            </span>
-                            <span wire:loading class="inline-flex items-center">
-                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                {{ __('messages.processing') }}
-                            </span>
-                        </button>
+                        @if($editMode)
+                            @can('failure_root_causes.edit')
+                                <button type="submit" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                                    <span wire:loading.remove wire:target="saveRootCause">
+                                        <i class="fas fa-save mr-2"></i>
+                                        {{ __('messages.save_changes') }}
+                                    </span>
+                                    <span wire:loading wire:target="saveRootCause" class="inline-flex items-center">
+                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        {{ __('messages.processing') }}
+                                    </span>
+                                </button>
+                            @else
+                                <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-white cursor-not-allowed opacity-75">
+                                    <i class="fas fa-ban mr-2"></i>
+                                    {{ __('messages.no_permission') }}
+                                </button>
+                            @endcan
+                        @else
+                            @can('failure_root_causes.create')
+                                <button type="submit" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                                    <span wire:loading.remove wire:target="saveRootCause">
+                                        <i class="fas fa-plus-circle mr-2"></i>
+                                        {{ __('messages.create_root_cause') }}
+                                    </span>
+                                    <span wire:loading wire:target="saveRootCause" class="inline-flex items-center">
+                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        {{ __('messages.processing') }}
+                                    </span>
+                                </button>
+                            @else
+                                <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-white cursor-not-allowed opacity-75">
+                                    <i class="fas fa-ban mr-2"></i>
+                                    {{ __('messages.no_permission') }}
+                                </button>
+                            @endcan
+                        @endif
                     </div>
                 </form>
             </div>
@@ -420,18 +485,22 @@
                         <p class="mb-2">{{ __('messages.delete_failure_root_cause_confirmation') }}</p>
                         <p class="font-bold text-red-600">{{ __('messages.delete_failure_root_cause_warning') }}</p>
                     </div>
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button" wire:click="closeModal" class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" wire:click="$set('confirmingDeletion', false)" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                             <i class="fas fa-times mr-2"></i>
                             {{ __('messages.cancel') }}
                         </button>
-                        <button type="button" wire:click="deleteRootCause" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
-                            <span wire:loading.remove>
-                                <i class="fas fa-trash-alt mr-2"></i>
+                        @can('failure_root_causes.delete')
+                            <button type="button" wire:click="deleteRootCause" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                <i class="fas fa-trash mr-2"></i>
                                 {{ __('messages.delete') }}
-                            </span>
-                            <span wire:loading class="inline-flex items-center">
-                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            </button>
+                        @else
+                            <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75">
+                                <i class="fas fa-ban mr-2"></i>
+                                {{ __('messages.no_permission') }}
+                            </button>
+                        @endcan
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>

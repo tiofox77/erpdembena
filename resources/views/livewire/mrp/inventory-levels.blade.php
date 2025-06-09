@@ -10,11 +10,20 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-2">
-            <button type="button" wire:click="create" 
-                class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                <i class="fas fa-plus mr-2"></i>
-                {{ __('messages.add_inventory_level') }}
-            </button>
+            @can('inventory_levels.create')
+                <button type="button" wire:click="create" 
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                    <i class="fas fa-plus mr-2"></i>
+                    {{ __('messages.add_inventory_level') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75"
+                    title="{{ __('messages.no_permission_to_add') }}">
+                    <i class="fas fa-plus mr-2"></i>
+                    {{ __('messages.add_inventory_level') }}
+                </button>
+            @endcan
         </div>
     </div>
     
@@ -268,15 +277,35 @@
                             </td>
                             <!-- ACTIONS -->
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                <button wire:click="view({{ $level->id }})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_details') }}">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button wire:click="edit({{ $level->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors duration-200" title="{{ __('messages.edit') }}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button wire:click="confirmDelete({{ $level->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200" title="{{ __('messages.delete') }}">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                @can('inventory_levels.view')
+                                    <button wire:click="view({{ $level->id }})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_details') }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                @else
+                                    <button class="text-gray-400 mr-3 cursor-not-allowed" disabled title="{{ __('messages.no_view_permission') }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                @endcan
+                                
+                                @can('inventory_levels.edit')
+                                    <button wire:click="edit({{ $level->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors duration-200" title="{{ __('messages.edit') }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                @else
+                                    <button class="text-gray-400 mr-3 cursor-not-allowed" disabled title="{{ __('messages.no_edit_permission') }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                @endcan
+                                
+                                @can('inventory_levels.delete')
+                                    <button wire:click="confirmDelete({{ $level->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200" title="{{ __('messages.delete') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                @else
+                                    <button class="text-gray-400 cursor-not-allowed" disabled title="{{ __('messages.no_delete_permission') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                @endcan
                             </td>
                         </tr>
                     @empty
@@ -285,10 +314,17 @@
                                 <div class="flex flex-col items-center justify-center py-6">
                                     <i class="fas fa-box-open text-4xl text-gray-300 mb-2"></i>
                                     <p>{{ __('messages.no_inventory_levels_found') }}</p>
-                                    <button wire:click="create" class="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                        <i class="fas fa-plus mr-1"></i>
-                                        {{ __('messages.add_inventory_level') }}
-                                    </button>
+                                    @can('inventory_levels.create')
+                                        <button wire:click="create" class="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                                            <i class="fas fa-plus mr-1"></i>
+                                            {{ __('messages.add_inventory_level') }}
+                                        </button>
+                                    @else
+                                        <button disabled class="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75" title="{{ __('messages.no_permission_to_add') }}">
+                                            <i class="fas fa-plus mr-1"></i>
+                                            {{ __('messages.add_inventory_level') }}
+                                        </button>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

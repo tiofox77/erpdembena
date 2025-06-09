@@ -6,11 +6,20 @@
                 <i class="fas fa-industry text-blue-600 mr-3"></i>
                 {{ __('messages.mrp_production_orders') }}
             </h1>
-            <button wire:click="create" 
-                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
-                {{ __('messages.new_production_order') }}
-            </button>
+            @can('production_orders.create')
+                <button wire:click="create" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                    <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
+                    {{ __('messages.new_production_order') }}
+                </button>
+            @else
+                <button disabled
+                    class="inline-flex items-center px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-white cursor-not-allowed opacity-75"
+                    title="{{ __('messages.no_permission') }}">
+                    <i class="fas fa-ban mr-2"></i>
+                    {{ __('messages.new_production_order') }}
+                </button>
+            @endcan
         </div>
 
         <!-- Cartão de Busca e Filtros -->
@@ -279,22 +288,61 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
-                                        <button wire:click="viewDetails({{ $order->id }})" 
-                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button wire:click="viewMaterials({{ $order->id }})" 
-                                            class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110">
-                                            <i class="fas fa-boxes"></i>
-                                        </button>
-                                        <button wire:click="edit({{ $order->id }})" 
-                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button wire:click="confirmDelete({{ $order->id }})" 
-                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        @can('production_orders.view')
+                                            <button wire:click="viewDetails({{ $order->id }})" 
+                                                class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.view_details') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endcan
+                                        
+                                        @can('production_orders.materials')
+                                            <button wire:click="viewMaterials({{ $order->id }})" 
+                                                class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.view_materials') }}">
+                                                <i class="fas fa-boxes"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-boxes"></i>
+                                            </button>
+                                        @endcan
+                                        
+                                        @can('production_orders.edit')
+                                            <button wire:click="edit({{ $order->id }})" 
+                                                class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endcan
+                                        
+                                        @can('production_orders.delete')
+                                            <button wire:click="confirmDelete({{ $order->id }})" 
+                                                class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.delete') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

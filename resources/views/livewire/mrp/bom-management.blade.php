@@ -7,11 +7,20 @@
                 {{ __('messages.bom_management') }}
             </h1>
             <div class="flex space-x-2">
+                @can('bom.create')
                 <button wire:click="create" 
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                    title="{{ __('messages.create_new_bom') }}">
                     <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
                     {{ __('messages.new_bom') }}
                 </button>
+                @else
+                <button class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-gray-500 cursor-not-allowed opacity-70"
+                    title="{{ __('messages.no_permission_to_create_bom') }}">
+                    <i class="fas fa-plus-circle mr-2"></i>
+                    {{ __('messages.new_bom') }}
+                </button>
+                @endcan
             </div>
         </div>
 
@@ -237,23 +246,45 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end space-x-2">
-                                            <button wire:click="viewBomDetails({{ $bom->id }})" 
-                                                class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.view_details') }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button wire:click="viewComponents({{ $bom->id }})" 
-                                                class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.view_components') }}">
-                                                <i class="fas fa-puzzle-piece"></i>
-                                            </button>
+                                        <div class="flex space-x-2">
+                                            @can('bom.edit', $bom)
                                             <button wire:click="edit({{ $bom->id }})" 
-                                                class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.edit_bom') }}">
+                                                class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.edit') }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
+                                            @else
+                                            <span class="text-gray-400 cursor-not-allowed" 
+                                                title="{{ __('messages.no_edit_permission') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </span>
+                                            @endcan
+
+                                            @can('bom.delete', $bom)
                                             <button wire:click="confirmDelete({{ $bom->id }})" 
-                                                class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.delete_bom') }}">
+                                                class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.delete') }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+                                            @else
+                                            <span class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_delete_permission') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </span>
+                                            @endcan
+
+                                            @can('bom.view', $bom)
+                                            <button wire:click="viewBom({{ $bom->id }})" 
+                                                class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.view_details') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            @else
+                                            <span class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_view_permission') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>
@@ -322,12 +353,18 @@
 
                 <!-- Botão para adicionar componente -->
                 <div class="flex justify-end mb-4">
+                    @can('bom.edit', $selectedBom)
                     <button wire:click="addComponent" 
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
-                        <i class="fas fa-plus-circle mr-2"></i>
-                        {{ __('messages.add_component') }}
+                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
+                        title="{{ __('messages.add_component') }}">
+                        <i class="fas fa-plus mr-1"></i> {{ __('messages.add_component') }}
                     </button>
-                </div>
+                    @else
+                    <button class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-gray-400 bg-gray-200 cursor-not-allowed opacity-70"
+                        title="{{ __('messages.no_permission_to_add_component') }}">
+                        <i class="fas fa-plus mr-1"></i> {{ __('messages.add_component') }}
+                    </button>
+                    @endcan
 
                 <!-- Tabela de Componentes -->
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">

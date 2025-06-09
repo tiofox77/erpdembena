@@ -159,6 +159,7 @@ class ProductionScheduling extends Component
     public $viewingSchedule = null;  // Programação sendo visualizada
     public $scheduleToDelete = null;  // Programacao a ser excluída
     public $confirmDelete = false;  // Confirmação de exclusão
+    public $deleting = false;  // Flag para controlar o estado de exclusão
     // Análise de impacto de paradas
     public $impactAnalysis = [];
     public $breakdownImpact = [];
@@ -3208,7 +3209,8 @@ class ProductionScheduling extends Component
     }
     
     /**
-     * Verifica se todos os planos diários estão completos e atualiza o status da programação automaticamente
+     * Verifica se todos os planos diários de todos os turnos estão completos 
+     * e atualiza o status da programação automaticamente
      * 
      * @param int $scheduleId ID da programação a ser verificada
      * @return void
@@ -3217,33 +3219,62 @@ class ProductionScheduling extends Component
     {
         try {
             // Buscar a programação
-            $schedule = ProductionSchedule::findOrFail($scheduleId);
+            $schedule = ProductionSchedule::with('shifts')->findOrFail($scheduleId);
             
-            // Buscar todos os planos diários associados a esta programação
-            $allDailyPlans = ProductionDailyPlan::where('schedule_id', $scheduleId)->get();
+            // Obter todos os turnos associados a esta programação
+            $shifts = $schedule->shifts;
             
-            // Se não houver planos diários, não faz nada
-            if ($allDailyPlans->isEmpty()) {
-                Log::info('Nenhum plano diário encontrado para verificar status da programação', [
+            // Se não houver turnos definidos, não faz nada
+            if ($shifts->isEmpty()) {
+                Log::info('Nenhum turno encontrado para a programação', [
                     'schedule_id' => $scheduleId
                 ]);
                 return;
             }
             
-            // Verificar se todos os planos diários estão com status 'completed'
-            $allCompleted = $allDailyPlans->every(function ($plan) {
-                return $plan->status === 'completed';
-            });
+            // Verificar se todos os turnos têm todos os seus planos completos
+            $allShiftsCompleted = true;
+            $shiftStatus = [];
             
-            Log::info('Verificando status dos planos diários', [
+            foreach ($shifts as $shift) {
+                // Buscar todos os planos diários para este turno
+                $shiftPlans = ProductionDailyPlan::where('schedule_id', $scheduleId)
+                    ->where('shift_id', $shift->id)
+                    ->get();
+                
+                // Se não houver planos para este turno, considerar como não completo
+                if ($shiftPlans->isEmpty()) {
+                    $allShiftsCompleted = false;
+                    $shiftStatus[$shift->id] = 'no_plans';
+                    continue;
+                }
+                
+                // Verificar se todos os planos deste turno estão completos
+                $shiftCompleted = $shiftPlans->every(function ($plan) {
+                    return $plan->status === 'completed';
+                });
+                
+                $shiftStatus[$shift->id] = [
+                    'name' => $shift->name,
+                    'total_plans' => $shiftPlans->count(),
+                    'completed_plans' => $shiftPlans->where('status', 'completed')->count(),
+                    'is_completed' => $shiftCompleted
+                ];
+                
+                if (!$shiftCompleted) {
+                    $allShiftsCompleted = false;
+                }
+            }
+            
+            Log::info('Verificando status dos planos diários por turno', [
                 'schedule_id' => $scheduleId,
-                'total_planos' => $allDailyPlans->count(),
-                'planos_completos' => $allDailyPlans->where('status', 'completed')->count(),
-                'todos_completos' => $allCompleted ? 'Sim' : 'Não'
+                'total_shifts' => $shifts->count(),
+                'shifts_status' => $shiftStatus,
+                'all_shifts_completed' => $allShiftsCompleted ? 'Sim' : 'Não'
             ]);
             
-            // Se todos os planos diários estiverem completos, atualizar o status da programação
-            if ($allCompleted) {
+            // Se todos os turnos tiverem todos os seus planos completos, atualizar o status da programação
+            if ($allShiftsCompleted) {
                 // Verificar se o status atual não é já 'completed'
                 if ($schedule->status !== 'completed') {
                     // Atualizar o status da programação para 'completed'
@@ -3417,9 +3448,16 @@ public function updateDailyPlan($index, $data = null)
             $this->filteredDailyPlans[$index]['id'] = $plan->id;
             $this->filteredDailyPlans[$index]['shift_id'] = $plan->shift_id;
 
+            // Se o status foi alterado para 'completed', verificar se todos os planos estão completos
+            if ($plan->status === 'completed' && $previousStatus !== 'completed') {
+                $this->checkAndUpdateScheduleStatus($plan->schedule_id);
+            }
+
             \Illuminate\Support\Facades\Log::info('Plano diário atualizado com sucesso', [
                 'id' => $plan->id,
-                'shift_id' => $plan->shift_id
+                'shift_id' => $plan->shift_id,
+                'status' => $plan->status,
+                'previous_status' => $previousStatus
             ]);
         } else {
             // Plano novo, criar no banco de dados
@@ -4644,6 +4682,8 @@ public function updateDailyPlan($index, $data = null)
             return false;
         }
     }
+
+    // Note: Removed duplicate method definitions for openDeleteModal, closeDeleteModal, and delete
 
     /**
      * Carregar dados para a view

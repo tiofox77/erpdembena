@@ -10,11 +10,20 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-2">
-            <button type="button" wire:click="refreshData" 
-                class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                <i class="fas fa-sync-alt mr-2"></i>
-                {{ __('messages.refresh_data') }}
-            </button>
+            @can('mrp_dashboard.refresh')
+                <button type="button" wire:click="refreshData" 
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    {{ __('messages.refresh_data') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75"
+                    title="{{ __('messages.no_permission') }}">
+                    <i class="fas fa-ban mr-2"></i>
+                    {{ __('messages.refresh_data') }}
+                </button>
+            @endcan
         </div>
     </div>
     
@@ -170,10 +179,19 @@
                                 <p class="text-sm text-gray-500">{{ $alert['description'] }}</p>
                             </div>
                             <div class="flex-shrink-0 self-center">
-                                <button type="button" wire:click="viewAlert({{ $alert['id'] }})"
-                                    class="rounded-full p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    <i class="fas fa-arrow-right"></i>
-                                </button>
+                                @can('alerts.view')
+                                    <button type="button" wire:click="viewAlert({{ $alert['id'] }})"
+                                        class="rounded-full p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        title="{{ __('messages.view_alert') }}">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                @else
+                                    <button type="button" disabled
+                                        class="rounded-full p-1 text-gray-300 cursor-not-allowed"
+                                        title="{{ __('messages.no_permission') }}">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                @endcan
                             </div>
                         </li>
                     @empty

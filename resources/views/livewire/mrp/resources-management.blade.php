@@ -6,16 +6,37 @@
             {{ trans('messages.resources_management') }}
         </h1>
         <div class="flex gap-2">
-            <button wire:click="createResourceType" 
-                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-layer-group mr-2 animate-pulse"></i>
-                {{ trans('messages.add_resource_type') }}
-            </button>
-            <button wire:click="create" 
-                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
-                {{ trans('messages.add_resource') }}
-            </button>
+            @can('resource_types.create')
+                <button wire:click="createResourceType" 
+                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                    title="{{ trans('messages.add_resource_type') }}">
+                    <i class="fas fa-layer-group mr-2 animate-pulse"></i>
+                    {{ trans('messages.add_resource_type') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex items-center px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-white cursor-not-allowed opacity-75"
+                    title="{{ trans('messages.no_permission') }}">
+                    <i class="fas fa-ban mr-2"></i>
+                    {{ trans('messages.add_resource_type') }}
+                </button>
+            @endcan
+            
+            @can('resources.create')
+                <button wire:click="create" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                    title="{{ trans('messages.add_resource') }}">
+                    <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
+                    {{ trans('messages.add_resource') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex items-center px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-white cursor-not-allowed opacity-75"
+                    title="{{ trans('messages.no_permission') }}">
+                    <i class="fas fa-ban mr-2"></i>
+                    {{ trans('messages.add_resource') }}
+                </button>
+            @endcan
         </div>
     </div>
 
@@ -202,25 +223,62 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
-                                    <button wire:click="view({{ $resource->id }})" 
-                                        class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" title="{{ trans('messages.view_details') }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button wire:click="edit({{ $resource->id }})" 
-                                        class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" title="{{ trans('messages.edit') }}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button wire:click="confirmDelete({{ $resource->id }})" 
-                                        class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" title="{{ trans('messages.delete') }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    @can('resources.view')
+                                        <button wire:click="view({{ $resource->id }})" 
+                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ trans('messages.view_details') }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    @else
+                                        <button disabled
+                                            class="text-gray-400 cursor-not-allowed"
+                                            title="{{ trans('messages.no_permission') }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('resources.edit')
+                                        <button wire:click="edit({{ $resource->id }})" 
+                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ trans('messages.edit') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @else
+                                        <button disabled
+                                            class="text-gray-400 cursor-not-allowed"
+                                            title="{{ trans('messages.no_permission') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('resources.delete')
+                                        <button wire:click="confirmDelete({{ $resource->id }})" 
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ trans('messages.delete') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @else
+                                        <button disabled
+                                            class="text-gray-400 cursor-not-allowed"
+                                            title="{{ trans('messages.no_permission') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @endcan
                                     
                                     <!-- Toggle Status -->
-                                    <button wire:click="toggleStatus({{ $resource->id }})" 
-                                        class="{{ $resource->active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900' }} transition-colors duration-150 transform hover:scale-110" 
-                                        title="{{ $resource->active ? trans('messages.deactivate') : trans('messages.activate') }}">
-                                        <i class="fas {{ $resource->active ? 'fa-ban' : 'fa-check-circle' }}"></i>
-                                    </button>
+                                    @can('resources.edit')
+                                        <button wire:click="toggleStatus({{ $resource->id }})" 
+                                            class="{{ $resource->active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900' }} transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ $resource->active ? trans('messages.deactivate') : trans('messages.activate') }}">
+                                            <i class="fas {{ $resource->active ? 'fa-ban' : 'fa-check-circle' }}"></i>
+                                        </button>
+                                    @else
+                                        <button disabled
+                                            class="text-gray-400 cursor-not-allowed"
+                                            title="{{ trans('messages.no_permission') }}">
+                                            <i class="fas {{ $resource->active ? 'fa-ban' : 'fa-check-circle' }}"></i>
+                                        </button>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
@@ -230,7 +288,11 @@
                                 <div class="flex flex-col items-center justify-center py-6">
                                     <i class="fas fa-search text-gray-400 text-3xl mb-3"></i>
                                     <p class="text-gray-500 mb-1">{{ trans('messages.no_resources_found') }}</p>
-                                    <p class="text-gray-400 text-sm">{{ trans('messages.try_adjusting_filters_or_create') }}</p>
+                                    @can('resources.create')
+                                        <p class="text-gray-400 text-sm">{{ trans('messages.try_adjusting_filters_or_create') }}</p>
+                                    @else
+                                        <p class="text-gray-400 text-sm">{{ trans('messages.try_adjusting_filters') }}</p>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

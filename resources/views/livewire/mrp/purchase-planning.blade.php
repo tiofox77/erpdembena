@@ -6,11 +6,21 @@
                 <i class="fas fa-shopping-cart text-blue-600 mr-3"></i>
                 {{ __('messages.purchase_planning') }}
             </h1>
-            <button wire:click="createMultiProduct" 
-                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-boxes mr-2 animate-pulse"></i>
-                {{ __('Adicionar Plano de Compra') }}
-            </button>
+            @can('purchase_plans.create')
+                <button wire:click="createMultiProduct" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                    title="{{ __('messages.add_purchase_plan') }}">
+                    <i class="fas fa-boxes mr-2 animate-pulse"></i>
+                    {{ __('messages.add_purchase_plan') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex items-center px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-white cursor-not-allowed opacity-75"
+                    title="{{ __('messages.no_permission') }}">
+                    <i class="fas fa-ban mr-2"></i>
+                    {{ __('messages.add_purchase_plan') }}
+                </button>
+            @endcan
         </div>
 
         <!-- Cartão de Busca e Filtros -->
@@ -281,63 +291,108 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
-                                        <button wire:click="view({{ $plan->id }})" 
-                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.view_details') }}">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button wire:click="editMultiProduct({{ $plan->id }})" 
-                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.edit') }}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button wire:click="confirmDelete({{ $plan->id }})" 
-                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.delete') }}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        @can('purchase_plans.view')
+                                            <button wire:click="view({{ $plan->id }})" 
+                                                class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" 
+                                                title="{{ __('messages.view_details') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endcan
+                                        
+                                        @can('purchase_plans.edit')
+                                            <button wire:click="editMultiProduct({{ $plan->id }})" 
+                                                class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" 
+                                                title="{{ __('messages.edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endcan
+                                        
+                                        @can('purchase_plans.delete')
+                                            <button wire:click="confirmDelete({{ $plan->id }})" 
+                                                class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" 
+                                                title="{{ __('messages.delete') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @else
+                                            <button disabled
+                                                class="text-gray-400 cursor-not-allowed"
+                                                title="{{ __('messages.no_permission') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endcan
                                         
                                         <!-- Dropdown de Ações para Status -->
-                                        <div x-data="{ open: false }" class="relative text-left">
-                                            <button @click="open = !open" type="button" class="text-gray-600 hover:text-gray-900 transition-colors duration-150 transform hover:scale-110">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            
-                                            <div x-show="open" @click.away="open = false" 
-                                                class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10"
-                                                x-transition:enter="transition ease-out duration-100"
-                                                x-transition:enter-start="transform opacity-0 scale-95"
-                                                x-transition:enter-end="transform opacity-100 scale-100"
-                                                x-transition:leave="transition ease-in duration-75"
-                                                x-transition:leave-start="transform opacity-100 scale-100"
-                                                x-transition:leave-end="transform opacity-0 scale-95"
-                                                style="display: none">
-                                                <div class="py-1">
-                                                    @if($plan->status === 'planned')
-                                                        <button wire:click="updateStatus({{ $plan->id }}, 'approved')" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 w-full text-left">
-                                                            <i class="fas fa-clipboard-check mr-3 text-blue-500"></i>
-                                                            {{ __('messages.approve_plan') }}
-                                                        </button>
-                                                    @elseif($plan->status === 'approved')
-                                                        <button wire:click="updateStatus({{ $plan->id }}, 'ordered')" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900 w-full text-left">
-                                                            <i class="fas fa-shopping-cart mr-3 text-green-500"></i>
-                                                            {{ __('messages.mark_as_ordered') }}
-                                                        </button>
-                                                    @endif
-                                                    
-                                                    @if(!in_array($plan->status, ['cancelled']))
-                                                        <button wire:click="updateStatus({{ $plan->id }}, 'cancelled')" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-900 w-full text-left">
-                                                            <i class="fas fa-ban mr-3 text-red-500"></i>
-                                                            {{ __('messages.cancel_plan') }}
-                                                        </button>
-                                                    @endif
-                                                    
-                                                    @if($plan->status === 'cancelled')
-                                                        <button wire:click="updateStatus({{ $plan->id }}, 'planned')" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 w-full text-left">
-                                                            <i class="fas fa-redo-alt mr-3 text-gray-500"></i>
-                                                            {{ __('messages.reopen_as_planned') }}
-                                                        </button>
-                                                    @endif
+                                        @canany(['purchase_plans.approve', 'purchase_plans.status_update'])
+                                            <div x-data="{ open: false }" class="relative text-left">
+                                                <button @click="open = !open" type="button" 
+                                                    class="text-gray-600 hover:text-gray-900 transition-colors duration-150 transform hover:scale-110"
+                                                    title="{{ __('messages.more_actions') }}">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                
+                                                <div x-show="open" @click.away="open = false" 
+                                                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10"
+                                                    x-transition:enter="transition ease-out duration-100"
+                                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                                    x-transition:leave="transition ease-in duration-75"
+                                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                                    x-transition:leave-end="transform opacity-0 scale-95"
+                                                    style="display: none">
+                                                    <div class="py-1">
+                                                        @can('purchase_plans.approve')
+                                                            @if($plan->status === 'planned')
+                                                                <button wire:click="updateStatus({{ $plan->id }}, 'approved')" 
+                                                                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 w-full text-left"
+                                                                    title="{{ __('messages.approve_plan') }}">
+                                                                    <i class="fas fa-clipboard-check mr-3 text-blue-500"></i>
+                                                                    {{ __('messages.approve_plan') }}
+                                                                </button>
+                                                            @elseif($plan->status === 'approved')
+                                                                <button wire:click="updateStatus({{ $plan->id }}, 'ordered')" 
+                                                                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900 w-full text-left"
+                                                                    title="{{ __('messages.mark_as_ordered') }}">
+                                                                    <i class="fas fa-shopping-cart mr-3 text-green-500"></i>
+                                                                    {{ __('messages.mark_as_ordered') }}
+                                                                </button>
+                                                            @endif
+                                                        @endcan
+                                                        
+                                                        @can('purchase_plans.status_update')
+                                                            @if(!in_array($plan->status, ['cancelled']))
+                                                                <button wire:click="updateStatus({{ $plan->id }}, 'cancelled')" 
+                                                                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-900 w-full text-left"
+                                                                    title="{{ __('messages.cancel_plan') }}">
+                                                                    <i class="fas fa-ban mr-3 text-red-500"></i>
+                                                                    {{ __('messages.cancel_plan') }}
+                                                                </button>
+                                                            @endif
+                                                            
+                                                            @if($plan->status === 'cancelled')
+                                                                <button wire:click="updateStatus({{ $plan->id }}, 'planned')" 
+                                                                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 w-full text-left"
+                                                                    title="{{ __('messages.reopen_as_planned') }}">
+                                                                    <i class="fas fa-redo-alt mr-3 text-gray-500"></i>
+                                                                    {{ __('messages.reopen_as_planned') }}
+                                                                </button>
+                                                            @endif
+                                                        @endcan
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        @endcanany
                                     </div>
                                 </td>
                             </tr>

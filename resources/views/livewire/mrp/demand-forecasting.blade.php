@@ -6,11 +6,20 @@
                 <i class="fas fa-chart-line text-blue-600 mr-3"></i>
                 {{ __('messages.demand_forecasting') }}
             </h1>
+            @can('demand_forecast.create')
             <button wire:click="create" 
-                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
+                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                title="{{ __('messages.create_forecast') }}">
                 <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
                 {{ __('messages.add_forecast') }}
             </button>
+            @else
+            <button class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-gray-500 cursor-not-allowed opacity-70"
+                title="{{ __('messages.no_permission_to_add_forecast') }}">
+                <i class="fas fa-plus-circle mr-2"></i>
+                {{ __('messages.add_forecast') }}
+            </button>
+            @endcan
         </div>
 
         <!-- Cartão de Busca e Filtros -->
@@ -237,14 +246,81 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
+                                        <!-- View Button -->
+                                        @can('demand_forecast.view', $forecast)
+                                        <button wire:click="view({{ $forecast->id }})" 
+                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ __('messages.view_details') }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        @else
+                                        <span class="text-gray-400 cursor-not-allowed" 
+                                            title="{{ __('messages.no_view_permission') }}">
+                                            <i class="fas fa-eye"></i>
+                                        </span>
+                                        @endcan
+
+                                        <!-- Edit Button -->
+                                        @can('demand_forecast.edit', $forecast)
                                         <button wire:click="edit({{ $forecast->id }})" 
-                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.edit') }}">
+                                            class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ __('messages.edit') }}">
                                             <i class="fas fa-edit"></i>
                                         </button>
+                                        @else
+                                        <span class="text-gray-400 cursor-not-allowed" 
+                                            title="{{ __('messages.no_edit_permission') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </span>
+                                        @endcan
+
+                                        <!-- Delete Button -->
+                                        @can('demand_forecast.delete', $forecast)
                                         <button wire:click="confirmDelete({{ $forecast->id }})" 
-                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.delete') }}">
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110" 
+                                            title="{{ __('messages.delete') }}"
+                                            onclick="return confirm('{{ __('messages.confirm_delete_forecast') }}')">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                        @else
+                                        <span class="text-gray-400 cursor-not-allowed" 
+                                            title="{{ __('messages.no_delete_permission') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </span>
+                                        @endcan
+                                        
+                                        <!-- Export Button -->
+                                        @can('demand_forecast.export', $forecast)
+                                        <div x-data="{ open: false }" class="relative">
+                                            <button @click="open = !open" 
+                                                class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
+                                                :class="{ 'text-green-700': open }"
+                                                title="{{ __('messages.export') }}">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" 
+                                                class="origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10"
+                                                x-transition:enter="transition ease-out duration-100"
+                                                x-transition:enter-start="transform opacity-0 scale-95"
+                                                x-transition:enter-end="transform opacity-100 scale-100"
+                                                x-transition:leave="transition ease-in duration-75"
+                                                x-transition:leave-start="transform opacity-100 scale-100"
+                                                x-transition:leave-end="transform opacity-0 scale-95">
+                                                <div class="py-1">
+                                                    <button wire:click="exportToPdf({{ $forecast->id }})" 
+                                                        class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                        title="{{ __('messages.export_to_pdf') }}">
+                                                        <i class="fas fa-file-pdf mr-2 text-red-500"></i> {{ __('messages.export_pdf') }}
+                                                    </button>
+                                                    <button wire:click="exportToExcel({{ $forecast->id }})" 
+                                                        class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                        title="{{ __('messages.export_to_excel') }}">
+                                                        <i class="fas fa-file-excel mr-2 text-green-600"></i> {{ __('messages.export_excel') }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

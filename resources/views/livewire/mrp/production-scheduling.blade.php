@@ -10,11 +10,20 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-2">
-            <button type="button" wire:click="openCreateModal" 
-                class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                <i class="fas fa-plus mr-2"></i>
-                {{ __('messages.add_production_schedule') }}
-            </button>
+            @can('production_scheduling.create')
+                <button type="button" wire:click="openCreateModal" 
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                    <i class="fas fa-plus mr-2"></i>
+                    {{ __('messages.add_production_schedule') }}
+                </button>
+            @else
+                <button type="button" disabled
+                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75"
+                    title="{{ __('messages.no_permission') }}">
+                    <i class="fas fa-ban mr-2"></i>
+                    {{ __('messages.add_production_schedule') }}
+                </button>
+            @endcan
         </div>
     </div>
     
@@ -110,11 +119,20 @@
                 <!-- Botões de Ação -->
                 <div class="flex items-end gap-2">
                     <!-- Botão Gerar PDF -->
-                    <button type="button" wire:click="generatePdfList" 
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <i class="fas fa-file-pdf mr-2"></i>
-                        {{ __('messages.generate_list_pdf') }}
-                    </button>
+                    @can('production_scheduling.export_pdf')
+                        <button type="button" wire:click="generatePdfList" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-file-pdf mr-2"></i>
+                            {{ __('messages.generate_list_pdf') }}
+                        </button>
+                    @else
+                        <button type="button" disabled
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-400 cursor-not-allowed opacity-75"
+                            title="{{ __('messages.no_permission') }}">
+                            <i class="fas fa-ban mr-2"></i>
+                            {{ __('messages.generate_list_pdf') }}
+                        </button>
+                    @endcan
                     
                     <!-- Limpar Filtros -->
                     <button type="button" wire:click="resetFilters" 
@@ -280,24 +298,65 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button wire:click="viewOrders({{ $schedule->id }})" class="text-green-600 hover:text-green-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_orders') }}">
-                                        <i class="fas fa-list-alt"></i>
-                                    </button>
-                                    <button wire:click="view({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_details') }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button wire:click="viewDailyPlans({{ $schedule->id }})" class="text-teal-600 hover:text-teal-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_daily_plans') }}">
-                                        <i class="fas fa-calendar-check"></i>
-                                    </button>
-                                    <button wire:click="edit({{ $schedule->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors duration-200" title="{{ __('messages.edit') }}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button wire:click="generateSchedulePdf({{ $schedule->id }})" class="text-orange-600 hover:text-orange-900 mr-3 transition-colors duration-200 transform hover:scale-110" title="{{ __('messages.generate_pdf') }}">
-                                        <i class="fas fa-file-pdf"></i>
-                                    </button>
-                                    <button wire:click="openDeleteModal({{ $schedule->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200 transform hover:scale-110" title="{{ __('messages.delete') }}">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
+                                    @can('production_scheduling.view_orders')
+                                        <button wire:click="viewOrders({{ $schedule->id }})" class="text-green-600 hover:text-green-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_orders') }}">
+                                            <i class="fas fa-list-alt"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 mr-3 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-list-alt"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('production_scheduling.view')
+                                        <button wire:click="view({{ $schedule->id }})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_details') }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 mr-3 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('production_scheduling.view_daily_plans')
+                                        <button wire:click="viewDailyPlans({{ $schedule->id }})" class="text-teal-600 hover:text-teal-900 mr-3 transition-colors duration-200" title="{{ __('messages.view_daily_plans') }}">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 mr-3 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('production_scheduling.edit')
+                                        <button wire:click="edit({{ $schedule->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors duration-200" title="{{ __('messages.edit') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 mr-3 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('production_scheduling.export_pdf')
+                                        <button wire:click="generateSchedulePdf({{ $schedule->id }})" class="text-orange-600 hover:text-orange-900 mr-3 transition-colors duration-200 transform hover:scale-110" title="{{ __('messages.generate_pdf') }}">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 mr-3 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                    @endcan
+                                    
+                                    @can('production_scheduling.delete')
+                                        <button wire:click="openDeleteModal({{ $schedule->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200 transform hover:scale-110" title="{{ __('messages.delete') }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -306,10 +365,17 @@
                                     <div class="flex flex-col items-center justify-center py-6">
                                         <i class="fas fa-calendar-times text-4xl text-gray-300 mb-2"></i>
                                         <p>{{ __('messages.no_schedules_found') }}</p>
+                                        @can('production_scheduling.create')
                                         <button wire:click="openCreateModal" class="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
                                             <i class="fas fa-plus mr-1"></i>
                                             {{ __('messages.add_production_schedule') }}
                                         </button>
+                                        @else
+                                        <button disabled class="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed opacity-75">
+                                            <i class="fas fa-ban mr-1"></i>
+                                            {{ __('messages.add_production_schedule') }}
+                                        </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
@@ -370,9 +436,15 @@
                                     {{ $day['day'] }}
                                 </span>
                                 @if($day['isCurrentMonth'])
-                                    <button wire:click="openCreateModalForDate('{{ $day['date'] }}')" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-plus-circle text-xs"></i>
-                                    </button>
+                                    @can('production_scheduling.create')
+                                        <button wire:click="openCreateModalForDate('{{ $day['date'] }}')" class="text-blue-600 hover:text-blue-800" title="{{ __('messages.add_schedule') }}">
+                                            <i class="fas fa-plus-circle text-xs"></i>
+                                        </button>
+                                    @else
+                                        <button disabled class="text-gray-400 cursor-not-allowed" title="{{ __('messages.no_permission') }}">
+                                            <i class="fas fa-plus-circle text-xs"></i>
+                                        </button>
+                                    @endcan
                                 @endif
                             </div>
                             

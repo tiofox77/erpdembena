@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\SupplyChain\InventoryTransaction;
 use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation;
+use App\Models\Mrp\ProductionDailyPlan;
 use Carbon\Carbon;
 
 class StockMovementReport extends Component
@@ -20,23 +21,45 @@ class StockMovementReport extends Component
     public $productId = '';
     public $locationId = '';
     public $transactionType = '';
-    public $perPage = 25;
+    public $perPage = 50;
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
 
     // Opções para filtros
     public $products = [];
     public $locations = [];
-    public $transactionTypes = [
-        'purchase_receipt' => 'Recebimento de Compra',
-        'production_consumption' => 'Consumo de Produção',
-        'production_output' => 'Saída de Produção',
-        'inventory_adjustment' => 'Ajuste de Estoque',
-        'inventory_transfer' => 'Transferência de Estoque',
-        'sales_delivery' => 'Entrega de Venda',
-        'return_from_customer' => 'Retorno de Cliente',
-        'scrap' => 'Sucata',
-    ];
+    public $transactionTypes = [];
+    
+    /**
+     * Get the transaction types that exist in the database
+     * 
+     * @return array
+     */
+    protected function getTransactionTypes()
+    {
+        $types = [];
+        
+        // Get unique transaction types from the database
+        $dbTypes = InventoryTransaction::select('transaction_type')
+            ->distinct()
+            ->orderBy('transaction_type')
+            ->pluck('transaction_type')
+            ->filter()
+            ->toArray();
+            
+        // Use translation keys for each type
+        foreach ($dbTypes as $type) {
+            $translationKey = 'transaction_type_' . $type;
+            $translated = __($translationKey);
+            
+            // If translation doesn't exist, use a fallback
+            $types[$type] = $translated === $translationKey 
+                ? ucfirst(str_replace('_', ' ', $type))
+                : $translated;
+        }
+        
+        return $types;
+    }
 
     public function mount()
     {
@@ -47,6 +70,9 @@ class StockMovementReport extends Component
         $this->locations = InventoryLocation::where('is_active', true)
             ->orderBy('name')
             ->pluck('name', 'id');
+            
+        // Load transaction types that exist in the database
+        $this->transactionTypes = $this->getTransactionTypes();
             
         $this->endDate = now()->format('Y-m-d');
         $this->startDate = now()->subMonth()->format('Y-m-d');
@@ -79,7 +105,7 @@ class StockMovementReport extends Component
     public function render()
     {
         try {
-            // Base query with only essential relationships
+            // Base query with essential relationships
             $query = InventoryTransaction::query()
                 ->with([
                     'product',
@@ -87,6 +113,9 @@ class StockMovementReport extends Component
                     'destinationLocation',
                     'creator'
                 ]);
+                
+            // We'll load the reference relationship separately after getting the results
+            // to avoid issues with the polymorphic relationship
 
             // Apply filters
             $query->when($this->search, function($q) {
@@ -128,12 +157,44 @@ class StockMovementReport extends Component
             $transactions = $query->orderBy($this->sortField, $this->sortDirection)
                 ->paginate($this->perPage);
 
-            return view('livewire.supply-chain.reports.stock-movement-report', [
+            // Prepare to load production data for daily production transactions
+            $dailyProductions = collect();
+            
+            // Get all daily production transactions
+            $dailyProdTransactions = $transactions->filter(function($transaction) {
+                return in_array($transaction->transaction_type, [
+                    InventoryTransaction::TYPE_DAILY_PRODUCTION,
+                    InventoryTransaction::TYPE_DAILY_PRODUCTION_FG
+                ]);
+            });
+            
+            if ($dailyProdTransactions->isNotEmpty()) {
+                // Get unique reference IDs
+                $referenceIds = $dailyProdTransactions->pluck('reference_id')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->toArray();
+                
+                if (!empty($referenceIds)) {
+                    // Load production plans with their relationships
+                    $dailyProductions = ProductionDailyPlan::with(['schedule.product'])
+                        ->whereIn('id', $referenceIds)
+                        ->get()
+                        ->keyBy('id');
+                }
+            }
+
+            // Prepare view data
+            $viewData = [
                 'transactions' => $transactions,
                 'totalIn' => $totalIn,
                 'totalOut' => $totalOut,
                 'netMovement' => $netMovement,
-            ]);
+                'dailyProductions' => $dailyProductions,
+            ];
+            
+            return view('livewire.supply-chain.reports.stock-movement-report', $viewData);
             
         } catch (\Exception $e) {
             // Log the error for debugging

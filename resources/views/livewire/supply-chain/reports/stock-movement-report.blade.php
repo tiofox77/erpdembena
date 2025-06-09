@@ -310,8 +310,8 @@
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center">
-                                    <i class="fas fa-info-circle text-gray-400 mr-1"></i>
-                                    {{ __('messages.info') }}
+                                    <i class="fas fa-industry text-gray-400 mr-1"></i>
+                                    {{ __('messages.production_info') }}
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -363,7 +363,26 @@
                                     <div class="text-sm text-gray-900">{{ $transaction->sourceLocation->name ?? 'N/A' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $transaction->destinationLocation->name ?? 'N/A' }}</div>
+                                    @php
+                                        $isDailyProduction = in_array($transaction->transaction_type, [
+                                            \App\Models\SupplyChain\InventoryTransaction::TYPE_DAILY_PRODUCTION,
+                                            \App\Models\SupplyChain\InventoryTransaction::TYPE_DAILY_PRODUCTION_FG
+                                        ]);
+                                        $dailyProduction = $isDailyProduction ? ($dailyProductions[$transaction->reference_id] ?? null) : null;
+                                    @endphp
+                                    @if($isDailyProduction && $dailyProduction && $dailyProduction->schedule?->product)
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-box text-green-600 text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900">{{ $dailyProduction->schedule->product->name }}</div>
+                                                <div class="text-xs text-green-600">{{ __('messages.produced_product') }}</div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="text-sm text-gray-900">{{ $transaction->destinationLocation->name ?? 'N/A' }}</div>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     @php
@@ -419,10 +438,60 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                    @if(isset($error))
-                                        <span class="text-xs text-red-500">{{ $error }}</span>
+                                    @php
+                                        $productionInfo = null;
+                                        
+                                        // Check if this is a daily production transaction
+                                        if (in_array($transaction->transaction_type, [
+                                            \App\Models\SupplyChain\InventoryTransaction::TYPE_DAILY_PRODUCTION,
+                                            \App\Models\SupplyChain\InventoryTransaction::TYPE_DAILY_PRODUCTION_FG
+                                        ]) && $transaction->reference_type === 'App\\Models\\Mrp\\ProductionDailyPlan') {
+                                            $dailyProduction = $dailyProductions[$transaction->reference_id] ?? null;
+                                            if ($dailyProduction) {
+                                                $productionInfo = [
+                                                    'type' => 'daily_production',
+                                                    'id' => $dailyProduction->id,
+                                                    'date' => $dailyProduction->production_date->format('d/m/Y'),
+                                                    'product' => $dailyProduction->schedule->product->name ?? 'N/A',
+                                                    'planned' => $dailyProduction->planned_quantity,
+                                                    'actual' => $dailyProduction->actual_quantity,
+                                                    'defects' => $dailyProduction->defect_quantity ?? 0,
+                                                    'status' => $dailyProduction->status,
+                                                    'is_finished_good' => $transaction->transaction_type === \App\Models\SupplyChain\InventoryTransaction::TYPE_DAILY_PRODUCTION_FG
+                                                ];
+                                            }
+                                        }
+                                    @endphp
+
+                                    @if(!empty($productionInfo))
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 h-8 w-8 rounded-full {{ $productionInfo['is_finished_good'] ? 'bg-green-100' : 'bg-blue-100' }} flex items-center justify-center mr-2">
+                                                <i class="fas {{ $productionInfo['is_finished_good'] ? 'fa-boxes text-green-600' : 'fa-box text-blue-600' }} text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-medium text-gray-900">
+                                                    {{ $productionInfo['is_finished_good'] ? __('Finished Goods') : __('Raw Materials') }}
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $productionInfo['product'] }}
+                                                </div>
+                                                <div class="flex items-center mt-1">
+                                                    <span class="text-xs {{ $productionInfo['status'] === 'completed' ? 'text-green-600' : 'text-yellow-600' }} mr-2">
+                                                        {{ ucfirst($productionInfo['status']) }}
+                                                    </span>
+                                                    <span class="text-xs text-gray-500">
+                                                        {{ number_format($productionInfo['actual'], 2) }} {{ $transaction->product->unit_of_measure ?? '' }}
+                                                    </span>
+                                                </div>
+                                                @if($productionInfo['defects'] > 0)
+                                                    <div class="text-xs text-red-500 mt-1">
+                                                        {{ __('Defects') }}: {{ number_format($productionInfo['defects'], 2) }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
                                     @else
-                                        <span class="text-xs text-gray-400">-
+                                        <span class="text-xs text-gray-400">-</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
