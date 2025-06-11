@@ -263,13 +263,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @if($receipt->other_reference)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
-                                            <i class="fas fa-hashtag text-gray-500 mr-1"></i> {{ $receipt->other_reference }}
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
+                                @if($receipt->purchase_order && $receipt->purchase_order->other_reference)
+                                    <div class="flex items-center">
+                                        <i class="fas fa-hashtag text-gray-500 mr-1"></i>
+                                        <span class="font-medium">{{ $receipt->purchase_order->other_reference }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

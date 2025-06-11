@@ -175,7 +175,7 @@
                         </div>
                     </div>
                 </td>
-                <td style="width: 45%; vertical-align: top; padding-left: 10px;">
+                <td style="width: 45%; vertical-align: top; padding-left: 10px; padding-top: 6%;">
                     <h3>{{ __('messages.supplier_info') }}</h3>
                     <div class="document-info" style="margin-top: 0;">
                         <table style="width: 100%;">
@@ -260,13 +260,7 @@
     </div>
     
     @if($isOverdue)
-        <div class="alert-danger">
-            {{ __('messages.order_is_overdue') }}
-        </div>
     @elseif($isApproaching)
-        <div class="alert-warning">
-            {{ __('messages.delivery_within_15_days') }}
-        </div>
     @endif
 
     @if($order->notes)
@@ -314,7 +308,7 @@
 
     <div class="footer">
         <p>{{ __('messages.purchase_order_generated') }} {{ date('d/m/Y H:i:s') }}</p>
-        <p>{{ __('messages.document_for_internal_use') }}</p>
+        <p>{{ __('messages.document_not_an_invoice') }}</p>
     </div>
 </body>
 </html>

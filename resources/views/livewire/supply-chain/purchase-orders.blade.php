@@ -52,10 +52,7 @@
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_statuses') }}</option>
                                 <option value="draft">{{ __('messages.draft') }}</option>
-                                <option value="pending_approval">{{ __('messages.pending_approval') }}</option>
-                                <option value="approved">{{ __('messages.approved') }}</option>
                                 <option value="ordered">{{ __('messages.ordered') }}</option>
-                                <option value="partially_received">{{ __('messages.partially_received') }}</option>
                                 <option value="completed">{{ __('messages.completed') }}</option>
                                 <option value="cancelled">{{ __('messages.cancelled') }}</option>
                             </select>

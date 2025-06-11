@@ -1663,9 +1663,9 @@ return [
     'goods_receipt_generated' => 'Goods receipt generated on',
     'goods_receipts_list_generated' => 'Goods receipts list generated on',
     'document_for_internal_use' => 'This document is for internal use only',
-    'no_goods_receipts_found' => 'No goods receipts found',
-    'filters_applied' => 'Filters Applied',
-    'generated_at' => 'Generated at',
+    'document_not_an_invoice' => 'This document is not an invoice',
+    'delivery_approaching' => 'Delivery date is approaching',
+    'delivery_within_15_days' => 'Delivery within 15 days',
     'total_items' => 'Total items',
     'no_purchase_order' => 'No purchase order',
     // Dashboard
@@ -2362,6 +2362,10 @@ return [
     'select_purchase_order' => 'Select Purchase Order',
     'select_supplier' => 'Select Supplier',
     'reference_number' => 'Reference Number',
+    'approaching' => 'Approaching',
+    'date_field' => 'Date Field',
+    'supplier_categories' => 'Supplier Categories',
+
     
     // Date Range Filter
     'start_date' => 'Start Date',
