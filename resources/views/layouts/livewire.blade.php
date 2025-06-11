@@ -1254,8 +1254,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
             
-            // Configurar menus
+            // Configurar menus - removidas duplicações e adicionados todos os menus
             setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
+            setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
             setupMenuToggle('mrpMenu', 'mrpSubmenu');
             setupMenuToggle('mrpReportsMenu', 'mrpReportsSubmenu');
             setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
@@ -1266,9 +1267,6 @@
             setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
             setupMenuToggle('stocksMenu', 'stocksSubmenu');
             setupMenuToggle('partsMenu', 'partsSubmenu');
-            setupMenuToggle('hrMenu', 'hrSubmenu');
-            setupMenuToggle('userManagementMenu', 'userManagementSubmenu');
-            setupMenuToggle('settingsMenu', 'settingsSubmenu');
         });
         
         // Integração com Livewire para reconfigurar menus após atualizações do DOM
@@ -1277,19 +1275,28 @@
                 // Reconfigurar a sidebar após cada atualização do Livewire
                 setupSidebar();
                 
-                // Reconfigurar todos os menus
-                setupMenuToggle('maintenanceMenu', 'maintenanceSubmenu');
-                setupMenuToggle('mrpMenu', 'mrpSubmenu');
-                setupMenuToggle('mrpReportsMenu', 'mrpReportsSubmenu');
-                setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
-                setupMenuToggle('supplyChainReportsMenu', 'supplyChainReportsSubmenu');
-                setupMenuToggle('maintenanceSettingsMenu', 'maintenanceSettingsSubmenu');
-                setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
-                setupMenuToggle('stocksMenu', 'stocksSubmenu');
-                setupMenuToggle('partsMenu', 'partsSubmenu');
-                setupMenuToggle('hrMenu', 'hrSubmenu');
-                setupMenuToggle('userManagementMenu', 'userManagementSubmenu');
-                setupMenuToggle('settingsMenu', 'settingsSubmenu');
+                // Reconfigurar todos os menus principal e sub-menus
+                const menuPairs = [
+                    ['maintenanceMenu', 'maintenanceSubmenu'],
+                    ['maintenanceSettingsMenu', 'maintenanceSettingsSubmenu'],
+                    ['mrpMenu', 'mrpSubmenu'],
+                    ['mrpReportsMenu', 'mrpReportsSubmenu'],
+                    ['supplyChainMenu', 'supplyChainSubmenu'],
+                    ['supplyChainReportsMenu', 'supplyChainReportsSubmenu'],
+                    ['hrMenu', 'hrSubmenu'],
+                    ['settingsMenu', 'settingsSubmenu'],
+                    ['userManagementMenu', 'userManagementSubmenu'],
+                    ['reportsHistoryMenu', 'reportsHistorySubmenu'],
+                    ['stocksMenu', 'stocksSubmenu'],
+                    ['partsMenu', 'partsSubmenu']
+                ];
+                
+                // Inicializar cada par menu/submenu e garantir a existência dos elementos
+                menuPairs.forEach(pair => {
+                    if (document.getElementById(pair[0]) && document.getElementById(pair[1])) {
+                        setupMenuToggle(pair[0], pair[1]);
+                    }
+                });
             });
         });
     </script>

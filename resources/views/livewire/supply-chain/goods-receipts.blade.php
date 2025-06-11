@@ -195,6 +195,16 @@
                                     @endif
                                 </div>
                             </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div class="flex items-center cursor-pointer" wire:click="sortBy('other_reference')">
+                                    {{ __('messages.other_reference') }}
+                                    @if($sortField === 'other_reference')
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
+                                    @else
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
+                                    @endif
+                                </div>
+                            </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('messages.actions') }}
                             </th>
@@ -203,8 +213,15 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($goodsReceipts as $receipt)
                         <tr class="hover:bg-gray-50 transition-colors duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $receipt->receipt_number }}</div>
+                            <td class="px-6 py-4 whitespace-nowrap relative">
+                                @if($receipt->status == 'partially_processed')
+                                    <div class="absolute left-1 top-1/2 transform -translate-y-1/2">
+                                        <span class="text-green-500" title="{{ __('messages.partially_processed') }}">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+                                    </div>
+                                @endif
+                                <div class="text-sm font-medium text-gray-900 ml-5">{{ $receipt->receipt_number }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
@@ -244,6 +261,17 @@
                                     <i class="fas fa-calendar-alt text-gray-500 mr-1"></i> {{ date('d/m/Y', strtotime($receipt->receipt_date)) }}
                                 </div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    @if($receipt->other_reference)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
+                                            <i class="fas fa-hashtag text-gray-500 mr-1"></i> {{ $receipt->other_reference }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <button wire:click="viewReceipt({{ $receipt->id }})" 
@@ -251,10 +279,17 @@
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     
-                                    @if($receipt->status == 'pending' || $receipt->status == 'processing')
+                                    @if(in_array($receipt->status, ['pending', 'processing', 'partially_processed']))
                                     <button wire:click="editReceipt({{ $receipt->id }})" 
                                         class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.edit') }}">
                                         <i class="fas fa-edit"></i>
+                                    </button>
+                                    @endif
+                                    
+                                    @if($receipt->status == 'partially_processed')
+                                    <button wire:click="completeReceipt({{ $receipt->id }})" 
+                                        class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110" title="{{ __('messages.complete_receipt') }}">
+                                        <i class="fas fa-check-double"></i>
                                     </button>
                                     @endif
                                     

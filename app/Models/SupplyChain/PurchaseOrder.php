@@ -102,6 +102,55 @@ class PurchaseOrder extends Model
     }
     
     /**
+     * Check if the purchase order is partially received
+     */
+    public function getIsPartiallyReceivedAttribute()
+    {
+        if (!$this->relationLoaded('items')) {
+            $this->load('items');
+        }
+        
+        return $this->items->contains(function($item) {
+            return $item->is_partially_received;
+        }) || (
+            $this->items->sum('received_quantity') > 0 && 
+            $this->items->sum('received_quantity') < $this->items->sum('quantity')
+        );
+    }
+    
+    /**
+     * Check if all items are fully received
+     */
+    public function getIsFullyReceivedAttribute()
+    {
+        if (!$this->relationLoaded('items')) {
+            $this->load('items');
+        }
+        
+        return $this->items->every(function($item) {
+            return $item->is_fully_received;
+        });
+    }
+    
+    /**
+     * Update the purchase order status based on received quantities
+     */
+    public function updateReceiptStatus()
+    {
+        if ($this->is_fully_received) {
+            $this->status = 'completed';
+        } elseif ($this->is_partially_received) {
+            $this->status = 'partially_received';
+        } else {
+            $this->status = 'approved'; // Default status if not fully or partially received
+        }
+        
+        $this->save();
+        
+        return $this->status;
+    }
+    
+    /**
      * Get the latest shipping note for this purchase order
      */
     public function latestShippingNote()

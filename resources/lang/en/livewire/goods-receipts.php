@@ -65,4 +65,13 @@ return [
     'select_purchase_order' => 'Please select a purchase order',
     'select_supplier' => 'Please select a supplier',
     'select_location' => 'Please select a location',
+    'previously_received' => 'Previously received',
+    'accepted' => 'accepted',
+    'rejected' => 'rejected',
+    'total' => 'Total',
+    'max_receivable' => 'Max receivable',
+    'ordered' => 'Ordered',
+    'remaining' => 'Remaining',
+    'this_receipt' => 'This receipt',
+    'quantity' => 'Quantity',
 ];

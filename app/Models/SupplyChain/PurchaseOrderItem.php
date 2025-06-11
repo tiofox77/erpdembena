@@ -104,6 +104,34 @@ class PurchaseOrderItem extends Model
     }
 
     /**
+     * Update received quantity for a partial receipt
+     * 
+     * @param float $quantity
+     * @return array
+     */
+    public function receiveQuantity($quantity)
+    {
+        $remaining = $this->remaining_quantity;
+        
+        // If trying to receive more than remaining, adjust to remaining
+        $toReceive = min($quantity, $remaining);
+        
+        // Update received quantity
+        $this->received_quantity += $toReceive;
+        $this->save();
+        
+        // Check if fully received
+        $isFullyReceived = $this->remaining_quantity <= 0;
+        
+        return [
+            'received' => $toReceive,
+            'remaining' => $this->remaining_quantity,
+            'is_partial' => $toReceive < $remaining,
+            'is_complete' => $isFullyReceived
+        ];
+    }
+
+    /**
      * Calculate line total, tax and discount before saving
      */
     protected static function booted()

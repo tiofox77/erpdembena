@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             SupplyChainHrRolesPermissionsSeeder::class,
             EnsureModuleUsersSeeder::class,
             FailureAnalysisDataSeeder::class,
+            MRPPermissionsSeeder::class, // Add MRP permissions
         ]);
     }
 }

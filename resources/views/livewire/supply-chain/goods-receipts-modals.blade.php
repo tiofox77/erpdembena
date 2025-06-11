@@ -33,6 +33,39 @@
 
             <!-- Conteúdo da Modal -->
             <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                @if ($errors->any())
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-md shadow-sm animate-pulse">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-700">
+                                {{ __('messages.validation_error') }}
+                            </h3>
+                            <div class="mt-2 text-sm text-red-600">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                @error('items')
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-md shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-box-open text-red-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">{{ $message }}</p>
+                        </div>
+                    </div>
+                </div>
+                @enderror
                 <!-- Informações Básicas -->
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                     <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200">
@@ -70,7 +103,7 @@
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <option value="">{{ __('messages.select_purchase_order') }}</option>
                                 @foreach($purchaseOrders ?? [] as $po)
-                                    <option value="{{ $po->id }}">{{ $po->order_number }}</option>
+                                    <option value="{{ $po->id }}">{{ $po->order_number }}--{{ $po->other_reference }}</option>
                                 @endforeach
                             </select>
                             @error('goodsReceipt.purchase_order_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -81,7 +114,7 @@
                             <label for="supplier_id" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.supplier') }} <span class="text-red-500">*</span>
                             </label>
-                            <select id="supplier_id" wire:model.defer="goodsReceipt.supplier_id" 
+                            <select id="supplier_id" wire:model="goodsReceipt.supplier_id" 
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md {{ !empty($goodsReceipt['purchase_order_id']) ? 'bg-gray-100' : '' }}"
                                 {{ !empty($goodsReceipt['purchase_order_id']) ? 'disabled' : '' }}>
                                 <option value="">{{ __('messages.select_supplier') }}</option>
@@ -97,7 +130,7 @@
                             <label for="location_id" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.location') }} <span class="text-red-500">*</span>
                             </label>
-                            <select id="location_id" wire:model.defer="goodsReceipt.location_id" 
+                            <select id="location_id" wire:model="goodsReceipt.location_id" 
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <option value="">{{ __('messages.select_location') }}</option>
                                 @foreach($locations as $location)
@@ -125,9 +158,9 @@
                             <select id="status" wire:model.defer="goodsReceipt.status" 
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <option value="pending">{{ __('messages.pending') }}</option>
-                                <option value="processing">{{ __('messages.processing') }}</option>
+                                <option value="partially_processed">{{ __('messages.partially_processed') }}</option>
                                 <option value="completed">{{ __('messages.completed') }}</option>
-                                <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                                <option value="discrepancy">{{ __('messages.discrepancy') }}</option>
                             </select>
                             @error('goodsReceipt.status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -158,14 +191,27 @@
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ __('messages.product') }}
                                         </th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {{ __('messages.quantity') }}
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" title="{{ __('messages.ordered_quantity_help') }}">
+                                            {{ __('messages.ordered') }}
+                                            <div class="text-xs font-normal text-gray-400">{{ __('messages.quantity') }}</div>
                                         </th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {{ __('messages.accepted_quantity') }}
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" title="{{ __('messages.previously_received_help') }}">
+                                            {{ __('messages.previously_received') }}
+                                            <div class="text-xs font-normal text-gray-400">{{ __('messages.quantity') }}</div>
                                         </th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" title="{{ __('messages.remaining_quantity_help') }}">
+                                            {{ __('messages.remaining') }}
+                                            <div class="text-xs font-normal text-gray-400">{{ __('messages.quantity') }}</div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" title="{{ __('messages.this_receipt_help') }}">
+                                            {{ __('messages.this_receipt') }}
+                                            <div class="text-xs font-normal text-gray-400">{{ __('messages.quantity') }}</div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" title="{{ __('messages.rejected_quantity_help') }}">
                                             {{ __('messages.rejected_quantity') }}
+                                        </th>
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" title="{{ __('messages.accepted_quantity_help') }}">
+                                            {{ __('messages.accepted_quantity') }}
                                         </th>
                                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ __('messages.unit_cost') }}
@@ -173,31 +219,122 @@
                                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ __('messages.actions') }}
                                         </th>
-                                    </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @forelse($receiptItems as $index => $item)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    @php
+                                        $orderedQty = $item['ordered_quantity'] ?? $item['quantity'] ?? 0;
+                                        $previouslyReceived = $item['previously_received'] ?? 0;
+                                        $remainingQty = isset($item['remaining_quantity']) ? $item['remaining_quantity'] : max(0, $orderedQty - $previouslyReceived);
+                                        $thisReceiptQty = $item['quantity'] ?? 0;
+                                        $rejectedQty = $item['rejected_quantity'] ?? 0;
+                                        $acceptedQty = $item['accepted_quantity'] ?? ($thisReceiptQty - $rejectedQty);
+                                        $isPartiallyProcessed = isset($goodsReceipt['status']) && $goodsReceipt['status'] === 'partially_processed';
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150 {{ $isPartiallyProcessed ? 'bg-yellow-50' : '' }}">
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">{{ $item['product_name'] }}</div>
-                                            <div class="text-xs text-gray-500">{{ $item['product_code'] ?? '' }}</div>
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ $item['product_name'] ?? 'N/A' }}
+                                                @if(isset($item['original_accepted']) || isset($item['original_rejected']))
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    {{ __('messages.previously_received') }}: 
+                                                    @if(isset($item['original_accepted']) && $item['original_accepted'] > 0)
+                                                        {{ number_format($item['original_accepted'], 2) }} {{ __('messages.accepted') }}
+                                                    @endif
+                                                    @if(isset($item['original_rejected']) && $item['original_rejected'] > 0)
+                                                        <span class="text-red-500">
+                                                            {{ number_format($item['original_rejected'], 2) }} {{ __('messages.rejected') }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                @endif
+                                            </div>
+                                            <div class="text-sm text-gray-500">{{ $item['product_code'] ?? '' }}</div>
                                         </td>
+                                        
+                                        <!-- Ordered Quantity -->
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <input type="number" min="0" step="0.01" wire:model.defer="receiptItems.{{ $index }}.quantity" 
+                                            <span class="text-sm text-gray-900">{{ number_format($orderedQty, 2) }}</span>
+                                        </td>
+                                        
+                                        <!-- Previously Received -->
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            <span class="text-sm text-gray-900">{{ number_format($previouslyReceived, 2) }}</span>
+                                        </td>
+                                        
+                                        <!-- Remaining Quantity -->
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            <span class="text-sm text-gray-900">{{ number_format($remainingQty, 2) }}</span>
+                                            @if(isset($item['max_receivable']) && $item['max_receivable'] > 0)
+                                            <div class="text-xs text-blue-600">
+                                                {{ __('messages.max_receivable') }}: {{ number_format($item['max_receivable'], 2) }}
+                                            </div>
+                                            @endif
+                                        </td>
+                                        
+                                        <!-- This Receipt Quantity -->
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            <input type="number" 
+                                                wire:model.live="receiptItems.{{ $index }}.quantity" 
+                                                wire:change="$dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'quantity', value: $event.target.value })" 
+                                                min="0" 
+                                                step="0.01" 
+                                                max="{{ $item['max_receivable'] ?? $remainingQty }}" 
+                                                class="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                {{ ($editMode && $goodsReceipt['status'] !== 'pending' && $goodsReceipt['status'] !== 'partially_processed') ? 'readonly' : '' }}>
+                                        </td>
+                                        
+                                        <!-- Rejected Quantity -->
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            <input type="number" 
+                                                wire:model.live="receiptItems.{{ $index }}.rejected_quantity" 
+                                                wire:change="$dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'rejected_quantity', value: $event.target.value })" 
+                                                min="0" 
+                                                step="0.01" 
+                                                max="{{ $item['quantity'] ?? 0 }}" 
+                                                class="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                {{ ($editMode && $goodsReceipt['status'] !== 'pending' && $goodsReceipt['status'] !== 'partially_processed') ? 'readonly' : '' }}>
+                                        </td>
+                                        
+                                        <!-- Accepted Quantity -->
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            @if(($editMode && $goodsReceipt['status'] === 'partially_processed') || !$editMode)
+                                                <input type="number" 
+                                                    wire:model.live="receiptItems.{{ $index }}.accepted_quantity" 
+                                                    wire:change="$dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'accepted_quantity', value: $event.target.value })" 
+                                                    min="0" 
+                                                    step="0.01" 
+                                                    max="{{ $item['max_receivable'] ?? $remainingQty }}" 
+                                                    class="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    {{ ($editMode && $goodsReceipt['status'] !== 'pending' && $goodsReceipt['status'] !== 'partially_processed') ? 'readonly' : '' }}>
+                                                @if(isset($item['original_accepted']))
+                                                <div class="text-xs text-gray-500">
+                                                    {{ __('messages.total') }}: {{ number_format($item['original_accepted'] + $acceptedQty, 2) }}
+                                                </div>
+                                                @endif
+                                                @error("receiptItems.{$index}.accepted_quantity") <div class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</div> @enderror
+                                            @else
+                                                <span class="text-sm text-gray-900">{{ number_format($acceptedQty, 2) }}</span>
+                                                @if(isset($item['original_accepted']))
+                                                <div class="text-xs text-gray-500">
+                                                    {{ __('messages.total') }}: {{ number_format($item['original_accepted'] + $acceptedQty, 2) }}
+                                                </div>
+                                                @endif
+                                                @error("receiptItems.{$index}.accepted_quantity") <div class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</div> @enderror
+                                            @endif
+                                        </td>
+                                        
+                                        <!-- Unit Cost -->
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <input type="number" 
+                                                min="0" 
+                                                step="0.01" 
+                                                wire:model="receiptItems.{{ $index }}.unit_cost" 
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <input type="number" min="0" step="0.01" wire:model="receiptItems.{{ $index }}.accepted_quantity" 
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <input type="number" min="0" step="0.01" wire:model="receiptItems.{{ $index }}.rejected_quantity" 
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <input type="number" min="0" step="0.01" wire:model="receiptItems.{{ $index }}.unit_cost" 
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                        </td>
+                                        
+                                        <!-- Actions -->
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
                                             <button wire:click="removeItem({{ $index }})" class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110">
                                                 <i class="fas fa-trash"></i>
@@ -229,9 +366,17 @@
                 </button>
                 
                 <button type="button" wire:click="save" 
-                    class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                    <i class="fas fa-save mr-2"></i>
-                    {{ __('messages.save') }}
+                    wire:loading.attr="disabled"
+                    wire:target="save"
+                    class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed">
+                    <span wire:loading.remove wire:target="save"><i class="fas fa-save mr-2"></i> {{ __('messages.save') }}</span>
+                    <span wire:loading wire:target="save" class="inline-flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ __('messages.saving') }}...
+                    </span>
                 </button>
             </div>
         </div>

@@ -4,24 +4,28 @@ namespace App\Livewire\SupplyChain;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\SupplyChain\Supplier;
-use App\Models\SupplyChain\Product;
-use App\Models\SupplyChain\PurchaseOrder;
-use App\Models\SupplyChain\PurchaseOrderItem;
+use Livewire\WithFileUploads;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\SupplyChain\GoodsReceipt;
 use App\Models\SupplyChain\GoodsReceiptItem;
-use App\Models\SupplyChain\InventoryLocation;
+use App\Models\SupplyChain\PurchaseOrder;
+use App\Models\SupplyChain\PurchaseOrderItem;
+use App\Models\SupplyChain\Supplier;
 use App\Models\SupplyChain\InventoryItem;
-use App\Models\SupplyChain\InventoryTransaction;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Models\SupplyChain\InventoryLocation;
+use App\Models\Inventory\InventoryTransaction;
+use App\Models\Product\Product;
+use App\Traits\GoodsReceiptsPartial;
+use App\Traits\InventoryProcessing;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class GoodsReceipts extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads, GoodsReceiptsPartial, InventoryProcessing;
     
     public $search = '';
     public $perPage = 10;
@@ -54,8 +58,106 @@ class GoodsReceipts extends Component
     
     protected $listeners = [
         'productSelected' => 'addProduct',
-        'refreshGoodsReceipts' => '$refresh'
+        'refreshGoodsReceipts' => '$refresh',
+        'receiptItemUpdated' => 'onReceiptItemUpdated'
     ];
+    
+    public function mount()
+    {
+        $this->resetReceipt();
+    }
+    
+    protected function resetReceipt()
+    {
+        $this->goodsReceipt = [
+            'receipt_number' => 'GR' . now()->format('ymd') . rand(1000, 9999),
+            'purchase_order_id' => null,
+            'supplier_id' => '',
+            'location_id' => '',
+            'receipt_date' => now()->format('Y-m-d'),
+            'reference_number' => '',
+            'status' => 'pending',
+            'notes' => '',
+            'total_amount' => 0,
+        ];
+        
+        $this->receiptItems = [];
+        $this->purchaseOrderItems = [];
+        $this->selectedPurchaseOrder = null;
+        $this->selectedSupplier = null;
+        $this->selectedLocation = null;
+        $this->editMode = false;
+        $this->showModal = false;
+    }
+    
+    protected function loadPurchaseOrders()
+    {
+        // This method is not needed as we load purchase orders in the render method
+    }
+    
+    protected function loadSuppliers()
+    {
+        // This method is not needed as we load suppliers in the render method
+    }
+    
+    protected function loadLocations()
+    {
+        // This method is not needed as we load locations in the render method
+    }
+    
+    public function updated($propertyName)
+    {
+        // Handle updates to receipt items
+        if (str_starts_with($propertyName, 'receiptItems.')) {
+            $parts = explode('.', $propertyName);
+            if (count($parts) >= 3) {
+                $index = $parts[1];
+                $this->updateItemCalculations($index);
+            }
+        }
+    }
+    
+    public function onReceiptItemUpdated($index, $field, $value)
+    {
+        if (isset($this->receiptItems[$index])) {
+            $this->receiptItems[$index][$field] = $value;
+            $this->updateItemCalculations($index);
+        }
+    }
+    
+    protected function updateItemCalculations($index)
+    {
+        if (!isset($this->receiptItems[$index])) {
+            return;
+        }
+        
+        $item = &$this->receiptItems[$index];
+        
+        // Ensure quantity is a valid number
+        $quantity = isset($item['quantity']) ? (float)$item['quantity'] : 0;
+        $rejected = isset($item['rejected_quantity']) ? (float)$item['rejected_quantity'] : 0;
+        
+        // Ensure rejected quantity doesn't exceed quantity
+        if ($rejected > $quantity) {
+            $rejected = $quantity;
+            $item['rejected_quantity'] = $rejected;
+        }
+        
+        // Calculate accepted quantity
+        $accepted = $quantity - $rejected;
+        $item['accepted_quantity'] = $accepted;
+        
+        // Update line total if unit cost exists
+        if (isset($item['unit_cost'])) {
+            $item['subtotal'] = $accepted * (float)$item['unit_cost'];
+        }
+        
+        // Update remaining quantity
+        if (isset($item['ordered_quantity']) && isset($item['previously_received'])) {
+            $totalReceived = $item['previously_received'] + $accepted;
+            $item['remaining_quantity'] = $item['ordered_quantity'] - $totalReceived;
+        }
+    }
     
     protected $queryString = [
         'search' => ['except' => '','as' => 's'],
@@ -140,9 +242,10 @@ class GoodsReceipts extends Component
         
         $goodsReceipts = $goodsReceiptsQuery->paginate($this->perPage);
 
-        // Get purchase orders for the dropdown
-        $purchaseOrders = PurchaseOrder::whereIn('status', ['approved', 'ordered', 'partially_received', 'completed', 'delivered'])
-            ->orderBy('order_date', 'desc')
+        // Get purchase orders for the dropdown - only completed purchase orders that don't have a completed goods receipt
+        $purchaseOrders = PurchaseOrder::where('status', 'completed')
+            ->orderBy('created_at', 'desc')
+            ->take(100) // Limit to 100 most recent to improve performance
             ->get();
         
         return view('livewire.supply-chain.goods-receipts', [
@@ -152,9 +255,9 @@ class GoodsReceipts extends Component
             'purchaseOrders' => $purchaseOrders,
             'statuses' => [
                 'pending' => __('messages.pending'),
-                'processing' => __('messages.processing'),
+                'partially_processed' => __('messages.partially_processed'),
                 'completed' => __('messages.completed'),
-                'cancelled' => __('messages.cancelled'),
+                'discrepancy' => __('messages.discrepancy'),
             ]
         ]);
     }
@@ -203,26 +306,10 @@ class GoodsReceipts extends Component
     
     public function editReceipt($id)
     {
-        $receipt = GoodsReceipt::with('items.product')->find($id);
-        
-        if(!$receipt) {
-            return $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.goods_receipt_not_found')
-            ]);
-        }
-        
-        if($receipt->status === 'completed' || $receipt->status === 'cancelled') {
-            return $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.cannot_edit_completed_cancelled_receipt')
-            ]);
-        }
-        
         $this->resetValidation();
-        $this->resetExcept(['search', 'perPage', 'statusFilter', 'supplierFilter', 'locationFilter', 'sortField', 'sortDirection']);
+        $this->reset(['goodsReceipt', 'receiptItems', 'editMode']);
+        
+        $receipt = GoodsReceipt::with(['items.product', 'purchaseOrder.items'])->findOrFail($id);
         
         $this->goodsReceipt = [
             'id' => $receipt->id,
@@ -230,40 +317,84 @@ class GoodsReceipts extends Component
             'purchase_order_id' => $receipt->purchase_order_id,
             'supplier_id' => $receipt->supplier_id,
             'location_id' => $receipt->location_id,
-            'receipt_date' => $receipt->receipt_date,
+            'receipt_date' => $receipt->receipt_date->format('Y-m-d'),
+            'reference_number' => $receipt->reference_number,
             'status' => $receipt->status,
             'notes' => $receipt->notes,
+            'total_amount' => $receipt->total_amount,
         ];
         
-        $this->receiptItems = $receipt->items->map(function($item) {
-            return [
-                'id' => $item->id,
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->name,
-                'purchase_order_item_id' => $item->purchase_order_item_id,
-                'expected_quantity' => $item->expected_quantity,
-                'received_quantity' => $item->received_quantity,
-                'accepted_quantity' => $item->accepted_quantity,
-                'rejected_quantity' => $item->rejected_quantity,
-                'unit_cost' => $item->unit_cost,
-            ];
-        })->toArray();
-        
-        // If receipt is linked to a purchase order, load its items
-        if($receipt->purchase_order_id) {
-            $purchaseOrder = PurchaseOrder::with('items.product')->find($receipt->purchase_order_id);
-            if($purchaseOrder) {
-                $this->purchaseOrderItems = $purchaseOrder->items->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'product_name' => $item->product->name,
-                        'quantity' => $item->quantity,
-                        'received_quantity' => $item->received_quantity,
-                        'remaining_quantity' => $item->quantity - $item->received_quantity,
-                        'unit_price' => $item->unit_price,
-                    ];
-                })->toArray();
+        // For partially processed receipts, we need to load the PO items to calculate remaining quantities
+        if ($receipt->status === 'partially_processed') {
+            // Load PO items with previously received quantities
+            $this->loadPurchaseOrderItems();
+            
+            // Update with actual received quantities from this receipt
+            foreach ($receipt->items as $item) {
+                foreach ($this->receiptItems as &$receiptItem) {
+                    if ($receiptItem['product_id'] == $item->product_id) {
+                        // Store the original received quantities
+                        $receiptItem['original_accepted'] = (float) $item->accepted_quantity;
+                        $receiptItem['original_rejected'] = (float) $item->rejected_quantity;
+                        
+                        // Calculate remaining quantity to be received
+                        $remainingQty = $receiptItem['ordered_quantity'] - $receiptItem['previously_received'];
+                        
+                        // Set the current quantities for editing
+                        $receiptItem['quantity'] = max(0, $remainingQty); // This is the remaining quantity to be received
+                        $receiptItem['accepted_quantity'] = (float) $item->accepted_quantity;
+                        $receiptItem['rejected_quantity'] = (float) $item->rejected_quantity;
+                        $receiptItem['unit_cost'] = (float) $item->unit_cost;
+                        $receiptItem['goods_receipt_item_id'] = $item->id;
+                        
+                        // Calculate remaining quantity that can be received
+                        $totalReceived = $receiptItem['previously_received'] + $item->accepted_quantity;
+                        $remaining = $receiptItem['ordered_quantity'] - $totalReceived;
+                        
+                        // Ensure remaining quantity is never negative
+                        $receiptItem['remaining_quantity'] = max(0, $remaining);
+                        
+                        // Set the max quantity that can be received in this edit
+                        // Add back the current item's accepted quantity since we're editing it
+                        $receiptItem['max_receivable'] = $receiptItem['remaining_quantity'] + $item->accepted_quantity;
+                        
+                        // Set the accepted_quantity to the REMAINING quantity (not the current value)
+                        // This shows how much more can be received based on what's remaining
+                        // Ensure it's at least 1 even if remaining is zero
+                        $receiptItem['accepted_quantity'] = max(0, $receiptItem['remaining_quantity']);
+                        
+                        break;
+                    }
+                }
+            }
+        } else {
+            // For other statuses, load items normally
+            $this->loadPurchaseOrderItems();
+            
+            // Update with remaining quantities and other values
+            foreach ($receipt->items as $item) {
+                foreach ($this->receiptItems as &$receiptItem) {
+                    if ($receiptItem['product_id'] == $item->product_id) {
+                        // Store the original values
+                        $receiptItem['original_accepted'] = (float) $item->accepted_quantity;
+                        $receiptItem['rejected_quantity'] = (float) $item->rejected_quantity;
+                        $receiptItem['unit_cost'] = (float) $item->unit_cost;
+                        $receiptItem['quantity'] = (float) $item->quantity;
+                        $receiptItem['goods_receipt_item_id'] = $item->id;
+                        
+                        // Calculate remaining quantity that can still be received
+                        $remainingQty = max(0, $receiptItem['ordered_quantity'] - $receiptItem['previously_received']);
+                        $receiptItem['remaining_quantity'] = $remainingQty;
+                        
+                        // Set the max receivable quantity
+                        $receiptItem['max_receivable'] = $remainingQty + $item->accepted_quantity;
+                        
+                        // Set the accepted quantity to the remaining quantity
+                        // Ensure it's never less than 1, even if remaining is zero
+                        $receiptItem['accepted_quantity'] = max(0, $remainingQty);
+                        break;
+                    }
+                }
             }
         }
         
@@ -374,72 +505,115 @@ class GoodsReceipts extends Component
      */
     public function loadPurchaseOrderItems()
     {
-        // Limpa os itens atuais
+        // Clear current items
         $this->receiptItems = [];
         
         if (!empty($this->goodsReceipt['purchase_order_id'])) {
-            // Log para debug
-            Log::info('Carregando itens da ordem de compra', [
-                'purchase_order_id' => $this->goodsReceipt['purchase_order_id']
+            $purchaseOrderId = $this->goodsReceipt['purchase_order_id'];
+            
+            Log::info('Loading purchase order items', [
+                'purchase_order_id' => $purchaseOrderId,
+                'edit_mode' => $this->editMode,
+                'receipt_id' => $this->goodsReceipt['id'] ?? 'new'
             ]);
             
-            $purchaseOrder = PurchaseOrder::with(['items.product', 'supplier'])
-                ->find($this->goodsReceipt['purchase_order_id']);
+            // Load purchase order with items and their previous receipts
+            $purchaseOrder = PurchaseOrder::with(['items.product', 'supplier', 'items.receiptItems'])
+                ->find($purchaseOrderId);
             
             if (!$purchaseOrder) {
-                Log::warning('Ordem de compra não encontrada', [
-                    'purchase_order_id' => $this->goodsReceipt['purchase_order_id']
-                ]);
+                Log::warning('Purchase order not found', ['purchase_order_id' => $purchaseOrderId]);
                 return;
             }
             
-            // Atualiza o fornecedor automaticamente
+            // Set supplier from PO
             $this->goodsReceipt['supplier_id'] = $purchaseOrder->supplier_id;
             
-            // Log para debug
-            Log::info('Fornecedor atualizado', [
-                'supplier_id' => $purchaseOrder->supplier_id,
-                'supplier_name' => $purchaseOrder->supplier->name ?? 'N/A'
-            ]);
+            // Get all previous receipt items for this PO
+            $previousReceipts = GoodsReceipt::where('purchase_order_id', $purchaseOrderId)
+                ->when($this->editMode && !empty($this->goodsReceipt['id']), function($query) {
+                    $query->where('id', '!=', $this->goodsReceipt['id']);
+                })
+                ->with('items')
+                ->get();
             
-            // Popula os itens do recebimento com base na ordem de compra
+            // Create a map of product_id to total received quantity from previous receipts
+            $previouslyReceived = [];
+            foreach ($previousReceipts as $previousReceipt) {
+                foreach ($previousReceipt->items as $item) {
+                    if (!isset($previouslyReceived[$item->product_id])) {
+                        $previouslyReceived[$item->product_id] = 0;
+                    }
+                    $previouslyReceived[$item->product_id] += $item->accepted_quantity;
+                }
+            }
+            
+            // Process each PO item
             foreach ($purchaseOrder->items as $item) {
-                // Calcula a quantidade restante a receber
-                $remainingQuantity = $item->quantity - ($item->received_quantity ?? 0);
+                $orderedQty = (float) $item->quantity;
+                $previouslyReceivedQty = (float) ($previouslyReceived[$item->product_id] ?? 0);
+                $remainingQty = max(0, $orderedQty - $previouslyReceivedQty);
                 
-                if ($remainingQuantity > 0) {
+                // Only add items that still need to be received
+                if ($remainingQty > 0) {
+                    // If in edit mode, get the current receipt's accepted quantity
+                    $currentReceiptQty = 0;
+                    if ($this->editMode && !empty($this->goodsReceipt['id'])) {
+                        $currentItem = GoodsReceiptItem::where('goods_receipt_id', $this->goodsReceipt['id'])
+                            ->where('product_id', $item->product_id)
+                            ->first();
+                        if ($currentItem) {
+                            $currentReceiptQty = (float) $currentItem->accepted_quantity;
+                            // For editing existing receipt, we want to show what was received in this receipt
+                            $acceptedQty = $currentReceiptQty;
+                        } else {
+                            // New item in existing receipt, default to remaining
+                            $acceptedQty = $remainingQty;
+                        }
+                    } else {
+                        // New receipt, default to remaining quantity
+                        $acceptedQty = $remainingQty;
+                    }
+                    
+                    // Ensure we don't exceed the remaining quantity
+                    $acceptedQty = min($acceptedQty, $remainingQty);
+                    
+                    // Calculate remaining after this receipt
+                    $remainingAfterThis = max(0, $remainingQty - $acceptedQty);
+                    
                     $this->receiptItems[] = [
                         'product_id' => $item->product_id,
                         'product_name' => $item->product->name,
                         'product_code' => $item->product->sku ?? $item->product->code ?? '',
-                        'quantity' => $remainingQuantity,
-                        'accepted_quantity' => $remainingQuantity,
+                        'ordered_quantity' => $orderedQty,
+                        'previously_received' => $previouslyReceivedQty,
+                        'quantity' => $remainingQty, // Total remaining to receive
+                        'accepted_quantity' => $acceptedQty, // Default to remaining quantity for new receipts
                         'rejected_quantity' => 0,
                         'unit_cost' => $item->unit_price,
-                        'purchase_order_item_id' => $item->id
+                        'purchase_order_item_id' => $item->id,
+                        'status' => 'pending',
+                        'remaining_quantity' => $remainingAfterThis,
+                        'max_receivable' => $remainingQty // Maximum that can be received in this receipt
                     ];
                 }
             }
             
-            // Log para debug
-            Log::info('Itens carregados', [
-                'count' => count($this->receiptItems)
-            ]);
+            // Recalculate receipt total after loading items
+            $this->recalculateReceiptTotal();
             
-            // Emitir notificação visual em caso de sucesso
-            if (count($this->receiptItems) > 0) {
-                $this->dispatch('notify', [
-                    'type' => 'success',
-                    'title' => __('messages.success'),
-                    'message' => __('messages.items_loaded_successfully')
-                ]);
-            } else {
-                $this->dispatch('notify', [
-                    'type' => 'warning',
-                    'title' => __('messages.warning'),
-                    'message' => __('messages.no_items_available_for_receipt')
-                ]);
-            }
+            Log::info('PO items loaded for receipt', [
+                'po_id' => $purchaseOrder->id,
+                'items_count' => count($this->receiptItems),
+                'supplier_id' => $purchaseOrder->supplier_id,
+                'has_previous_receipts' => $previousReceipts->count() > 0
+            ]);
+        } else {
+            $this->dispatch('notify', [
+                'type' => 'warning',
+                'title' => __('messages.warning'),
+                'message' => __('messages.no_items_available_for_receipt')
+            ]);
         }
     }
 
@@ -456,9 +630,26 @@ class GoodsReceipts extends Component
      */
     public function updatedReceiptItemsAcceptedQuantity($value, $index)
     {
-        $this->updateRejectedQuantity($index);
-        $this->recalculateItemTotals($index);
-        $this->recalculateReceiptTotal();
+        if (isset($this->receiptItems[$index])) {
+            $acceptedQty = floatval($value);
+            $remainingQty = floatval($this->receiptItems[$index]['quantity'] ?? 0);
+            
+            // Ensure accepted quantity doesn't exceed remaining quantity
+            if ($acceptedQty > $remainingQty) {
+                $acceptedQty = $remainingQty;
+                $this->receiptItems[$index]['accepted_quantity'] = $acceptedQty;
+            }
+            
+            // Update rejected quantity
+            $this->receiptItems[$index]['rejected_quantity'] = $remainingQty - $acceptedQty;
+            
+            // Update remaining quantity for display
+            $this->receiptItems[$index]['remaining_quantity'] = $remainingQty - $acceptedQty;
+            
+            // Recalculate totals
+            $this->recalculateItemTotals($index);
+            $this->recalculateReceiptTotal();
+        }
     }
     
     /**
@@ -466,9 +657,26 @@ class GoodsReceipts extends Component
      */
     public function updatedReceiptItemsRejectedQuantity($value, $index)
     {
-        $this->updateAcceptedQuantity($index);
-        $this->recalculateItemTotals($index);
-        $this->recalculateReceiptTotal();
+        if (isset($this->receiptItems[$index])) {
+            $rejectedQty = floatval($value);
+            $remainingQty = floatval($this->receiptItems[$index]['quantity'] ?? 0);
+            
+            // Ensure rejected quantity doesn't exceed remaining quantity
+            if ($rejectedQty > $remainingQty) {
+                $rejectedQty = $remainingQty;
+                $this->receiptItems[$index]['rejected_quantity'] = $rejectedQty;
+            }
+            
+            // Update accepted quantity
+            $this->receiptItems[$index]['accepted_quantity'] = $remainingQty - $rejectedQty;
+            
+            // Update remaining quantity for display
+            $this->receiptItems[$index]['remaining_quantity'] = $remainingQty - ($remainingQty - $rejectedQty);
+            
+            // Recalculate totals
+            $this->recalculateItemTotals($index);
+            $this->recalculateReceiptTotal();
+        }
     }
     
     /**
@@ -476,47 +684,74 @@ class GoodsReceipts extends Component
      */
     public function updatedReceiptItemsUnitCost($value, $index)
     {
-        $this->recalculateItemTotals($index);
-        $this->recalculateReceiptTotal();
-    }
-    
-    /**
-     * Atualiza a quantidade rejeitada com base na quantidade aceita
-     */
-    protected function updateRejectedQuantity($index)
-    {
+        // Atualiza o custo unitário no array de itens
         if (isset($this->receiptItems[$index])) {
-            $totalQuantity = $this->receiptItems[$index]['quantity'] ?? 0;
-            $acceptedQuantity = $this->receiptItems[$index]['accepted_quantity'] ?? 0;
+            $this->receiptItems[$index]['unit_cost'] = (float) $value;
             
-            // Garantir que a quantidade aceita não seja maior que a quantidade total
-            if ($acceptedQuantity > $totalQuantity) {
-                $this->receiptItems[$index]['accepted_quantity'] = $totalQuantity;
-                $acceptedQuantity = $totalQuantity;
-            }
+            // Recalcula os totais para este item
+            $this->recalculateItemTotals($index);
             
-            // Calcular quantidade rejeitada
-            $this->receiptItems[$index]['rejected_quantity'] = $totalQuantity - $acceptedQuantity;
+            // Recalcula o total geral do recebimento
+            $this->recalculateReceiptTotal();
         }
     }
     
     /**
      * Atualiza a quantidade aceita com base na quantidade rejeitada
+     * 
+     * @param int $index The index of the item in the receiptItems array
+     * @return void
      */
     protected function updateAcceptedQuantity($index)
     {
         if (isset($this->receiptItems[$index])) {
-            $totalQuantity = $this->receiptItems[$index]['quantity'] ?? 0;
-            $rejectedQuantity = $this->receiptItems[$index]['rejected_quantity'] ?? 0;
+            $quantity = (float) ($this->receiptItems[$index]['quantity'] ?? 0);
+            $rejected = (float) ($this->receiptItems[$index]['rejected_quantity'] ?? 0);
             
-            // Garantir que a quantidade rejeitada não seja maior que a quantidade total
-            if ($rejectedQuantity > $totalQuantity) {
-                $this->receiptItems[$index]['rejected_quantity'] = $totalQuantity;
-                $rejectedQuantity = $totalQuantity;
+            // Calculate accepted quantity as (quantity - rejected)
+            $accepted = max(0, $quantity - $rejected);
+            $this->receiptItems[$index]['accepted_quantity'] = $accepted;
+            
+            // Update remaining quantity for display (remaining from PO - this receipt's accepted)
+            $remainingFromPO = $this->receiptItems[$index]['ordered_quantity'] - 
+                             ($this->receiptItems[$index]['previously_received'] ?? 0);
+            $this->receiptItems[$index]['remaining_quantity'] = max(0, $remainingFromPO - $accepted);
+            
+            // Recalculate item totals if unit cost is set
+            if (isset($this->receiptItems[$index]['unit_cost'])) {
+                $this->recalculateItemTotals($index);
+                $this->recalculateReceiptTotal();
+            }
+        }
+    }
+    
+    // Update calculations when quantity is changed
+    public function updatedReceiptItemsQuantity($value, $index)
+    {
+        if (isset($this->receiptItems[$index])) {
+            $newQuantity = (float) $value;
+            $maxReceivable = (float) $this->receiptItems[$index]['max_receivable'];
+            
+            // Ensure quantity doesn't exceed max receivable
+            if ($newQuantity > $maxReceivable) {
+                $newQuantity = $maxReceivable;
+                $this->receiptItems[$index]['quantity'] = $newQuantity;
             }
             
-            // Calcular quantidade aceita
-            $this->receiptItems[$index]['accepted_quantity'] = $totalQuantity - $rejectedQuantity;
+            // Update accepted quantity to match the new quantity (this receipt)
+            $this->receiptItems[$index]['accepted_quantity'] = $newQuantity;
+            
+            // Reset rejected quantity since we're setting a new receipt quantity
+            $this->receiptItems[$index]['rejected_quantity'] = 0;
+            
+            // Update remaining quantity
+            $remainingQty = $this->receiptItems[$index]['ordered_quantity'] - 
+                          ($this->receiptItems[$index]['previously_received'] + $newQuantity);
+            $this->receiptItems[$index]['remaining_quantity'] = max(0, $remainingQty);
+            
+            // Recalculate totals
+            $this->recalculateItemTotals($index);
+            $this->recalculateReceiptTotal();
         }
     }
     
@@ -563,212 +798,352 @@ class GoodsReceipts extends Component
     }
     
     /**
+     * Determina o status do recebimento com base nas quantidades recebidas
+     * - Se recebeu tudo: 'completed'
+     * - Se recebeu parcialmente: 'partially_processed'
+     * - Se houver divergência: 'discrepancy'
+     * - Senão: 'pending'
+     * 
+     * @param array $receiptItems
+     * @return string
+     */
+    protected function determineReceiptStatus($receiptItems)
+    {
+        if (empty($receiptItems)) {
+            return 'pending';
+        }
+        
+        $allItemsFullyProcessed = true;
+        $anyReceived = false;
+        $anyRejected = false;
+        $anyDiscrepancy = false;
+        $allItemsAtLeastPartiallyProcessed = true;
+        
+        foreach ($receiptItems as $item) {
+            $ordered = (float)($item['ordered_quantity'] ?? $item['quantity'] ?? 0);
+            $previouslyReceived = (float)($item['previously_received'] ?? 0);
+            $accepted = (float)($item['accepted_quantity'] ?? 0);
+            $rejected = (float)($item['rejected_quantity'] ?? 0);
+            
+            $totalReceived = $previouslyReceived + $accepted + $rejected;
+            $isFullyReceived = (abs($totalReceived - $ordered) < 0.0001); // Comparação segura para float
+            $isPartiallyReceived = (($accepted + $rejected) > 0) && !$isFullyReceived;
+            
+            Log::debug('Verificando status do item', [
+                'item' => $item['id'] ?? 'new',
+                'ordered' => $ordered,
+                'previouslyReceived' => $previouslyReceived,
+                'accepted' => $accepted,
+                'rejected' => $rejected,
+                'totalReceived' => $totalReceived,
+                'isFullyReceived' => $isFullyReceived ? 'sim' : 'não',
+                'isPartiallyReceived' => $isPartiallyReceived ? 'sim' : 'não'
+            ]);
+            
+            if (!$isFullyReceived) {
+                $allItemsFullyProcessed = false;
+            }
+            
+            // Se não recebeu nada neste item
+            if (($accepted + $rejected) <= 0) {
+                $allItemsAtLeastPartiallyProcessed = false;
+            }
+            
+            if ($accepted > 0) {
+                $anyReceived = true;
+            }
+            
+            if ($rejected > 0) {
+                $anyRejected = true;
+                $anyDiscrepancy = true;
+            }
+            
+            // Se recebeu mais do que o pedido, é uma discrepância
+            if (($totalReceived - $ordered) > 0.0001) { // Tolerância para comparação de float
+                $anyDiscrepancy = true;
+                Log::debug('Discrepância detectada: recebido > pedido', [
+                    'ordered' => $ordered,
+                    'totalReceived' => $totalReceived,
+                    'difference' => $totalReceived - $ordered
+                ]);
+            }
+        }
+        
+        Log::debug('Status do recebimento', [
+            'allItemsFullyProcessed' => $allItemsFullyProcessed ? 'sim' : 'não',
+            'allItemsAtLeastPartiallyProcessed' => $allItemsAtLeastPartiallyProcessed ? 'sim' : 'não',
+            'anyReceived' => $anyReceived ? 'sim' : 'não',
+            'anyRejected' => $anyRejected ? 'sim' : 'não',
+            'anyDiscrepancy' => $anyDiscrepancy ? 'sim' : 'não'
+        ]);
+        
+        // Se todos os itens foram totalmente recebidos
+        if ($allItemsFullyProcessed) {
+            Log::info('Todos os itens foram totalmente recebidos', [
+                'status' => $anyRejected ? 'discrepancy' : 'completed'
+            ]);
+            return $anyRejected ? 'discrepancy' : 'completed';
+        }
+        
+        // Se todos os itens têm pelo menos algum recebimento, mas ainda não estão completos
+        if ($allItemsAtLeastPartiallyProcessed) {
+            Log::info('Todos os itens têm pelo menos algum recebimento', [
+                'status' => $anyDiscrepancy ? 'discrepancy' : 'partially_processed'
+            ]);
+            return $anyDiscrepancy ? 'discrepancy' : 'partially_processed';
+        }
+        
+        // Para recebimentos parciais, retorna 'partially_processed' se recebeu algo
+        if ($anyReceived || $anyRejected) {
+            return 'partially_processed';
+        }
+        
+        return 'pending';
+    }
+    
+    /**
      * Salva um recebimento de mercadorias
      */
     public function save()
     {
-        // Validação
+        // Definir regras de validação
+        $rules = [
+            'goodsReceipt.receipt_number' => 'required|string|max:50',
+            'goodsReceipt.receipt_date' => 'required|date',
+            'goodsReceipt.purchase_order_id' => 'required|exists:sc_purchase_orders,id',
+            'goodsReceipt.supplier_id' => 'required|exists:sc_suppliers,id',
+            'goodsReceipt.location_id' => 'required|exists:sc_inventory_locations,id',
+            'goodsReceipt.status' => 'required|in:pending,partially_processed,completed,discrepancy',
+            'receiptItems.*.accepted_quantity' => 'required|numeric|min:0.01',
+            'receiptItems.*.rejected_quantity' => 'required|numeric|min:0',
+        ];
+        
+        // Validação - NãO envolva em try-catch para permitir que o Livewire exiba os erros automaticamente
+        $this->validate($rules);
+        
+        // Verificar se existem itens para processar
+        if (empty($this->receiptItems)) {
+            $this->addError('items', __('messages.at_least_one_item_required'));
+            return;
+        }
+
+        try {
+            // Iniciar transação
+            DB::beginTransaction();
+
+            // Criar ou atualizar o recebimento
+            $receipt = $this->createOrUpdateReceipt();
+
+            // Processar itens do recebimento
+            $processedItems = $this->processReceiptItems($this->receiptItems, $receipt);
+
+            // Atualizar o status do recebimento (retorna se deve atualizar estoque)
+            $shouldUpdateStock = $this->updateReceiptStatus($receipt);
+            
+            // Verificar se devemos atualizar o estoque
+            if ($shouldUpdateStock) {
+                // Processar atualizações de inventário
+                $this->processInventoryUpdates(
+                    $this->receiptItems,
+                    $receipt->location_id,
+                    $receipt->receipt_number,
+                    $receipt->id
+                );
+                
+                Log::info('Estoque atualizado para o recebimento', [
+                    'receipt_id' => $receipt->id,
+                    'status' => $receipt->status
+                ]);
+            } else {
+                Log::info('Atualização de estoque ignorada para o status: ' . $receipt->status, [
+                    'receipt_id' => $receipt->id
+                ]);
+            }
+
+            // Atualizar o status da ordem de compra, se aplicável
+            if ($receipt->purchase_order_id) {
+                $this->updatePurchaseOrderStatus($receipt->purchase_order_id, $shouldUpdateStock);
+            }
+
+            // Confirmar transação
+            DB::commit();
+
+            // Notificar sucesso
+            $this->notifySuccess($receipt);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->handleError($e);
+        }
+    }
+
+    /**
+     * Valida os dados do recebimento
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function validateReceiptData()
+    {
         $rules = [
             'goodsReceipt.receipt_number' => 'required|string|max:50',
             'goodsReceipt.receipt_date' => 'required|date',
             'goodsReceipt.supplier_id' => 'required|exists:sc_suppliers,id',
             'goodsReceipt.location_id' => 'required|exists:sc_inventory_locations,id',
-            'goodsReceipt.status' => 'required|in:pending,processing,completed,cancelled',
+            'goodsReceipt.status' => 'required|in:pending,partially_processed,completed,discrepancy',
+            'receiptItems.*.accepted_quantity' => 'required|numeric|min:0.01',
+            'receiptItems.*.rejected_quantity' => 'required|numeric|min:0',
         ];
-        
+
+        // Log dos dados para depuração
+        Log::info('Validating goods receipt data', [
+            'goods_receipt' => $this->goodsReceipt,
+            'receipt_items_count' => count($this->receiptItems ?? []),
+            'edit_mode' => $this->editMode
+        ]);
+
         $this->validate($rules);
 
-        // Validar que existem itens
+        // Verificar se existem itens para processar
         if (empty($this->receiptItems)) {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.at_least_one_item_required')
-            ]);
-            return;
+            throw new \RuntimeException(__('messages.at_least_one_item_required'));
         }
+    }
 
-        DB::beginTransaction();
-        
-        try {
-            // Criar ou atualizar o recebimento
-            if ($this->editMode && isset($this->goodsReceipt['id'])) {
-                $receipt = GoodsReceipt::findOrFail($this->goodsReceipt['id']);
-                
-                // Se o status era diferente de 'pending', não permitir edição
-                if ($receipt->status !== 'pending' && $receipt->status !== $this->goodsReceipt['status']) {
-                    $this->dispatch('notify', [
-                        'type' => 'error',
-                        'title' => __('messages.error'),
-                        'message' => __('messages.cannot_edit_processed_receipt_status')
-                    ]);
-                    DB::rollBack();
-                    return;
-                }
-                
-                $receipt->update([
-                    'purchase_order_id' => $this->goodsReceipt['purchase_order_id'] ?? null,
-                    'supplier_id' => $this->goodsReceipt['supplier_id'],
-                    'location_id' => $this->goodsReceipt['location_id'],
-                    'receipt_date' => $this->goodsReceipt['receipt_date'],
-                    'reference_number' => $this->goodsReceipt['reference_number'] ?? null,
-                    'status' => $this->goodsReceipt['status'],
-                    'notes' => $this->goodsReceipt['notes'] ?? null,
-                    'total_amount' => $this->goodsReceipt['total_amount'] ?? 0,
-                ]);
-                
-                // Remover itens antigos e adicionar novos
-                $receipt->items()->delete();
-            } else {
-                // Criar novo recebimento
-                $receipt = GoodsReceipt::create([
-                    'receipt_number' => $this->goodsReceipt['receipt_number'],
-                    'purchase_order_id' => $this->goodsReceipt['purchase_order_id'] ?? null,
-                    'supplier_id' => $this->goodsReceipt['supplier_id'],
-                    'location_id' => $this->goodsReceipt['location_id'],
-                    'receipt_date' => $this->goodsReceipt['receipt_date'],
-                    'reference_number' => $this->goodsReceipt['reference_number'] ?? null,
-                    'status' => $this->goodsReceipt['status'],
-                    'notes' => $this->goodsReceipt['notes'] ?? null,
-                    'received_by' => Auth::id(),
-                    'total_amount' => $this->goodsReceipt['total_amount'] ?? 0,
-                ]);
+    /**
+     * Cria ou atualiza um recebimento
+     *
+     * @return \App\Models\SupplyChain\GoodsReceipt
+     * @throws \RuntimeException
+     */
+    protected function createOrUpdateReceipt()
+    {
+        if ($this->editMode && isset($this->goodsReceipt['id'])) {
+            $receipt = GoodsReceipt::findOrFail($this->goodsReceipt['id']);
+            
+            // Verificar se é permitido editar
+            if ($receipt->status !== 'pending' && $receipt->status !== $this->goodsReceipt['status']) {
+                throw new \RuntimeException(__('messages.cannot_edit_processed_receipt_status'));
             }
             
-            // Registrar os itens
-            foreach ($this->receiptItems as $item) {
-                $receiptItem = new GoodsReceiptItem([
-                    'goods_receipt_id' => $receipt->id,
-                    'product_id' => $item['product_id'],
-                    'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
-                    'quantity' => $item['quantity'] ?? $item['accepted_quantity'] ?? 0,
-                    'accepted_quantity' => $item['accepted_quantity'],
-                    'rejected_quantity' => $item['rejected_quantity'],
-                    'received_quantity' => $item['accepted_quantity'], // Adicionando o campo faltante
-                    'unit_cost' => $item['unit_cost'],
-                    'subtotal' => ($item['accepted_quantity'] * $item['unit_cost']),
-                ]);
-                
-                $receipt->items()->save($receiptItem);
-                
-                // Se houver um item relacionado de ordem de compra, atualizar a quantidade recebida
-                if (!empty($item['purchase_order_item_id'])) {
-                    $poItem = PurchaseOrderItem::find($item['purchase_order_item_id']);
-                    if ($poItem) {
-                        $poItem->received_quantity = ($poItem->received_quantity ?? 0) + $item['accepted_quantity'];
-                        $poItem->save();
-                        
-                        // Atualizar o status da ordem de compra se necessário
-                        $this->updatePurchaseOrderStatus($poItem->purchase_order_id);
-                    }
-                }
-                
-                // Se o status for 'completed', atualizar o estoque
-                if ($this->goodsReceipt['status'] === 'completed') {
-                    // Verificar se já existe um item de inventário para este produto
-                    $inventoryItem = InventoryItem::where('product_id', $item['product_id'])
-                        ->where('location_id', $receipt->location_id)
-                        ->first();
-                    
-                    if ($inventoryItem) {
-                        // Atualizar quantidade
-                        $inventoryItem->quantity_on_hand += $item['accepted_quantity'];
-                        $inventoryItem->save();
-                    } else {
-                        // Criar novo item de inventário
-                        $inventoryItem = new InventoryItem([
-                            'product_id' => $item['product_id'],
-                            'location_id' => $receipt->location_id,
-                            'quantity_on_hand' => $item['accepted_quantity'],
-                            'quantity_allocated' => 0,
-                            'unit_cost' => $item['unit_cost'],
-                        ]);
-                        $inventoryItem->save();
-                    }
-                    
-                    // Registrar a transação de inventário
-                    $transaction = new InventoryTransaction([
-                        'transaction_number' => InventoryTransaction::generateTransactionNumber(),
-                        'transaction_type' => 'purchase_receipt',
-                        'reference_type' => 'goods_receipt',
-                        'reference_id' => $receipt->id,
-                        'product_id' => $item['product_id'],
-                        'source_location_id' => null, // Entrada no estoque, não há origem
-                        'destination_location_id' => $receipt->location_id,
-                        'quantity' => $item['accepted_quantity'],
-                        'unit_cost' => $item['unit_cost'],
-                        'transaction_date' => now(),
-                        'notes' => "Goods Receipt #{$receipt->receipt_number}",
-                        'created_by' => Auth::id(),
-                    ]);
-                    $transaction->save();
-                }
-            }
-            
-            DB::commit();
-            
-            // Fechar o modal e redefinir as propriedades
-            $this->closeModal();
-            
-            // Mostrar mensagem de sucesso
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'title' => __('messages.success'),
-                'message' => $this->editMode 
-                    ? __('messages.goods_receipt_updated') 
-                    : __('messages.goods_receipt_created')
+            // Atualizar informações do recebimento
+            $receipt->update([
+                'purchase_order_id' => $this->goodsReceipt['purchase_order_id'] ?? null,
+                'supplier_id' => $this->goodsReceipt['supplier_id'],
+                'location_id' => $this->goodsReceipt['location_id'],
+                'receipt_date' => $this->goodsReceipt['receipt_date'],
+                'reference_number' => $this->goodsReceipt['reference_number'] ?? null,
+                'notes' => $this->goodsReceipt['notes'] ?? null,
+                'total_amount' => $this->goodsReceipt['total_amount'] ?? 0,
             ]);
             
-        } catch (\Exception $e) {
-            DB::rollBack();
+            Log::info('Recebimento atualizado', ['receipt_id' => $receipt->id]);
             
-            // Log do erro
-            Log::error('Erro ao salvar recebimento de mercadorias: ' . $e->getMessage(), [
-                'exception' => $e,
-                'goods_receipt' => $this->goodsReceipt,
-                'receipt_items' => $this->receiptItems
+            return $receipt;
+        } else {
+            // Criar novo recebimento
+            $receipt = GoodsReceipt::create([
+                'receipt_number' => $this->goodsReceipt['receipt_number'],
+                'purchase_order_id' => $this->goodsReceipt['purchase_order_id'] ?? null,
+                'supplier_id' => $this->goodsReceipt['supplier_id'],
+                'location_id' => $this->goodsReceipt['location_id'],
+                'receipt_date' => $this->goodsReceipt['receipt_date'],
+                'reference_number' => $this->goodsReceipt['reference_number'] ?? null,
+                'status' => 'pending', // Será atualizado após o processamento
+                'notes' => $this->goodsReceipt['notes'] ?? null,
+                'received_by' => Auth::id(),
+                'total_amount' => $this->goodsReceipt['total_amount'] ?? 0,
             ]);
             
-            // Mostrar mensagem de erro
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'title' => __('messages.error'),
-                'message' => __('messages.goods_receipt_save_failed') . ': ' . $e->getMessage()
-            ]);
+            Log::info('Novo recebimento criado', ['receipt_id' => $receipt->id]);
+            
+            return $receipt;
         }
     }
     
-    /**
-     * Atualiza o status da ordem de compra com base nos itens recebidos
-     */
-    protected function updatePurchaseOrderStatus($purchaseOrderId)
+  /**
+ * Atualiza o status do recebimento, respeitando a seleção do usuário
+ * quando for um recebimento parcial.
+ *
+ * @param \App\Models\SupplyChain\GoodsReceipt $receipt
+ * @return bool Retorna true se o estoque deve ser atualizado
+ */
+protected function updateReceiptStatus($receipt)
+{
+    $previousStatus = $receipt->status;
+    $calculatedStatus = $this->determineReceiptStatus($receipt->items->toArray());
+    $userSelectedStatus = $this->goodsReceipt['status'] ?? null;
+    
+    // Se o usuário selecionou 'partially_processed' manualmente, respeitar
+    if ($userSelectedStatus === 'partially_processed') {
+        $status = 'partially_processed';
+    } 
+    // Se houver itens rejeitados, marcar como discrepância
+    elseif ($calculatedStatus === 'discrepancy') {
+        $status = 'discrepancy';
+    }
+    // Caso contrário, usar o status calculado
+    else {
+        $status = $calculatedStatus;
+    }
+    
+    // Atualizar o status
+    if ($receipt->status !== $status) {
+        $receipt->update(['status' => $status]);
+        
+        Log::info('Status do recebimento atualizado', [
+            'receipt_id' => $receipt->id,
+            'old_status' => $previousStatus,
+            'new_status' => $status,
+            'status_selecionado' => $userSelectedStatus
+        ]);
+    }
+    
+    // Retornar se o status permite atualização de estoque
+    return in_array($status, ['partially_processed', 'completed']);
+}
+
+/**
+ * Notifica o usuário sobre o sucesso da operação
+ *
+ * @param \App\Models\SupplyChain\GoodsReceipt $receipt
+ * @return void
+ */
+protected function notifySuccess($receipt)
     {
-        $purchaseOrder = PurchaseOrder::with('items')->find($purchaseOrderId);
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'title' => __('messages.success'),
+            'message' => $this->editMode 
+                ? __('messages.goods_receipt_updated_successfully')
+                : __('messages.goods_receipt_created_successfully')
+        ]);
         
-        if (!$purchaseOrder) {
-            return;
-        }
+        // Resetar formulário e fechar modal
+        $this->resetReceipt();
+        $this->closeModal();
         
-        $allItemsReceived = true;
-        $anyItemReceived = false;
+        // Atualizar a lista
+        $this->loadPurchaseOrders();
+    }
+    
+    /**
+     * Trata erros ocorridos durante o processamento
+     *
+     * @param \Exception $e
+     * @return void
+     */
+    protected function handleError(\Exception $e)
+    {
+        Log::error('Erro ao salvar recebimento', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
         
-        foreach ($purchaseOrder->items as $item) {
-            if (($item->received_quantity ?? 0) > 0) {
-                $anyItemReceived = true;
-            }
-            
-            if (($item->received_quantity ?? 0) < $item->quantity) {
-                $allItemsReceived = false;
-            }
-        }
-        
-        if ($allItemsReceived) {
-            $purchaseOrder->status = 'completed';
-        } else if ($anyItemReceived) {
-            $purchaseOrder->status = 'partially_received';
-        }
-        
-        $purchaseOrder->save();
+        $this->dispatch('notify', [
+            'type' => 'error',
+            'title' => __('messages.error'),
+            'message' => $e->getMessage()
+        ]);
     }
     
     public function changeTab($tab)
@@ -805,6 +1180,61 @@ class GoodsReceipts extends Component
                 message: __('messages.pdf_generation_failed')
             );
             return null;
+        }
+    }
+    
+    /**
+     * Completa um recebimento parcial, alterando seu status para completed
+     *
+     * @param int $id ID do recebimento
+     * @return void
+     */
+    public function completeReceipt($id)
+    {
+        try {
+            // Buscar o recebimento diretamente da tabela sc_goods_receipts
+            $receipt = GoodsReceipt::findOrFail($id);
+            
+            // Verificar se o status é partially_processed
+            if ($receipt->status !== 'partially_processed') {
+                throw new \Exception(__('messages.receipt_must_be_partially_processed'));
+            }
+            
+            // Iniciar transação
+            DB::beginTransaction();
+            
+            // Atualizar diretamente na tabela para garantir a mudança
+            DB::table('sc_goods_receipts')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'completed',
+                    'updated_at' => now()
+                ]);
+            
+            // Commit da transação
+            DB::commit();
+            
+            // Notificar sucesso
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.receipt_completed_successfully')
+            );
+            
+            // Forçar atualização da listagem
+            $this->dispatch('refreshGoodsReceipts');
+            
+        } catch (\Exception $e) {
+            // Rollback em caso de erro
+            DB::rollBack();
+            
+            // Log do erro
+            Log::error('Erro ao completar recebimento: ' . $e->getMessage());
+            
+            // Notificar erro
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.error_completing_receipt') . ': ' . $e->getMessage()
+            );
         }
     }
     

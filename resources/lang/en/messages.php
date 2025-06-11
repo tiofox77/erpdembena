@@ -2359,6 +2359,9 @@ return [
     'raw_material' => 'Raw Material',
     'others' => 'Others',
     'updated_at' => 'Updated At',
+    'select_purchase_order' => 'Select Purchase Order',
+    'select_supplier' => 'Select Supplier',
+    'reference_number' => 'Reference Number',
     
     // Date Range Filter
     'start_date' => 'Start Date',
@@ -2367,6 +2370,32 @@ return [
     'filtered_by_date' => 'Filtered by date range',
     
     // Raw Material Report
+    // Receipt Items
+    'ordered' => 'Ordered',
+    'previously_received' => 'Previously Received',
+    'remaining' => 'Remaining',
+    'this_receipt' => 'This Receipt',
+    'quantity' => 'Quantity',
+    'accepted_quantity' => 'Accepted Qty',
+    'rejected_quantity' => 'Rejected Qty',
+    'unit_cost' => 'Unit Cost',
+    'total_cost' => 'Total Cost',
+    'actions' => 'Actions',
+    'partial_receipt' => 'Partial Receipt',
+    'full_receipt' => 'Full Receipt',
+    'receipt_type' => 'Receipt Type',
+    'select_receipt_type' => 'Select Receipt Type',
+    'partial_receipt_note' => 'You are creating a partial receipt. The remaining quantity can be received later.',
+    'full_receipt_note' => 'This will mark the full ordered quantity as received.',
+    // Receipt Items - Tooltips
+    'ordered_quantity_help' => 'Total quantity ordered in the purchase order',
+    'previously_received_help' => 'Quantity already received in previous receipts',
+    'remaining_quantity_help' => 'Remaining quantity that can be received',
+    'this_receipt_help' => 'Quantity being received in this receipt',
+    'rejected_quantity_help' => 'Quantity being rejected in this receipt',
+    'accepted_quantity_help' => 'Accepted quantity = This Receipt - Rejected',
+    'unit_cost_help' => 'Unit cost of the item',
+    
     'raw_material_report' => 'Raw Material Stock Report',
     'raw_material_report_description' => 'Comprehensive view of raw material inventory across warehouses, purchase orders, and production schedules.',
     'raw_materials_stock_overview' => 'Raw materials stock status and reorder quantities',
