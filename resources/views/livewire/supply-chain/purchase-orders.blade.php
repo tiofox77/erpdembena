@@ -105,34 +105,6 @@
                             </select>
                         </div>
                         
-                        <!-- Date Range Filter - Start Date -->
-                        <div>
-                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">
-                                <i class="fas fa-calendar-day text-gray-500 mr-1"></i>
-                                {{ __('messages.start_date') }}
-                            </label>
-                            <input 
-                                type="date" 
-                                wire:model.live="startDate" 
-                                id="startDate" 
-                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out"
-                            >
-                        </div>
-                        
-                        <!-- Date Range Filter - End Date -->
-                        <div>
-                            <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">
-                                <i class="fas fa-calendar-day text-gray-500 mr-1"></i>
-                                {{ __('messages.end_date') }}
-                            </label>
-                            <input 
-                                type="date" 
-                                wire:model.live="endDate" 
-                                id="endDate" 
-                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out"
-                            >
-                        </div>
-                        
                         <!-- Filtro de Status do Formulário Personalizado (aparece apenas quando um formulário é selecionado) -->
                         @if($customFormFilter)
                         <div>
@@ -612,8 +584,8 @@
                 const select = document.getElementById('perPage');
                 const savedValue = localStorage.getItem('erpdembena_per_page');
                 
-                console.log('PO: Select encontrado:', select ? 'Sim' : 'Não');
-                console.log('PO: Valor salvo:', savedValue);
+                // console.log('PO: Select encontrado:', select ? 'Sim' : 'Não');
+                // console.log('PO: Valor salvo:', savedValue);
                 
                 if (select && savedValue) {
                     // Verificar se a opção existe
@@ -626,7 +598,7 @@
                         
                         // 2. Via Alpine.js se disponível
                         if (window.Alpine) {
-                            console.log('PO: Alpine.js encontrado, tentando definir valor');
+                            // console.log('PO: Alpine.js encontrado, tentando definir valor');
                             try {
                                 const wireEl = select.closest('[wire\\:id]');
                                 if (wireEl) {
@@ -642,13 +614,13 @@
                             const wireEl = select.closest('[wire\\:id]');
                             if (wireEl) {
                                 const wireId = wireEl.getAttribute('wire:id');
-                                console.log('PO: Componente Livewire encontrado:', wireId);
+                                // console.log('PO: Componente Livewire encontrado:', wireId);
                                 
                                 if (window.Livewire) {
-                                    console.log('PO: Atualizando via Livewire 3');
+                                    // console.log('PO: Atualizando via Livewire 3');
                                     window.Livewire.find(wireId).$wire.set('perPage', savedValue);
                                 } else if (window.livewire) {
-                                    console.log('PO: Atualizando via Livewire 2');
+                                    // console.log('PO: Atualizando via Livewire 2');
                                     window.livewire.find(wireId).set('perPage', savedValue);
                                 }
                             }
@@ -658,7 +630,7 @@
                         
                         // 4. Simulando evento de mudança
                         try {
-                            console.log('PO: Disparando evento de mudança');
+                            // console.log('PO: Disparando evento de mudança');
                             select.dispatchEvent(new Event('change', { bubbles: true }));
                         } catch(e) {
                             console.error('PO: Erro ao disparar evento:', e);
@@ -670,7 +642,7 @@
             // Salvar valor quando mudar
             document.addEventListener('change', function(e) {
                 if (e.target && e.target.id === 'perPage') {
-                    console.log('PO: Salvando valor:', e.target.value);
+                    // console.log('PO: Salvando valor:', e.target.value);
                     localStorage.setItem('erpdembena_per_page', e.target.value);
                 }
             });
@@ -683,7 +655,7 @@
             // Quando o Livewire terminar de processar
             if (window.Livewire) {
                 window.Livewire.hook('message.processed', function() {
-                    console.log('PO: Livewire processou mensagem, tentando aplicar valor');
+                    // console.log('PO: Livewire processou mensagem, tentando aplicar valor');
                     setTimeout(applyPerPageValue, 100);
                 });
             }

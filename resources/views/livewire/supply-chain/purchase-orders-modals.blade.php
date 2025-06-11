@@ -115,6 +115,30 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+
+                        <!-- Active Status Toggle -->
+                        <div class="flex items-center">
+                            <div class="flex items-center">
+                                <div x-data="{ isActive: {{ $purchaseOrder['is_active'] ?? true ? 'true' : 'false' }} }" 
+                                     x-init="$watch('isActive', value => { 
+                                         $wire.set('purchaseOrder.is_active', value, false);
+                                     })">
+                                    <button type="button" 
+                                            x-on:click="isActive = !isActive"
+                                            x-bind:class="{ 'bg-blue-600': isActive, 'bg-gray-200': !isActive }"
+                                            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                            role="switch"
+                                            x-bind:aria-checked="isActive">
+                                        <span class="sr-only">{{ __('messages.active') }}</span>
+                                        <span x-bind:class="{ 'translate-x-5': isActive, 'translate-x-0': !isActive }" 
+                                              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                                    </button>
+                                </div>
+                                <span class="ml-2 text-sm font-medium" x-text="isActive ? '{{ __('messages.active') }}' : '{{ __('messages.inactive') }}'">
+                                    {{ $purchaseOrder['is_active'] ?? true ? __('messages.active') : __('messages.inactive') }}
+                                </span>
+                            </div>
+                        </div>
                         @endif
                     </div>
                 </div>
@@ -225,7 +249,7 @@
                                                     <span class="text-gray-500 sm:text-sm">{{ config('default.currency_symbol', '$') }}</span>
                                                 </div>
                                                 <input type="number" 
-                                                    wire:model.defer="purchaseOrder.shipping_amount" 
+                                                    wire:model.live="purchaseOrder.shipping_amount" 
                                                     wire:change="calculateOrderTotal"
                                                     step="0.01" 
                                                     min="0"

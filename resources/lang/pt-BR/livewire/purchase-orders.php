@@ -21,6 +21,8 @@ return [
     'total_amount' => 'Valor Total',
     'notes' => 'Observações',
     'created_by' => 'Criado Por',
+    'active' => 'Ativo',
+    'inactive' => 'Inativo',
     
     // Item Form Labels
     'product' => 'Produto',

@@ -315,6 +315,13 @@ class PurchaseOrders extends Component
     public $hasMoreProducts = true;
     public $isLoadingProducts = false;
 
+    public function updatedPurchaseOrderShippingAmount($value)
+    {
+        // Garantir que o valor seja numérico
+        $this->purchaseOrder['shipping_amount'] = is_numeric($value) ? floatval($value) : 0;
+        $this->calculateOrderTotal();
+    }
+    
     public function updatedProductSearch($value)
     {
         $this->productPage = 1;
@@ -482,9 +489,6 @@ class PurchaseOrders extends Component
         
         if(in_array($order->status, ['completed', 'cancelled'])) {
             return $this->dispatch('notify', type: 'error', title: __('messages.error'), message: __('messages.cannot_edit_completed_cancelled_order'));
-
-            $this->dispatch('notify', type: 'error', title: __('messages.access_denied'), message: __('messages.no_permission'));
-            
         }
         
         $this->resetValidation();
@@ -498,9 +502,15 @@ class PurchaseOrders extends Component
             'expected_delivery_date' => $order->expected_delivery_date ? date('Y-m-d', strtotime($order->expected_delivery_date)) : null,
             'other_reference' => $order->other_reference,
             'status' => $order->status,
+            'is_active' => (bool)$order->is_active,
             'notes' => $order->notes,
             'shipping_amount' => $order->shipping_amount ?? 0.00,
         ];
+        
+        $this->selectedSupplier = $order->supplier_id ? [
+            'id' => $order->supplier_id,
+            'name' => $order->supplier->name
+        ] : null;
         
         $this->orderItems = $order->items->map(function($item) {
             return [
@@ -703,8 +713,15 @@ class PurchaseOrders extends Component
             $subtotal += floatval($item['line_total'] ?? 0);
         }
         
-        $shipping = floatval($this->purchaseOrder['shipping_amount'] ?? 0);
+        // Garantir que o shipping_amount seja um valor numérico válido
+        $shipping = isset($this->purchaseOrder['shipping_amount']) ? 
+                   (is_numeric($this->purchaseOrder['shipping_amount']) ? 
+                   floatval($this->purchaseOrder['shipping_amount']) : 0) : 0;
+                    
         $this->orderTotal = $subtotal + $shipping;
+        
+        // Garantir que o shipping_amount seja salvo no array purchaseOrder
+        $this->purchaseOrder['shipping_amount'] = $shipping;
     }
     
     public function savePurchaseOrder()
@@ -775,15 +792,17 @@ class PurchaseOrders extends Component
                 $order->expected_delivery_date = $this->purchaseOrder['expected_delivery_date'];
                 $order->other_reference = $this->purchaseOrder['other_reference'] ?? null;
                 $order->shipping_amount = floatval($this->purchaseOrder['shipping_amount'] ?? 0);
+                $order->is_active = (bool)($this->purchaseOrder['is_active'] ?? true);
                 
                 // Removendo campos que não existem na tabela
                 $order->notes = $this->purchaseOrder['notes'] ?? null;
                 
+                // Mantém o status original ao editar, não altera nunca
                 if (!$this->editMode) {
-                    $order->status = 'ordered'; // Alterando para 'ordered' em vez de 'draft'
-                } else if (isset($this->purchaseOrder['status'])) {
-                    $order->status = $this->purchaseOrder['status'];
+                    // Nova ordem recebe status 'ordered' por padrão
+                    $order->status = 'ordered';
                 }
+                // Se for edição, o status permanece o que já estava no banco de dados
                 
                 Log::info('Dados da ordem preparados', ['order' => $order->toArray()]);
                 $order->save();
