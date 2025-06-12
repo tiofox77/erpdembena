@@ -1085,11 +1085,21 @@ protected function updateReceiptStatus($receipt)
     $calculatedStatus = $this->determineReceiptStatus($receipt->items->toArray());
     $userSelectedStatus = $this->goodsReceipt['status'] ?? null;
     
-    // Se o usuário selecionou 'partially_processed' manualmente, respeitar
+    // Se o usuário selecionou um status manualmente, respeitamos sua escolha
     if ($userSelectedStatus === 'partially_processed') {
         $status = 'partially_processed';
     } 
-    // Se houver itens rejeitados, marcar como discrepância
+    // Se o usuário selecionou 'completed', respeitamos sua escolha
+    elseif ($userSelectedStatus === 'completed') {
+        $status = 'completed';
+        
+        // Log da decisão de respeitar a escolha do usuário
+        Log::info('Usuário selecionou completed manualmente. Respeitando escolha do usuário.', [
+            'receipt_id' => $receipt->id,
+            'calculatedStatus' => $calculatedStatus
+        ]);
+    }
+    // Se houver itens rejeitados ou discrepância, marcar apenas se o usuário não escolheu explicitamente
     elseif ($calculatedStatus === 'discrepancy') {
         $status = 'discrepancy';
     }
@@ -1205,15 +1215,38 @@ protected function notifySuccess($receipt)
     {
         try {
             // Buscar o recebimento diretamente da tabela sc_goods_receipts
-            $receipt = GoodsReceipt::findOrFail($id);
+            $receipt = GoodsReceipt::with('items')->findOrFail($id);
             
-            // Verificar se o status é partially_processed
-            if ($receipt->status !== 'partially_processed') {
-                throw new \Exception(__('messages.receipt_must_be_partially_processed'));
+            // Verificar se o status é partially_processed ou discrepancy
+            // Agora permite completar mesmo em status de discrepância
+            if (!in_array($receipt->status, ['partially_processed', 'discrepancy'])) {
+                throw new \Exception(__('messages.receipt_must_be_partially_processed_or_discrepancy'));
             }
             
             // Iniciar transação
             DB::beginTransaction();
+            
+            // Verificar se ainda há itens pendentes e ajustá-los quando necessário
+            foreach ($receipt->items as $item) {
+                $ordered = (float)($item->ordered_quantity ?? $item->quantity ?? 0);
+                $previouslyReceived = (float)($item->previously_received ?? 0);
+                $accepted = (float)($item->accepted_quantity ?? 0);
+                $rejected = (float)($item->rejected_quantity ?? 0);
+                
+                $totalReceived = $previouslyReceived + $accepted + $rejected;
+                
+                // Se ainda há quantidade pendente, assumimos que ela foi aceita
+                // quando o usuário marca recebimento como completed
+                if ($totalReceived < $ordered) {
+                    $difference = $ordered - $totalReceived;
+                    
+                    // Atualiza o item para aceitar a quantidade restante
+                    $item->update([
+                        'accepted_quantity' => $accepted + $difference,
+                        'updated_at' => now()
+                    ]);
+                }
+            }
             
             // Atualizar diretamente na tabela para garantir a mudança
             DB::table('sc_goods_receipts')

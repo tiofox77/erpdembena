@@ -802,73 +802,186 @@
                 
                 @if ($activeTab === 'items')
                 <!-- Itens do Recebimento -->
-                <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden transform transition-all duration-300 hover:shadow-lg">
                     <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200">
                         <i class="fas fa-box-open text-blue-600 mr-2"></i>
                         <h3 class="text-base font-medium text-gray-700">{{ __('messages.receipt_items') }}</h3>
+                    </div>
+                    
+                    <!-- Contador de itens e informação -->
+                    <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            @if($viewingReceipt && $viewingReceipt->items && count($viewingReceipt->items) > 0)
+                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                                {{ __('messages.showing') }} {{ count($viewingReceipt->items) }} {{ __('messages.items') }}
+                            @else
+                                <i class="fas fa-exclamation-circle mr-1 text-amber-500"></i>
+                                {{ __('messages.no_items_found') }}
+                            @endif
+                        </div>
+                        <div class="flex items-center">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                <i class="fas fa-layer-group mr-1"></i> 
+                                {{ __('messages.receipt') }} #{{ $viewingReceipt ? $viewingReceipt->receipt_number : '' }}
+                            </span>
+                        </div>
                     </div>
                     
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center">
+                                        <i class="fas fa-box text-gray-400 mr-1"></i>
                                         {{ __('messages.product') }}
                                     </th>
                                     <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <i class="fas fa-file-alt text-gray-400 mr-1"></i>
                                         {{ __('messages.description') }}
                                     </th>
                                     <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <i class="fas fa-balance-scale text-gray-400 mr-1"></i>
                                         {{ __('messages.quantity') }}
                                     </th>
                                     <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <i class="fas fa-money-bill-wave text-gray-400 mr-1"></i>
+                                        {{ __('messages.unit_cost') }}
+                                    </th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <i class="fas fa-hashtag text-gray-400 mr-1"></i>
                                         {{ __('messages.batch_number') }}
                                     </th>
                                     <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
                                         {{ __('messages.expiry_date') }}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @if($viewingReceipt && $viewingReceipt->items)
-                                    @forelse($viewingReceipt->items as $item)
+                                @if($viewingReceipt && isset($viewingReceipt->items) && count($viewingReceipt->items) > 0)
+                                    @foreach($viewingReceipt->items as $item)
                                     <tr class="hover:bg-gray-50 transition-colors duration-150">
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $item->product->name ?? $item->product_id }}</div>
-                                            <div class="text-xs text-gray-500">{{ $item->product->sku ?? '' }}</div>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <div class="text-sm text-gray-900">{{ $item->description }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <div class="text-sm font-medium text-gray-900">{{ $item->quantity }} {{ $item->unit_of_measure }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <div class="text-sm text-gray-900">{{ $item->batch_number ?? __('messages.none') }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <div class="text-sm text-gray-900">
-                                                {{ $item->expiry_date ? date('d/m/Y', strtotime($item->expiry_date)) : __('messages.none') }}
+                                                <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mr-2">
+                                                    <i class="fas fa-cube text-blue-500"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm font-medium text-gray-900">
+                                                        @php
+                                                            $productName = '';
+                                                            if (isset($item->product) && $item->product) {
+                                                                $productName = $item->product->name;
+                                                            } elseif (isset($item->purchaseOrderItem) && $item->purchaseOrderItem && isset($item->purchaseOrderItem->product)) {
+                                                                $productName = $item->purchaseOrderItem->product->name;
+                                                            } elseif (isset($item->product_name)) {
+                                                                $productName = $item->product_name;
+                                                            } else {
+                                                                $productName = 'ID: ' . $item->product_id;
+                                                            }
+                                                            echo e($productName);
+                                                        @endphp
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        @php
+                                                            $sku = '';
+                                                            if (isset($item->product) && $item->product && isset($item->product->sku)) {
+                                                                $sku = $item->product->sku;
+                                                            } elseif (isset($item->purchaseOrderItem) && $item->purchaseOrderItem && isset($item->purchaseOrderItem->product)) {
+                                                                $sku = $item->purchaseOrderItem->product->sku;
+                                                            } elseif (isset($item->sku)) {
+                                                                $sku = $item->sku;
+                                                            }
+                                                            echo e($sku);
+                                                        @endphp
+                                                    </div>
+                                                </div>
                                             </div>
                                         </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">
-                                            {{ __('messages.no_items_found') }}
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm text-gray-900">{{ $item->description ?? __('messages.no_description') }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <span class="bg-blue-50 text-blue-700 py-1 px-2 rounded-lg">
+                                                    @php
+                                                        $quantity = 0;
+                                                        if (isset($item->accepted_quantity)) {
+                                                            $quantity = $item->accepted_quantity;
+                                                        } elseif (isset($item->received_quantity)) {
+                                                            $quantity = $item->received_quantity;
+                                                        } elseif (isset($item->quantity)) {
+                                                            $quantity = $item->quantity;
+                                                        }
+                                                        echo number_format((float)$quantity, 2);
+                                                    @endphp
+                                                    {{ $item->unit_of_measure ?? '' }}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <span class="bg-green-50 text-green-700 py-1 px-2 rounded-lg">
+                                                    @if(isset($item->unit_cost) && !empty($item->unit_cost))
+                                                        <i class="fas fa-dollar-sign mr-1"></i>
+                                                        {{ number_format((float)$item->unit_cost, 2) }}
+                                                    @else
+                                                        <span class="text-xs text-gray-400 italic">{{ __('messages.none') }}</span>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            @if(isset($item->batch_number) && !empty($item->batch_number))
+                                                <div class="text-sm text-gray-900 bg-gray-50 py-1 px-2 rounded inline-block">
+                                                    {{ $item->batch_number }}
+                                                </div>
+                                            @else
+                                                <span class="text-xs text-gray-400 italic">{{ __('messages.none') }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                                            @if(isset($item->expiry_date) && !empty($item->expiry_date))
+                                                <div class="text-sm text-gray-900">
+                                                    <span class="inline-flex items-center bg-green-50 text-green-700 py-1 px-2 rounded-lg">
+                                                        <i class="fas fa-calendar-check mr-1"></i>
+                                                        {{ date('d/m/Y', strtotime($item->expiry_date)) }}
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <span class="text-xs text-gray-400 italic">{{ __('messages.none') }}</span>
+                                            @endif
                                         </td>
                                     </tr>
-                                    @endforelse
+                                    @endforeach
                                 @else
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">
-                                        {{ __('messages.no_items_found') }}
+                                    <td colspan="5" class="px-4 py-8 text-center">
+                                        <div class="flex flex-col items-center justify-center py-4 space-y-2">
+                                            <div class="flex-shrink-0 bg-gray-100 p-3 rounded-full">
+                                                <i class="fas fa-box-open text-gray-400 text-2xl"></i>
+                                            </div>
+                                            <p class="text-gray-500 text-sm font-medium">{{ __('messages.no_items_found') }}</p>
+                                            <p class="text-gray-400 text-xs max-w-xs text-center">{{ __('messages.no_items_description') }}</p>
+                                        </div>
                                     </td>
                                 </tr>
                                 @endif
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Rodapé da tabela com totais -->
+                    @if($viewingReceipt && isset($viewingReceipt->items) && count($viewingReceipt->items) > 0)
+                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                        <div class="flex justify-end items-center space-x-4">
+                            <div class="text-sm font-medium text-gray-500">{{ __('messages.total_items') }}:</div>
+                            <div class="text-sm font-medium text-gray-900 bg-gray-100 py-1 px-3 rounded-full">
+                                {{ count($viewingReceipt->items) }}
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
