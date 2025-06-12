@@ -38,6 +38,36 @@ class PurchaseOrders extends Component
     public $sortField = 'order_date';
     public $sortDirection = 'desc';
     
+    public function mount()
+    {
+        $this->yearFilter = date('Y');
+    }
+    
+    /**
+     * Get formatted period text based on selected filters
+     *
+     * @return string
+     */
+    protected function getFilterPeriodText()
+    {
+        $period = [];
+        
+        if ($this->monthFilter) {
+            $monthName = date('F', mktime(0, 0, 0, $this->monthFilter, 10));
+            $period[] = __('messages.month') . ': ' . __("messages." . strtolower($monthName));
+        }
+        
+        if ($this->yearFilter) {
+            $period[] = __('messages.year') . ': ' . $this->yearFilter;
+        }
+        
+        if (empty($period)) {
+            return __('messages.all_periods');
+        }
+        
+        return implode(', ', $period);
+    }
+    
     // Create/Edit Modal Properties
     public $showModal = false;
     public $editMode = false;
@@ -1508,17 +1538,30 @@ class PurchaseOrders extends Component
                 ->when($this->supplierFilter, function($query) {
                     return $query->where('supplier_id', $this->supplierFilter);
                 })
+                ->when($this->monthFilter, function($query) {
+                    return $query->whereMonth($this->dateField, $this->monthFilter);
+                })
+                ->when($this->yearFilter, function($query) {
+                    return $query->whereYear($this->dateField, $this->yearFilter);
+                })
                 ->orderBy($this->sortField, $this->sortDirection);
             
             // Não paginamos aqui para exportar todos os resultados filtrados
             $purchaseOrders = $purchaseOrdersQuery->get();
+            
+            // Get month name for display
+            $monthName = $this->monthFilter ? date('F', mktime(0, 0, 0, $this->monthFilter, 10)) : null;
             
             Log::info('Gerando PDF da listagem de ordens de compra', [
                 'quantidade' => $purchaseOrders->count(),
                 'filtros' => [
                     'search' => $this->search,
                     'status' => $this->statusFilter,
-                    'supplier' => $this->supplierFilter
+                    'supplier' => $this->supplierFilter,
+                    'month' => $this->monthFilter,
+                    'month_name' => $monthName,
+                    'year' => $this->yearFilter,
+                    'date_field' => $this->dateField
                 ]
             ]);
             
@@ -1530,19 +1573,70 @@ class PurchaseOrders extends Component
             $user = Auth::user();
             $currentDate = now()->format('d/m/Y H:i:s');
             
-            // Gerar o PDF usando a view
+            // Log the filter values for debugging
+            Log::info('Filter values for PDF:', [
+                'search' => $this->search,
+                'statusFilter' => $this->statusFilter,
+                'supplierFilter' => $this->supplierFilter,
+                'monthFilter' => $this->monthFilter,
+                'yearFilter' => $this->yearFilter,
+                'dateField' => $this->dateField,
+                'periodText' => $this->getFilterPeriodText()
+            ]);
+
+            // Get supplier name if filter is set
+            $supplierName = $this->supplierFilter 
+                ? (Supplier::find($this->supplierFilter)->name ?? __('messages.all_suppliers'))
+                : __('messages.all_suppliers');
+
+            // Get status text
+            $statusText = $this->statusFilter 
+                ? (__('messages.' . $this->statusFilter) ?: $this->statusFilter)
+                : __('messages.all_statuses');
+
+            // Prepare filters array with raw and formatted values
+            $filters = [
+                'search' => $this->search ?? '',
+                'status' => $statusText,
+                'supplier' => $supplierName,
+                'period' => $this->getFilterPeriodText(),
+                'month' => $this->monthFilter,
+                'year' => $this->yearFilter,
+                'date_field' => $this->dateField
+            ];
+            
+            // Log completo dos dados que serão enviados para a view
+            Log::info('Dados enviados para a view do PDF:', [
+                'purchaseOrders_count' => $purchaseOrders->count(),
+                'totalOrders' => $totalOrders,
+                'totalValue' => $totalValue,
+                'user_name' => $user->name,
+                'currentDate' => $currentDate,
+                'filters' => $filters,
+                'dateField' => $this->dateField,
+                'monthFilter' => $this->monthFilter,
+                'yearFilter' => $this->yearFilter,
+                'statusFilter' => $this->statusFilter,
+                'supplierFilter' => $this->supplierFilter
+            ]);
+
+            // Load the PDF view with all necessary data
             $pdf = PDF::loadView('pdfs.purchase-orders-list', [
                 'purchaseOrders' => $purchaseOrders,
                 'totalOrders' => $totalOrders,
                 'totalValue' => $totalValue,
                 'user' => $user,
                 'currentDate' => $currentDate,
-                'filters' => [
-                    'search' => $this->search,
-                    'status' => $this->statusFilter ? __('messages.' . $this->statusFilter) : __('messages.all_statuses'),
-                    'supplier' => $this->supplierFilter ? Supplier::find($this->supplierFilter)->name : __('messages.all_suppliers')
-                ]
+                'filters' => $filters,
+                'dateField' => $this->dateField === 'order_date' ? __('messages.order_date') : __('messages.expected_delivery'),
+                'monthFilter' => $this->monthFilter,
+                'yearFilter' => $this->yearFilter,
+                'statusFilter' => $this->statusFilter,
+                'supplierFilter' => $this->supplierFilter
             ]);
+            
+            // Log para confirmar que o PDF foi carregado com sucesso
+            Log::info('PDF carregado com sucesso com os filtros fornecidos.');
             
             // Configurar o PDF
             $pdf->setPaper('a4', 'landscape');

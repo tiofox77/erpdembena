@@ -1,69 +1,93 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+<html lang="{{ App::getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('messages.purchase_orders_list') }}</title>
     <style>
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #333;
             margin: 0;
             padding: 0;
-            font-size: 12px;
-            color: #333;
-            line-height: 1.4;
         }
         .container {
             width: 100%;
             padding: 10px;
         }
         .header {
+            text-align: left;
             margin-bottom: 20px;
-            border-bottom: 2px solid #3b82f6;
             padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
         }
-        .header h1 {
-            color: #3b82f6;
-            font-size: 22px;
-            margin: 0;
-            padding: 0;
-        }
-        .header .company {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .header .info {
-            font-size: 10px;
-            color: #666;
+        .logo {
+            max-height: 60px;
+            max-width: 200px;
         }
         .filters {
-            background-color: #f3f4f6;
-            padding: 10px;
+            background-color: #ffffff;
+            padding: 10px 12px;
             margin-bottom: 15px;
             border-radius: 4px;
+            border: 1px solid #e2e8f0;
         }
         .filters h3 {
-            margin: 0 0 5px 0;
-            font-size: 14px;
-            color: #4b5563;
+            margin: 0 0 8px 0;
+            font-size: 11px;
+            color: #1a1a1a;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e2e8f0;
         }
         .filters-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 10px 20px;
         }
         .filter-item {
-            flex: 1;
-            min-width: 100px;
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
         }
         .filter-label {
-            font-weight: bold;
             font-size: 10px;
-            color: #6b7280;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-right: 5px;
+            white-space: nowrap;
         }
         .filter-value {
-            font-size: 11px;
+            font-size: 10px;
+            color: #1a1a1a;
+            font-weight: 400;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            margin: 0;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        .filter-label {
+            font-weight: 600;
+            font-size: 9px;
+            color: #4b5563;
+            margin-right: 4px;
+        }
+        .filter-value {
+            font-size: 9px;
+            color: #1f2937;
+            font-weight: 400;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
         }
         table {
             width: 100%;
@@ -171,28 +195,91 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="company">ERP DEMBENA</div>
-            <h1>{{ __('messages.purchase_orders_list') }}</h1>
-            <div class="info">
-                {{ __('messages.generated_by') }}: {{ $user->name }} | {{ __('messages.date') }}: {{ $currentDate }}
+            @php
+                $logoPath = \App\Models\Setting::get('company_logo');
+                $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
+                $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+                $companyAddress = \App\Models\Setting::get('company_address', '');
+                $companyPhone = \App\Models\Setting::get('company_phone', '');
+                $companyEmail = \App\Models\Setting::get('company_email', '');
+                $companyWebsite = \App\Models\Setting::get('company_website', '');
+                $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
+            @endphp
+            <div style="display: flex; align-items: flex-start;">
+                <div style="margin-right: 20px;">
+                    <img src="{{ $logoFullPath }}" alt="{{ $companyName }} Logo" class="logo">
+                </div>
+                <div>
+                    <h2 style="margin: 0; padding: 0; font-size: 14px;">{{ $companyName }}</h2>
+                    <p style="margin: 2px 0; font-size: 9px;">{{ $companyAddress }}</p>
+                    <p style="margin: 2px 0; font-size: 9px;">Tel: {{ $companyPhone }} | Email: {{ $companyEmail }}</p>
+                    <p style="margin: 2px 0; font-size: 9px;">NIF: {{ $companyTaxId }} | {{ $companyWebsite }}</p>
+                </div>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <h1 style="margin: 10px 0; font-size: 18px; color: #3b82f6;">{{ strtoupper(__('messages.purchase_orders_list')) }}</h1>
+                <div style="font-size: 9px; color: #666;">
+                    {{ __('messages.generated_by') }}: {{ $user->name }} | {{ __('messages.date') }}: {{ $currentDate }}
+                </div>
             </div>
         </div>
 
-        <div class="filters">
-            <h3>{{ __('messages.applied_filters') }}</h3>
-            <div class="filters-grid">
-                <div class="filter-item">
-                    <div class="filter-label">{{ __('messages.search') }}:</div>
-                    <div class="filter-value">{{ $filters['search'] ?: __('messages.none') }}</div>
+        <div class="filters" style="background-color: #ffffff; padding: 10px; border: 1px solid #e0e0e0; margin-bottom: 10px; border-radius: 4px;">
+            <h3 style="color: #000000; font-size: 12px; font-weight: bold; margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">
+                {{ __('messages.applied_filters') }}
+            </h3>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 10px 20px;">
+                {{-- Search Filter --}}
+                @if(!empty(trim($search ?? '')))
+                <div style="display: flex; align-items: center;">
+                    <span style="font-weight: bold; margin-right: 5px; color: #000000; font-size: 10px;">{{ __('messages.search') }}:</span>
+                    <span style="color: #000000; font-size: 10px;">{{ $search }}</span>
                 </div>
-                <div class="filter-item">
-                    <div class="filter-label">{{ __('messages.status') }}:</div>
-                    <div class="filter-value">{{ $filters['status'] }}</div>
+                @endif
+                
+                {{-- Status Filter --}}
+                <div style="display: flex; align-items: center;">
+                    <span style="font-weight: bold; margin-right: 5px; color: #000000; font-size: 10px;">{{ __('messages.status') }}:</span>
+                    <span style="color: #000000; font-size: 10px;">
+                        {{ !empty($statusFilter) && $statusFilter !== 'all' ? __('messages.' . $statusFilter) : __('messages.all_statuses') }}
+                    </span>
                 </div>
-                <div class="filter-item">
-                    <div class="filter-label">{{ __('messages.supplier') }}:</div>
-                    <div class="filter-value">{{ $filters['supplier'] }}</div>
+                
+                {{-- Supplier Filter --}}
+                @if(!empty($supplierFilter) && $supplierFilter !== 'all' && !empty($filters['supplier']))
+                <div style="display: flex; align-items: center;">
+                    <span style="font-weight: bold; margin-right: 5px; color: #000000; font-size: 10px;">{{ __('messages.supplier') }}:</span>
+                    <span style="color: #000000; font-size: 10px;">{{ $filters['supplier'] }}</span>
                 </div>
+                @endif
+                
+                {{-- Date Field --}}
+                <div style="display: flex; align-items: center;">
+                    <span style="font-weight: bold; margin-right: 5px; color: #000000; font-size: 10px;">{{ __('messages.date_field') }}:</span>
+                    <span style="color: #000000; font-size: 10px;">
+                        {{ $dateField === 'order_date' ? __('messages.order_date') : __('messages.expected_delivery') }}
+                    </span>
+                </div>
+                
+                {{-- Period Filter --}}
+                <div style="display: flex; align-items: center;">
+                    <span style="font-weight: bold; margin-right: 5px; color: #000000; font-size: 10px;">{{ __('messages.period') }}:</span>
+                    <span style="color: #000000; font-size: 10px;">
+                        @if(!empty($monthFilter) || !empty($yearFilter))
+                            @if(!empty($monthFilter))
+                                {{ date('F', mktime(0, 0, 0, $monthFilter, 10)) }}
+                            @endif
+                            @if(!empty($monthFilter) && !empty($yearFilter)), @endif
+                            @if(!empty($yearFilter))
+                                {{ $yearFilter }}
+                            @endif
+                        @else
+                            {{ __('messages.all_periods') }}
+                        @endif
+                    </span>
+                </div>
+            </div>
             </div>
         </div>
 

@@ -183,7 +183,6 @@
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="order_date">{{ __('messages.order_date') }}</option>
                                 <option value="expected_delivery_date">{{ __('messages.expected_delivery') }}</option>
-                                <option value="delivery_date">{{ __('messages.delivery_date') }}</option>
                             </select>
                         </div>
                         

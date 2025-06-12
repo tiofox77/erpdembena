@@ -2367,8 +2367,10 @@ return [
     'supplier_categories' => 'Supplier Categories',
     'max_receivable' => 'Max Receivable',
     'messages.accepted' => 'Accepted', 
-    'partially_processed' => 'Partially Processed',
-    'fully_processed' => 'Fully Processed',
+    'status_partially_processed' => 'Partially Processed',
+    'status_fully_processed' => 'Fully Processed',
+    'status_discrepancy' => 'Status Discrepancy',  
+    'items' => 'Items',  
 
 
     
