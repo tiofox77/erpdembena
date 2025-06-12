@@ -12,7 +12,7 @@
     x-transition:leave="transition ease-in duration-200" 
     x-transition:leave-start="opacity-100" 
     x-transition:leave-end="opacity-0">
-    <div class="relative top-20 mx-auto p-1 w-full max-w-4xl">
+    <div class="relative top-4 sm:top-10 md:top-20 mx-auto p-1 w-11/12 sm:w-11/12 md:w-11/12 lg:w-11/12 xl:w-10/12 2xl:w-9/12 max-w-7xl">
         <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out" 
              x-transition:enter="transition ease-out duration-300" 
              x-transition:enter-start="transform opacity-0 scale-95" 
@@ -32,7 +32,7 @@
             </div>
 
             <!-- Conteúdo da Modal -->
-            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div class="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[80vh] overflow-y-auto">
                 @if ($errors->any())
                 <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-md shadow-sm animate-pulse">
                     <div class="flex items-center">
@@ -72,14 +72,14 @@
                         <i class="fas fa-info-circle text-blue-600 mr-2"></i>
                         <h3 class="text-base font-medium text-gray-700">{{ __('messages.basic_information') }}</h3>
                     </div>
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-2 sm:p-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <!-- Número do Recibo -->
                         <div>
                             <label for="receipt_number" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ __('messages.receipt_number') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="text" id="receipt_number" wire:model.defer="goodsReceipt.receipt_number" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out"
                                 {{ $editMode ? 'readonly' : '' }}>
                             @error('goodsReceipt.receipt_number') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -90,7 +90,7 @@
                                 {{ __('messages.receipt_date') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="date" id="receipt_date" wire:model.defer="goodsReceipt.receipt_date" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out transition duration-150 ease-in-out">
                             @error('goodsReceipt.receipt_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         
@@ -100,7 +100,7 @@
                                 {{ __('messages.purchase_order') }}
                             </label>
                             <select id="purchase_order_id" wire:model="goodsReceipt.purchase_order_id" wire:change="loadPurchaseOrderItems" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out">
                                 <option value="">{{ __('messages.select_purchase_order') }}</option>
                                 @foreach($purchaseOrders ?? [] as $po)
                                     <option value="{{ $po->id }}">{{ $po->order_number }}--{{ $po->other_reference }}</option>
@@ -115,7 +115,7 @@
                                 {{ __('messages.supplier') }} <span class="text-red-500">*</span>
                             </label>
                             <select id="supplier_id" wire:model="goodsReceipt.supplier_id" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md {{ !empty($goodsReceipt['purchase_order_id']) ? 'bg-gray-100' : '' }}"
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out {{ !empty($goodsReceipt['purchase_order_id']) ? 'bg-gray-100' : '' }}"
                                 {{ !empty($goodsReceipt['purchase_order_id']) ? 'disabled' : '' }}>
                                 <option value="">{{ __('messages.select_supplier') }}</option>
                                 @foreach($suppliers as $supplier)
@@ -131,7 +131,7 @@
                                 {{ __('messages.location') }} <span class="text-red-500">*</span>
                             </label>
                             <select id="location_id" wire:model="goodsReceipt.location_id" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out">
                                 <option value="">{{ __('messages.select_location') }}</option>
                                 @foreach($locations as $location)
                                     <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -146,7 +146,7 @@
                                 {{ __('messages.reference_number') }}
                             </label>
                             <input type="text" id="reference_number" wire:model.defer="goodsReceipt.reference_number" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out">
                             @error('goodsReceipt.reference_number') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         
@@ -156,7 +156,7 @@
                                 {{ __('messages.status') }} <span class="text-red-500">*</span>
                             </label>
                             <select id="status" wire:model.defer="goodsReceipt.status" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out">
                                 <option value="pending">{{ __('messages.pending') }}</option>
                                 <option value="partially_processed">{{ __('messages.partially_processed') }}</option>
                                 <option value="completed">{{ __('messages.completed') }}</option>
@@ -171,7 +171,7 @@
                                 {{ __('messages.notes') }}
                             </label>
                             <textarea id="notes" wire:model.defer="goodsReceipt.notes" rows="3" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out"></textarea>
                             @error('goodsReceipt.notes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
@@ -228,12 +228,12 @@
                                         $remainingQty = isset($item['remaining_quantity']) ? $item['remaining_quantity'] : max(0, $orderedQty - $previouslyReceived);
                                         $thisReceiptQty = $item['quantity'] ?? 0;
                                         $rejectedQty = $item['rejected_quantity'] ?? 0;
-                                        $acceptedQty = $item['accepted_quantity'] ?? ($thisReceiptQty - $rejectedQty);
+                                        // Always start at 0 if not explicitly set
+                                        $acceptedQty = $item['accepted_quantity'] ?? 0;
                                         $isPartiallyProcessed = isset($goodsReceipt['status']) && $goodsReceipt['status'] === 'partially_processed';
                                     @endphp
                                     <tr class="hover:bg-gray-50 transition-colors duration-150 {{ $isPartiallyProcessed ? 'bg-yellow-50' : '' }}">
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $item['product_name'] }}</div>
                                             <div class="text-sm font-medium text-gray-900">
                                                 {{ $item['product_name'] ?? 'N/A' }}
                                                 @if(isset($item['original_accepted']) || isset($item['original_rejected']))
@@ -266,30 +266,157 @@
                                         <!-- Remaining Quantity -->
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
                                             <span class="text-sm text-gray-900">{{ number_format($remainingQty, 2) }}</span>
-                                            @if(isset($item['max_receivable']) && $item['max_receivable'] > 0)
                                             <div class="text-xs text-blue-600">
-                                                {{ __('messages.max_receivable') }}: {{ number_format($item['max_receivable'], 2) }}
+                                                {{ __('messages.max_receivable') }}: {{ number_format($previouslyReceived, 2) }}
                                             </div>
-                                            @endif
                                         </td>
                                         
                                         <!-- This Receipt Quantity -->
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <input type="number" 
-                                                wire:model.live="receiptItems.{{ $index }}.quantity" 
-                                                wire:change="$dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'quantity', value: $event.target.value })" 
+                                            <input type="text" 
+                                                x-data="{
+                                                    rawValue: '0.00',
+                                                    isTyping: false,
+                                                    formatNumber(value) {
+                                                        if (!value) return '0,00';
+                                                        const num = parseFloat(value);
+                                                        if (isNaN(num)) return '0,00';
+                                                        return num.toLocaleString('pt-PT', {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                            useGrouping: true
+                                                        });
+                                                    },
+                                                    parseInput(value) {
+                                                        // Remove all non-digit characters except comma
+                                                        let clean = value.replace(/[^\d,]/g, '');
+                                                        
+                                                        // Handle multiple commas by keeping only the first one
+                                                        const commaIndex = clean.indexOf(',');
+                                                        if (commaIndex !== -1) {
+                                                            const before = clean.substring(0, commaIndex + 1);
+                                                            const after = clean.substring(commaIndex + 1).replace(/[^\d]/g, '');
+                                                            clean = before + after;
+                                                        }
+                                                        
+                                                        // Limit to 2 decimal places
+                                                        const parts = clean.split(',');
+                                                        if (parts.length > 1) {
+                                                            parts[1] = parts[1].substring(0, 2);
+                                                            clean = parts.join(',');
+                                                        }
+                                                        
+                                                        return clean;
+                                                    },
+                                                    toRawNumber(value) {
+                                                        if (!value) return '0.00';
+                                                        return value.replace(/\./g, '').replace(',', '.');
+                                                    }
+                                                }"
+                                                x-init="
+                                                    // Set initial formatted value
+                                                    $el.value = formatNumber(rawValue);
+                                                    
+                                                    // Watch for changes from Livewire
+                                                    $watch('$wire.receiptItems[{{ $index }}].quantity', value => {
+                                                        if (!isTyping && value !== undefined && value !== null) {
+                                                            rawValue = value;
+                                                            $el.value = formatNumber(value);
+                                                        }
+                                                    });
+                                                "
+                                                @input="
+                                                    isTyping = true;
+                                                    const formatted = parseInput($event.target.value);
+                                                    $el.value = formatted;
+                                                    
+                                                    // Update raw value and Livewire
+                                                    rawValue = toRawNumber(formatted);
+                                                    $wire.set('receiptItems.{{ $index }}.quantity', rawValue, false);
+                                                    $dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'quantity', value: rawValue });
+                                                "
+                                                @blur="
+                                                    isTyping = false;
+                                                    // Ensure proper formatting on blur
+                                                    $el.value = formatNumber(rawValue);
+                                                "
                                                 min="0" 
                                                 step="0.01" 
                                                 max="{{ $item['max_receivable'] ?? $remainingQty }}" 
-                                                class="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                class="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
                                                 {{ ($editMode && $goodsReceipt['status'] !== 'pending' && $goodsReceipt['status'] !== 'partially_processed') ? 'readonly' : '' }}>
                                         </td>
                                         
                                         <!-- Rejected Quantity -->
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <input type="number" 
+                                            <input type="text" 
                                                 wire:model.live="receiptItems.{{ $index }}.rejected_quantity" 
-                                                wire:change="$dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'rejected_quantity', value: $event.target.value })" 
+                                                x-data="{
+                                                    rawValue: '{{ $item['rejected_quantity'] ?? '0' }}',
+                                                    isTyping: false,
+                                                    formatNumber(value) {
+                                                        if (!value) return '0,00';
+                                                        const num = parseFloat(value);
+                                                        if (isNaN(num)) return '0,00';
+                                                        return num.toLocaleString('pt-PT', {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                            useGrouping: true
+                                                        });
+                                                    },
+                                                    parseInput(value) {
+                                                        // Remove all non-digit characters except comma
+                                                        let clean = value.replace(/[^\d,]/g, '');
+                                                        
+                                                        // Handle multiple commas by keeping only the first one
+                                                        const commaIndex = clean.indexOf(',');
+                                                        if (commaIndex !== -1) {
+                                                            const before = clean.substring(0, commaIndex + 1);
+                                                            const after = clean.substring(commaIndex + 1).replace(/[^\d]/g, '');
+                                                            clean = before + after;
+                                                        }
+                                                        
+                                                        // Limit to 2 decimal places
+                                                        const parts = clean.split(',');
+                                                        if (parts.length > 1) {
+                                                            parts[1] = parts[1].substring(0, 2);
+                                                            clean = parts.join(',');
+                                                        }
+                                                        
+                                                        return clean;
+                                                    },
+                                                    toRawNumber(value) {
+                                                        if (!value) return '0.00';
+                                                        return value.replace(/\./g, '').replace(',', '.');
+                                                    }
+                                                }"
+                                                x-init="
+                                                    // Set initial formatted value
+                                                    $el.value = formatNumber(rawValue);
+                                                    
+                                                    // Watch for changes from Livewire
+                                                    $watch('$wire.receiptItems[{{ $index }}].rejected_quantity', value => {
+                                                        if (!isTyping && value !== undefined && value !== null) {
+                                                            rawValue = value;
+                                                            $el.value = formatNumber(value);
+                                                        }
+                                                    });
+                                                "
+                                                @input="
+                                                    isTyping = true;
+                                                    const formatted = parseInput($event.target.value);
+                                                    $el.value = formatted;
+                                                    
+                                                    // Update raw value and Livewire
+                                                    rawValue = toRawNumber(formatted);
+                                                    $wire.set('receiptItems.{{ $index }}.rejected_quantity', rawValue, false);
+                                                    $dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'rejected_quantity', value: rawValue });
+                                                "
+                                                @blur="
+                                                    isTyping = false;
+                                                    // Ensure proper formatting on blur
+                                                    $el.value = formatNumber(rawValue);
+                                                "
                                                 min="0" 
                                                 step="0.01" 
                                                 max="{{ $item['quantity'] ?? 0 }}" 
@@ -300,17 +427,106 @@
                                         <!-- Accepted Quantity -->
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
                                             @if(($editMode && $goodsReceipt['status'] === 'partially_processed') || !$editMode)
-                                                <input type="number" 
+                                                <input type="text" 
                                                     wire:model.live="receiptItems.{{ $index }}.accepted_quantity" 
-                                                    wire:change="$dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'accepted_quantity', value: $event.target.value })" 
+                                                    x-data="{
+                                                        rawValue: '{{ $editMode ? ($item['this_receipt_quantity'] ?? '0') : ($item['accepted_quantity'] ?? '0') }}',
+                                                        isTyping: false,
+                                                        formatNumber(value) {
+                                                            if (!value) return '0,00';
+                                                            const num = parseFloat(value);
+                                                            if (isNaN(num)) return '0,00';
+                                                            return num.toLocaleString('pt-PT', {
+                                                                minimumFractionDigits: 2,
+                                                                maximumFractionDigits: 2,
+                                                                useGrouping: true
+                                                            });
+                                                        },
+                                                        parseInput(value) {
+                                                            // Remove all non-digit characters except comma
+                                                            let clean = value.replace(/[^\d,]/g, '');
+                                                            
+                                                            // Handle multiple commas by keeping only the first one
+                                                            const commaIndex = clean.indexOf(',');
+                                                            if (commaIndex !== -1) {
+                                                                const before = clean.substring(0, commaIndex + 1);
+                                                                const after = clean.substring(commaIndex + 1).replace(/[^\d]/g, '');
+                                                                clean = before + after;
+                                                            }
+                                                            
+                                                            // Limit to 2 decimal places
+                                                            const parts = clean.split(',');
+                                                            if (parts.length > 1) {
+                                                                parts[1] = parts[1].substring(0, 2);
+                                                                clean = parts.join(',');
+                                                            }
+                                                            
+                                                            return clean;
+                                                        },
+                                                        toRawNumber(value) {
+                                                            if (!value) return '0.00';
+                                                            return value.replace(/\./g, '').replace(',', '.');
+                                                        },
+                                                        validateQuantity(value) {
+                                                            const numValue = parseFloat(value);
+                                                            const maxQty = parseFloat({{ $orderedQty }});
+                                                            
+                                                            if (numValue > maxQty) {
+                                                                $dispatch('notify', {
+                                                                    type: 'error',
+                                                                    title: '{{ __('messages.error') }}',
+                                                                    message: '{{ __('messages.exceed_ordered_qty') }}'
+                                                                });
+                                                                return maxQty.toFixed(2);
+                                                            }
+                                                            return value;
+                                                        }
+                                                    }"
+                                                    x-init="
+                                                        // Set initial formatted value
+                                                        $el.value = formatNumber(rawValue);
+                                                        
+                                                        // Watch for changes from Livewire
+                                                        $watch('$wire.receiptItems[{{ $index }}].accepted_quantity', value => {
+                                                            if (!isTyping && value !== undefined && value !== null) {
+                                                                rawValue = value;
+                                                                $el.value = formatNumber(value);
+                                                            }
+                                                        });
+                                                    "
+                                                    @input="
+                                                        isTyping = true;
+                                                        const formatted = parseInput($event.target.value);
+                                                        $el.value = formatted;
+                                                        
+                                                        // Update raw value and Livewire
+                                                        rawValue = toRawNumber(formatted);
+                                                        $wire.set('receiptItems.{{ $index }}.accepted_quantity', rawValue, false);
+                                                        $dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'accepted_quantity', value: rawValue });
+                                                    "
+                                                    @blur="
+                                                        isTyping = false;
+                                                        
+                                                        // Validate against max quantity
+                                                        const validatedValue = validateQuantity(rawValue);
+                                                        if (validatedValue !== rawValue) {
+                                                            rawValue = validatedValue;
+                                                            $wire.set('receiptItems.{{ $index }}.accepted_quantity', validatedValue, false);
+                                                            $dispatch('receiptItemUpdated', { index: {{ $index }}, field: 'accepted_quantity', value: validatedValue });
+                                                        }
+                                                        
+                                                        // Ensure proper formatting on blur
+                                                        $el.value = formatNumber(rawValue);
+                                                    "
+                                                    "
                                                     min="0" 
                                                     step="0.01" 
-                                                    max="{{ $item['max_receivable'] ?? $remainingQty }}" 
+                                                    max="{{ $orderedQty }}" 
                                                     class="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                                     {{ ($editMode && $goodsReceipt['status'] !== 'pending' && $goodsReceipt['status'] !== 'partially_processed') ? 'readonly' : '' }}>
                                                 @if(isset($item['original_accepted']))
                                                 <div class="text-xs text-gray-500">
-                                                    {{ __('messages.total') }}: {{ number_format($item['original_accepted'] + $acceptedQty, 2) }}
+                                                    {{ __('messages.total') }}: {{ number_format($previouslyReceived + (float)($item['accepted_quantity'] ?? 0), 2) }}
                                                 </div>
                                                 @endif
                                                 @error("receiptItems.{$index}.accepted_quantity") <div class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</div> @enderror
@@ -318,7 +534,7 @@
                                                 <span class="text-sm text-gray-900">{{ number_format($acceptedQty, 2) }}</span>
                                                 @if(isset($item['original_accepted']))
                                                 <div class="text-xs text-gray-500">
-                                                    {{ __('messages.total') }}: {{ number_format($item['original_accepted'] + $acceptedQty, 2) }}
+                                                    {{ __('messages.total') }}: {{ number_format($previouslyReceived + (float)($item['accepted_quantity'] ?? 0), 2) }}
                                                 </div>
                                                 @endif
                                                 @error("receiptItems.{$index}.accepted_quantity") <div class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</div> @enderror
@@ -331,7 +547,7 @@
                                                 min="0" 
                                                 step="0.01" 
                                                 wire:model="receiptItems.{{ $index }}.unit_cost" 
-                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md transition duration-150 ease-in-out">
                                         </td>
                                         
                                         <!-- Actions -->
@@ -457,7 +673,7 @@
     x-transition:leave="transition ease-in duration-200" 
     x-transition:leave-start="opacity-100" 
     x-transition:leave-end="opacity-0">
-    <div class="relative top-20 mx-auto p-1 w-full max-w-4xl">
+    <div class="relative top-4 sm:top-10 md:top-20 mx-auto p-1 w-11/12 sm:w-11/12 md:w-11/12 lg:w-11/12 xl:w-10/12 2xl:w-9/12 max-w-7xl">
         <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out" 
              x-transition:enter="transition ease-out duration-300" 
              x-transition:enter-start="transform opacity-0 scale-95" 
@@ -477,7 +693,7 @@
             </div>
 
             <!-- Conteúdo da Modal -->
-            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div class="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[80vh] overflow-y-auto">
                 <!-- Tabs -->
                 <div class="border-b border-gray-200">
                     <nav class="-mb-px flex space-x-6" aria-label="Tabs">

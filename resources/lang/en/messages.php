@@ -2365,6 +2365,11 @@ return [
     'approaching' => 'Approaching',
     'date_field' => 'Date Field',
     'supplier_categories' => 'Supplier Categories',
+    'max_receivable' => 'Max Receivable',
+    'messages.accepted' => 'Accepted', 
+    'partially_processed' => 'Partially Processed',
+    'fully_processed' => 'Fully Processed',
+
 
     
     // Date Range Filter
@@ -2518,6 +2523,7 @@ return [
     'generate_pdf' => 'Generate PDF',
     'generating_pdf' => 'Generating PDF...',
     'not_available' => 'Not available',
+    'exceed_ordered_qty' => 'Cannot exceed ordered quantity!',
     
     // Shipping status
     'shipping_status_pending' => 'Pending',

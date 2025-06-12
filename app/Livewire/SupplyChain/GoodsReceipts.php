@@ -927,6 +927,18 @@ class GoodsReceipts extends Component
             return;
         }
 
+        // Verificar se algum item tem quantidade aceita maior que a quantidade pedida
+        foreach ($this->receiptItems as $index => $item) {
+            if (isset($item['ordered_qty']) && floatval($item['accepted_quantity']) > floatval($item['ordered_qty'])) {
+                $this->dispatch('notify',
+                    type: 'error',
+                    title: __('messages.error'),
+                    message: __('messages.exceed_ordered_qty')
+                );
+                return;
+            }
+        }
+        
         try {
             // Iniciar transação
             DB::beginTransaction();
@@ -1110,13 +1122,13 @@ protected function updateReceiptStatus($receipt)
  */
 protected function notifySuccess($receipt)
     {
-        $this->dispatch('notify', [
-            'type' => 'success',
-            'title' => __('messages.success'),
-            'message' => $this->editMode 
-                ? __('messages.goods_receipt_updated_successfully')
-                : __('messages.goods_receipt_created_successfully')
-        ]);
+        $this->dispatch('notify',
+            type: 'success',
+            title: $this->editMode ? __('messages.success_update') : __('messages.success_create'),
+            message: $this->editMode 
+                ? __('messages.goods_receipt_updated')
+                : __('messages.goods_receipt_created')
+        );
         
         // Resetar formulário e fechar modal
         $this->resetReceipt();
@@ -1139,11 +1151,11 @@ protected function notifySuccess($receipt)
             'trace' => $e->getTraceAsString()
         ]);
         
-        $this->dispatch('notify', [
-            'type' => 'error',
-            'title' => __('messages.error'),
-            'message' => $e->getMessage()
-        ]);
+        $this->dispatch('notify',
+            type: 'error',
+            title: __('messages.error'),
+            message: __('messages.error_saving_receipt')
+        );
     }
     
     public function changeTab($tab)
