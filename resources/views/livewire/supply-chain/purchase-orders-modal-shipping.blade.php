@@ -113,7 +113,17 @@
                                 <!-- Renderizar campos do formulário personalizado quando selecionado -->
                                 @if($renderCustomForm && $selectedCustomForm && !empty($customFormFields))
                                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 my-2">
-                                        <h4 class="text-blue-700 font-semibold mb-3">{{ $selectedCustomForm->name }}</h4>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <h4 class="text-blue-700 font-semibold">{{ $selectedCustomForm->name }}</h4>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="form_is_completed" 
+                                                    wire:model.live="formData.is_completed"
+                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                <label for="form_is_completed" class="ml-2 block text-sm text-gray-700">
+                                                    {{ __('messages.mark_as_completed') }}
+                                                </label>
+                                            </div>
+                                        </div>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             @foreach($customFormFields as $field)
                                                 <div class="@if($field['type'] == 'textarea') col-span-2 @endif">
@@ -363,7 +373,15 @@
                                             
                                             @if($customForm && $submission)
                                                 <div class="mt-3 bg-blue-50 p-3 rounded-md border border-blue-100">
-                                                    <h5 class="text-blue-700 font-medium mb-2">{{ $customForm->name }}</h5>
+                                                    <div class="flex justify-between items-center mb-2">
+                                                        <h5 class="text-blue-700 font-medium">{{ $customForm->name }}</h5>
+                                                        @if($submission->is_completed)
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <i class="fas fa-check-circle mr-1"></i>
+                                                                {{ __('messages.completed') }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                                         @forelse($submission->fieldValues as $fieldValue)
                                                             @if($fieldValue->field)

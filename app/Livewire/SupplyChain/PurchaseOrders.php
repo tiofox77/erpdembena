@@ -27,6 +27,8 @@ class PurchaseOrders extends Component
     public $perPage = 10;
     public $statusFilter = '';
     public $supplierFilter = '';
+    public $supplierCategoryFilter = ''; // Novo filtro por categoria de fornecedor
+    public $filteredSuppliers = []; // Lista de fornecedores filtrados por categoria
     public $activeFilter = 'active'; // Padrão: mostrar apenas ordens ativas
     public $monthFilter = ''; // Filtro por mês (1-12)
     public $yearFilter = ''; // Filtro por ano
@@ -35,6 +37,7 @@ class PurchaseOrders extends Component
     public $endDate = ''; // Filtro de data final para range
     public $customFormFilter = ''; // Filtro por formulário personalizado
     public $customFormStatusFilter = ''; // Filtro por status de formulário personalizado
+    public $customFormCompletedFilter = ''; // Filtro por status de conclusão (is_completed)
     public $sortField = 'order_date';
     public $sortDirection = 'desc';
     
@@ -139,6 +142,23 @@ class PurchaseOrders extends Component
         $this->resetPage();
     }
     
+    public function updatingSupplierCategoryFilter($value)
+    {
+        // Resetar a paginação para a primeira página quando o filtro for atualizado
+        $this->resetPage();
+        
+        // Se o filtro de fornecedor não estiver vazio e o fornecedor atual não for da categoria selecionada, resetar o filtro
+        if (!empty($this->supplierFilter) && !empty($value)) {
+            $supplier = \App\Models\SupplyChain\Supplier::find($this->supplierFilter);
+            if ($supplier && $supplier->category_id != $value) {
+                $this->supplierFilter = '';
+            }
+        }
+        
+        // Atualizar a lista de fornecedores filtrados
+        $this->updateFilteredSuppliers($value);
+    }
+    
     public function updatingActiveFilter()
     {
         $this->resetPage();
@@ -189,6 +209,7 @@ class PurchaseOrders extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->supplierFilter = '';
+        $this->supplierCategoryFilter = '';
         $this->activeFilter = 'active';
         $this->monthFilter = '';
         $this->yearFilter = '';
@@ -197,13 +218,47 @@ class PurchaseOrders extends Component
         $this->endDate = '';
         $this->customFormFilter = '';
         $this->customFormStatusFilter = '';
-        $this->perPage = 10;
+        $this->customFormCompletedFilter = '';
         $this->resetPage();
+        
+        // Redefinir a lista de fornecedores filtrados para mostrar todos os fornecedores
+        $this->updateFilteredSuppliers('');
+        
+        $this->dispatch('notify', 
+            type: 'info',
+            message: __('messages.filters_reset')
+        );
     }
-
+    
+    /**
+     * Atualiza a lista de fornecedores filtrados com base na categoria selecionada
+     */
+    public function updateFilteredSuppliers($categoryId = null)
+    {
+        $categoryId = $categoryId ?? $this->supplierCategoryFilter;
+        
+        if (!empty($categoryId)) {
+            // Filtrar fornecedores pela categoria selecionada
+            $this->filteredSuppliers = Supplier::where('category_id', $categoryId)
+                ->orderBy('name')
+                ->get();
+        } else {
+            // Se nenhuma categoria selecionada, mostrar todos os fornecedores
+            $this->filteredSuppliers = Supplier::orderBy('name')
+                ->get();
+        }
+    }
+    
     public function render()
     {
+        // Carregar todos os fornecedores e categorias
         $suppliers = Supplier::orderBy('name')->get();
+        $supplierCategories = \App\Models\SupplyChain\SupplierCategory::where('is_active', true)->orderBy('name')->get();
+        
+        // Atualizar a lista de fornecedores filtrados se necessário
+        if (empty($this->filteredSuppliers)) {
+            $this->updateFilteredSuppliers();
+        }
         
         // Carregar formulários personalizados ativos para shipping notes
         $customForms = \App\Models\SupplyChain\CustomForm::where('entity_type', 'shipping_note')
@@ -250,12 +305,154 @@ class PurchaseOrders extends Component
             ->when($this->supplierFilter, function($query) {
                 return $query->where('supplier_id', $this->supplierFilter);
             })
+            ->when($this->supplierCategoryFilter, function($query) {
+                // Filtrar ordens de compra por categoria de fornecedor
+                return $query->whereHas('supplier', function($q) {
+                    $q->where('category_id', $this->supplierCategoryFilter);
+                });
+            })
             ->when($this->customFormFilter, function($query) {
                 $query = $query->whereHas('shippingNotes', function($q) {
                     $q->where('custom_form_id', $this->customFormFilter);
                 });
                 
-                // Se tiver filtro de status, aplicar um filtro adicional
+                // Filtro por status de conclusão (is_completed)
+                if ($this->customFormCompletedFilter !== '') {
+                    $isCompleted = ($this->customFormCompletedFilter === 'completed');
+                    
+                    // Log para debug
+                    Log::info('Filtrando por status de conclusão:', [
+                        'customFormCompletedFilter' => $this->customFormCompletedFilter,
+                        'isCompleted' => $isCompleted
+                    ]);
+                    
+                    // 1. Primeiro, obter as datas mais recentes de submissão para cada shipping note
+                    $latestDates = DB::table('sc_custom_form_submissions')
+                        ->select('entity_id', DB::raw('MAX(created_at) as latest_date'))
+                        ->where('form_id', $this->customFormFilter)
+                        ->groupBy('entity_id')
+                        ->get();
+                    
+                    // 2. Criar array de datas mais recentes para uso na próxima consulta
+                    $latestDatesByEntity = [];
+                    foreach ($latestDates as $record) {
+                        $latestDatesByEntity[$record->entity_id] = $record->latest_date;
+                    }
+                    
+                    // 3. Obter todos os registros de shipping notes que têm submissões para este formulário
+                    $allNoteIds = array_keys($latestDatesByEntity);
+                    
+                    // 4. Nenhuma shipping note? Retornar vazio
+                    if (empty($allNoteIds)) {
+                        $filteredNoteIds = [];
+                    } else {
+                        // 5. Buscar as submissões mais recentes com seu status is_completed
+                        $latestSubmissions = DB::table('sc_custom_form_submissions')
+                            ->select('entity_id', 'is_completed', 'created_at')
+                            ->where('form_id', $this->customFormFilter)
+                            ->whereIn('entity_id', $allNoteIds)
+                            ->get();
+                            
+                        // Log detalhado de todos os registros iniciais
+                        Log::info('Todos os registros para o filtro de conclusão antes da filtragem:', [
+                            'total_registros' => $latestSubmissions->count(),
+                            'registros' => $latestSubmissions->toArray()
+                        ]);
+                            
+                        // Filtrar para obter apenas as submissões mais recentes
+                        $latestSubmissions = $latestSubmissions
+                            ->filter(function ($submission) use ($latestDatesByEntity) {
+                                // Manter apenas as submissões mais recentes para cada entity_id
+                                return $submission->created_at == $latestDatesByEntity[$submission->entity_id];
+                            });
+                        
+                        // Log dos registros após filtrar só pelos mais recentes
+                        Log::info('Registros mais recentes após filtragem de data:', [
+                            'total_registros' => $latestSubmissions->count(),
+                            'registros' => $latestSubmissions->toArray()
+                        ]);
+                        
+                        // 6. Separar os IDs das shipping notes marcadas como concluídas
+                        // Garantir que is_completed seja tratado como booleano, convertendo-o explicitamente
+                        $latestSubmissions->transform(function ($submission) {
+                            // Garantir que is_completed seja tratado como booleano
+                            $submission->is_completed = filter_var($submission->is_completed, FILTER_VALIDATE_BOOLEAN);
+                            return $submission;
+                        });
+                        
+                        // Log dos valores is_completed convertidos para booleano
+                        Log::info('Status is_completed após conversão para booleano:', [
+                            'registros' => $latestSubmissions->map(function ($item) {
+                                return [
+                                    'entity_id' => $item->entity_id,
+                                    'is_completed' => $item->is_completed,
+                                    'is_boolean' => is_bool($item->is_completed),
+                                    'valor_original' => $item->is_completed
+                                ];
+                            })->toArray()
+                        ]);
+                        
+                        $completedNoteIds = $latestSubmissions
+                            ->filter(function ($item) {
+                                return $item->is_completed === true;
+                            })
+                            ->pluck('entity_id')
+                            ->toArray();
+                            
+                        // Log dos IDs separados como concluídos
+                        Log::info('IDs identificados como concluídos:', [
+                            'total' => count($completedNoteIds),
+                            'ids' => $completedNoteIds
+                        ]);
+                    }
+                    
+                    // 3. Determinar os IDs das shipping notes baseados no filtro selecionado
+                    if ($isCompleted) {
+                        // Para filtro "Concluído": Usar os IDs de shipping notes com última submissão concluída
+                        $filteredNoteIds = $completedNoteIds;
+                    } else {
+                        // Para filtro "Não Concluído": Usar shipping notes que a última submissão NÃO está concluída
+                        $filteredNoteIds = array_diff($allNoteIds, $completedNoteIds);
+                    }
+                    
+                    // Log para debug dos IDs encontrados
+                    Log::info('IDs das shipping notes filtradas pelo status de conclusão (apenas última submissão):', [
+                        'filtro' => $this->customFormCompletedFilter, 
+                        'quantidade' => count($filteredNoteIds),
+                        'total_shipping_notes' => count($allNoteIds),
+                        'total_concluidas' => count($completedNoteIds),
+                        'ids_filtrados' => $filteredNoteIds
+                    ]);
+                    
+                    // Filtrar orders que tenham shipping notes correspondentes
+                    if (!empty($filteredNoteIds)) {
+                        // Para "Concluído" - Mostrar ordens que tenham pelo menos uma shipping note concluída
+                        if ($isCompleted) {
+                            $query->whereHas('shippingNotes', function($q) use ($filteredNoteIds) {
+                                $q->whereIn('id', $filteredNoteIds);
+                            });
+                        } 
+                        // Para "Não Concluído" - Não mostrar nenhuma ordem que tenha shipping note concluída
+                        else {
+                            // Primeiro, incluir apenas ordens que tenham shipping notes não concluídas
+                            $query->whereHas('shippingNotes', function($q) use ($filteredNoteIds) {
+                                $q->whereIn('id', $filteredNoteIds);
+                            });
+                            
+                            // Depois, excluir ordens que também tenham shipping notes concluídas
+                            if (!empty($completedNoteIds)) {
+                                $query->whereDoesntHave('shippingNotes', function($q) use ($completedNoteIds) {
+                                    $q->whereIn('id', $completedNoteIds);
+                                });
+                            }
+                        }
+                    } else {
+                        // Se não encontrar registros, força retornar vazio
+                        $query->whereRaw('1 = 0');
+                    }
+                }
+                
+                // Se tiver filtro de status do campo personalizado, aplicar
                 if ($this->customFormStatusFilter) {
                     // Obter o ID do campo configurado como campo de status
                     $statusFieldId = DB::table('sc_custom_forms')
@@ -279,7 +476,7 @@ class PurchaseOrders extends Component
                                 $q->whereIn('id', $shippingNoteIds);
                             });
                         } else {
-                            // Se não encontrar nenhum registro com este status, força retornar vazio
+                            // Se não encontrar registros, força retornar vazio
                             $query->whereRaw('1 = 0');
                         }
                     }
@@ -326,6 +523,8 @@ class PurchaseOrders extends Component
         return view('livewire.supply-chain.purchase-orders', [
             'purchaseOrders' => $purchaseOrders,
             'suppliers' => $suppliers,
+            'filteredSuppliers' => $this->filteredSuppliers,
+            'supplierCategories' => $supplierCategories,
             'products' => Product::orderBy('name')->get(),
             'customForms' => $customForms,
             'statuses' => [
@@ -1189,6 +1388,16 @@ class PurchaseOrders extends Component
                             ->first();
                         
                         if ($submission) {
+                            // Inicializa is_completed com o valor da submissão
+                            $this->formData['is_completed'] = (bool)$submission->is_completed;
+                            
+                            // Log para depuração do valor recuperado
+                            \Illuminate\Support\Facades\Log::info('Valor is_completed recuperado:', [
+                                'raw_value' => $submission->is_completed,
+                                'converted_value' => (bool)$submission->is_completed,
+                                'submission_id' => $submission->id
+                            ]);
+                            
                             // Popula os dados do formulário com os valores encontrados
                             foreach ($submission->fieldValues as $fieldValue) {
                                 if ($fieldValue->field) {
@@ -1322,13 +1531,30 @@ class PurchaseOrders extends Component
                 // Salvar a shipping note primeiro para obter o ID
                 $note->save();
                 
+                // Extrair is_completed do formData e converter para booleano
+                $isCompleted = filter_var($this->formData['is_completed'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                
+                // Log para verificar o valor bruto e após conversão
+                \Illuminate\Support\Facades\Log::info('Valor is_completed:', [
+                    'raw_value' => $this->formData['is_completed'] ?? 'não definido',
+                    'converted_value' => $isCompleted
+                ]);
+                
                 // Criar uma submissão do formulário personalizado
                 $submission = new \App\Models\SupplyChain\CustomFormSubmission([
                     'form_id' => $this->selectedCustomForm->id,
                     'entity_id' => $note->id,
+                    'shipping_note_id' => $note->id,
+                    'data' => json_encode($this->formData),
+                    'is_completed' => $isCompleted,
                     'created_by' => Auth::id()
                 ]);
                 $submission->save();
+                
+                // Verificar após salvar
+                \Illuminate\Support\Facades\Log::info('Valores após salvar:', [
+                    'is_completed_saved' => $submission->is_completed
+                ]);
                 
                 // Salvar os valores dos campos
                 foreach ($this->formData as $fieldName => $value) {

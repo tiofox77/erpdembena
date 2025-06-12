@@ -68,6 +68,9 @@ class CustomFormSubmissionManager extends Component
             ->latest()
             ->first();
         
+        // Initialize is_completed from existing submission or default to false
+        $this->formData['is_completed'] = $existingSubmission ? (bool)$existingSubmission->is_completed : false;
+        
         foreach ($form->fields as $field) {
             $defaultValue = '';
             if ($existingSubmission) {
@@ -323,11 +326,32 @@ class CustomFormSubmissionManager extends Component
             // Iniciar transação
             DB::beginTransaction();
             
+            // Extrair is_completed do formData e converter explicitamente para booleano
+            $isCompleted = filter_var($this->formData['is_completed'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            
+            // Log do estado de is_completed antes da criação
+            logger()->debug('=== IS COMPLETED VALUE ===', [
+                'raw_value' => $this->formData['is_completed'] ?? 'não definido',
+                'processed_value' => $isCompleted,
+                'is_boolean' => is_bool($isCompleted),
+                'value_as_int' => (int)$isCompleted
+            ]);
+            
             // Criar uma nova submissão
             $submission = CustomFormSubmission::create([
                 'form_id' => $this->customFormId,
+                'entity_id' => $this->shippingNoteId,
                 'shipping_note_id' => $this->shippingNoteId,
                 'data' => json_encode($this->formData),
+                'is_completed' => $isCompleted,
+                'created_by' => auth()->id(),
+            ]);
+            
+            // Verificar se o valor foi salvo corretamente
+            logger()->debug('=== SUBMISSION APÓS SALVAR ===', [
+                'submission_id' => $submission->id,
+                'is_completed_raw' => $submission->getRawOriginal('is_completed'),
+                'is_completed_cast' => $submission->is_completed,
             ]);
             
             logger()->debug('=== SUBMISSION CRIADA ===', [
@@ -491,7 +515,14 @@ class CustomFormSubmissionManager extends Component
             $shippingNote = ShippingNote::find($this->shippingNoteId);
             if ($shippingNote) {
                 $shippingNote->status = 'form_completed';
+                $shippingNote->form_completed = $isCompleted; // Atualiza o status de conclusão
                 $shippingNote->save();
+                
+                logger()->info('Status da nota de envio atualizado', [
+                    'shipping_note_id' => $shippingNote->id,
+                    'status' => 'form_completed',
+                    'form_completed' => $isCompleted
+                ]);
             }
             
             // Confirmar transação
@@ -499,9 +530,16 @@ class CustomFormSubmissionManager extends Component
             
             // Fechar modal e enviar notificação
             $this->closeModal();
+            
+            // Mensagem personalizada baseada no status de conclusão
+            $message = $isCompleted 
+                ? __('messages.form_submitted_and_completed_successfully') 
+                : __('messages.form_submitted_successfully');
+                
             $this->dispatch('notify', 
                 type: 'success', 
-                message: __('messages.form_submitted_successfully')
+                title: __('messages.success'),
+                message: $message
             );
             
             // Atualizar a lista de shipping notes se necessário

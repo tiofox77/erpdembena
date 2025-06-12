@@ -1,5 +1,5 @@
 <div>
-    <!-- {{ __('messages.form_modal_title') }} -->
+    <!-- Form Submission Modal -->
     @if($showFormModal)
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-auto">
@@ -353,21 +353,55 @@
                             @endforeach
                         </div>
                         
+                        <!-- Mark as Completed Checkbox -->
+                        <div class="flex items-center justify-between mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <div class="flex items-center">
+                                <div class="flex items-center h-5">
+                                    <input id="is_completed" name="is_completed" type="checkbox" 
+                                           wire:model.defer="formData.is_completed"
+                                           class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                </div>
+                                <label for="is_completed" class="ml-3 text-sm font-medium text-gray-700">
+                                    <i class="fas fa-check-circle text-blue-500 mr-1"></i>
+                                    {{ __('Mark as Completed') }}
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500">{{ __('Check this box to mark this form as completed') }}</p>
+                        </div>
+                        
+                        <!-- Mark as Completed Checkbox -->
+                        <div class="flex items-center justify-between mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <div class="flex items-center">
+                                <div class="flex items-center h-5">
+                                    <input id="is_completed" name="is_completed" type="checkbox" 
+                                           wire:model.defer="formData.is_completed"
+                                           class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                </div>
+                                <label for="is_completed" class="ml-3 text-sm font-medium text-gray-700">
+                                    <i class="fas fa-check-circle text-blue-500 mr-1"></i>
+                                    {{ __('Mark as Completed') }}
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500">{{ __('Check this box to mark this form as completed') }}</p>
+                        </div>
+                        
                         <div class="flex justify-end space-x-2 mt-6">
-                            <!-- Botão de Debug -->
+                            <!-- Debug Button -->
                             <button type="button" wire:click="debugFormData" 
                                 class="inline-flex items-center px-3 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
                                 <i class="fas fa-bug mr-1"></i>
-                                Debug
+                                {{ __('Debug') }}
                             </button>
                             
                             <button type="button" wire:click="closeModal" 
                                 class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 {{ __('messages.cancel') }}
                             </button>
+                            
                             <button type="submit" 
                                 class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                {{ __('messages.submit_form') }}
+                                <i class="fas fa-save mr-1"></i>
+                                {{ isset($submission) ? __('Update') : __('Save') }}
                             </button>
                         </div>
                     @else
@@ -379,6 +413,10 @@
                         </div>
                     @endif
                 </form>
+            </div>
+        </div>
+    </div>
+    @endif
             </div>
         </div>
     </div>

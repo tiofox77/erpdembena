@@ -28,6 +28,13 @@ return [
     'all_statuses' => 'All Statuses',
     'all_priorities' => 'All Priorities',
     'all_products' => 'All Products',
+    // Custom Form Filters
+    'form_status' => 'Form Status',
+    'completion_status' => 'Completion Status',
+    'all' => 'All',
+    'completed' => 'Completed',
+    'not_completed' => 'Not Completed',
+    'mark_as_completed' => 'Mark as Completed',
     'all_locations' => 'All Locations',
     'items_per_page' => 'Items per page',
     'reset_filters' => 'Reset Filters',
@@ -2371,10 +2378,13 @@ return [
     'status_fully_processed' => 'Fully Processed',
     'status_discrepancy' => 'Status Discrepancy',  
     'items' => 'Items',  
+    'supplier_category' => 'Supplier Category',
+
 
 
     
     // Date Range Filter
+    'date_filters' => 'Date Filters',
     'start_date' => 'Start Date',
     'end_date' => 'End Date',
     'date_range' => 'Date Range',
@@ -2449,7 +2459,10 @@ return [
     'search_forecast_help' => 'Search by product name, SKU or forecast notes',
     'all_forecast_types' => 'All Forecast Types',
     'forecast_details' => 'Forecast Details',
-    'forecast_created_successfully' => 'Forecast created successfully',
+    'form_submitted_successfully' => 'Form submitted successfully',
+    'form_submitted_and_completed_successfully' => 'Form submitted and marked as completed successfully',
+    'mark_as_completed' => 'Mark as completed',
+    'completed' => 'Completed',
     'forecast_updated_successfully' => 'Forecast updated successfully',
     'forecast_deleted_successfully' => 'Forecast deleted successfully',
     'no_forecasts_found' => 'No forecasts found',

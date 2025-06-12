@@ -80,6 +80,13 @@ return [
     'all_locations' => 'Todas as Localizações',
     'items_per_page' => 'Itens por página',
     'reset_filters' => 'Resetar Filtros',
+    // Formulários Personalizados
+    'form_status' => 'Status do Formulário',
+    'completion_status' => 'Status de Conclusão',
+    'all' => 'Todos',
+    'completed' => 'Concluído',
+    'not_completed' => 'Não Concluído',
+    'mark_as_completed' => 'Marcar como Concluído',
     'production_order_list' => 'Lista de Ordens de Produção',
     'order_number' => 'Número da Ordem',
     'product' => 'Produto',

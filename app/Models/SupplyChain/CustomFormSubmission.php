@@ -16,6 +16,11 @@ class CustomFormSubmission extends Model
         'form_id',
         'entity_id',
         'created_by',
+        'is_completed',
+    ];
+    
+    protected $casts = [
+        'is_completed' => 'boolean',
     ];
 
     /**

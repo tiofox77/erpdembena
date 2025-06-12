@@ -22,25 +22,32 @@
             <!-- Conteúdo do cartão -->
             <div class="p-4">
                 <div class="flex flex-col gap-4">
-                    <!-- Campo de busca -->
-                    <div>
-                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-                            <i class="fas fa-search text-gray-500 mr-1"></i>
-                            {{ __('messages.search') }}
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400"></i>
+                    <!-- Cabeçalho com campo de busca e botão de resetar -->
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-grow mr-2">
+                            <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-search text-gray-500 mr-1"></i>
+                                {{ __('messages.search') }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input wire:model.live.debounce.300ms="search" id="search" 
+                                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out" 
+                                    placeholder="{{ __('messages.search_orders') }}" 
+                                    type="search">
                             </div>
-                            <input wire:model.live.debounce.300ms="search" id="search" 
-                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out" 
-                                placeholder="{{ __('messages.search_orders') }}" 
-                                type="search">
+                            <p class="mt-1 text-xs text-gray-500">{{ __('messages.search_by_order_number_or_supplier') }}</p>
                         </div>
-                        <p class="mt-1 text-xs text-gray-500">{{ __('messages.search_by_order_number_or_supplier') }}</p>
+                        <button wire:click="resetFilters" 
+                            class="mt-6 flex items-center px-3 py-2 border border-blue-300 text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none transition-all duration-200 ease-in-out transform hover:scale-105">
+                            <i class="fas fa-undo mr-1"></i>
+                            {{ __('messages.reset_filters') }}
+                        </button>
                     </div>
                     
-                    <!-- Linha de filtros -->
+                    <!-- Primeira linha de filtros -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Filtro de Status -->
                         <div>
@@ -57,6 +64,21 @@
                                 <option value="cancelled">{{ __('messages.cancelled') }}</option>
                             </select>
                         </div>
+
+                        <!-- Filtro de Categoria de Fornecedor -->
+                        <div>
+                            <label for="supplierCategoryFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-tags text-gray-500 mr-1"></i>
+                                {{ __('messages.supplier_category') }}
+                            </label>
+                            <select wire:model.live="supplierCategoryFilter" id="supplierCategoryFilter" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="">{{ __('messages.all_categories') }}</option>
+                                @foreach($supplierCategories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         
                         <!-- Filtro de Fornecedor -->
                         <div>
@@ -67,7 +89,7 @@
                             <select wire:model.live="supplierFilter" id="supplierFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_suppliers') }}</option>
-                                @foreach($suppliers as $supplier)
+                                @foreach($filteredSuppliers as $supplier)
                                     <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                                 @endforeach
                             </select>
@@ -138,6 +160,22 @@
                         </div>
                         @endif
                         
+                        <!-- Filtro de Status de Conclusão do Formulário (aparece apenas quando um formulário é selecionado) -->
+                        @if($customFormFilter)
+                        <div>
+                            <label for="customFormCompletedFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-check-circle text-gray-500 mr-1"></i>
+                                {{ __('messages.completion_status') }}
+                            </label>
+                            <select wire:model.live="customFormCompletedFilter" id="customFormCompletedFilter" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="">{{ __('messages.all') }}</option>
+                                <option value="completed">{{ __('messages.completed') }}</option>
+                                <option value="not_completed">{{ __('messages.not_completed') }}</option>
+                            </select>
+                        </div>
+                        @endif
+                        
                         <!-- Registros por página -->
                         <div>
                             <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">
@@ -156,22 +194,7 @@
                     
                     <!-- Linha de filtros de data -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                        <div class="flex justify-between items-center">
-                            <button wire:click="resetFilters" 
-                                class="text-sm text-blue-600 hover:text-blue-800 focus:outline-none flex items-center">
-                                <i class="fas fa-undo text-xs mr-1"></i>
-                                {{ __('messages.reset_filters') }}
-                            </button>
-                            @if($startDate || $endDate)
-                                <div class="text-xs text-gray-600 bg-gray-100 rounded-full px-3 py-1">
-                                    <i class="fas fa-filter mr-1 text-blue-500"></i>
-                                    {{ __('messages.filtered_by_date') }}: 
-                                    {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : '∞' }} 
-                                    <i class="fas fa-arrow-right mx-1 text-xs"></i> 
-                                    {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d/m/Y') : '∞' }}
-                                </div>
-                            @endif
-                        </div>
+                       
                         
                         <!-- Filtro de Campo de Data -->
                         <div>
