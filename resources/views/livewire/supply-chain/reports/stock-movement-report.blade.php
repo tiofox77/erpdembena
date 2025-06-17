@@ -21,12 +21,12 @@
                     <span wire:loading wire:target="exportToExcel">{{ __('messages.exporting') }}...</span>
                 </button>
                 <button type="button" 
-                        wire:click="exportToPdf"
+                        wire:click="generatePdf"
                         wire:loading.attr="disabled"
                         class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                     <i class="fas fa-file-pdf mr-2"></i>
-                    <span wire:loading.remove wire:target="exportToPdf">{{ __('messages.export_pdf') }}</span>
-                    <span wire:loading wire:target="exportToPdf">{{ __('messages.exporting') }}...</span>
+                    <span wire:loading.remove wire:target="generatePdf">{{ __('messages.generate_pdf') }}</span>
+                    <span wire:loading wire:target="generatePdf">{{ __('messages.generating_pdf') }}...</span>
                 </button>
             </div>
         </div>
@@ -345,7 +345,7 @@
                             <tr class="hover:bg-gray-50 transition-all duration-150 ease-in-out transform hover:scale-[1.01]">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
-                                        {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d/m/Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y H:i') }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -544,10 +544,16 @@
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-100 flex items-center">
                         <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                        {{ __('messages.showing') }} <span class="font-medium">{{ $transactions->firstItem() ?? 0 }}</span> {{ __('messages.to') }} <span class="font-medium">{{ $transactions->lastItem() ?? 0 }}</span> {{ __('messages.of') }} <span class="font-medium">{{ $transactions->total() }}</span> {{ __('messages.results') }}
+                        @if (method_exists($transactions, 'links'))
+                            {{ __('messages.showing') }} <span class="font-medium">{{ $transactions->firstItem() ?? 0 }}</span> {{ __('messages.to') }} <span class="font-medium">{{ $transactions->lastItem() ?? 0 }}</span> {{ __('messages.of') }} <span class="font-medium">{{ $transactions->total() }}</span> {{ __('messages.results') }}
+                        @else
+                            {{ __('messages.showing') }} <span class="font-medium">{{ count($transactions) }}</span> {{ __('messages.results') }}
+                        @endif
                     </div>
                     <div class="mt-2 sm:mt-0">
-                        {{ $transactions->onEachSide(1)->links() }}
+                        @if (method_exists($transactions, 'links'))
+                            {{ $transactions->onEachSide(1)->links() }}
+                        @endif
                     </div>
                 </div>
             </div>

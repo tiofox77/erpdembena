@@ -19,6 +19,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 
 class RawMaterialReport extends Component
 {
@@ -71,13 +73,27 @@ class RawMaterialReport extends Component
         $filename = 'raw-material-report-' . now()->format('Y-m-d-His') . '.pdf';
         $path = 'reports/' . $filename;
         
-        // Create the PDF
+        // Get company information for the header
+        $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
+        $companyAddress = \App\Models\Setting::get('company_address', '');
+        $companyPhone = \App\Models\Setting::get('company_phone', '');
+        $companyEmail = \App\Models\Setting::get('company_email', '');
+        $companyTaxId = \App\Models\Setting::get('company_tax_id', '');
+        $companyWebsite = \App\Models\Setting::get('company_website', '');
+        
+        // Create the PDF with landscape orientation
         $pdf = Pdf::loadView('pdf.raw-material-report', [
             'materials' => $materials,
             'startDate' => $this->startDate,
             'endDate' => $this->endDate,
-            'search' => $this->search
-        ]);
+            'search' => $this->search,
+            'companyName' => $companyName,
+            'companyAddress' => $companyAddress,
+            'companyPhone' => $companyPhone, 
+            'companyEmail' => $companyEmail,
+            'companyTaxId' => $companyTaxId,
+            'companyWebsite' => $companyWebsite
+        ])->setPaper('a4', 'landscape');
         
         // Create directory if it doesn't exist
         Storage::makeDirectory('public/reports');
@@ -143,25 +159,37 @@ class RawMaterialReport extends Component
      */
     protected function getInProductionQuantity($materialId)
     {
-        // Get all active production schedules that use this material
-        $query = DB::table('production_schedule_items as psi')
-            ->join('production_schedules as ps', 'psi.production_schedule_id', '=', 'ps.id')
-            ->join('bom_details as bd', 'psi.bom_detail_id', '=', 'bd.id')
-            ->where('bd.product_id', $materialId)
-            ->whereIn('ps.status', ['planned', 'in_progress', 'on_hold'])
-            ->where('ps.is_active', true);
+        try {
+            // Verificar se a tabela existe (safeguard para evitar erro quando tabela não existe)
+            if (!Schema::hasTable('production_schedule_items')) {
+                // Tabela não existe, retorna 0
+                return 0;
+            }
             
-        // Apply date filters if set
-        if ($this->startDate) {
-            $query->where('ps.planned_start_date', '>=', $this->startDate);
+            // Get all active production schedules that use this material
+            $query = DB::table('production_schedule_items as psi')
+                ->join('production_schedules as ps', 'psi.production_schedule_id', '=', 'ps.id')
+                ->join('bom_details as bd', 'psi.bom_detail_id', '=', 'bd.id')
+                ->where('bd.product_id', $materialId)
+                ->whereIn('ps.status', ['planned', 'in_progress', 'on_hold'])
+                ->where('ps.is_active', true);
+                
+            // Apply date filters if set
+            if ($this->startDate) {
+                $query->where('ps.planned_start_date', '>=', $this->startDate);
+            }
+            
+            if ($this->endDate) {
+                $query->where('ps.planned_start_date', '<=', $this->endDate);
+            }
+            
+            // Return the sum of quantities in production
+            return $query->sum(DB::raw('(bd.quantity * ps.quantity) - COALESCE(psi.quantity_used, 0)'));
+        } catch (\Exception $e) {
+            // Log erro para depuração
+            Log::error('Erro ao calcular quantidade em produção: ' . $e->getMessage());
+            return 0; // Retornar 0 em caso de erro
         }
-        
-        if ($this->endDate) {
-            $query->where('ps.planned_start_date', '<=', $this->endDate);
-        }
-        
-        // Return the sum of quantities in production
-        return $query->sum(DB::raw('(bd.quantity * ps.quantity) - COALESCE(psi.quantity_used, 0)'));
     }
     
     /**

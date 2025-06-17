@@ -336,6 +336,9 @@ Route::middleware(['auth'])->group(function () {
         // Goods Receipts Management
         Route::middleware(['permission:supplychain.goods_receipts.view'])->get('/goods-receipts', App\Livewire\SupplyChain\GoodsReceipts::class)->name('goods-receipts');
         
+        // Warehouse Transfers Management
+        Route::middleware(['permission:supplychain.warehouse_transfers.view'])->get('/warehouse-transfers', App\Livewire\SupplyChain\WarehouseTransfers::class)->name('warehouse-transfers');
+        
         // Custom Forms Management
         Route::middleware(['permission:supplychain.forms.manage'])->get('/custom-forms', App\Livewire\SupplyChain\CustomFormsPage::class)->name('custom-forms');
         

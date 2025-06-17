@@ -773,7 +773,8 @@
 
         <!-- Supply Chain Menu - Add permission check -->
         @canany(['supplychain.dashboard', 'supplychain.purchase_orders.view', 'supplychain.goods_receipts.view', 
-                'supplychain.products.view', 'supplychain.suppliers.view', 'supplychain.inventory.view'])
+                'supplychain.products.view', 'supplychain.suppliers.view', 'supplychain.inventory.view',
+                'supplychain.warehouse_transfers.view'])
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="supplyChainMenu">
             <i class="fas fa-truck text-indigo-500"></i>
             <span>{{ trans('messages.supply_chain') }}</span>
@@ -824,6 +825,13 @@
                 <i class="fas fa-cubes text-gray-500"></i>
                 <span>{{ trans('messages.inventory') }}</span>
             </a>
+
+            @can('supplychain.warehouse_transfers.view')
+            <a href="{{ route('supply-chain.warehouse-transfers') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.warehouse-transfers*') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-exchange-alt text-gray-500"></i>
+                <span>{{ trans('messages.warehouse_transfers') }}</span>
+            </a>
+            @endcan
             @endcan
 
             @can('supplychain.purchase_orders.view')

@@ -617,7 +617,7 @@
                                     @else
                                         <div class="grid grid-cols-1 divide-y divide-gray-200">
                                             @foreach($this->filteredProducts as $product)
-                                                <label class="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer transition-colors duration-150 @if(in_array($product->id, $selectedProducts)) bg-blue-50 @endif">
+                                                <label class="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer transition-colors duration-200 ease-in-out @if(in_array($product->id, $selectedProducts)) bg-blue-50 border-l-4 border-blue-500 @else border-l-4 border-transparent @endif rounded-md mb-1 shadow-sm hover:shadow-md">
                                                     <input type="checkbox" 
                                                         wire:model.live="selectedProducts" 
                                                         value="{{ $product->id }}" 
@@ -765,14 +765,68 @@
                     </div>
 
                     <!-- Footer com botões -->
-                    <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200">
+                    <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200" 
+                         x-data="{
+                             isFormValid: false,
+                             init() {
+                                 this.checkFormValidity();
+                                 // Watch for changes in key fields only
+                                 this.$watch('$wire.selectedProducts', () => this.checkFormValidity());
+                                 this.$watch('$wire.selectedLocationId', () => this.checkFormValidity());
+                                 this.$watch('$wire.adjustmentType', () => this.checkFormValidity());
+                                 this.$watch('$wire.adjustmentReason', () => this.checkFormValidity());
+                                 this.$watch('$wire.adjustmentQuantities', () => this.checkFormValidity());
+                             },
+                             checkFormValidity() {
+                                 // Check if products are selected
+                                 if (!$wire.selectedProducts || $wire.selectedProducts.length === 0) {
+                                     this.isFormValid = false;
+                                     return;
+                                 }
+                                 
+                                 // Check if location is selected
+                                 if (!$wire.selectedLocationId) {
+                                     this.isFormValid = false;
+                                     return;
+                                 }
+                                 
+                                 // Check if adjustment type is selected
+                                 if (!$wire.adjustmentType) {
+                                     this.isFormValid = false;
+                                     return;
+                                 }
+                                 
+                                 // Check if adjustment reason is filled
+                                 if (!$wire.adjustmentReason || $wire.adjustmentReason.trim() === '') {
+                                     this.isFormValid = false;
+                                     return;
+                                 }
+                                 
+                                 // Check if all selected products have quantities filled
+                                 if ($wire.selectedProducts && $wire.selectedProducts.length > 0) {
+                                     for (let productId of $wire.selectedProducts) {
+                                         const quantity = $wire.adjustmentQuantities[productId];
+                                         if (!quantity || quantity <= 0) {
+                                             this.isFormValid = false;
+                                             return;
+                                         }
+                                     }
+                                 }
+                                 
+                                 this.isFormValid = true;
+                             }
+                         }"
+                         x-cloak>
                         <button type="button" wire:click="closeAdjustmentModal" 
                             class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                             <i class="fas fa-times mr-2"></i>
                             {{ __('messages.cancel') }}
                         </button>
-                        <button type="submit" wire:loading.attr="disabled"
-                            class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
+                        <button type="submit" 
+                            wire:loading.attr="disabled"
+                            :disabled="!isFormValid"
+                            class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed"
+                            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid }">
                             <span wire:loading.remove wire:target="saveAdjustment">
                                 <i class="fas fa-save mr-2"></i>
                                 {{ __('messages.save') }}

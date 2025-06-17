@@ -7,8 +7,9 @@ use Livewire\WithPagination;
 use App\Models\SupplyChain\InventoryTransaction;
 use App\Models\SupplyChain\Product;
 use App\Models\SupplyChain\InventoryLocation;
-use App\Models\Mrp\ProductionDailyPlan;
-use Carbon\Carbon;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StockMovementReport extends Component
 {
@@ -29,7 +30,106 @@ class StockMovementReport extends Component
     public $products = [];
     public $locations = [];
     public $transactionTypes = [];
+
+    protected $listeners = [
+        'refreshInventoryData' => '$refresh'
+    ];
     
+    /**
+     * Gera um PDF do relatório de movimentação de estoque com os filtros aplicados
+     */
+    public function generatePdf()
+    {
+        try {
+            // Preparar a consulta usando os filtros atuais sem paginação
+            $query = InventoryTransaction::query();
+            
+            // Aplicar todos os filtros existentes
+            $query->when($this->search, function($q) {
+                $q->whereHas('product', function($productQuery) {
+                    $productQuery->where('name', 'like', '%' . $this->search . '%')
+                                ->orWhere('sku', 'like', '%' . $this->search . '%');
+                });
+            });
+
+            $query->when($this->productId, function($q) {
+                $q->where('product_id', $this->productId);
+            });
+
+            $query->when($this->locationId, function($q) {
+                $q->where(function($query) {
+                    $query->where('source_location_id', $this->locationId)
+                          ->orWhere('destination_location_id', $this->locationId);
+                });
+            });
+
+            $query->when($this->transactionType, function($q) {
+                $q->where('transaction_type', $this->transactionType);
+            });
+
+            $query->when($this->startDate, function($q) {
+                $q->whereDate('created_at', '>=', $this->startDate);
+            });
+
+            $query->when($this->endDate, function($q) {
+                $q->whereDate('created_at', '<=', $this->endDate);
+            });
+            
+            // Ordenar os resultados
+            $transactions = $query->with(['product', 'sourceLocation', 'destinationLocation', 'creator'])
+                            ->orderBy($this->sortField, $this->sortDirection)
+                            ->get();
+            
+            // Calcular totais
+            $totalIn = (clone $query)->where('quantity', '>', 0)->sum('quantity');
+            $totalOut = abs((clone $query)->where('quantity', '<', 0)->sum('quantity'));
+            $netMovement = $totalIn - $totalOut;
+            
+            // Carregar produtos e localizações para o cabeçalho do relatório
+            $selectedProduct = $this->productId ? Product::find($this->productId) : null;
+            $selectedLocation = $this->locationId ? InventoryLocation::find($this->locationId) : null;
+            
+            // Criar o PDF
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.stock-movement-report', [
+                'transactions' => $transactions,
+                'totalIn' => $totalIn,
+                'totalOut' => $totalOut,
+                'netMovement' => $netMovement,
+                'filters' => [
+                    'product' => $selectedProduct,
+                    'location' => $selectedLocation,
+                    'transactionType' => $this->transactionType,
+                    'startDate' => $this->startDate,
+                    'endDate' => $this->endDate,
+                    'search' => $this->search
+                ],
+                'date' => now(),
+                'user' => auth()->user()
+            ]);
+            
+            $filename = 'stock_movement_report_' . now()->format('Y-m-d_H-i') . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error generating stock movement PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
+    }
+
     /**
      * Get the transaction types that exist in the database
      * 
@@ -101,6 +201,8 @@ class StockMovementReport extends Component
         $this->endDate = now()->format('Y-m-d');
         $this->resetPage();
     }
+    
+
 
     public function render()
     {
@@ -153,6 +255,8 @@ class StockMovementReport extends Component
             $totalOut = abs((clone $query)->where('quantity', '<', 0)->sum('quantity'));
             $netMovement = $totalIn - $totalOut;
 
+            // Nota: Esta tabela usa created_at como data da transação
+            
             // Apply sorting and pagination
             $transactions = $query->orderBy($this->sortField, $this->sortDirection)
                 ->paginate($this->perPage);
@@ -216,10 +320,105 @@ class StockMovementReport extends Component
         // Implementar exportação para Excel
         return redirect()->back()->with('success', 'Exportação para Excel em desenvolvimento');
     }
+    
+    /**
+     * Gera os dados necessários para o PDF do relatório de movimentação de estoque
+     * 
+     * @return array
+     */
+    protected function generatePdfData()
+    {
+        // Preparar a consulta usando os filtros atuais sem paginação
+        $query = InventoryTransaction::query();
+        
+        // Aplicar todos os filtros existentes
+        $query->when($this->search, function($q) {
+            $q->whereHas('product', function($productQuery) {
+                $productQuery->where('name', 'like', '%' . $this->search . '%')
+                            ->orWhere('sku', 'like', '%' . $this->search . '%');
+            });
+        });
+
+        $query->when($this->productId, function($q) {
+            $q->where('product_id', $this->productId);
+        });
+
+        $query->when($this->locationId, function($q) {
+            $q->where(function($query) {
+                $query->where('source_location_id', $this->locationId)
+                      ->orWhere('destination_location_id', $this->locationId);
+            });
+        });
+
+        $query->when($this->transactionType, function($q) {
+            $q->where('transaction_type', $this->transactionType);
+        });
+
+        $query->when($this->startDate, function($q) {
+            $q->whereDate('created_at', '>=', $this->startDate);
+        });
+
+        $query->when($this->endDate, function($q) {
+            $q->whereDate('created_at', '<=', $this->endDate);
+        });
+        
+        // Ordenar os resultados
+        $transactions = $query->with(['product', 'sourceLocation', 'destinationLocation', 'creator'])
+                        ->orderBy($this->sortField, $this->sortDirection)
+                        ->get();
+        
+        // Calcular totais
+        $totalIn = (clone $query)->where('quantity', '>', 0)->sum('quantity');
+        $totalOut = abs((clone $query)->where('quantity', '<', 0)->sum('quantity'));
+        $netMovement = $totalIn - $totalOut;
+        
+        // Carregar produtos e localizações para o cabeçalho do relatório
+        $selectedProduct = $this->productId ? Product::find($this->productId) : null;
+        $selectedLocation = $this->locationId ? InventoryLocation::find($this->locationId) : null;
+        
+        return [
+            'transactions' => $transactions,
+            'totalIn' => $totalIn,
+            'totalOut' => $totalOut,
+            'netMovement' => $netMovement,
+            'filters' => [
+                'product' => $selectedProduct,
+                'location' => $selectedLocation,
+                'transactionType' => $this->transactionType,
+                'startDate' => $this->startDate,
+                'endDate' => $this->endDate,
+                'search' => $this->search
+            ],
+            'date' => now(),
+            'user' => auth()->user()
+        ];
+    }
 
     public function exportToPdf()
     {
-        // Implementar exportação para PDF
-        return redirect()->back()->with('success', 'Exportação para PDF em desenvolvimento');
+        try {
+            // Gerar dados do PDF usando o método existente
+            $data = $this->generatePdfData();
+            
+            // Criar o PDF com orientação landscape
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.stock-movement-report', $data);
+            $pdf->setPaper('a4', 'landscape');
+            
+            // Nome do arquivo
+            $fileName = 'stock_movement_report_' . now()->format('YmdHis') . '.pdf';
+            
+            // Salvar temporariamente
+            $tempPath = storage_path('app/public/reports/' . $fileName);
+            $pdf->save($tempPath);
+            
+            // Retornar arquivo para download
+            return response()->download($tempPath, $fileName, [
+                'Content-Type' => 'application/pdf',
+            ])->deleteFileAfterSend();
+            
+        } catch (\Exception $e) {
+            Log::error('Error exporting PDF: ' . $e->getMessage());
+            return redirect()->back()->with('error', __('messages.error_generating_pdf'));
+        }
     }
 }
