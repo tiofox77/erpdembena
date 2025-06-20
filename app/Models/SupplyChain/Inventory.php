@@ -4,12 +4,12 @@ namespace App\Models\SupplyChain;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+// SoftDeletes não é utilizado pois a tabela não tem coluna deleted_at
 use App\Models\User;
 
 class Inventory extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     /**
      * The table associated with the model.

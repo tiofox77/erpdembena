@@ -28,6 +28,15 @@ return [
     'all_statuses' => 'All Statuses',
     'all_priorities' => 'All Priorities',
     'all_products' => 'All Products',
+    'request_number' => 'Request Number',
+    'requested_date' => 'Requested Date',
+    'search_by_request_number_or_location' => 'Search by request number or location',
+    'warehouse_transfers' => 'Warehouse Transfers',
+    'create_transfer_request' => 'Create Transfer Request',
+    'warehouse_transfer_requests' => 'Warehouse Transfer Requests',
+        
+    
+    
     // Custom Form Filters
     'form_status' => 'Form Status',
     'completion_status' => 'Completion Status',

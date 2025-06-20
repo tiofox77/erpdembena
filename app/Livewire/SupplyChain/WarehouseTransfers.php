@@ -5,11 +5,14 @@ namespace App\Livewire\SupplyChain;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\SupplyChain\WarehouseTransferRequest;
-use App\Models\SupplyChain\InventoryLocation;
+use App\Models\SupplyChain\WarehouseTransferRequestItem;
+use App\Models\SupplyChain\Inventory;
+use App\Models\SupplyChain\InventoryTransaction;
 use App\Models\SupplyChain\Product;
-use Illuminate\Support\Facades\Auth;
+use App\Models\SupplyChain\InventoryLocation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class WarehouseTransfers extends Component
 {
@@ -51,6 +54,7 @@ class WarehouseTransfers extends Component
     public $selectedTransferRequestId;
     public $selectedTransferRequest;
     public $selectedItemIndex;
+    public $transferRequestToDelete;
     
     // Data lists
     public $locations = [];
@@ -145,7 +149,51 @@ class WarehouseTransfers extends Component
         // Initialize selected item
         $this->selectedItem = null;
         
+        // Carregar transferências iniciais
+        $this->loadTransferRequests();
+        
         $this->filterProducts();
+    }
+    
+    /**
+     * Carrega a lista de pedidos de transferência com filtros aplicados
+     */
+    public function loadTransferRequests()
+    {
+        $query = WarehouseTransferRequest::query()
+            ->with(['sourceLocation', 'destinationLocation', 'requestedBy', 'approvedBy'])
+            ->orderBy($this->sortField, $this->sortDirection);
+            
+        // Aplicar filtros
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('request_number', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('sourceLocation', function($q) {
+                      $q->where('name', 'like', '%' . $this->search . '%');
+                  })
+                  ->orWhereHas('destinationLocation', function($q) {
+                      $q->where('name', 'like', '%' . $this->search . '%');
+                  });
+            });
+        }
+        
+        if ($this->statusFilter) {
+            $query->where('status', $this->statusFilter);
+        }
+        
+        if ($this->priorityFilter) {
+            $query->where('priority', $this->priorityFilter);
+        }
+        
+        if ($this->dateFrom) {
+            $query->whereDate('created_at', '>=', $this->dateFrom);
+        }
+        
+        if ($this->dateTo) {
+            $query->whereDate('created_at', '<=', $this->dateTo);
+        }
+        
+        $this->transferRequests = $query->paginate(10);
     }
     
     /**
@@ -422,7 +470,7 @@ class WarehouseTransfers extends Component
             $this->selectedProducts = [];
             foreach ($transfer->items as $item) {
                 $this->selectedProducts[$item->product_id] = [
-                    'quantity' => $item->quantity,
+                    'quantity' => $item->quantity_requested,
                     'unit' => $item->unit,
                     'notes' => $item->notes,
                 ];
@@ -458,16 +506,31 @@ class WarehouseTransfers extends Component
         try {
             DB::beginTransaction();
             
+            // Log para debug
+            \Illuminate\Support\Facades\Log::info('=== INÍCIO saveTransferRequest ===', [
+                'transferRequest' => $this->transferRequest,
+            ]);
+            
+            // Mapear campos do formulário para os campos corretos da base de dados
             $data = [
-                'source_location_id' => $this->transferRequest['source_location_id'],
-                'destination_location_id' => $this->transferRequest['destination_location_id'],
+                'from_warehouse_id' => $this->transferRequest['source_location_id'], // Corrigido
+                'to_warehouse_id' => $this->transferRequest['destination_location_id'], // Corrigido
                 'priority' => $this->transferRequest['priority'],
                 'requested_date' => $this->transferRequest['requested_date'],
-                'required_by_date' => $this->transferRequest['required_by_date'],
+                'required_date' => $this->transferRequest['required_by_date'], // Corrigido
                 'notes' => $this->transferRequest['notes'],
                 'status' => 'draft',
                 'requested_by' => Auth::id(),
             ];
+            
+            // Se não for uma atualização, precisamos gerar o número do pedido
+            if (!$this->transferRequest['id']) {
+                $data['request_number'] = WarehouseTransferRequest::generateRequestNumber();
+                
+                \Illuminate\Support\Facades\Log::info('Gerado número de pedido', [
+                    'request_number' => $data['request_number']
+                ]);
+            }
             
             if ($this->transferRequest['id']) {
                 // Update existing
@@ -546,6 +609,15 @@ class WarehouseTransfers extends Component
     }
     
     /**
+     * Confirm delete transfer request modal
+     */
+    public function confirmDeleteTransferRequest($id)
+    {
+        $this->transferRequestToDelete = $id;
+        $this->isOpenDeleteModal = true;
+    }
+    
+    /**
      * Approve transfer request
      */
     public function approveTransferRequest($id)
@@ -595,14 +667,26 @@ class WarehouseTransfers extends Component
      */
     public function deleteTransferRequest()
     {
-        if (!$this->selectedTransferRequestId) {
+        // Usar transferRequestToDelete (definido em confirmDeleteTransferRequest)
+        // ou manter compatibilidade com selectedTransferRequestId para não quebrar funcionalidades existentes
+        $idToDelete = $this->transferRequestToDelete ?? $this->selectedTransferRequestId;
+        
+        if (!$idToDelete) {
             return;
         }
         
         try {
-            $transferRequest = WarehouseTransferRequest::findOrFail($this->selectedTransferRequestId);
+            // Log para debug
+            \Illuminate\Support\Facades\Log::info('=== INÍCIO deleteTransferRequest ===', [
+                'id' => $idToDelete
+            ]);
             
-            if (!$transferRequest->isDeletable()) {
+            $transferRequest = WarehouseTransferRequest::findOrFail($idToDelete);
+            
+            // Verificação de segurança para não eliminar pedidos em processamento
+            $nonDeletableStatuses = ['in_progress', 'completed'];
+            if (in_array($transferRequest->status, $nonDeletableStatuses) || 
+                (method_exists($transferRequest, 'isDeletable') && !$transferRequest->isDeletable())) {
                 $this->dispatch('notify', 
                     type: 'error',
                     message: __('messages.cannot_delete_transfer')
@@ -610,21 +694,82 @@ class WarehouseTransfers extends Component
                 return;
             }
             
-            $transferRequest->delete();
+            // Usar forceDelete() para eliminação permanente em vez de soft delete
+            $transferRequest->forceDelete();
             
+            \Illuminate\Support\Facades\Log::info('Registo eliminado permanentemente:', [
+                'id' => $idToDelete,
+                'request_number' => $transferRequest->request_number
+            ]);
+            
+            // Limpar todas as variáveis relacionadas
             $this->isOpenDeleteModal = false;
+            $this->transferRequestToDelete = null;
+            
             $this->dispatch('notify', 
                 type: 'success',
                 message: __('messages.transfer_deleted')
             );
             
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erro ao excluir pedido de transferência: ' . $e->getMessage(), [
+                'exception' => $e,
+                'id' => $idToDelete
+            ]);
+            
             $this->dispatch('notify', 
                 type: 'error',
                 message: __('messages.error_deleting_transfer')
             );
-            \Log::error('Error deleting transfer request: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Incrementar a quantidade de um item na lista
+     */
+    public function incrementQuantity($index)
+    {
+        \Illuminate\Support\Facades\Log::info('=== INÍCIO incrementQuantity ===', [
+            'index' => $index,
+            'valor_atual' => $this->items[$index]['quantity_requested'] ?? 'não definido'
+        ]);
+        
+        if (!isset($this->items[$index])) {
+            return;
+        }
+        
+        // Incrementar o valor em 1 (ou 0.01 para produtos com casa decimal)
+        $atual = (float) $this->items[$index]['quantity_requested'];
+        $this->items[$index]['quantity_requested'] = $atual + 1;
+        
+        \Illuminate\Support\Facades\Log::info('=== FIM incrementQuantity ===', [
+            'novo_valor' => $this->items[$index]['quantity_requested']
+        ]);
+    }
+    
+    /**
+     * Decrementar a quantidade de um item na lista
+     */
+    public function decrementQuantity($index)
+    {
+        \Illuminate\Support\Facades\Log::info('=== INÍCIO decrementQuantity ===', [
+            'index' => $index,
+            'valor_atual' => $this->items[$index]['quantity_requested'] ?? 'não definido'
+        ]);
+        
+        if (!isset($this->items[$index])) {
+            return;
+        }
+        
+        // Decrementar o valor em 1 (ou 0.01 para produtos com casa decimal)
+        // Garantir que não fique abaixo de 0.01
+        $atual = (float) $this->items[$index]['quantity_requested'];
+        $novo = max(0.01, $atual - 1);
+        $this->items[$index]['quantity_requested'] = $novo;
+        
+        \Illuminate\Support\Facades\Log::info('=== FIM decrementQuantity ===', [
+            'novo_valor' => $this->items[$index]['quantity_requested']
+        ]);
     }
     
     /**
@@ -1146,26 +1291,15 @@ public function submitRequest()
     }
     
     /**
-     * Accept a transfer request
+     * Accept a transfer request and process inventory stock movement
      */
     public function acceptTransferRequest()
     {
-        Log::info('=== ACCEPTING TRANSFER REQUEST ===');
-        
-        if (!$this->selectedTransferRequestId) {
-            $this->dispatch('notify', 
-                type: 'error',
-                message: __('messages.no_transfer_selected')
-            );
-            return;
-        }
-        
         try {
             DB::beginTransaction();
             
-            $transferRequest = WarehouseTransferRequest::findOrFail($this->selectedTransferRequestId);
+            $transferRequest = WarehouseTransferRequest::with('items.product')->findOrFail($this->selectedTransferRequestId);
             
-            // Check if can be approved
             if (!$transferRequest->canBeApproved()) {
                 throw new \Exception('Transfer request cannot be approved in current status: ' . $transferRequest->status);
             }
@@ -1178,17 +1312,75 @@ public function submitRequest()
                 'approval_notes' => $this->approvalNotes, // Include approval notes
             ]);
             
-            Log::info('Transfer request accepted successfully', [
-                'request_id' => $transferRequest->id,
-                'request_number' => $transferRequest->request_number,
-                'approved_by' => auth()->id(),
-                'approval_notes' => $this->approvalNotes,
-            ]);
+            // Processar movimentação de stock
+            foreach ($transferRequest->items as $item) {
+                // 1. Criar transação de inventário para registar o movimento
+                $transaction = InventoryTransaction::create([
+                    'transaction_number' => 'TRTX-' . $transferRequest->request_number . '-' . $item->id,
+                    'transaction_type' => InventoryTransaction::TYPE_TRANSFER,
+                    'product_id' => $item->product_id,
+                    'source_location_id' => $transferRequest->from_warehouse_id,
+                    'destination_location_id' => $transferRequest->to_warehouse_id,
+                    'quantity' => $item->quantity_requested,
+                    'reference_id' => $transferRequest->id,
+                    'reference_type' => WarehouseTransferRequest::class,
+                    'created_by' => auth()->id(),
+                    'notes' => 'Transferência automática: ' . $transferRequest->request_number,
+                ]);
+                
+                // 2. Decrementar stock na localização de origem
+                $sourceInventory = Inventory::where('product_id', $item->product_id)
+                    ->where('location_id', $transferRequest->from_warehouse_id)
+                    ->first();
+                    
+                if (!$sourceInventory || $sourceInventory->quantity_on_hand < $item->quantity_requested) {
+                    throw new \Exception('Stock insuficiente para produto ' . ($item->product->name ?? $item->product_id) . 
+                        ' no armazém de origem. Disponível: ' . ($sourceInventory->quantity_on_hand ?? 0));
+                }
+                
+                $sourceInventory->update([
+                    'quantity_on_hand' => $sourceInventory->quantity_on_hand - $item->quantity_requested,
+                    'quantity_available' => $sourceInventory->quantity_available - $item->quantity_requested,
+                ]);
+                
+                // 3. Incrementar stock na localização de destino
+                $destinationInventory = Inventory::firstOrNew(
+                    [
+                        'product_id' => $item->product_id,
+                        'location_id' => $transferRequest->to_warehouse_id,
+                    ],
+                    [
+                        'quantity_on_hand' => 0,
+                        'quantity_allocated' => 0,
+                        'quantity_available' => 0,
+                    ]
+                );
+                
+                if (!$destinationInventory->exists) {
+                    $destinationInventory->quantity_on_hand = $item->quantity_requested;
+                    $destinationInventory->quantity_available = $item->quantity_requested;
+                    $destinationInventory->save();
+                } else {
+                    $destinationInventory->update([
+                        'quantity_on_hand' => $destinationInventory->quantity_on_hand + $item->quantity_requested,
+                        'quantity_available' => $destinationInventory->quantity_available + $item->quantity_requested,
+                    ]);
+                }
+                
+                Log::info('Stock transferred successfully', [
+                    'transaction_id' => $transaction->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity_requested,
+                    'from_warehouse' => $transferRequest->from_warehouse_id,
+                    'to_warehouse' => $transferRequest->to_warehouse_id,
+                ]);
+            }
             
             DB::commit();
             
             $this->dispatch('notify', 
                 type: 'success',
+                title: __('messages.success'),
                 message: __('messages.transfer_accepted_successfully')
             );
             
@@ -1202,7 +1394,8 @@ public function submitRequest()
             Log::error('Error accepting transfer request: ' . $e->getMessage());
             $this->dispatch('notify', 
                 type: 'error',
-                message: __('messages.error_accepting_transfer')
+                title: __('messages.error'),
+                message: $e->getMessage()
             );
         }
     }
@@ -1217,10 +1410,19 @@ public function submitRequest()
             
             $transferRequest = WarehouseTransferRequest::findOrFail($this->selectedTransferRequestId);
             
-            if ($transferRequest->status !== WarehouseTransferRequest::STATUS_PENDING) {
+            if (!$transferRequest->canBeRejected()) {
                 $this->dispatch('notify', 
                     type: 'error',
                     message: __('messages.transfer_not_pending')
+                );
+                return;
+            }
+            
+            // Verificar se foi fornecida uma nota para rejeição
+            if (empty($this->approvalNotes)) {
+                $this->dispatch('notify', 
+                    type: 'error',
+                    message: __('messages.rejection_notes_required')
                 );
                 return;
             }

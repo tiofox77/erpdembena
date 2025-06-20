@@ -69,36 +69,7 @@
                             <i class="fas fa-calendar-alt mr-2 text-purple-600"></i>
                             {{ __('Schedule Details') }}
                         </h4>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">{{ __('Priority:') }}</span>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                    @if($transferRequest['priority'] === 'urgent') bg-red-100 text-red-800
-                                    @elseif($transferRequest['priority'] === 'high') bg-orange-100 text-orange-800
-                                    @elseif($transferRequest['priority'] === 'normal') bg-yellow-100 text-yellow-800
-                                    @else bg-green-100 text-green-800
-                                    @endif">
-                                    @if($transferRequest['priority'] === 'urgent') 🔴
-                                    @elseif($transferRequest['priority'] === 'high') 🟠  
-                                    @elseif($transferRequest['priority'] === 'normal') 🟡
-                                    @else 🟢
-                                    @endif
-                                    {{ $priorities[$transferRequest['priority']] ?? 'Not set' }}
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">{{ __('Request Date:') }}</span>
-                                <span class="text-sm font-semibold text-gray-900">
-                                    {{ $transferRequest['requested_date'] ? \Carbon\Carbon::parse($transferRequest['requested_date'])->format('M d, Y') : 'Not set' }}
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">{{ __('Required By:') }}</span>
-                                <span class="text-sm font-semibold text-gray-900">
-                                    {{ $transferRequest['required_by_date'] ? \Carbon\Carbon::parse($transferRequest['required_by_date'])->format('M d, Y') : 'Not set' }}
-                                </span>
-                            </div>
-                        </div>
+                       
                     </div>
                 </div>
 

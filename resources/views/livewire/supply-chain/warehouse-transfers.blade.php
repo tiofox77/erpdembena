@@ -1,14 +1,15 @@
 <div>
     <div class="container mx-auto px-4 py-6">
+        <!-- Título e Botão de Adicionar -->
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
             <h1 class="text-2xl font-semibold text-gray-800 flex items-center">
                 <i class="fas fa-exchange-alt text-blue-600 mr-3"></i>
-                {{ __('messages.warehouse_transfers_management') }}
+                {{ __('messages.warehouse_transfer_requests') }}
             </h1>
             <button wire:click="openCreateModal" 
                 class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg">
                 <i class="fas fa-plus-circle mr-2 animate-pulse"></i>
-                {{ __('messages.create_transfer') }}
+                {{ __('messages.create_transfer_request') }}
             </button>
         </div>
 
@@ -56,7 +57,7 @@
                                 {{ __('messages.status') }}
                             </label>
                             <select wire:model.live="statusFilter" id="statusFilter" 
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_statuses') }}</option>
                                 @foreach ($statusOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
@@ -71,7 +72,7 @@
                                 {{ __('messages.priority') }}
                             </label>
                             <select wire:model.live="priorityFilter" id="priorityFilter" 
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                                 <option value="">{{ __('messages.all_priorities') }}</option>
                                 @foreach ($priorityOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
@@ -87,7 +88,7 @@
                                     {{ __('messages.date_from') }}
                                 </label>
                                 <input type="date" wire:model.live="dateFrom" id="dateFrom" 
-                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
+                                    class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                             </div>
                             <div>
                                 <label for="dateTo" class="block text-sm font-medium text-gray-700 mb-1">
@@ -95,7 +96,7 @@
                                     {{ __('messages.date_to') }}
                                 </label>
                                 <input type="date" wire:model.live="dateTo" id="dateTo" 
-                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
+                                    class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
                             </div>
                         </div>
                     </div>
@@ -103,19 +104,35 @@
             </div>
         </div>
 
+        <!-- Alertas -->
+        @if (session()->has('message'))
+            <div class="mb-4 flex w-full overflow-hidden bg-white rounded-lg shadow-md">
+                <div class="flex items-center justify-center w-12 bg-green-500">
+                    <i class="fas fa-check text-white"></i>
+                </div>
+                <div class="px-4 py-2 -mx-3">
+                    <div class="mx-3">
+                        <span class="font-semibold text-green-500">{{ __('messages.success') }}</span>
+                        <p class="text-sm text-gray-600">{{ session('message') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Tabela de Pedidos de Transferência -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-            <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                <div class="flex items-center">
-                    <i class="fas fa-list text-blue-600 mr-2"></i>
-                    <h2 class="text-base font-medium text-gray-700">{{ __('messages.warehouse_transfer_requests') }}</h2>
-                </div>
-                <div class="flex items-center text-sm text-gray-500">
-                    <span wire:loading wire:target="search, statusFilter, priorityFilter, dateFrom, dateTo, sortField, sortDirection" class="mr-2">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        {{ __('messages.loading') }}...
-                    </span>
-                </div>
+        <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg">
+            <!-- Cabeçalho da Tabela -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+                <h2 class="text-lg font-medium text-white flex items-center">
+                    <i class="fas fa-exchange-alt mr-2"></i>
+                    {{ __('messages.warehouse_transfer_requests') }}
+                </h2>
+            </div>
+            <div class="flex items-center text-sm text-gray-500 px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <span wire:loading wire:target="search, statusFilter, priorityFilter, dateFrom, dateTo, sortField, sortDirection">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    {{ __('messages.loading') }}...
+                </span>
             </div>
             
             <div class="overflow-x-auto">
@@ -128,7 +145,7 @@
                                     @if ($sortField === 'request_number')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
-                                        <i class="fas fa-sort ml-1"></i>
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
                                     @endif
                                 </div>
                             </th>
@@ -138,7 +155,7 @@
                                     @if ($sortField === 'source_location_id')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
-                                        <i class="fas fa-sort ml-1"></i>
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
                                     @endif
                                 </div>
                             </th>
@@ -148,7 +165,7 @@
                                     @if ($sortField === 'destination_location_id')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
-                                        <i class="fas fa-sort ml-1"></i>
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
                                     @endif
                                 </div>
                             </th>
@@ -158,7 +175,7 @@
                                     @if ($sortField === 'status')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
-                                        <i class="fas fa-sort ml-1"></i>
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
                                     @endif
                                 </div>
                             </th>
@@ -168,7 +185,7 @@
                                     @if ($sortField === 'priority')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
-                                        <i class="fas fa-sort ml-1"></i>
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
                                     @endif
                                 </div>
                             </th>
@@ -178,7 +195,7 @@
                                     @if ($sortField === 'requested_date')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
-                                        <i class="fas fa-sort ml-1"></i>
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
                                     @endif
                                 </div>
                             </th>
@@ -190,8 +207,11 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse ($transferRequests as $transferRequest)
                             <tr class="hover:bg-gray-50 transition-all duration-150">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ $transferRequest->request_number }}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div wire:click="editTransferRequest({{ $transferRequest->id }})" class="flex items-center text-sm font-medium text-blue-700 cursor-pointer hover:text-blue-900 hover:bg-blue-50 transition-all duration-150 ease-in-out px-2 py-1 rounded border-b-2 border-blue-400 shadow-sm hover:shadow">
+                                        <i class="fas fa-edit mr-1 text-xs opacity-70"></i>
+                                        {{ $transferRequest->request_number }}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $transferRequest->sourceLocation->name }}
@@ -200,44 +220,57 @@
                                     {{ $transferRequest->destinationLocation->name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $transferRequest->getStatusColorClass() }}">
+                                    <div @if($transferRequest->canBeApproved()) wire:click="viewTransferRequest({{ $transferRequest->id }})" @endif
+                                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $transferRequest->getStatusColorClass() }} @if($transferRequest->canBeApproved()) cursor-pointer hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-105 @endif">
                                         <i class="fas {{ $transferRequest->getStatusIcon() }} mr-1"></i>
                                         {{ $statusOptions[$transferRequest->status] ?? $transferRequest->status }}
-                                    </span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $transferRequest->getPriorityColorClass() }}">
+                                    <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $transferRequest->getPriorityColorClass() }}">
                                         <i class="fas {{ $transferRequest->getPriorityIcon() }} mr-1"></i>
                                         {{ $priorityOptions[$transferRequest->priority] ?? $transferRequest->priority }}
-                                    </span>
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $transferRequest->requested_date->format('d/m/Y') }}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-calendar-day text-gray-400 mr-2"></i>
+                                        {{ $transferRequest->requested_date->format('d/m/Y') }}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
                                         <!-- Botão de Visualizar -->
-                                        <button wire:click="viewTransferRequest({{ $transferRequest->id }})" class="text-blue-600 hover:text-blue-900 transition-all duration-200 hover:scale-110">
+                                        <button wire:click="viewTransferRequest({{ $transferRequest->id }})" 
+                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.view_transfer_request') }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         
                                         <!-- Botão de Editar (disponível apenas se estiver em rascunho ou rejeitado) -->
                                         @if ($transferRequest->isEditable())
-                                            <button wire:click="editTransferRequest({{ $transferRequest->id }})" class="text-yellow-600 hover:text-yellow-900 transition-all duration-200 hover:scale-110">
+                                            <button wire:click="editTransferRequest({{ $transferRequest->id }})" 
+                                                class="text-yellow-600 hover:text-yellow-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.edit_transfer_request') }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         @endif
                                         
                                         <!-- Botão de Aprovar (disponível apenas se estiver pendente e usuário tiver permissão) -->
-                                        @if ($transferRequest->canBeApproved())
-                                            <button wire:click="openApprovalModal({{ $transferRequest->id }})" class="text-green-600 hover:text-green-900 transition-all duration-200 hover:scale-110">
+                                            @if ($transferRequest->canBeApproved())
+                                           <!-- <button  
+                                            wire:click="openApprovalModal" 
+                                            class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.approve_transfer_request') }}">
                                                 <i class="fas fa-check-circle"></i>
-                                            </button>
+                                            </button>-->
                                         @endif
-                                        
+
                                         <!-- Botão de Excluir (disponível apenas se não estiver aprovado/em progresso/completo) -->
                                         @if ($transferRequest->isEditable())
-                                            <button wire:click="confirmDeleteTransferRequest({{ $transferRequest->id }})" class="text-red-600 hover:text-red-900 transition-all duration-200 hover:scale-110">
+                                            <button wire:click="confirmDeleteTransferRequest({{ $transferRequest->id }})" 
+                                                class="text-red-600 hover:text-red-900 transition-colors duration-150 transform hover:scale-110"
+                                                title="{{ __('messages.delete_transfer_request') }}">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         @endif
@@ -246,11 +279,17 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                    <div class="flex flex-col items-center justify-center py-8">
-                                        <i class="fas fa-exchange-alt text-gray-300 text-5xl mb-4"></i>
-                                        <p class="text-gray-500 text-lg">{{ __('messages.no_transfer_requests_found') }}</p>
-                                        <p class="text-gray-400 text-sm mt-1">{{ __('messages.try_different_filters') }}</p>
+                                <td colspan="7" class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col items-center justify-center py-6 space-y-2">
+                                        <div class="flex-shrink-0 bg-gray-100 p-3 rounded-full">
+                                            <i class="fas fa-exchange-alt text-gray-400 text-3xl"></i>
+                                        </div>
+                                        <p class="text-gray-500 text-lg font-medium">{{ __('messages.no_transfer_requests_found') }}</p>
+                                        <p class="text-gray-400 text-sm">{{ __('messages.try_different_filters') }}</p>
+                                        <button wire:click="resetFilters" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150">
+                                            <i class="fas fa-sync-alt mr-2"></i>
+                                            {{ __('messages.reset_filters') }}
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -260,7 +299,7 @@
             </div>
             
             <!-- Paginação -->
-            <div class="px-4 py-3 border-t border-gray-200 sm:px-6">
+            <div class="px-4 py-3 bg-white border-t border-gray-200">
                 {{ $transferRequests->links() }}
             </div>
         </div>

@@ -827,9 +827,21 @@
             </a>
 
             @can('supplychain.warehouse_transfers.view')
-            <a href="{{ route('supply-chain.warehouse-transfers') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.warehouse-transfers*') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-exchange-alt text-gray-500"></i>
-                <span>{{ trans('messages.warehouse_transfers') }}</span>
+            @php
+                $pendingTransfers = \App\Models\SupplyChain\WarehouseTransferRequest::countPendingApproval();
+            @endphp
+            <a href="{{ route('supply-chain.warehouse-transfers') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.warehouse-transfers*') ? 'active' : '' }} hover:bg-gray-50 transition duration-200 relative">
+                <div class="flex items-center w-full justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-exchange-alt text-gray-500"></i>
+                        <span class="mx-2">{{ trans('messages.warehouse_transfers') }}</span>
+                    </div>
+                    @if($pendingTransfers > 0)
+                    <span class="inline-block min-w-[22px] h-5 px-1.5 text-xs font-bold text-white bg-gray-800 rounded-full shadow-sm text-center leading-5">
+                        {{ $pendingTransfers }}
+                    </span>
+                    @endif
+                </div>
             </a>
             @endcan
             @endcan

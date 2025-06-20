@@ -24,8 +24,8 @@
                 <h3 class="text-xl font-bold text-white flex items-center">
                     <i class="fas fa-eye mr-3 animate-pulse"></i>
                     {{ __('View Transfer Request') }} 
-                    @if($transferRequest)
-                        - {{ $transferRequest['request_number'] ?? '' }}
+                    @if($selectedTransferRequest)
+                        - {{ $selectedTransferRequest->request_number ?? '' }}
                     @endif
                 </h3>
                 <button type="button" 
@@ -37,8 +37,8 @@
 
             <!-- Body -->
             <div class="p-6">
+                @if($selectedTransferRequest)
                 <!-- Status Badge -->
-                @if($transferRequest)
                     <div class="mb-6 flex items-center justify-between">
                         <div class="flex items-center space-x-4">
                             <span class="text-sm font-medium text-gray-600">Status:</span>
@@ -50,7 +50,7 @@
                                     'in_transit' => 'bg-blue-100 text-blue-800 border-blue-300',
                                     'completed' => 'bg-gray-100 text-gray-800 border-gray-300',
                                 ];
-                                $statusClass = $statusClasses[$transferRequest['status']] ?? 'bg-gray-100 text-gray-800 border-gray-300';
+                                $statusClass = $statusClasses[$selectedTransferRequest->status] ?? 'bg-gray-100 text-gray-800 border-gray-300';
                                 
                                 $statusIcons = [
                                     'pending' => 'fa-clock',
@@ -59,31 +59,98 @@
                                     'in_transit' => 'fa-truck',
                                     'completed' => 'fa-check-double',
                                 ];
-                                $statusIcon = $statusIcons[$transferRequest['status']] ?? 'fa-question-circle';
+                                $statusIcon = $statusIcons[$selectedTransferRequest->status] ?? 'fa-question-circle';
                             @endphp
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {{ $statusClass }}">
-                                <i class="fas {{ $statusIcon }} mr-1"></i>
-                                {{ $statusOptions[$transferRequest['status']] ?? $transferRequest['status'] }}
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border {{ $statusClasses[$selectedTransferRequest->status] ?? 'bg-gray-100 text-gray-800 border-gray-200' }}">
+                                {{ ucfirst(str_replace('_', ' ', $selectedTransferRequest->status)) }}
                             </span>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <span class="text-sm font-medium text-gray-600">Priority:</span>
+                            <span class="text-sm font-medium text-gray-600">Prioridade:</span>
                             @php
                                 $priorityClasses = [
-                                    'low' => 'bg-gray-100 text-gray-800',
-                                    'normal' => 'bg-blue-100 text-blue-800',
-                                    'high' => 'bg-orange-100 text-orange-800',
-                                    'urgent' => 'bg-red-100 text-red-800',
+                                    'low' => 'bg-blue-100 text-blue-800 border-blue-300',
+                                    'normal' => 'bg-green-100 text-green-800 border-green-300',
+                                    'high' => 'bg-orange-100 text-orange-800 border-orange-300',
+                                    'urgent' => 'bg-red-100 text-red-800 border-red-300',
                                 ];
-                                $priorityClass = $priorityClasses[$transferRequest['priority']] ?? 'bg-gray-100 text-gray-800';
+                                
+                                $priorityIcons = [
+                                    'low' => 'fa-arrow-down',
+                                    'normal' => 'fa-minus',
+                                    'high' => 'fa-arrow-up',
+                                    'urgent' => 'fa-exclamation-circle',
+                                ];
                             @endphp
-                            <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium {{ $priorityClass }}">
-                                <i class="fas fa-flag mr-1"></i>
-                                {{ ucfirst($transferRequest['priority']) }}
+                            <span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full border {{ $priorityClasses[$selectedTransferRequest->priority] ?? 'bg-gray-100 text-gray-800 border-gray-200' }}">
+                                <i class="fas {{ $priorityIcons[$selectedTransferRequest->priority] ?? 'fa-question' }} mr-1"></i>
+                                {{ ucfirst($selectedTransferRequest->priority) }}
                             </span>
                         </div>
                     </div>
-                @endif
+                    
+                    <!-- Informações de Solicitação e Aprovação -->
+                    <div class="mb-6 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                        <div class="flex items-center bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 border-b border-gray-200">
+                            <i class="fas fa-user-check text-purple-600 mr-2"></i>
+                            <h2 class="text-base font-medium text-gray-700">{{ __('Informações de Rastreamento') }}</h2>
+                        </div>
+                        <div class="p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Solicitado por -->
+                                <div class="flex">
+                                    <div class="w-1/3">
+                                        <span class="text-sm font-medium text-gray-600">Solicitado por:</span>
+                                    </div>
+                                    <div class="w-2/3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-user text-blue-500 mr-2"></i>
+                                            <span>{{ $selectedTransferRequest->requestedBy ? $selectedTransferRequest->requestedBy->name : 'N/A' }}</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <i class="far fa-calendar-alt mr-1"></i> 
+                                            {{ $selectedTransferRequest->created_at ? $selectedTransferRequest->created_at->format('d/m/Y H:i') : 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Aprovado/Rejeitado por -->
+                                <div class="flex">
+                                    <div class="w-1/3">
+                                        <span class="text-sm font-medium text-gray-600">{{ $selectedTransferRequest->status == 'approved' ? 'Aprovado por:' : ($selectedTransferRequest->status == 'rejected' ? 'Rejeitado por:' : 'Pendente aprovação') }}</span>
+                                    </div>
+                                    <div class="w-2/3">
+                                        @if($selectedTransferRequest->status == 'approved' || $selectedTransferRequest->status == 'rejected')
+                                            <div class="flex items-center">
+                                                <i class="fas fa-user-shield {{ $selectedTransferRequest->status == 'approved' ? 'text-green-500' : 'text-red-500' }} mr-2"></i>
+                                                <span>{{ $selectedTransferRequest->approvedBy ? $selectedTransferRequest->approvedBy->name : 'N/A' }}</span>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                <i class="far fa-calendar-check mr-1"></i>
+                                                {{ $selectedTransferRequest->approval_date ? \Carbon\Carbon::parse($selectedTransferRequest->approval_date)->format('d/m/Y H:i') : 'N/A' }}
+                                            </div>
+                                        @else
+                                            <div class="text-yellow-600 flex items-center">
+                                                <i class="fas fa-hourglass-half mr-2"></i>
+                                                <span>Aguardando aprovação</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                <!-- Notas de Aprovação/Rejeição -->
+                                @if($selectedTransferRequest->approval_notes)
+                                <div class="col-span-1 md:col-span-2 mt-2 pt-2 border-t border-gray-200">
+                                    <div class="text-sm font-medium text-gray-600 mb-1">Notas de {{ $selectedTransferRequest->status == 'approved' ? 'Aprovação' : 'Rejeição' }}:</div>
+                                    <div class="text-sm bg-gray-50 p-2 rounded border border-gray-200">
+                                        {{ $selectedTransferRequest->approval_notes }}
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                
 
                 <!-- Transfer Details Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -116,11 +183,11 @@
                             {{ __('Requested Date') }}
                         </h4>
                         <p class="text-lg font-medium text-gray-900">
-                            @if($transferRequest['requested_date'])
-                                @if(is_string($transferRequest['requested_date']))
-                                    {{ \Carbon\Carbon::parse($transferRequest['requested_date'])->format('M d, Y') }}
+                            @if($selectedTransferRequest && $selectedTransferRequest->requested_date)
+                                @if(is_string($selectedTransferRequest->requested_date))
+                                    {{ \Carbon\Carbon::parse($selectedTransferRequest->requested_date)->format('M d, Y') }}
                                 @else
-                                    {{ $transferRequest['requested_date']->format('M d, Y') }}
+                                    {{ $selectedTransferRequest->requested_date->format('M d, Y') }}
                                 @endif
                             @else
                                 N/A
@@ -135,11 +202,11 @@
                             {{ __('Required By Date') }}
                         </h4>
                         <p class="text-lg font-medium text-gray-900">
-                            @if($transferRequest['required_by_date'])
-                                @if(is_string($transferRequest['required_by_date']))
-                                    {{ \Carbon\Carbon::parse($transferRequest['required_by_date'])->format('M d, Y') }}
+                            @if($selectedTransferRequest && $selectedTransferRequest->required_date)
+                                @if(is_string($selectedTransferRequest->required_date))
+                                    {{ \Carbon\Carbon::parse($selectedTransferRequest->required_date)->format('M d, Y') }}
                                 @else
-                                    {{ $transferRequest['required_by_date']->format('M d, Y') }}
+                                    {{ $selectedTransferRequest->required_date->format('M d, Y') }}
                                 @endif
                             @else
                                 N/A
@@ -149,13 +216,13 @@
                 </div>
 
                 <!-- Notes -->
-                @if($transferRequest && $transferRequest['notes'])
+                @if($selectedTransferRequest && $selectedTransferRequest->notes)
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
                             <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
                             {{ __('Notes') }}
                         </h4>
-                        <p class="text-gray-700">{{ $transferRequest['notes'] }}</p>
+                        <p class="text-gray-700">{{ $selectedTransferRequest->notes ?? 'N/A' }}</p>
                     </div>
                 @endif
 
@@ -183,7 +250,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($items as $item)
+                                @forelse($items ?? [] as $item)
                                     <tr class="hover:bg-gray-50 transition-colors duration-200">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">
@@ -211,6 +278,74 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Inventory Transactions Section -->
+                <div class="mb-6">
+                    <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200 rounded-t-lg">
+                        <i class="fas fa-exchange-alt text-blue-600 mr-2"></i>
+                        <h2 class="text-base font-medium text-gray-700">{{ __('Transações de Stock') }}</h2>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-b-lg overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Transação</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produto</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origem</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destino</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($selectedTransferRequest->transactions as $transaction)
+                                    <tr>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $transaction->transaction_number }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                            {{ $transaction->product->name ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $transaction->sourceLocation->name ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $transaction->destinationLocation->name ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {{ number_format($transaction->quantity, 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $transaction->created_at->format('d/m/Y H:i') }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">
+                                            @if($selectedTransferRequest->status === 'approved')
+                                                <span class="inline-flex items-center">
+                                                    <i class="fas fa-circle-notch fa-spin mr-2 text-blue-500"></i>
+                                                    {{ __('Processando transações de stock...') }}
+                                                </span>
+                                            @else
+                                                {{ __('Nenhuma transação de stock registada') }}
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @else
+                    <div class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 text-4xl mb-4"></i>
+                            <p class="text-gray-600 text-lg">{{ __('Transfer request data is not available') }}</p>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <!-- Footer with Action Buttons -->
@@ -222,10 +357,9 @@
                     {{ __('Close') }}
                 </button>
                 
-                @if($transferRequest && ($transferRequest['status'] === 'pending' || $transferRequest['status'] === 'pending_approval'))
+                @if($selectedTransferRequest && ($selectedTransferRequest->status === 'pending' || $selectedTransferRequest->status === 'pending_approval'))
                     <div class="flex space-x-3">
-                        <!-- Debug info (remove after testing) -->
-                        <div class="text-xs text-gray-500 mr-2">Status: {{ $transferRequest['status'] ?? 'null' }}</div>
+                        <!-- Botões de ação -->
                         
                         <!-- Approve Button (opens approval modal) -->
                         <button type="button" 
@@ -237,7 +371,7 @@
                         
                         <!-- Reject Button -->
                         <button type="button" 
-                                wire:click="rejectTransferRequest"
+                                 wire:click="openApprovalModal"
                                 wire:loading.attr="disabled"
                                 class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
                             <span wire:loading.remove wire:target="rejectTransferRequest">
@@ -254,10 +388,7 @@
                         </button>
                     </div>
                 @else
-                    <!-- Debug info for non-pending status -->
-                    <div class="text-xs text-gray-500">
-                        Status: {{ $transferRequest['status'] ?? 'null' }} (not showing buttons)
-                    </div>
+                    <!-- Sem botões para status diferente de 'pending' -->
                 @endif
             </div>
         </div>
