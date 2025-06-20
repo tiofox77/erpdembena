@@ -140,6 +140,8 @@
                 </div>
             </div>
 
+            <!-- Este botão foi movido para a seção de componentes -->
+
             <!-- Tabela de BOMs -->
             <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg">
                 <!-- Cabeçalho da Tabela -->
@@ -274,7 +276,20 @@
                                             @endcan
 
                                             @can('bom.view', $bom)
-                                            <button wire:click="viewBom({{ $bom->id }})" 
+                                            <button wire:click="viewComponents({{ $bom->id }})" 
+                                                class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110 mx-2"
+                                                title="{{ __('messages.view_components') }}">
+                                                <i class="fas fa-puzzle-piece"></i>
+                                            </button>
+                                            @else
+                                            <span class="text-gray-400 cursor-not-allowed mx-2"
+                                                title="{{ __('messages.no_view_permission') }}">
+                                                <i class="fas fa-puzzle-piece"></i>
+                                            </span>
+                                            @endcan
+
+                                            @can('bom.view', $bom)
+                                            <button wire:click="viewBomDetails({{ $bom->id }})" 
                                                 class="text-green-600 hover:text-green-900 transition-colors duration-150 transform hover:scale-110"
                                                 title="{{ __('messages.view_details') }}">
                                                 <i class="fas fa-eye"></i>
@@ -317,84 +332,82 @@
             @if($selectedBom)
                 <div class="mb-6">
                     <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
+                        <div class="flex flex-col md:flex-row justify-between">
+                            <!-- BOM Number -->
+                            <div class="flex flex-col mb-4 md:mb-0">
                                 <div class="text-sm font-medium text-gray-500">{{ __('messages.bom_number') }}:</div>
                                 <div class="text-lg font-bold text-gray-900">{{ $selectedBom->bom_number }}</div>
-                                <div class="text-sm text-gray-500">{{ __('messages.version') }} {{ $selectedBom->version }}</div>
+                                <div class="text-xs text-gray-500">{{ __('messages.version') }} {{ $selectedBom->version }}</div>
                             </div>
-                            <div>
+                            
+                            <!-- Product -->
+                            <div class="flex flex-col mb-4 md:mb-0">
                                 <div class="text-sm font-medium text-gray-500">{{ __('messages.product') }}:</div>
-                                <div class="text-lg font-bold text-gray-900">{{ $selectedBom->product->name ?? 'N/A' }}</div>
-                                <div class="text-sm text-gray-500">{{ $selectedBom->product->sku ?? '' }}</div>
+                                <div class="text-lg font-bold text-gray-900">{{ $selectedBom->product->name }}</div>
+                                <div class="text-xs text-gray-500">{{ $selectedBom->product->sku }}</div>
                             </div>
-                            <div>
+                            
+                            <!-- Status -->
+                            <div class="flex flex-col">
                                 <div class="text-sm font-medium text-gray-500">{{ __('messages.status') }}:</div>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-                                    @if($selectedBom->status === 'draft') bg-gray-100 text-gray-800
-                                    @elseif($selectedBom->status === 'active') bg-green-100 text-green-800
-                                    @elseif($selectedBom->status === 'obsolete') bg-red-100 text-red-800
-                                    @endif">
-                                    <i class="mr-1
-                                        @if($selectedBom->status === 'draft') fas fa-pencil-alt
-                                        @elseif($selectedBom->status === 'active') fas fa-check-circle
-                                        @elseif($selectedBom->status === 'obsolete') fas fa-ban
-                                        @endif"></i>
-                                    @if($selectedBom->status === 'draft') {{ __('messages.status_draft') }}
-                                    @elseif($selectedBom->status === 'active') {{ __('messages.status_active') }}
-                                    @elseif($selectedBom->status === 'obsolete') {{ __('messages.status_obsolete') }}
-                                    @else {{ $selectedBom->status }}
-                                    @endif
-                                </span>
+                                <div>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                    {{ $selectedBom->status === 'active' ? 'bg-green-100 text-green-800' : 
+                                       ($selectedBom->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                                       'bg-red-100 text-red-800') }}">
+                                        @if($selectedBom->status === 'active')
+                                            <span class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></span>
+                                        @elseif($selectedBom->status === 'draft')
+                                            <span class="h-2.5 w-2.5 rounded-full bg-yellow-500 mr-2"></span>
+                                        @else
+                                            <span class="h-2.5 w-2.5 rounded-full bg-red-500 mr-2"></span>
+                                        @endif
+                                        {{ __("messages.status_{$selectedBom->status}") }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Botão para adicionar componente -->
-                <div class="flex justify-end mb-4">
+                <!-- Seção de componentes da BOM com estilo redesenhado -->
+                <div class="mb-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
+                    <div>
+                        <h3 class="text-lg font-medium flex items-center">
+                            <i class="fas fa-puzzle-piece text-blue-700 mr-2"></i>
+                            {{ __('messages.bom_components') }}
+                        </h3>
+                    </div>
                     @can('bom.edit', $selectedBom)
-                    <button wire:click="addComponent" 
-                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
-                        title="{{ __('messages.add_component') }}">
-                        <i class="fas fa-plus mr-1"></i> {{ __('messages.add_component') }}
-                    </button>
-                    @else
-                    <button class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-gray-400 bg-gray-200 cursor-not-allowed opacity-70"
-                        title="{{ __('messages.no_permission_to_add_component') }}">
-                        <i class="fas fa-plus mr-1"></i> {{ __('messages.add_component') }}
-                    </button>
+                        <button wire:click="addComponent" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors ease-in-out duration-150">
+                            <i class="fas fa-plus mr-2"></i>
+                            {{ __('messages.add_component') }}
+                        </button>
                     @endcan
+                </div>
 
                 <!-- Tabela de Componentes -->
-                <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                    <!-- Cabeçalho da Tabela -->
-                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
-                        <h2 class="text-lg font-medium text-white flex items-center">
-                            <i class="fas fa-puzzle-piece text-white mr-2"></i>
-                            {{ __('messages.bom_components') }}
-                        </h2>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                <div class="bg-blue-500 rounded-lg shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto bg-blue-500">
+                        <table class="w-full table-fixed">
+                            <thead class="bg-blue-600 text-white">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="w-1/3 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         {{ __('messages.component') }}
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         {{ __('messages.quantity') }}
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="w-1/12 px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                                         {{ __('messages.level') }}
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="w-1/12 px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                                         {{ __('messages.position') }}
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="w-1/12 px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                                         {{ __('messages.critical') }}
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="w-1/6 px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">
                                         {{ __('messages.actions') }}
                                     </th>
                                 </tr>
@@ -423,32 +436,30 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ number_format($component['quantity'], 4) }} {{ $component['uom'] }}</div>
+                                            <div class="text-sm font-medium">{{ $component['quantity'] }} {{ $component['uom'] }}</div>
                                             @if($component['scrap_percentage'] > 0)
                                                 <div class="text-xs text-gray-500">Perda: {{ $component['scrap_percentage'] }}%</div>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             {{ $component['level'] }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             {{ $component['position'] ?: '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             @if($component['is_critical'])
-                                                <span class="text-red-600" title="Componente crítico">
-                                                    <i class="fas fa-exclamation-circle text-lg"></i>
-                                                </span>
-                                            @else
-                                                <span class="text-gray-400" title="Componente não crítico">
-                                                    <i class="fas fa-minus"></i>
+                                                <span class="inline-flex items-center justify-center">
+                                                    <span class="h-5 w-5 rounded-full bg-red-600 flex items-center justify-center">
+                                                        <i class="fas fa-exclamation-circle text-white text-xs"></i>
+                                                    </span>
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div class="flex justify-end space-x-2">
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <div class="flex justify-center space-x-3">
                                                 <button wire:click="editComponent({{ $component['id'] }})" 
-                                                    class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 transform hover:scale-110" title="Editar Componente">
+                                                    class="text-blue-600 hover:text-blue-900 transition-colors duration-150 transform hover:scale-110" title="Editar Componente">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button wire:click="confirmDeleteComponent({{ $component['id'] }})" 
