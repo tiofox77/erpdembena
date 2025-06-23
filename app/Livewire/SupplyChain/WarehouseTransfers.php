@@ -13,6 +13,7 @@ use App\Models\SupplyChain\InventoryLocation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class WarehouseTransfers extends Component
 {
@@ -468,11 +469,27 @@ class WarehouseTransfers extends Component
 
             // Load existing items
             $this->selectedProducts = [];
+            $this->items = [];
+            
+            // Carregar os items para ambos os formatos necessários
             foreach ($transfer->items as $item) {
+                // Para o formato antigo (compatibilidade)
                 $this->selectedProducts[$item->product_id] = [
                     'quantity' => $item->quantity_requested,
                     'unit' => $item->unit,
                     'notes' => $item->notes,
+                ];
+                
+                // Para o formato usado na aba de produtos
+                $this->items[] = [
+                    'id' => $item->id ?? uniqid('item_'),
+                    'product_id' => $item->product_id,
+                    'product_name' => optional($item->product)->name ?? 'Produto #'.$item->product_id,
+                    'product_code' => optional($item->product)->code ?? optional($item->product)->sku ?? 'N/A',
+                    'quantity_requested' => (float)$item->quantity_requested,
+                    'unit_cost' => optional($item->product)->cost_price ?? 0,
+                    'total_cost' => (float)$item->quantity_requested * (optional($item->product)->cost_price ?? 0),
+                    'notes' => $item->notes ?? null,
                 ];
             }
 
@@ -1189,6 +1206,60 @@ public function submitRequest()
         \Log::info('WarehouseTransfers::resetForm() - Form reset complete');
     }
 
+    /**
+     * Gera um PDF do pedido de transferência de armazém
+     */
+    public function generatePdf($id)
+    {
+        try {
+            Log::info('Iniciando geração de PDF para transferência de armazém', ['id' => $id]);
+            
+            $transfer = WarehouseTransferRequest::with([
+                'sourceLocation',
+                'destinationLocation',
+                'requestedBy',
+                'approvedBy',
+                'items.product'
+            ])->findOrFail($id);
+            
+            $pdf = Pdf::loadView('pdf.warehouse-transfer', ['transfer' => $transfer]);
+            
+            // Configurações para melhor qualidade do PDF
+            $pdf->setPaper('a4');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'sans-serif'
+            ]);
+            
+            Log::info('PDF gerado com sucesso', ['transfer_number' => $transfer->request_number]);
+            
+            // Nome do arquivo
+            $fileName = 'transferencia_' . $transfer->request_number . '_' . date('dmY') . '.pdf';
+            
+            // Retornar para download
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $fileName,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar PDF da transferência', [
+                'id' => $id,
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('error', ['message' => 'Erro ao gerar PDF: ' . $e->getMessage()]);
+            return null;
+        }
+    }
+    
     /**
      * View transfer request details
      */

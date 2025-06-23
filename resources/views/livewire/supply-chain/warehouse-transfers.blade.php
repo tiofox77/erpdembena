@@ -247,6 +247,16 @@
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         
+                                        <!-- Botão de PDF -->
+                                        <button wire:click="generatePdf({{ $transferRequest->id }})" 
+                                            wire:loading.attr="disabled"
+                                            wire:target="generatePdf({{ $transferRequest->id }})"
+                                            class="text-purple-600 hover:text-purple-900 transition-colors duration-150 transform hover:scale-110"
+                                            title="{{ __('messages.export_transfer_to_pdf') }}">
+                                            <i wire:loading.remove wire:target="generatePdf({{ $transferRequest->id }})" class="fas fa-file-pdf"></i>
+                                            <i wire:loading wire:target="generatePdf({{ $transferRequest->id }})" class="fas fa-spinner fa-spin"></i>
+                                        </button>
+                                        
                                         <!-- Botão de Editar (disponível apenas se estiver em rascunho ou rejeitado) -->
                                         @if ($transferRequest->isEditable())
                                             <button wire:click="editTransferRequest({{ $transferRequest->id }})" 

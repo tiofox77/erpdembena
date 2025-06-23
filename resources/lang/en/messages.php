@@ -34,9 +34,24 @@ return [
     'warehouse_transfers' => 'Warehouse Transfers',
     'create_transfer_request' => 'Create Transfer Request',
     'warehouse_transfer_requests' => 'Warehouse Transfer Requests',
-        
-    
-    
+    'warehouse_transfer_request' => 'Warehouse Transfer Request',
+    'warehouse_info' => 'Warehouse Info',
+    'source_warehouse' => 'Source Warehouse',
+    'destination_warehouse' => 'Destination Warehouse',
+    'responsible_person' => 'Responsible Person',
+    'transfer_details' => 'Transfer Details',
+    'required_date' => 'Required Date',
+    'request_date' => 'Request Date',
+    'transfer_details' => 'Transfer Details',
+    'approval_details' => 'Approval Details',
+    'source_warehouse_signature' => 'Source Warehouse Signature',
+    'destination_warehouse_signature' => 'Destination Warehouse Signature',
+    'approval_notes' => 'Approval Notes',
+    'warehouse_transfer_generated' => 'Warehouse Transfer Generated',
+    'approved_by' => 'Approved By',
+    'approval_date' => 'Approval Date',
+    'transfer_items' => 'Transfer Items',   
+
     // Custom Form Filters
     'form_status' => 'Form Status',
     'completion_status' => 'Completion Status',

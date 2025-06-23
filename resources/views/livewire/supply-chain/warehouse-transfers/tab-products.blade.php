@@ -154,6 +154,18 @@
                                         <p class="text-gray-600">
                                             SKU: <span class="font-mono font-semibold">{{ $product ? $product->sku : 'N/A' }}</span>
                                         </p>
+                                        @if($this->hasSourceWarehouse && $product)
+                                            @php
+                                                $stockQty = $this->getProductStock($item['product_id']);
+                                            @endphp
+                                            <p class="mt-1 text-sm">
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
+                                                {{ $stockQty > 10 ? 'bg-green-100 text-green-800' : ($stockQty > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                                    <i class="fas fa-cube mr-1"></i>
+                                                    {{ $stockQty }} {{ __('unidades disponíveis em stock') }}
+                                                </span>
+                                            </p>
+                                        @endif
                                     </div>
                                 </div>
                                 
