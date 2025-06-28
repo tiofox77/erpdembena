@@ -845,14 +845,6 @@
             </a>
             @endcan
             @endcan
-
-            @can('supplychain.purchase_orders.view')
-            <a href="{{ route('supply-chain.purchase-orders') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.purchase-orders') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-file-invoice text-gray-500"></i>
-                <span>{{ trans('messages.purchase_orders') }}</span>
-            </a>
-            @endcan
-            
             @can('supplychain.reports.view')
             <!-- Reports Submenu -->
             <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="supplyChainReportsMenu">
@@ -876,6 +868,15 @@
                 </a>
             </div>
             @endcan
+
+            @can('supplychain.purchase_orders.view')
+            <a href="{{ route('supply-chain.purchase-orders') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.purchase-orders') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-file-invoice text-gray-500"></i>
+                <span>{{ trans('messages.purchase_orders') }}</span>
+            </a>
+            @endcan
+            
+            
 
             @can('supplychain.goods_receipts.view')
             <a href="{{ route('supply-chain.goods-receipts') }}" class="sidebar-submenu-item {{ request()->routeIs('supply-chain.goods-receipts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">

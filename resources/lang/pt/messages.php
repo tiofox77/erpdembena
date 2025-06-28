@@ -101,6 +101,8 @@ return [
     'production_date' => 'Data de Produção',
     'time_period' => 'Período de Tempo',
     'date' => 'Data',
+    'bill_of_lading' => 'B.L. (Conhecimento de Embarque)',
+    'bill_of_lading_placeholder' => 'Digite o número do Conhecimento de Embarque',
     'start_time' => 'Hora de Início',
     'end_time' => 'Hora de Término',
     'actions' => 'Ações',

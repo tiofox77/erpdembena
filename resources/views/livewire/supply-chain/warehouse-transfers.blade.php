@@ -49,7 +49,7 @@
                     </div>
                     
                     <!-- Primeira linha de filtros -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <!-- Filtro de Status -->
                         <div>
                             <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">
@@ -77,6 +77,21 @@
                                 @foreach ($priorityOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Itens por Página -->
+                        <div>
+                            <label for="perPage" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-list-ol text-gray-500 mr-1"></i>
+                                {{ __('messages.items_per_page') }}
+                            </label>
+                            <select wire:model.live="perPage" id="perPage" 
+                                class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
                             </select>
                         </div>
                         
@@ -123,10 +138,20 @@
         <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg">
             <!-- Cabeçalho da Tabela -->
             <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
-                <h2 class="text-lg font-medium text-white flex items-center">
-                    <i class="fas fa-exchange-alt mr-2"></i>
-                    {{ __('messages.warehouse_transfer_requests') }}
-                </h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-white flex items-center">
+                        <i class="fas fa-exchange-alt mr-2"></i>
+                        {{ __('messages.warehouse_transfer_requests') }}
+                    </h2>
+                    <button wire:click="generateFilteredListPdf" 
+                        wire:loading.attr="disabled"
+                        wire:target="generateFilteredListPdf"
+                        class="inline-flex items-center px-3 py-1.5 bg-white text-blue-800 text-sm font-medium rounded hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                        <i wire:loading.remove wire:target="generateFilteredListPdf" class="fas fa-file-pdf mr-1"></i>
+                        <i wire:loading wire:target="generateFilteredListPdf" class="fas fa-spinner fa-spin mr-1"></i>
+                        {{ __('messages.export_to_pdf') }}
+                    </button>
+                </div>
             </div>
             <div class="flex items-center text-sm text-gray-500 px-4 py-2 bg-gray-50 border-b border-gray-200">
                 <span wire:loading wire:target="search, statusFilter, priorityFilter, dateFrom, dateTo, sortField, sortDirection">

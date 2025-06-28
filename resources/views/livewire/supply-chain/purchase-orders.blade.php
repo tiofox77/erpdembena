@@ -333,22 +333,9 @@
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('messages.supplier') }}
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center cursor-pointer" wire:click="sortBy('status')">
                                     {{ __('messages.status') }}
                                     @if($sortField === 'status')
-                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                                    @else
-                                        <i class="fas fa-sort ml-1 opacity-50"></i>
-                                    @endif
-                                </div>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <div class="flex items-center justify-center cursor-pointer" wire:click="sortBy('is_active')">
-                                    {{ __('messages.status_active') }}
-                                    @if($sortField === 'is_active')
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
                                     @else
                                         <i class="fas fa-sort ml-1 opacity-50"></i>
@@ -360,6 +347,19 @@
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('messages.total') }}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('messages.supplier') }}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div class="flex items-center justify-center cursor-pointer" wire:click="sortBy('is_active')">
+                                    {{ __('messages.status_active') }}
+                                    @if($sortField === 'is_active')
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
+                                    @else
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
+                                    @endif
+                                </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('messages.actions') }}
@@ -382,9 +382,6 @@
                                         {{ $order->other_reference }}
                                         <i class="fas fa-external-link-alt ml-1 text-xs opacity-70"></i>
                                     </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $order->supplier->name }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($order->status)
@@ -496,17 +493,6 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    @if($order->is_active)
-                                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium leading-none rounded-full bg-green-100 text-green-800">
-                                            <i class="fas fa-check-circle mr-1"></i> {{ __('messages.active') }}
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium leading-none rounded-full bg-gray-100 text-gray-800">
-                                            <i class="fas fa-times-circle mr-1"></i> {{ __('messages.inactive') }}
-                                        </span>
-                                    @endif
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="block text-sm font-medium 
                                         {{ $order->is_overdue ? 'text-red-600' : 
@@ -530,6 +516,20 @@
                                     <div class="text-sm font-medium {{ $order->total_amount > 1000 ? 'text-green-600' : 'text-gray-900' }}">
                                         {{ number_format($order->total_amount, 2) }}
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ $order->supplier->name }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($order->is_active)
+                                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium leading-none rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i> {{ __('messages.active') }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium leading-none rounded-full bg-gray-100 text-gray-800">
+                                            <i class="fas fa-times-circle mr-1"></i> {{ __('messages.inactive') }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">

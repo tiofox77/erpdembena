@@ -97,6 +97,7 @@ class WarehouseTransfers extends Component
     public $dateTo = '';
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
+    public $perPage = 10; // Número de itens por página
     
     // Validation rules
     protected function rules()
@@ -1011,6 +1012,16 @@ class WarehouseTransfers extends Component
      */
     public function getTransferRequestsProperty()
     {
+        $query = $this->getFilteredQuery();
+        
+        return $query->paginate($this->perPage);
+    }
+    
+    /**
+     * Get the base filtered query for transfer requests
+     */
+    private function getFilteredQuery()
+    {
         $query = WarehouseTransferRequest::with(['sourceLocation', 'destinationLocation', 'requestedBy'])
             ->orderBy($this->sortField, $this->sortDirection);
         
@@ -1044,7 +1055,65 @@ class WarehouseTransfers extends Component
             $query->whereDate('requested_date', '<=', $this->dateTo);
         }
         
-        return $query->paginate(10);
+        return $query;
+    }
+    
+    /**
+     * Generate PDF for the currently filtered list of warehouse transfers
+     */
+    public function generateFilteredListPdf()
+    {
+        try {
+            Log::info('Iniciando geração de PDF para listagem de transferências de armazém');
+            
+            // Obter todas as transferências baseadas nos filtros atuais (sem paginação)
+            $transfers = $this->getFilteredQuery()->get();
+            
+            $pdf = Pdf::loadView('pdf.warehouse-transfers-list', [
+                'transfers' => $transfers,
+                'filters' => [
+                    'search' => $this->search,
+                    'status' => $this->statusFilter,
+                    'priority' => $this->priorityFilter,
+                    'dateFrom' => $this->dateFrom,
+                    'dateTo' => $this->dateTo
+                ]
+            ]);
+            
+            $pdf->setPaper('a4', 'landscape');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'sans-serif'
+            ]);
+            
+            Log::info('PDF da listagem gerado com sucesso', ['count' => $transfers->count()]);
+            
+            $fileName = 'transferencias_armazem_' . date('dmY') . '.pdf';
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $fileName,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar PDF da listagem de transferências', [
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', 
+                type: 'error', 
+                title: __('messages.error'), 
+                message: 'Erro ao gerar PDF: ' . $e->getMessage()
+            );
+            return null;
+        }
     }
     
     /**

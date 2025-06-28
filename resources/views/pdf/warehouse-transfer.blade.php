@@ -227,7 +227,7 @@
         <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
             <tr>
                 <th style="text-align: left; padding-right: 5px; white-space: nowrap;">{{ __('messages.request_date') }}:</th>
-                <td style="padding-right: 15px; white-space: nowrap;">{{ date('d/m/Y', strtotime($transfer->request_date)) }}</td>
+                <td style="padding-right: 15px; white-space: nowrap;">{{ date('d/m/Y', strtotime($transfer->requested_date)) }}</td>
                 
                 <th style="text-align: left; padding-right: 5px; white-space: nowrap;">{{ __('messages.required_date') }}:</th>
                 <td style="padding-right: 15px; white-space: nowrap;">

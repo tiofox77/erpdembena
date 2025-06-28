@@ -91,8 +91,21 @@
                             <input type="date" 
                                 wire:model.defer="purchaseOrder.expected_delivery_date" 
                                 id="expected_delivery_date" 
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-white">
                             @error('purchaseOrder.expected_delivery_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Bill of Lading -->
+                        <div>
+                            <label for="bill_of_lading" class="block text-sm font-medium text-gray-700">{{ __('messages.bill_of_lading') }}</label>
+                            <input type="text" 
+                                wire:model.defer="purchaseOrder.bill_of_lading" 
+                                id="bill_of_lading" 
+                                placeholder="{{ __('messages.bill_of_lading_placeholder') }}"
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-white">
+                            @error('purchaseOrder.bill_of_lading')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

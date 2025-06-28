@@ -64,15 +64,66 @@ class InventoryManagement extends Component
         $this->resetPage();
     }
     
-    public function updatingFilters()
+    public function updatingFilters($value, $key)
     {
         $this->resetPage();
+    }
+    
+    public function updatedFilters($value, $key)
+    {
         $this->loadChartData();
+        // Emitir evento para notificar que os filtros foram atualizados
+        $this->dispatch('filtersUpdated');
+        
+        // Fornecer feedback visual ao utilizador
+        $filterName = '';
+        switch($key) {
+            case 'location':
+                $filterName = __('messages.location');
+                break;
+            case 'category':
+                $filterName = __('messages.category');
+                break;
+            case 'product_type':
+                $filterName = __('messages.product_type');
+                break;
+            case 'stock_status':
+                $filterName = __('messages.stock_status');
+                break;
+            case 'warehouse_type':
+                $filterName = __('messages.warehouse_type');
+                break;
+            case 'expiry_date':
+                $filterName = __('messages.expiry_date');
+                break;
+        }
+        
+        if (!empty($value)) {
+            $this->dispatch('notify', type: 'info', title: __('messages.filter_applied'), message: sprintf(__('messages.filter_applied_message'), $filterName));
+        }
     }
     
     public function updatedPeriod()
     {
         $this->loadChartData();
+    }
+    
+    public function resetFilters()
+    {
+        $this->filters = [
+            'location' => '',
+            'category' => '',
+            'product_type' => '',
+            'stock_status' => '',
+            'date_range' => '',
+            'warehouse_type' => '',
+            'expiry_date' => '',
+        ];
+        $this->search = '';
+        $this->resetPage();
+        $this->loadChartData();
+        $this->dispatch('filtersUpdated');
+        $this->dispatch('notify', type: 'info', title: __('messages.filters_reset'), message: __('messages.filters_have_been_reset'));
     }
     
     public function updatedChartType()

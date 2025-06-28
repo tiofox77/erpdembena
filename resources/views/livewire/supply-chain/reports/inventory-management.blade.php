@@ -111,9 +111,13 @@
             <div class="p-4">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-sm font-medium text-gray-700">{{ __('messages.filter_instructions') }}</h3>
-                    <button wire:click="resetFilters" class="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-all duration-200">
-                        <i class="fas fa-undo-alt mr-2"></i>
-                        {{ __('messages.reset_filters') }}
+                    <button wire:click="resetFilters" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        <span>{{ __('messages.reset_filters') }}</span>
+                        <svg wire:loading wire:target="resetFilters" class="animate-spin ml-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                     </button>
                 </div>
             
@@ -125,14 +129,14 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
                             <i class="fas fa-search"></i>
                         </span>
-                        <input type="text" wire:model.debounce.300ms="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="{{ __('messages.search_products_sku_batch') }}">
+                        <input type="text" wire:model.live.debounce.300ms="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 ease-in-out hover:border-blue-400" placeholder="{{ __('messages.search_products_sku_batch') }}">
                     </div>
                 </div>
 
                 <!-- Filtro por Localização/Armazém -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.location') }}</label>
-                    <select wire:model="filters.location" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <select wire:model.live="filters.location" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
                         <option value="">{{ __('messages.all_locations') }}</option>
                         @foreach($inventoryLocations as $location)
                             <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -143,7 +147,7 @@
                 <!-- Filtro por Tipo de Armazém -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.warehouse_type') }}</label>
-                    <select wire:model="filters.warehouse_type" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <select wire:model.live="filters.warehouse_type" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
                         <option value="">{{ __('messages.all_warehouses') }}</option>
                         <option value="raw_material">{{ __('messages.raw_material_warehouse') }}</option>
                         <option value="finished_product">{{ __('messages.finished_product_warehouse') }}</option>
@@ -153,7 +157,7 @@
                 <!-- Filtro por Categoria -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.category') }}</label>
-                    <select wire:model="filters.category" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <select wire:model.live="filters.category" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
                         <option value="">{{ __('messages.all_categories') }}</option>
                         @foreach($productCategories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -164,7 +168,7 @@
                 <!-- Filtro por Tipo de Produto -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.product_type') }}</label>
-                    <select wire:model="filters.product_type" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <select wire:model.live="filters.product_type" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
                         <option value="">{{ __('messages.all_types') }}</option>
                         @foreach($productTypes as $type)
                             <option value="{{ $type }}">{{ __("messages.$type") }}</option>
@@ -175,7 +179,7 @@
                 <!-- Filtro por Status de Estoque -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.stock_status') }}</label>
-                    <select wire:model="filters.stock_status" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <select wire:model.live="filters.stock_status" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
                         <option value="">{{ __('messages.all_stock') }}</option>
                         <option value="normal">{{ __('messages.normal_stock') }}</option>
                         <option value="reorder">{{ __('messages.reorder_level') }}</option>
@@ -189,7 +193,7 @@
                 <!-- Filtro por Data de Validade -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.expiry_date_filter') }}</label>
-                    <select wire:model="filters.expiry_date" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <select wire:model.live="filters.expiry_date" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
                         <option value="">{{ __('messages.all_expiry_dates') }}</option>
                         <option value="30">{{ __('messages.expires_in_30_days') }}</option>
                         <option value="60">{{ __('messages.expires_in_60_days') }}</option>
@@ -412,10 +416,20 @@
                         init() {
                             console.log('Inicializando componente Alpine');
                             
-                            // Escutar evento Livewire para atualização de dados
+                            // Escutar eventos Livewire para atualização de dados
                             Livewire.on('chartDataUpdated', () => {
                                 console.log('Evento chartDataUpdated recebido');
                                 setTimeout(() => this.renderChart(), 100);
+                            });
+                            
+                            // Escutar evento de atualização de filtros
+                            Livewire.on('filtersUpdated', () => {
+                                console.log('Filtros atualizados, recarregando dados');
+                                const loadingEl = document.getElementById('chart-loading');
+                                if (loadingEl) loadingEl.classList.remove('hidden');
+                                
+                                // Precisamos recarregar os dados do gráfico
+                                setTimeout(() => this.renderChart(), 300);
                             });
                             
                             // Carrega dados iniciais

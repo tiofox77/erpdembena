@@ -39,7 +39,8 @@ class PurchaseOrder extends Model
         'total_amount',
         'notes',
         'internal_notes',
-        'reference_number'
+        'reference_number',
+        'bill_of_lading'
     ];
 
     protected $casts = [

@@ -730,10 +730,11 @@ class PurchaseOrders extends Component
             'order_date' => $order->order_date ? date('Y-m-d', strtotime($order->order_date)) : null,
             'expected_delivery_date' => $order->expected_delivery_date ? date('Y-m-d', strtotime($order->expected_delivery_date)) : null,
             'other_reference' => $order->other_reference,
+            'bill_of_lading' => $order->bill_of_lading,
             'status' => $order->status,
             'is_active' => (bool)$order->is_active,
             'notes' => $order->notes,
-            'shipping_amount' => $order->shipping_amount ?? 0.00,
+            'shipping_amount' => is_numeric($order->shipping_amount) ? floatval($order->shipping_amount) : 0.00,
         ];
         
         $this->selectedSupplier = $order->supplier_id ? [
@@ -753,7 +754,8 @@ class PurchaseOrders extends Component
             ];
         })->toArray();
         
-        $this->orderTotal = array_sum(array_column($this->orderItems, 'line_total'));
+        // Em vez de calcular manualmente, usamos o método já existente para garantir consistência
+        $this->calculateOrderTotal();
         
         $this->showModal = true;
         $this->editMode = true;
@@ -973,6 +975,7 @@ class PurchaseOrders extends Component
                 'purchaseOrder.order_date' => 'required|date',
                 'purchaseOrder.expected_delivery_date' => 'required|date',
                 'purchaseOrder.other_reference' => 'nullable|string|max:255',
+                'purchaseOrder.bill_of_lading' => 'nullable|string|max:255',
             ]);
             
             Log::info('Validação passou');
@@ -1020,6 +1023,7 @@ class PurchaseOrders extends Component
                 $order->order_date = $this->purchaseOrder['order_date'];
                 $order->expected_delivery_date = $this->purchaseOrder['expected_delivery_date'];
                 $order->other_reference = $this->purchaseOrder['other_reference'] ?? null;
+                $order->bill_of_lading = $this->purchaseOrder['bill_of_lading'] ?? null;
                 $order->shipping_amount = floatval($this->purchaseOrder['shipping_amount'] ?? 0);
                 $order->is_active = (bool)($this->purchaseOrder['is_active'] ?? true);
                 
