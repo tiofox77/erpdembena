@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\UserDashboardService;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Lang;
@@ -65,8 +66,23 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
-        return redirect()->intended($this->redirectPath())
-            ->with('success', 'Welcome to DEMBENA ERP, ' . $user->name . '!');
+        // Determine redirect path based on user permissions using centralized service
+        $redirectPath = UserDashboardService::determineUserDashboard($user);
+        
+        // Get user's primary module for personalized message
+        $primaryModule = UserDashboardService::getUserPrimaryModule($user);
+        $moduleLabels = [
+            'hr' => 'Recursos Humanos',
+            'supplychain' => 'Supply Chain',
+            'mrp' => 'MRP',
+            'maintenance' => 'Manutenção',
+            'none' => 'Sistema'
+        ];
+        
+        $moduleLabel = $moduleLabels[$primaryModule] ?? 'Sistema';
+        
+        return redirect()->intended($redirectPath)
+            ->with('success', "Bem-vindo ao DEMBENA ERP, {$user->name}! Você foi direcionado para o módulo de {$moduleLabel}.");
     }
 
     /**

@@ -292,9 +292,8 @@ class UserManagement extends Component
             // Send notification
             $this->dispatch('notify', type: $notificationType, message: $message);
 
-            // Close modal and reset form
-            $this->showModal = false;
-            $this->reset('user');
+            // Close modal and reset form properly
+            $this->closeModal();
 
         } catch (\Exception $e) {
             Log::error('Error saving user: ' . $e->getMessage());
@@ -349,7 +348,22 @@ class UserManagement extends Component
     {
         $this->showModal = false;
         $this->showDeleteModal = false;
-        $this->reset(['user', 'deleteUserId']);
+        $this->isEditing = false;
+        $this->deleteUserId = null;
+        
+        // Reset user data properly
+        $this->user = [
+            'first_name' => '',
+            'last_name' => '',
+            'email' => '',
+            'phone' => '',
+            'role' => '',
+            'department' => '',
+            'password' => '',
+            'password_confirmation' => '',
+            'is_active' => true
+        ];
+        
         $this->resetValidation();
     }
 

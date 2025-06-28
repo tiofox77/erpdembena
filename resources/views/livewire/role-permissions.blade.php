@@ -9,7 +9,10 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                         <div class="flex items-center mb-4 sm:mb-0">
                             <i class="fas fa-user-shield text-gray-600 text-xl mr-3"></i>
-                            <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Gerenciamento de Funções e Permissões</h1>
+                            <div>
+                                <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Gerenciamento de Funções e Permissões</h1>
+                                <p class="text-sm text-gray-600 mt-1">Organizadas por módulos: Maintenance, MRP, Supply Chain e HR</p>
+                            </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <button
@@ -35,6 +38,20 @@
                                 <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="openCreatePermissionModal"></i>
                                 <span wire:loading.remove wire:target="openCreatePermissionModal">Nova Permissão</span>
                                 <span wire:loading wire:target="openCreatePermissionModal">Carregando...</span>
+                            </button>
+                            
+                            <!-- Botão temporário para criar todas as permissões -->
+                            <button
+                                wire:click="createAllPermissions"
+                                type="button"
+                                class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-md flex items-center"
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-75 cursor-wait"
+                            >
+                                <i class="fas fa-database mr-2" wire:loading.class="hidden" wire:target="createAllPermissions"></i>
+                                <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="createAllPermissions"></i>
+                                <span wire:loading.remove wire:target="createAllPermissions">Criar Todas as Permissões</span>
+                                <span wire:loading wire:target="createAllPermissions">Criando...</span>
                             </button>
                         </div>
                     </div>
@@ -99,8 +116,10 @@
                                             class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         >
                                             <option value="">Todos os Módulos</option>
-                                            @foreach($this->permissionGroupNames as $group)
-                                                <option value="{{ $group }}">{{ ucfirst($group) }}</option>
+                                            @foreach($this->permissionGroups as $groupKey => $group)
+                                                <option value="{{ $groupKey }}">
+                                                    {{ $group['label'] }}
+                                                </option>
                                             @endforeach
                                         </select>
                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -268,11 +287,27 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php
                                                 $parts = explode('.', $permission->name);
-                                                $module = $parts[0] ?? 'outro';
+                                                $module = $parts[0] ?? 'other';
+                                                
+                                                // Map old permissions to new structure
+                                                if (in_array($module, ['inventory', 'stock', 'parts'])) {
+                                                    $module = 'supply-chain';
+                                                }
+                                                
+                                                $moduleConfig = [
+                                                    'maintenance' => ['label' => 'Maintenance', 'icon' => 'fas fa-tools', 'color' => 'bg-blue-100 text-blue-800'],
+                                                    'mrp' => ['label' => 'MRP (Production)', 'icon' => 'fas fa-industry', 'color' => 'bg-purple-100 text-purple-800'],
+                                                    'supply-chain' => ['label' => 'Supply Chain', 'icon' => 'fas fa-truck', 'color' => 'bg-green-100 text-green-800'],
+                                                    'hr' => ['label' => 'Human Resources', 'icon' => 'fas fa-users', 'color' => 'bg-yellow-100 text-yellow-800'],
+                                                    'system' => ['label' => 'System', 'icon' => 'fas fa-cogs', 'color' => 'bg-gray-100 text-gray-800'],
+                                                    'other' => ['label' => 'Others', 'icon' => 'fas fa-question-circle', 'color' => 'bg-gray-100 text-gray-600']
+                                                ];
+                                                
+                                                $config = $moduleConfig[$module] ?? $moduleConfig['other'];
                                             @endphp
-                                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 flex items-center inline-block">
-                                                <i class="fas fa-folder mr-1"></i>
-                                                {{ ucfirst($module) }}
+                                            <span class="px-3 py-1 text-xs rounded-full {{ $config['color'] }} flex items-center inline-block font-medium">
+                                                <i class="{{ $config['icon'] }} mr-2 text-sm"></i>
+                                                {{ $config['label'] }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -334,27 +369,43 @@
 
     <!-- Modal de Criação/Edição de Função -->
     @if($showRoleModal)
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-4">
-            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                <!-- Cabeçalho do modal -->
-                <div class="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
-                    <h3 class="text-base sm:text-lg font-medium text-gray-900 flex items-center">
-                        <span class="bg-blue-100 text-blue-600 p-2 rounded-full mr-3">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-4"
+             x-data="{ showModal: true }"
+             x-show="showModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-5xl max-h-[90vh] overflow-y-auto"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                
+                <!-- Cabeçalho do modal com gradiente melhorado -->
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                    <h3 class="text-lg sm:text-xl font-semibold text-white flex items-center">
+                        <span class="bg-white bg-opacity-20 text-white p-2 rounded-full mr-3">
                             <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-plus' }} text-lg"></i>
                         </span>
                         {{ $isEditing ? 'Editar Função' : 'Nova Função' }}
                     </h3>
-                    <button wire:click="$set('showRoleModal', false)" class="text-gray-400 hover:text-gray-500">
-                        <i class="fas fa-times"></i>
+                    <button wire:click="$set('showRoleModal', false)" 
+                            class="text-white hover:text-gray-200 transition-colors duration-150 p-1 rounded-full hover:bg-white hover:bg-opacity-20">
+                        <i class="fas fa-times text-lg"></i>
                     </button>
                 </div>
 
                 <!-- Corpo do modal -->
                 <div class="px-4 sm:px-6 py-4">
                     @if($errors->any())
-                        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
+                        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
                             <p class="font-bold flex items-center">
-                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                <i class="fas fa-exclamation-circle mr-2 text-red-500"></i>
                                 Por favor, corrija os seguintes erros:
                             </p>
                             <ul class="mt-2 list-disc list-inside text-sm">
@@ -368,10 +419,10 @@
                     <div class="space-y-6">
                         <!-- Nome da Função -->
                         <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <h4 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
                                 <i class="fas fa-tag mr-2 text-blue-500"></i> Informações da Função
                             </h4>
-                            <div class="rounded-md border border-gray-300 p-4 bg-gray-50">
+                            <div class="rounded-lg border border-gray-300 p-4 bg-gradient-to-r from-blue-50 to-indigo-50">
                                 <label for="roleName" class="block text-sm font-medium text-gray-700 mb-1">Nome da Função</label>
                                 <input
                                     id="roleName"
@@ -388,74 +439,176 @@
 
                         <!-- Permissões -->
                         <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <h4 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
                                 <i class="fas fa-key mr-2 text-blue-500"></i> Permissões Associadas
                             </h4>
-                            <div class="rounded-md border border-gray-300 p-4 bg-gray-50 max-h-80 overflow-y-auto">
-                                <div class="mb-4">
-                                    <input
-                                        type="text"
-                                        wire:model.live.debounce.300ms="permissionSearch"
-                                        placeholder="Filtrar permissões..."
-                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                    >
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    @foreach($this->permissionGroups as $group => $permissions)
-                                        <div class="bg-white p-3 rounded-md shadow-sm">
-                                            <h5 class="font-medium text-sm text-gray-700 mb-2 pb-1 border-b flex items-center">
-                                                <i class="fas fa-folder mr-2 text-blue-400"></i>
-                                                {{ ucfirst($group) }}
-                                            </h5>
-
-                                            <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
-                                                @foreach($permissions as $permission)
-                                                    <label class="flex items-center space-x-3 py-1 hover:bg-gray-50 px-2 rounded-md cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            value="{{ $permission->id }}"
-                                                            wire:model="selectedPermissions"
-                                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                        >
-                                                        <span class="text-sm text-gray-800">{{ $permission->name }}</span>
-                                                    </label>
-                                                @endforeach
-                                            </div>
+                            <div class="rounded-lg border border-gray-300 p-4 bg-gray-50">
+                                <!-- Controles de busca e filtro -->
+                                <div class="mb-4 space-y-3">
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <div class="flex-1">
+                                            <input
+                                                type="text"
+                                                wire:model.live.debounce.300ms="permissionSearch"
+                                                placeholder="🔍 Buscar permissões..."
+                                                class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
                                         </div>
-                                    @endforeach
+                                        <div class="flex-1">
+                                            <select
+                                                wire:model.live="selectedModuleFilter"
+                                                class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">🎯 Todos os módulos</option>
+                                                @foreach($this->permissionGroups as $groupKey => $group)
+                                                    <option value="{{ $groupKey }}">{{ $this->getModuleLabel($groupKey) }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Botões de ação rápida -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <button type="button" 
+                                                wire:click="selectAllPermissions"
+                                                class="inline-flex items-center px-3 py-1 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150">
+                                            <i class="fas fa-check-double mr-1"></i>
+                                            Selecionar Todas
+                                        </button>
+                                        <button type="button" 
+                                                wire:click="deselectAllPermissions"
+                                                class="inline-flex items-center px-3 py-1 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150">
+                                            <i class="fas fa-times mr-1"></i>
+                                            Desmarcar Todas
+                                        </button>
+                                    </div>
                                 </div>
+
+                                <!-- Grupos de permissões com scroll melhorado -->
+                                <div class="max-h-96 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #CBD5E0 #F7FAFC;">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        @foreach($this->permissionGroups as $groupKey => $group)
+                                            @if(empty($selectedModuleFilter) || $selectedModuleFilter === $groupKey)
+                                                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                                                    <!-- Cabeçalho do grupo com botão de seleção -->
+                                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+                                                        <h5 class="font-semibold text-sm text-gray-700 flex items-center">
+                                                            <i class="{{ $group['icon'] }} mr-2 text-lg" style="color: {{ str_contains($group['label'], 'Maintenance') ? '#3B82F6' : (str_contains($group['label'], 'MRP') ? '#8B5CF6' : (str_contains($group['label'], 'Supply') ? '#10B981' : (str_contains($group['label'], 'HR') ? '#F59E0B' : '#6B7280'))) }}"></i>
+                                                            {{ $group['label'] }}
+                                                        </h5>
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{{ count($group['permissions']) }}</span>
+                                                            <button type="button" 
+                                                                    wire:click="toggleModulePermissions('{{ $groupKey }}')"
+                                                                    class="text-xs px-2 py-1 rounded-md border transition-colors duration-150 hover:shadow-sm"
+                                                                    style="color: {{ str_contains($group['label'], 'Maintenance') ? '#3B82F6' : (str_contains($group['label'], 'MRP') ? '#8B5CF6' : (str_contains($group['label'], 'Supply') ? '#10B981' : (str_contains($group['label'], 'HR') ? '#F59E0B' : '#6B7280'))) }}; border-color: {{ str_contains($group['label'], 'Maintenance') ? '#3B82F6' : (str_contains($group['label'], 'MRP') ? '#8B5CF6' : (str_contains($group['label'], 'Supply') ? '#10B981' : (str_contains($group['label'], 'HR') ? '#F59E0B' : '#6B7280'))) }}">
+                                                                <i class="fas fa-toggle-on"></i>
+                                                                Alternar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Lista de permissões -->
+                                                    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                                        @foreach($group['permissions'] as $permission)
+                                                            @if(
+                                                                empty($permissionSearch) || 
+                                                                str_contains(strtolower($permission->name), strtolower($permissionSearch)) || 
+                                                                str_contains(strtolower($permission->description ?? ''), strtolower($permissionSearch))
+                                                            )
+                                                                <label class="flex items-center space-x-3 py-2 px-2 hover:bg-gray-50 rounded-md cursor-pointer transition-colors duration-150 group">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        value="{{ $permission->id }}"
+                                                                        wire:model="selectedPermissions"
+                                                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                                    >
+                                                                    <div class="flex-1 min-w-0">
+                                                                        <span class="text-sm font-medium text-gray-800 group-hover:text-gray-900">{{ $permission->name }}</span>
+                                                                        @if($permission->description)
+                                                                            <p class="text-xs text-gray-500 mt-1">{{ $permission->description }}</p>
+                                                                        @endif
+                                                                    </div>
+                                                                </label>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                                
                                 @error('selectedPermissions')
-                                    <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                                    <p class="mt-2 text-xs text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ $message }}
+                                    </p>
                                 @enderror
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="px-4 sm:px-6 py-3 bg-gray-50 flex justify-end space-x-3 border-t border-gray-200">
-                    <button
-                        type="button"
-                        wire:click="$set('showRoleModal', false)"
-                        wire:loading.attr="disabled"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
-                    >
-                        <i class="fas fa-times mr-1"></i>
-                        Cancelar
-                    </button>
+                <!-- Resumo das permissões selecionadas -->
+                @if(count($selectedPermissions) > 0)
+                    <div class="px-4 sm:px-6 py-3 bg-blue-50 border-t border-blue-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center text-sm text-blue-700">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span class="font-medium">{{ count($selectedPermissions) }} permissões selecionadas</span>
+                            </div>
+                            <button type="button" 
+                                    wire:click="showSelectedPermissionsList = !showSelectedPermissionsList"
+                                    class="text-xs text-blue-600 hover:text-blue-800 underline">
+                                {{ $showSelectedPermissionsList ?? false ? 'Ocultar' : 'Ver lista' }}
+                            </button>
+                        </div>
+                        @if($showSelectedPermissionsList ?? false)
+                            <div class="mt-2 text-xs text-blue-600 max-h-20 overflow-y-auto">
+                                @foreach($selectedPermissions as $permId)
+                                    @php
+                                        $perm = App\Models\Permission::find($permId);
+                                    @endphp
+                                    @if($perm)
+                                        <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full mr-1 mb-1">{{ $perm->name }}</span>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
-                    <button
-                        type="button"
-                        wire:click="saveRole"
-                        wire:loading.attr="disabled"
-                        wire:loading.class="opacity-75 cursor-wait"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 flex items-center"
-                    >
-                        <i class="fas fa-save mr-1" wire:loading.class="hidden" wire:target="saveRole"></i>
-                        <i class="fas fa-spinner fa-spin mr-1 hidden" wire:loading.class.remove="hidden" wire:target="saveRole"></i>
-                        <span wire:loading.remove wire:target="saveRole">Salvar</span>
-                        <span wire:loading wire:target="saveRole">Salvando...</span>
-                    </button>
+                <!-- Rodapé melhorado -->
+                <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 flex justify-between items-center border-t border-gray-200">
+                    <div class="text-xs text-gray-500">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        Dica: Use os filtros para encontrar permissões específicas
+                    </div>
+                    <div class="flex space-x-3">
+                        <button
+                            type="button"
+                            wire:click="$set('showRoleModal', false)"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-150 flex items-center"
+                        >
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="button"
+                            wire:click="saveRole"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-75 cursor-wait"
+                            class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150 flex items-center transform hover:scale-105"
+                        >
+                            <i class="fas fa-save mr-2" wire:loading.class="hidden" wire:target="saveRole"></i>
+                            <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="saveRole"></i>
+                            <span wire:loading.remove wire:target="saveRole">{{ $isEditing ? 'Atualizar' : 'Criar' }} Função</span>
+                            <span wire:loading wire:target="saveRole">{{ $isEditing ? 'Atualizando' : 'Criando' }}...</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -463,27 +616,43 @@
 
     <!-- Modal de Criação/Edição de Permissão -->
     @if($showPermissionModal)
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-4">
-            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <!-- Cabeçalho do modal -->
-                <div class="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
-                    <h3 class="text-base sm:text-lg font-medium text-gray-900 flex items-center">
-                        <span class="bg-blue-100 text-blue-600 p-2 rounded-full mr-3">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-4"
+             x-data="{ showModal: true }"
+             x-show="showModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                
+                <!-- Cabeçalho do modal com gradiente -->
+                <div class="bg-gradient-to-r from-purple-500 to-indigo-600 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                    <h3 class="text-lg sm:text-xl font-semibold text-white flex items-center">
+                        <span class="bg-white bg-opacity-20 text-white p-2 rounded-full mr-3">
                             <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-plus' }} text-lg"></i>
                         </span>
                         {{ $isEditing ? 'Editar Permissão' : 'Nova Permissão' }}
                     </h3>
-                    <button wire:click="$set('showPermissionModal', false)" class="text-gray-400 hover:text-gray-500">
-                        <i class="fas fa-times"></i>
+                    <button wire:click="$set('showPermissionModal', false)" 
+                            class="text-white hover:text-gray-200 transition-colors duration-150 p-1 rounded-full hover:bg-white hover:bg-opacity-20">
+                        <i class="fas fa-times text-lg"></i>
                     </button>
                 </div>
 
                 <!-- Corpo do modal -->
                 <div class="px-4 sm:px-6 py-4">
                     @if($errors->any())
-                        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
+                        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
                             <p class="font-bold flex items-center">
-                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                <i class="fas fa-exclamation-circle mr-2 text-red-500"></i>
                                 Por favor, corrija os seguintes erros:
                             </p>
                             <ul class="mt-2 list-disc list-inside text-sm">
@@ -495,50 +664,162 @@
                     @endif
 
                     <div class="space-y-6">
-                        <div class="rounded-md border border-gray-300 p-4 bg-gray-50">
-                            <div class="mb-4">
-                                <label for="permissionName" class="block text-sm font-medium text-gray-700 mb-1">Nome da Permissão</label>
-                                <input
-                                    id="permissionName"
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('permissionName') border-red-300 text-red-900 @enderror"
-                                    wire:model="permissionName"
-                                    placeholder="Digite o nome da permissão (ex: users.view)"
-                                >
-                                @error('permissionName')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                                <p class="mt-2 text-sm text-gray-500">
-                                    Recomendado usar o formato: <span class="font-mono">módulo.ação</span> (ex: users.create, users.edit)
-                                </p>
+                        <!-- Informações da Permissão -->
+                        <div>
+                            <h4 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-key mr-2 text-purple-500"></i> Informações da Permissão
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Nome da Permissão -->
+                                <div class="md:col-span-2">
+                                    <div class="rounded-lg border border-gray-300 p-4 bg-gradient-to-r from-purple-50 to-indigo-50">
+                                        <label for="permissionName" class="block text-sm font-medium text-gray-700 mb-1">Nome da Permissão</label>
+                                        <input
+                                            id="permissionName"
+                                            type="text"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm @error('permissionName') border-red-300 text-red-900 @enderror"
+                                            wire:model.live="permissionName"
+                                            placeholder="Digite o nome da permissão (ex: users.view)"
+                                        >
+                                        @error('permissionName')
+                                            <p class="mt-1 text-xs text-red-600 flex items-center">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                {{ $message }}
+                                            </p>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Descrição -->
+                                <div class="md:col-span-2">
+                                    <div class="rounded-lg border border-gray-300 p-4 bg-gray-50">
+                                        <label for="permissionDescription" class="block text-sm font-medium text-gray-700 mb-1">Descrição (Opcional)</label>
+                                        <textarea
+                                            id="permissionDescription"
+                                            rows="3"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                            wire:model="permissionDescription"
+                                            placeholder="Descreva o que esta permissão permite fazer..."
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sugestões de Módulo -->
+                        <div>
+                            <h4 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-lightbulb mr-2 text-yellow-500"></i> Sugestões de Estrutura
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Seletor de Módulo -->
+                                <div class="rounded-lg border border-gray-300 p-4 bg-yellow-50">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Módulo Sugerido</label>
+                                    <select
+                                        wire:model.live="selectedPermissionModule"
+                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                    >
+                                        <option value="">Selecione um módulo...</option>
+                                        <option value="maintenance">Maintenance (Manutenção)</option>
+                                        <option value="mrp">MRP (Production Planning)</option>
+                                        <option value="supplychain">Supply Chain (Cadeia de Suprimentos)</option>
+                                        <option value="hr">HR (Recursos Humanos)</option>
+                                        <option value="system">System (Sistema)</option>
+                                        <option value="reports">Reports (Relatórios)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Seletor de Ação -->
+                                <div class="rounded-lg border border-gray-300 p-4 bg-blue-50">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Ação Sugerida</label>
+                                    <select
+                                        wire:model.live="selectedPermissionAction"
+                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    >
+                                        <option value="">Selecione uma ação...</option>
+                                        <option value="view">View (Visualizar)</option>
+                                        <option value="create">Create (Criar)</option>
+                                        <option value="edit">Edit (Editar)</option>
+                                        <option value="delete">Delete (Excluir)</option>
+                                        <option value="manage">Manage (Gerenciar)</option>
+                                        <option value="approve">Approve (Aprovar)</option>
+                                        <option value="export">Export (Exportar)</option>
+                                        <option value="dashboard">Dashboard (Painel)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Botão para aplicar sugestão -->
+                            @if($selectedPermissionModule && $selectedPermissionAction)
+                                <div class="mt-3 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div class="flex items-center text-sm text-green-700">
+                                        <i class="fas fa-magic mr-2"></i>
+                                        <span>Sugestão: <strong>{{ $selectedPermissionModule }}.{{ $selectedPermissionAction }}</strong></span>
+                                    </div>
+                                    <button type="button" 
+                                            wire:click="applyPermissionSuggestion"
+                                            class="inline-flex items-center px-3 py-1 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150">
+                                        <i class="fas fa-arrow-right mr-1"></i>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Exemplos de Uso -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                                Exemplos de Nomes de Permissões
+                            </h5>
+                            <div class="text-xs text-gray-600 space-y-1">
+                                <div class="flex items-center">
+                                    <span class="font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">users.manage</span>
+                                    <span>Gerenciar usuários</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="font-mono bg-green-100 text-green-800 px-2 py-1 rounded mr-2">inventory.view</span>
+                                    <span>Visualizar inventário</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="font-mono bg-purple-100 text-purple-800 px-2 py-1 rounded mr-2">reports.export</span>
+                                    <span>Exportar relatórios</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="px-4 sm:px-6 py-3 bg-gray-50 flex justify-end space-x-3 border-t border-gray-200">
-                    <button
-                        type="button"
-                        wire:click="$set('showPermissionModal', false)"
-                        wire:loading.attr="disabled"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
-                    >
-                        <i class="fas fa-times mr-1"></i>
-                        Cancelar
-                    </button>
+                <!-- Rodapé melhorado -->
+                <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 flex justify-between items-center border-t border-gray-200">
+                    <div class="text-xs text-gray-500">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        Dica: Use a estrutura módulo.ação para melhor organização
+                    </div>
+                    <div class="flex space-x-3">
+                        <button
+                            type="button"
+                            wire:click="$set('showPermissionModal', false)"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-150 flex items-center"
+                        >
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </button>
 
-                    <button
-                        type="button"
-                        wire:click="savePermission"
-                        wire:loading.attr="disabled"
-                        wire:loading.class="opacity-75 cursor-wait"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 flex items-center"
-                    >
-                        <i class="fas fa-save mr-1" wire:loading.class="hidden" wire:target="savePermission"></i>
-                        <i class="fas fa-spinner fa-spin mr-1 hidden" wire:loading.class.remove="hidden" wire:target="savePermission"></i>
-                        <span wire:loading.remove wire:target="savePermission">Salvar</span>
-                        <span wire:loading wire:target="savePermission">Salvando...</span>
-                    </button>
+                        <button
+                            type="button"
+                            wire:click="savePermission"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-75 cursor-wait"
+                            class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 border border-transparent rounded-lg shadow-sm hover:from-purple-700 hover:to-indigo-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-150 flex items-center transform hover:scale-105"
+                        >
+                            <i class="fas fa-save mr-2" wire:loading.class="hidden" wire:target="savePermission"></i>
+                            <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="savePermission"></i>
+                            <span wire:loading.remove wire:target="savePermission">{{ $isEditing ? 'Atualizar' : 'Criar' }} Permissão</span>
+                            <span wire:loading wire:target="savePermission">{{ $isEditing ? 'Atualizando' : 'Criando' }}...</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

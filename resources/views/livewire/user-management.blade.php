@@ -405,7 +405,8 @@
                         <div class="mt-1 relative rounded-md shadow-sm">
                             <select id="role"
                                 class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('user.role') border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500 @enderror"
-                                wire:model.live="user.role">
+                                wire:model.live="user.role"
+                                wire:key="role-select-{{ $isEditing ? 'edit' : 'create' }}">
                                 <option value="">Select Role</option>
                                 @foreach($roles as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>

@@ -391,6 +391,8 @@
             </button>
         </div>
 
+        <!-- Maintenance Menu - Add permission check -->
+        @canany(['equipment.view', 'preventive.view', 'corrective.view', 'reports.view', 'parts.view', 'stock.manage', 'settings.manage'])
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="maintenanceMenu">
             <i class="fas fa-wrench text-indigo-500"></i>
             <span>{{ trans('messages.maintenance') }}</span>
@@ -398,10 +400,12 @@
         </div>
 
         <div class="sidebar-submenu" id="maintenanceSubmenu">
+            @canany(['equipment.view', 'preventive.view', 'corrective.view', 'reports.view'])
             <a href="{{ route('maintenance.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-th text-gray-500"></i>
                 <span>{{ trans('messages.dashboard') }}</span>
             </a>
+            @endcanany
 
             @can('preventive.view')
                 <a href="{{ route('maintenance.plan') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.plan') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -626,6 +630,7 @@
                 </div>
             @endcan
         </div>
+        @endcanany
 
         <!-- MRP Menu - Add permission check -->
         @canany(['mrp.dashboard', 'mrp.demand_forecasting.view', 'mrp.bom_management.view', 'mrp.inventory_levels.view',

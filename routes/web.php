@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Services\UserDashboardService;
 use App\Livewire\MaintenanceDashboard;
 use App\Livewire\MaintenanceEquipment;
 use App\Livewire\MaintenanceTaskComponent;
@@ -35,26 +36,26 @@ Route::get('/', function () {
 
 // Todas as rotas protegidas pelo middleware auth (usuário deve estar autenticado)
 Route::middleware(['auth'])->group(function () {
-    // Main dashboard route - redirects based on user role
+    // Main dashboard route - redirects based on user permissions using centralized service
     Route::get('/dashboard', function() {
-        // Check if user has HR permissions
-        if (auth()->user()->can('hr.dashboard')) {
-            return redirect()->route('hr.dashboard');
-        } 
-        // Check if user has Supply Chain permissions
-        elseif (auth()->user()->can('supplychain.dashboard')) {
-            return redirect()->route('supply-chain.dashboard');
-        } 
-        // Default to maintenance dashboard if has permission
-        elseif (auth()->user()->can('equipment.view') || 
-                auth()->user()->can('preventive.view') || 
-                auth()->user()->can('corrective.view')) {
-            return redirect()->route('maintenance.dashboard');
+        $user = auth()->user();
+        
+        // Use centralized service to determine redirect
+        $dashboardUrl = UserDashboardService::determineUserDashboard($user);
+        
+        // If it's the same route (dashboard), show restricted view
+        if ($dashboardUrl === route('dashboard')) {
+            $primaryModule = UserDashboardService::getUserPrimaryModule($user);
+            $accessibleModules = UserDashboardService::getUserModules($user);
+            
+            return view('dashboard-restricted')
+                ->with('info', 'Você não possui permissões para acessar nenhum módulo específico. Entre em contato com o administrador do sistema.')
+                ->with('primaryModule', $primaryModule)
+                ->with('accessibleModules', $accessibleModules);
         }
-        // If no specific permissions, show a basic dashboard or access denied page
-        else {
-            return view('dashboard-restricted');
-        }
+        
+        // Redirect to appropriate dashboard
+        return redirect($dashboardUrl);
     })->name('dashboard');
 
     // HR Guide Pages
