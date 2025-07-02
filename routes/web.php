@@ -244,7 +244,7 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:hr.attendance.view'])->get('/shifts', App\Livewire\HR\ShiftManagement::class)->name('shifts');
         
         // Work Equipment Categories Management
-        Route::middleware(['permission:hr.equipment.view'])->get('/work-equipment-categories', App\Livewire\HR\WorkEquipmentCategories::class)->name('work-equipment-categories');
+        Route::middleware(['permission:hr.equipment.view'])->get('/work-equipment-categories', App\Livewire\HR\WorkEquipmentCategories::class)->name('work-equipment-categories'); // Nome completo: hr.work-equipment-categories
         
         // Payroll Management
         Route::middleware(['permission:hr.leave.view'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
