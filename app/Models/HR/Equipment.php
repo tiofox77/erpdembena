@@ -4,6 +4,7 @@ namespace App\Models\HR;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Equipment extends Model
@@ -41,13 +42,12 @@ class Equipment extends Model
     const STATUS_DISPOSED = 'disposed';
 
     /**
-     * Equipment type constants
+     * Get the category that owns the equipment.
      */
-    const TYPE_COMPUTER = 'computer';
-    const TYPE_PHONE = 'phone';
-    const TYPE_TOOL = 'tool';
-    const TYPE_VEHICLE = 'vehicle';
-    const TYPE_OTHER = 'other';
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(WorkEquipmentCategory::class, 'equipment_type');
+    }
 
     /**
      * Get the equipment assignments

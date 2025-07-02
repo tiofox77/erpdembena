@@ -43,6 +43,8 @@ class Employees extends Component
     public $department_id;
     public $hire_date;
     public $employment_status;
+    public $inss_number;
+    public $base_salary;
 
     // Document management
     public $newDocumentType = '';
@@ -84,6 +86,8 @@ class Employees extends Component
             'department_id' => 'nullable|exists:departments,id',
             'hire_date' => 'required|date',
             'employment_status' => 'required|in:active,on_leave,terminated,suspended,retired',
+            'inss_number' => 'nullable|string|max:30',
+            'base_salary' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -113,7 +117,7 @@ class Employees extends Component
             'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'tax_number',
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_name', 'bank_account', 'position_id', 'department_id', 'hire_date',
-            'employment_status'
+            'employment_status', 'inss_number', 'base_salary'
         ]);
         $this->isEditing = false;
         $this->showModal = true;
@@ -139,6 +143,8 @@ class Employees extends Component
         $this->department_id = $employee->department_id;
         $this->hire_date = $employee->hire_date;
         $this->employment_status = $employee->employment_status;
+        $this->inss_number = $employee->inss_number;
+        $this->base_salary = $employee->base_salary;
 
         // Load employee documents if available
         $this->employeeDocuments = $employee->documents()->latest()->get();
@@ -183,7 +189,11 @@ class Employees extends Component
             }
             
             $employee->update($validatedData);
-            session()->flash('message', 'Employee updated successfully.');
+            $this->dispatch('notify', 
+                type: 'warning',
+                title: __('messages.success'),
+                message: __('messages.employee_updated')
+            );
         } else {
             // For new employees creating a record first to get the ID
             $employee = Employee::create($validatedData);
@@ -204,7 +214,11 @@ class Employees extends Component
                 $employee->update(['photo' => $photoPath]);
             }
             
-            session()->flash('message', 'Employee created successfully.');
+            $this->dispatch('notify', 
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.employee_created')
+            );
         }
 
         $this->showModal = false;
@@ -221,7 +235,11 @@ class Employees extends Component
         $employee = Employee::find($this->employee_id);
         $employee->delete();
         $this->showDeleteModal = false;
-        session()->flash('message', 'Employee deleted successfully.');
+        $this->dispatch('notify', 
+            type: 'error',
+            title: __('messages.success'),
+            message: __('messages.employee_deleted')
+        );
     }
 
     public function closeModal()
@@ -422,13 +440,15 @@ class Employees extends Component
         $this->email = $employee->email;
         $this->marital_status = $employee->marital_status;
         $this->dependents = $employee->dependents;
-        $this->photo = $employee->photo;
+        $this->photo = null; // Reset photo to prevent old photo from being updated
         $this->bank_name = $employee->bank_name;
         $this->bank_account = $employee->bank_account;
         $this->position_id = $employee->position_id;
         $this->department_id = $employee->department_id;
         $this->hire_date = $employee->hire_date;
         $this->employment_status = $employee->employment_status;
+        $this->inss_number = $employee->inss_number;
+        $this->base_salary = $employee->base_salary;
         
         // Load employee documents
         $this->employeeDocuments = $employee->documents()->latest()->get();

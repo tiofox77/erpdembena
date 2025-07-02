@@ -508,6 +508,32 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <!-- INSS Number -->
+                            <div>
+                                <label for="inss_number" class="block text-sm font-medium text-gray-700">{{ __('messages.inss_number') }}</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <input type="text" id="inss_number"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('inss_number') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="inss_number" placeholder="{{ __('messages.inss_number_placeholder') }}">
+                                    @error('inss_number')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- Base Salary -->
+                            <div>
+                                <label for="base_salary" class="block text-sm font-medium text-gray-700">{{ __('messages.base_salary') }}</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <input type="number" step="0.01" min="0" id="base_salary"
+                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('base_salary') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="base_salary" placeholder="{{ __('messages.base_salary_placeholder') }}">
+                                    @error('base_salary')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -857,6 +883,18 @@
                                     <i class="fas fa-credit-card text-blue-400 mr-2"></i>Bank Account:
                                 </p>
                                 <p class="font-medium pl-6">{{ $bank_account ?: 'N/A' }}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-id-badge text-blue-400 mr-2"></i>INSS Number:
+                                </p>
+                                <p class="font-medium pl-6">{{ $inss_number ?: 'N/A' }}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-600 flex items-center mb-1">
+                                    <i class="fas fa-money-bill-wave text-blue-400 mr-2"></i>Base Salary:
+                                </p>
+                                <p class="font-medium pl-6">{{ $base_salary ? number_format($base_salary, 2, ',', '.') : 'N/A' }}</p>
                             </div>
                         </div>
                     </div>

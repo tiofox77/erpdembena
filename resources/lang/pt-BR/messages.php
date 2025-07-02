@@ -1846,6 +1846,31 @@ return [
     'planned_cost' => 'Custo Planejado',
     'actual_cost' => 'Custo Real',
     
+    // Funcionários - HR
+    'inss_number' => 'Número do INSS',
+    'inss_number_placeholder' => 'Informe o número de identificação do INSS',
+    'base_salary' => 'Salário Base',
+    'base_salary_placeholder' => 'Informe o valor do salário base',
+    
+    // Categorias de Equipamentos de Trabalho
+    'work_equipment_categories_management' => 'Gestão de Categorias de Equipamentos',
+    'work_equipment_category' => 'Categoria de Equipamento',
+    'add_work_equipment_category' => 'Adicionar Categoria de Equipamento',
+    'edit_work_equipment_category' => 'Editar Categoria de Equipamento',
+    'delete_work_equipment_category' => 'Excluir Categoria de Equipamento',
+    'search_work_equipment_categories' => 'Pesquisar categorias de equipamentos...',
+    'category_name' => 'Nome da Categoria',
+    'color' => 'Cor',
+    'description' => 'Descrição',
+    'enter_category_description' => 'Insira a descrição da categoria',
+    'set_category_active' => 'Definir a categoria como ativa ou inativa',
+    'delete_work_equipment_category_warning' => 'Tem certeza que deseja excluir esta categoria de equipamento? Todos os equipamentos associados a esta categoria serão afetados. Esta ação não pode ser desfeita.',
+    'work_equipment_category_created' => 'Categoria de equipamento criada com sucesso.',
+    'work_equipment_category_updated' => 'Categoria de equipamento atualizada com sucesso.',
+    'work_equipment_category_deleted' => 'Categoria de equipamento excluída com sucesso.',
+    'work_equipment_category_in_use' => 'Esta categoria não pode ser excluída porque está sendo usada por itens de equipamento.',
+    'no_categories_found' => 'Nenhuma categoria encontrada',
+    
     // Níveis de Inventário (Integração MRP e Supply Chain)
     'stock_from_supply_chain' => 'Estoque obtido do módulo Cadeia de Suprimentos',
     'available' => 'Disponível',

@@ -73,10 +73,10 @@
                             </label>
                             <select wire:model.live="supplierCategoryFilter" id="supplierCategoryFilter" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
-                                <option value="">{{ __('messages.all_categories') }}</option>
                                 @foreach($supplierCategories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    <option value="{{ $category->id }}" {{ strtolower($category->name) == 'internacional' ? 'selected' : '' }}>{{ $category->name }}</option>
                                 @endforeach
+                                <option value="">{{ __('messages.all_categories') }}</option>
                             </select>
                         </div>
                         
@@ -204,8 +204,8 @@
                             </label>
                             <select wire:model.live="dateField" id="dateField" 
                                 class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out">
-                                <option value="order_date">{{ __('messages.order_date') }}</option>
                                 <option value="expected_delivery_date">{{ __('messages.expected_delivery') }}</option>
+                                <option value="order_date">{{ __('messages.order_date') }}</option>
                             </select>
                         </div>
                         
@@ -343,7 +343,7 @@
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('messages.delivery_date') }}
+                                {{ __('messages.expected_date') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('messages.total') }}

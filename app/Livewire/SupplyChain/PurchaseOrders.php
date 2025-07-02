@@ -43,7 +43,22 @@ class PurchaseOrders extends Component
     
     public function mount()
     {
+        // Define o ano corrente como filtro padrão
         $this->yearFilter = date('Y');
+        
+        // Define expected_delivery_date como campo de data padrão
+        $this->dateField = 'expected_delivery_date';
+        
+        // Busca e define a categoria de fornecedor 'internacional' como padrão
+        $internationalCategory = \App\Models\SupplyChain\SupplierCategory::where('name', 'like', '%internacional%')
+            ->orWhere('name', 'like', '%international%')
+            ->first();
+            
+        if ($internationalCategory) {
+            $this->supplierCategoryFilter = $internationalCategory->id;
+            // Atualiza a lista de fornecedores baseada na categoria selecionada
+            $this->updateFilteredSuppliers($internationalCategory->id);
+        }
     }
     
     /**

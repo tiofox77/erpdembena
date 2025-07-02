@@ -243,6 +243,9 @@ Route::middleware(['auth'])->group(function () {
         // Shift Management
         Route::middleware(['permission:hr.attendance.view'])->get('/shifts', App\Livewire\HR\ShiftManagement::class)->name('shifts');
         
+        // Work Equipment Categories Management
+        Route::middleware(['permission:hr.equipment.view'])->get('/work-equipment-categories', App\Livewire\HR\WorkEquipmentCategories::class)->name('work-equipment-categories');
+        
         // Payroll Management
         Route::middleware(['permission:hr.leave.view'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
         
@@ -352,7 +355,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/stock-movement', App\Livewire\SupplyChain\Reports\StockMovementReport::class)->name('stock-movement');
             
             // Raw Material Report
-            Route::get('/raw-material', App\Livewire\mrp\Reports\RawMaterialReport::class)->name('raw-material');
+            Route::get('/raw-material', App\Livewire\Mrp\Reports\RawMaterialReport::class)->name('raw-material');
         });
     });
 });

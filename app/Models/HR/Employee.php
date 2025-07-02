@@ -29,6 +29,8 @@ class Employee extends Model
         'department_id',
         'hire_date',
         'employment_status',
+        'inss_number',
+        'base_salary',
     ];
 
     /**
@@ -47,6 +49,7 @@ class Employee extends Model
         'date_of_birth' => 'date',
         'hire_date' => 'date',
         'dependents' => 'integer',
+        'base_salary' => 'decimal:2',
     ];
 
     /**

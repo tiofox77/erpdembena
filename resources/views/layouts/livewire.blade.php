@@ -986,6 +986,13 @@
             </a>
             @endcan
             
+            @can('hr.equipment.view')
+            <a href="{{ route('hr.work-equipment-categories') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.work-equipment-categories') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-tags text-gray-500"></i>
+                <span>{{ trans('messages.work_equipment_categories') }}</span>
+            </a>
+            @endcan
+            
             @can('hr.employees.view')
             <a href="{{ route('hr.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-laptop text-gray-500"></i>

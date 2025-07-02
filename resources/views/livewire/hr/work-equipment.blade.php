@@ -107,7 +107,7 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->id }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $item->name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->type }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->category ? $item->category->name : '' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->serial_number }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -119,13 +119,10 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                    <button wire:click="edit({{ $item->id }})" class="text-blue-600 hover:text-blue-900">
+                                    <button wire:click="editEquipment({{ $item->id }})" class="text-blue-600 hover:text-blue-900">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button wire:click="view({{ $item->id }})" class="text-green-600 hover:text-green-900">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button wire:click="confirmDelete({{ $item->id }})" class="text-red-600 hover:text-red-900">
+                                    <button wire:click="confirmDelete({{ $item->id }}, 'equipment')" class="text-red-600 hover:text-red-900">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
@@ -528,11 +525,9 @@
                                 <select wire:model.lazy="equipment_type" id="equipment_type" 
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                     <option value="">Select type</option>
-                                    <option value="computer">Computer</option>
-                                    <option value="phone">Phone</option>
-                                    <option value="tool">Tool</option>
-                                    <option value="vehicle">Vehicle</option>
-                                    <option value="other">Other</option>
+                                    @foreach($workEquipmentCategories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
                                 </select>
                                 @error('equipment_type') <div class="mt-1 text-red-600 text-sm flex items-center"><i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}</div> @enderror
                             </div>

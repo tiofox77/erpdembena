@@ -144,15 +144,6 @@
                     </select>
                 </div>
                 
-                <!-- Filtro por Tipo de Armazém -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.warehouse_type') }}</label>
-                    <select wire:model.live="filters.warehouse_type" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-200 ease-in-out hover:border-blue-400">
-                        <option value="">{{ __('messages.all_warehouses') }}</option>
-                        <option value="raw_material">{{ __('messages.raw_material_warehouse') }}</option>
-                        <option value="finished_product">{{ __('messages.finished_product_warehouse') }}</option>
-                    </select>
-                </div>
 
                 <!-- Filtro por Categoria -->
                 <div>

@@ -7,6 +7,7 @@ use App\Models\HR\EmployeeEquipment;
 use App\Models\HR\EquipmentMaintenance;
 use App\Models\HR\Department;
 use App\Models\HR\Employee;
+use App\Models\HR\WorkEquipmentCategory;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -15,9 +16,21 @@ use Livewire\WithFileUploads;
 class WorkEquipment extends Component
 {
     use WithPagination, WithFileUploads;
+    
+    // WorkEquipmentCategories
+    public $workEquipmentCategories = [];
 
     // Tabs
     public $activeTab = 'equipment';
+    
+    /**
+     * Inicialização do componente
+     */
+    public function mount()
+    {
+        // Carregar categorias de equipamento de trabalho
+        $this->workEquipmentCategories = WorkEquipmentCategory::where('is_active', true)->orderBy('name')->get();
+    }
 
     // Equipment
     public $equipment_id;
@@ -89,7 +102,7 @@ class WorkEquipment extends Component
     {
         return [
             'name' => 'required|string|max:255',
-            'equipment_type' => 'required|in:computer,phone,tool,vehicle,other',
+            'equipment_type' => 'required|exists:work_equipment_categories,id',
             'serial_number' => 'nullable|string|max:255',
             'asset_code' => 'required|string|max:255|unique:equipment,asset_code,' . $this->equipment_id,
             'brand' => 'nullable|string|max:255',
@@ -228,10 +241,18 @@ class WorkEquipment extends Component
         if ($this->isEditing) {
             $equipment = Equipment::find($this->equipment_id);
             $equipment->update($validatedData);
-            session()->flash('message', 'Equipment updated successfully.');
+            $this->dispatch('notify', 
+                type: 'warning',
+                title: __('messages.success'),
+                message: __('messages.equipment_updated')
+            );
         } else {
             Equipment::create($validatedData);
-            session()->flash('message', 'Equipment created successfully.');
+            $this->dispatch('notify', 
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.equipment_created')
+            );
         }
 
         $this->showEquipmentModal = false;
@@ -395,10 +416,18 @@ class WorkEquipment extends Component
         if ($this->isEditing) {
             $maintenance = EquipmentMaintenance::find($this->maintenance_id);
             $maintenance->update($data);
-            session()->flash('message', 'Maintenance record updated successfully.');
+            $this->dispatch('notify', 
+                type: 'warning',
+                title: __('messages.success'),
+                message: __('messages.equipment_maintenance_updated')
+            );
         } else {
             EquipmentMaintenance::create($data);
-            session()->flash('message', 'Maintenance record created successfully.');
+            $this->dispatch('notify', 
+                type: 'success',
+                title: __('messages.success'),
+                message: __('messages.equipment_maintenance_created')
+            );
         }
 
         $this->showMaintenanceModal = false;
@@ -427,32 +456,52 @@ class WorkEquipment extends Component
     {
         if ($this->deleteType === 'equipment') {
             $equipment = Equipment::find($this->equipment_id);
-            $equipment->delete();
-            session()->flash('message', 'Equipment deleted successfully.');
+            if ($equipment) {
+                $equipment->delete();
+                $this->dispatch('notify', 
+                    type: 'error',
+                    title: __('messages.success'),
+                    message: __('messages.equipment_deleted')
+                );
+            }
         } elseif ($this->deleteType === 'assignment') {
             $assignment = EmployeeEquipment::find($this->assignment_id);
-            
-            // Reset equipment status if it was assigned
-            if ($assignment->status === 'issued') {
-                $equipment = Equipment::find($assignment->equipment_id);
-                $equipment->status = 'available';
-                $equipment->save();
+            if ($assignment) {
+                // Reset equipment status if it was assigned
+                if ($assignment->status === 'issued') {
+                    $equipment = Equipment::find($assignment->equipment_id);
+                    if ($equipment) {
+                        $equipment->status = 'available';
+                        $equipment->save();
+                    }
+                }
+                
+                $assignment->delete();
+                $this->dispatch('notify', 
+                    type: 'error',
+                    title: __('messages.success'),
+                    message: __('messages.equipment_assignment_deleted')
+                );
             }
-            
-            $assignment->delete();
-            session()->flash('message', 'Equipment assignment deleted successfully.');
         } elseif ($this->deleteType === 'maintenance') {
             $maintenance = EquipmentMaintenance::find($this->maintenance_id);
-            
-            // Reset equipment status if it was in maintenance
-            if (in_array($maintenance->status, ['planned', 'in_progress'])) {
-                $equipment = Equipment::find($maintenance->equipment_id);
-                $equipment->status = 'available';
-                $equipment->save();
+            if ($maintenance) {
+                // Reset equipment status if it was in maintenance
+                if (in_array($maintenance->status, ['planned', 'in_progress'])) {
+                    $equipment = Equipment::find($maintenance->equipment_id);
+                    if ($equipment) {
+                        $equipment->status = 'available';
+                        $equipment->save();
+                    }
+                }
+                
+                $maintenance->delete();
+                $this->dispatch('notify', 
+                    type: 'error',
+                    title: __('messages.success'),
+                    message: __('messages.equipment_maintenance_deleted')
+                );
             }
-            
-            $maintenance->delete();
-            session()->flash('message', 'Maintenance record deleted successfully.');
         }
         
         $this->showDeleteModal = false;
