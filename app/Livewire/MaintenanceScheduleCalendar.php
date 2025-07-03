@@ -826,19 +826,31 @@ private function getMaintenanceNoteStatus($planId, $dateStr, $defaultStatus = 'p
     }
 
     // Edit an event
-    public function editEvent($eventId)
+    public function editEvent($eventId, $eventDate = null)
     {
+        // Atualizar a data selecionada com a data do evento clicado
+        if ($eventDate) {
+            $this->selectedDate = $eventDate;
+        }
+        
         // Log para debug
         \Log::info('=== INÍCIO editEvent ===', [
             'eventId' => $eventId,
-            'selectedDate' => $this->selectedDate
+            'eventDate_parameter' => $eventDate,
+            'selectedDate' => $this->selectedDate,
+            'selectedDate_type' => gettype($this->selectedDate),
+            'data_atual' => now()->format('Y-m-d')
         ]);
         
         // Dispatch event to open the notes modal with the selected date
-        $this->dispatch('openNotesModal', $eventId, $this->selectedDate);
+        $this->dispatch('openNotesModal', $eventId, $eventDate ?? $this->selectedDate);
         
         // Log para debug
-        \Log::info('=== FIM editEvent ===');
+        \Log::info('=== FIM editEvent - DISPATCHED ===', [
+            'dispatched_eventId' => $eventId,
+            'dispatched_selectedDate' => $eventDate ?? $this->selectedDate,
+            'selectedDate_original' => $this->selectedDate
+        ]);
     }
 
     // Create a new event on the selected date

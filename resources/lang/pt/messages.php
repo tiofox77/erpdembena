@@ -534,6 +534,11 @@ return [
     // Histórico
     'maintenance_history' => 'Histórico de Manutenção',
     'maintenance_notes' => 'Notas de Manutenção',
+    'maintenance_notes_and_history' => 'Notas e Histórico de Manutenção',
+    'add_maintenance_note' => 'Adicionar Nota de Manutenção',
+    'enter_maintenance_notes' => 'Introduza as notas de manutenção aqui',
+    'select_maintenance_status' => 'Selecione o estado da manutenção',
+    'maintenance_activity_history' => 'Histórico de Atividades de Manutenção',
     'activity_history' => 'Histórico de Atividades',
     'no_activity_history_found' => 'Nenhum histórico de atividade encontrado.',
     'update_status' => 'Atualizar Status',
@@ -733,6 +738,10 @@ return [
     'success' => 'Sucesso',
     'generated_on' => 'Gerado em',
     'total_plans' => 'Total de Planos',
+    'status_explanation' => 'Explicação dos Estados',
+    'task_completed_for_specific_date' => 'Tarefa já concluída para a data :date',
+    'completed_plan_edit_disabled' => 'Plano concluído - edição desabilitada',
+    'completed_task' => 'Tarefa Concluída',
     'scheduled' => 'Agendado',
     'maintenance_plan_report_notes' => 'Este relatório mostra todos os planos de manutenção agendados durante o período selecionado. As ocorrências são calculadas com base nas configurações de frequência de cada plano.',
     

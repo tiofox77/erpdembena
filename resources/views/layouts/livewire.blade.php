@@ -1000,6 +1000,13 @@
             </a>
             @endcan
             
+            @can('hr.settings.view')
+            <a href="{{ route('hr.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-cogs text-gray-500"></i>
+                <span>{{ trans('messages.hr_settings') }}</span>
+            </a>
+            @endcan
+            
             @can('hr.dashboard')
             <a href="{{ route('hr.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-chart-bar text-gray-500"></i>

@@ -31,6 +31,16 @@ class MaintenanceNoteModal extends Component
         'selectedStatus' => 'required|string|in:in_progress,completed,cancelled,pending,schedule',
         'workFile' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // Max 10MB, documentos comuns
     ];
+    
+    // Remover validação em tempo real para evitar salvamento automático
+    protected function validationAttributes()
+    {
+        return [
+            'notes' => __('messages.notes'),
+            'selectedStatus' => __('messages.status'),
+            'workFile' => __('messages.attachment'),
+        ];
+    }
 
     protected $listeners = [
         'openNotesModal' => 'openModal',
@@ -47,15 +57,38 @@ class MaintenanceNoteModal extends Component
     #[On('openNotesModal')]
     public function openModal($eventId, $selectedDate = null)
     {
-        $this->reset(['notes', 'workFile', 'uploadError', 'selectedStatus', 'selectedDate']);
-
+        // Log antes de qualquer operação
+        Log::info('=== RECEBENDO PARÂMETROS NO MODAL ===', [
+            'eventId_recebido' => $eventId,
+            'selectedDate_recebido' => $selectedDate,
+            'tipo_selectedDate' => gettype($selectedDate),
+            'é_null' => $selectedDate === null ? 'SIM' : 'NÃO',
+            'é_string_vazia' => $selectedDate === '' ? 'SIM' : 'NÃO',
+            'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)
+        ]);
+        
+        // Definir primeiro a data selecionada ANTES de fazer o reset
+        // Certifique-se que não aceita valores vazios
+        if (empty($selectedDate)) {
+            Log::warning('Data selecionada vazia ou null, usando data atual');
+            $this->selectedDate = now()->format('Y-m-d');
+        } else {
+            $this->selectedDate = $selectedDate;
+        }
+        
         $this->maintenancePlanId = $eventId;
-        $this->selectedDate = $selectedDate ?? now()->format('Y-m-d');
+        
+        // Agora fazer o reset dos outros campos, preservando selectedDate
+        $this->reset(['notes', 'workFile', 'uploadError', 'selectedStatus']);
         
         // Log para debug
         Log::info('=== INÍCIO openModal ===', [
             'eventId' => $eventId,
-            'selectedDate' => $this->selectedDate
+            'selectedDate_parameter' => $selectedDate,
+            'selectedDate_final' => $this->selectedDate,
+            'maintenancePlanId' => $this->maintenancePlanId,
+            'data_atual' => now()->format('Y-m-d'),
+            'data_passou_parametro' => $selectedDate ? 'SIM' : 'NÃO'
         ]);
         
         $plan = MaintenancePlan::with(['task', 'equipment', 'notes'])->findOrFail($eventId);
@@ -67,50 +100,63 @@ class MaintenanceNoteModal extends Component
             'status' => $plan->status,
         ];
 
-        $this->currentStatus = $plan->status;
-        $this->selectedStatus = $plan->status; // Inicializa o status selecionado com o status atual
+        // Obter o status específico para a data selecionada
+        $this->currentStatus = $this->getStatusForDate($this->selectedDate);
+        $this->selectedStatus = $this->currentStatus;
 
-        // Verifica se existe nota com status 'completed' APENAS para a data selecionada
-        // Ao invés de verificar todas as notas do plano
+        // Verificar se existe nota com status 'completed' APENAS para a data selecionada usando note_date
         $hasCompletedNote = false;
         
         if ($this->selectedDate) {
             $selectedDateObj = \Carbon\Carbon::parse($this->selectedDate);
             
-            // Verificar se existe uma nota com status 'completed' APENAS para a data selecionada
-            $hasCompletedNote = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
+            // Query para debug
+            $completedNotesQuery = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
                 ->where('status', 'completed')
-                ->whereDate('note_date', $selectedDateObj->format('Y-m-d'))
-                ->exists();
+                ->whereDate('note_date', $selectedDateObj->format('Y-m-d'));
                 
-            Log::info('Verificando nota completed para data específica', [
-                'date' => $this->selectedDate,
-                'hasCompletedNote' => $hasCompletedNote ? 'sim' : 'não'
+            $hasCompletedNote = $completedNotesQuery->exists();
+            
+            // Log detalhado para debug
+            Log::info('=== VERIFICAÇÃO DE NOTA COMPLETED ===', [
+                'maintenancePlanId' => $this->maintenancePlanId,
+                'selectedDate' => $this->selectedDate,
+                'selectedDateFormatted' => $selectedDateObj->format('Y-m-d'),
+                'hasCompletedNote' => $hasCompletedNote ? 'SIM' : 'NÃO',
+                'currentStatus' => $this->currentStatus,
+                'sqlQuery' => $completedNotesQuery->toSql(),
+                'queryBindings' => $completedNotesQuery->getBindings()
+            ]);
+            
+            // Verificar todas as notas para esta data (para debug)
+            $allNotesForDate = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
+                ->whereDate('note_date', $selectedDateObj->format('Y-m-d'))
+                ->get(['id', 'status', 'note_date', 'created_at']);
+                
+            Log::info('Todas as notas para esta data:', [
+                'count' => $allNotesForDate->count(),
+                'notes' => $allNotesForDate->toArray()
             ]);
         }
         
-        // Define o modo somente visualização se o plano estiver marcado como concluído
-        // OU se existir uma nota com status 'completed' APENAS para a data selecionada
-        $this->viewOnly = ($plan->status === 'completed' || $hasCompletedNote);
+        // Define o modo somente visualização APENAS se existir uma nota com status 'completed' para a data específica
+        $this->viewOnly = $hasCompletedNote;
         
-        // Agora a mensagem é específica para a data selecionada
-        if ($this->viewOnly) {
-            if ($hasCompletedNote && $plan->status !== 'completed') {
-                $this->dispatch('notify', 
-                    type: 'info', 
-                    title: __('messages.completed_task'),
-                    message: __('messages.task_completed_for_specific_date', ['date' => $this->selectedDate])
-                );
-            } else if ($plan->status === 'completed') {
-                $this->dispatch('notify', 
-                    type: 'info', 
-                    title: __('messages.completed_task'),
-                    message: __('messages.completed_plan_edit_disabled')
-                );
-            }
+        Log::info('Definindo viewOnly', [
+            'viewOnly' => $this->viewOnly ? 'SIM' : 'NÃO',
+            'hasCompletedNote' => $hasCompletedNote ? 'SIM' : 'NÃO'
+        ]);
+        
+        // Mensagem específica para a data selecionada
+        if ($this->viewOnly && $hasCompletedNote) {
+            $this->dispatch('notify', 
+                type: 'info', 
+                title: __('messages.completed_task'),
+                message: __('messages.task_completed_for_specific_date', ['date' => $this->selectedDate])
+            );
         }
 
-        // Carregar histórico de notas
+        // Carregar histórico de notas filtrado pela data
         $this->loadHistory();
 
         $this->showModal = true;
@@ -139,10 +185,12 @@ class MaintenanceNoteModal extends Component
         $this->currentStatus = $plan->status;
         $this->selectedStatus = $plan->status; // Inicializa o status selecionado com o status atual
         
-        // Por padrão, o modo de visualização da história é somente leitura
-        $this->viewOnly = true;
+        // Iniciamos definindo viewOnly como false para permitir edição
+        // Isso será alterado para true pelo loadHistory se encontrar uma nota
+        // com status 'completed' para a data específica selecionada
+        $this->viewOnly = false;
         
-        // Carregar histórico de notas
+        // Carregar histórico de notas e definir viewOnly com base nos resultados
         $this->loadHistory();
 
         // Mostrar o modal
@@ -152,48 +200,111 @@ class MaintenanceNoteModal extends Component
     public function loadHistory()
     {
         try {
-            // Log para debug
+            // Log para debug com mais detalhes
             Log::info('=== INÍCIO loadHistory ===', [
                 'planId' => $this->maintenancePlanId,
-                'selectedDate' => $this->selectedDate
+                'selectedDate' => $this->selectedDate,
+                'tipo_selectedDate' => gettype($this->selectedDate),
+                'selectedDate_vazio' => empty($this->selectedDate) ? 'SIM' : 'NÃO'
             ]);
             
             // Converter a string de data para Carbon para manipulação segura
             $date = null;
             if ($this->selectedDate) {
-                $date = \Carbon\Carbon::parse($this->selectedDate);
-                Log::info('Data selecionada parseada', ['date' => $date->format('Y-m-d')]);
+                try {
+                    $date = \Carbon\Carbon::parse($this->selectedDate);
+                    Log::info('Data selecionada parseada com sucesso', [
+                        'date_formatada' => $date->format('Y-m-d'),
+                        'date_original' => $this->selectedDate
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Erro ao fazer parse da data selecionada', [
+                        'erro' => $e->getMessage(),
+                        'selectedDate' => $this->selectedDate
+                    ]);
+                    // Em caso de erro, usar a data atual como fallback
+                    $date = now();
+                }
+            } else {
+                Log::warning('Nenhuma data selecionada disponível');
             }
             
-            // Iniciar a query
+            // Iniciar a query - FILTRAR APENAS PELA DATA ESPECÍFICA
             $query = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId);
             
-            // Filtrar por data se uma data foi selecionada
+            // IMPORTANTE: Filtrar APENAS por data específica, sem incluir notas antigas
             if ($date) {
-                $query->where(function($q) use ($date) {
-                    $q->where('note_date', $date->format('Y-m-d'))
-                      ->orWhereNull('note_date'); // Para compatibilidade com notas antigas
-                });
+                $dateString = $date->format('Y-m-d');
+                $query->whereDate('note_date', $dateString);
+                
+                // Log da query SQL para depuração
+                $sql = $query->toSql();
+                $bindings = $query->getBindings();
+                Log::info('SQL da consulta de histórico', [
+                    'sql' => $sql, 
+                    'bindings' => $bindings,
+                    'data_filtro' => $dateString
+                ]);
+            } else {
+                // Se não há data selecionada, retornar histórico vazio
+                Log::warning('Retornando histórico vazio por falta de data válida');
+                $this->history = [];
+                return;
             }
             
             // Buscar as notas e transformá-las
-            $this->history = $query->with('user')
+            $notes = $query->with('user')
                 ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function($note) {
-                    return [
-                        'id' => $note->id,
-                        'status' => $note->status,
-                        'notes' => $note->notes,
-                        'file_name' => $note->file_name,
-                        'file_path' => $note->file_path,
-                        'user' => $note->user ? $note->user->name : 'System',
-                        'created_at' => $note->created_at->format('Y-m-d H:i:s'),
-                        'note_date' => $note->note_date ? $note->note_date->format('Y-m-d') : null,
-                    ];
-                })->toArray();
+                ->get();
                 
-            Log::info('Histórico carregado', ['count' => count($this->history)]);
+            Log::info('Notas encontradas para a data', [
+                'quantidade' => $notes->count(),
+                'data_filtro' => $date->format('Y-m-d'),
+                'plan_id' => $this->maintenancePlanId
+            ]);
+            
+            $this->history = $notes->map(function($note) {
+                return [
+                    'id' => $note->id,
+                    'notes' => $note->notes,
+                    'status' => $note->status,
+                    'user_name' => optional($note->user)->name ?? 'System',
+                    'created_at' => $note->created_at->format('Y-m-d H:i:s'),
+                    'work_file' => $note->work_file,
+                ];
+            })->toArray();
+
+            // Verificar se há alguma nota na data selecionada com status completed
+            $dateForStatus = $date->format('Y-m-d');
+            
+            // Query para verificar status completed
+            $statusQuery = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
+                ->whereDate('note_date', $dateForStatus)
+                ->where('status', 'completed');
+                
+            // Log para debug da query de status
+            Log::info('Verificando status completed para a data', [
+                'sql' => $statusQuery->toSql(),
+                'bindings' => $statusQuery->getBindings(),
+                'data_verificacao' => $dateForStatus
+            ]);
+            
+            $statusCompleted = $statusQuery->exists();
+            
+            // IMPORTANTE: Definir o modo viewOnly com base na verificação de statusCompleted
+            // Se houver uma nota com status 'completed' para esta data específica,
+            // o modal deve estar em modo somente leitura
+            $this->viewOnly = $statusCompleted;
+            
+            Log::info('Resultado da verificação de status completed', [
+                'statusCompleted' => $statusCompleted ? 'SIM' : 'NÃO',
+                'data_verificada' => $dateForStatus,
+                'viewOnly_definido' => $this->viewOnly ? 'MODO SOMENTE LEITURA' : 'MODO EDIÇÃO'
+            ]);
+            Log::info('Histórico carregado para data específica', [
+                'count' => count($this->history),
+                'date' => $date ? $date->format('Y-m-d') : 'sem data'
+            ]);
         } catch (\Exception $e) {
             Log::error('Erro ao carregar histórico', [
                 'error' => $e->getMessage(),
@@ -203,6 +314,41 @@ class MaintenanceNoteModal extends Component
         } finally {
             Log::info('=== FIM loadHistory ===');
         }
+    }
+
+    /**
+     * Obter status específico para uma data
+     */
+    private function getStatusForDate($selectedDate)
+    {
+        if (!$selectedDate) {
+            Log::info('getStatusForDate: Sem data selecionada, retornando pending');
+            return 'pending';
+        }
+
+        $date = \Carbon\Carbon::parse($selectedDate);
+        
+        Log::info('=== getStatusForDate ===', [
+            'selectedDate' => $selectedDate,
+            'dateFormatted' => $date->format('Y-m-d'),
+            'maintenancePlanId' => $this->maintenancePlanId
+        ]);
+        
+        // Buscar a última nota para a data específica usando note_date
+        $lastNote = MaintenanceNote::where('maintenance_plan_id', $this->maintenancePlanId)
+            ->whereDate('note_date', $date->format('Y-m-d'))
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $status = $lastNote ? $lastNote->status : 'pending';
+        
+        Log::info('Status para data específica', [
+            'lastNote' => $lastNote ? $lastNote->toArray() : null,
+            'status' => $status
+        ]);
+
+        // Se existe nota para a data, retornar seu status, senão retornar 'pending'
+        return $status;
     }
 
     public function closeModal()

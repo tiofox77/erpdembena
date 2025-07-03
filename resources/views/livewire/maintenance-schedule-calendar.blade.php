@@ -115,7 +115,7 @@
                     @if(isset($events[$day['date']]))
                         @foreach($events[$day['date']] as $event)
                             <div
-                                wire:click.stop="editEvent({{ $event['id'] }})"
+                                wire:click.stop="editEvent({{ $event['id'] }}, '{{ $day['date'] }}')"
                                 class="text-xs p-1 rounded cursor-pointer block w-full
                                     {{ $event['color'] }}
                                     {{ $event['status'] === 'completed' ? 'opacity-60' : '' }}
