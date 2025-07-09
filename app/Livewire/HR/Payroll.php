@@ -43,6 +43,16 @@ class Payroll extends Component
     public $status = 'draft';
     public $remarks;
     
+    // Propriedades para integração com presença e licenças
+    public $attendance_hours = 0; // Horas de presença
+    public $base_hourly_rate = 0; // Taxa horária base
+    public $total_hours_pay = 0; // Pagamento calculado com base nas horas
+    public $leave_days = 0; // Dias de licença regular
+    public $leave_deduction = 0; // Dedução calculada com base nas licenças
+    public $maternity_days = 0; // Dias de licença maternidade
+    public $special_leave_days = 0; // Dias de licença especial
+    public $employee = null; // Para armazenar dados completos do funcionário
+    
     // Payroll items
     public $payrollItems = [];
 
@@ -80,6 +90,12 @@ class Payroll extends Component
             'payment_date' => 'nullable|date',
             'status' => 'required|in:draft,approved,paid,cancelled',
             'remarks' => 'nullable',
+            // Novos campos de presença e licença
+            'attendance_hours' => 'nullable|numeric|min:0',
+            'base_hourly_rate' => 'nullable|numeric|min:0',
+            'leave_days' => 'nullable|numeric|min:0',
+            'maternity_days' => 'nullable|numeric|min:0',
+            'special_leave_days' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -107,43 +123,73 @@ class Payroll extends Component
     {
         if ($this->employee_id) {
             $employee = Employee::find($this->employee_id);
+            $this->employee = $employee; // Guardar objeto completo do funcionário
+            
             if ($employee) {
-                // Check if this employee already has a payroll with a custom salary
+                // Verificar se este funcionário já tem uma folha de pagamento com salário customizado
                 $lastPayroll = PayrollModel::where('employee_id', $this->employee_id)
                     ->orderBy('created_at', 'desc')
                     ->first();
                 
                 if ($lastPayroll) {
-                    // Use the last payroll's basic salary for continuity
+                    // Usar o último salário registrado para continuidade
                     $this->basic_salary = $lastPayroll->basic_salary;
+                    
+                    // Recuperar valores de presença e licença se disponíveis
+                    $this->attendance_hours = $lastPayroll->attendance_hours ?? 0;
+                    $this->leave_days = $lastPayroll->leave_days ?? 0;
+                    $this->maternity_days = $lastPayroll->maternity_days ?? 0;
+                    $this->special_leave_days = $lastPayroll->special_leave_days ?? 0;
                 } else {
-                    // If position exists, get the default salary from position
+                    // Se existe posição, obter o salário padrão da posição
                     if ($employee->position) {
-                        // Use the middle of the salary range as default instead of minimum
+                        // Usar o ponto médio da faixa salarial como padrão em vez do mínimo
                         $minSalary = $employee->position->salary_range_min;
                         $maxSalary = $employee->position->salary_range_max;
                         
-                        // If max salary is defined, use middle of range, otherwise use min
+                        // Se o salário máximo está definido, usar o ponto médio, caso contrário usar mínimo
                         if ($maxSalary > $minSalary) {
                             $this->basic_salary = ($minSalary + $maxSalary) / 2;
                         } else {
                             $this->basic_salary = $minSalary;
                         }
                     } else {
+                        // Valor padrão zero se não há posição
                         $this->basic_salary = 0;
                     }
+                    
+                    // Calcular taxa horária base com base no salário mensal (considera 22 dias e 8 horas por dia)
+                    if ($this->basic_salary > 0) {
+                        $this->base_hourly_rate = round($this->basic_salary / (8 * 22), 2);
+                    }
                 }
-                
-                $this->bank_account = $employee->bank_account;
-                
-                // Initialize other fields with zero
-                $this->allowances = 0;
-                $this->overtime = 0;
-                $this->bonuses = 0;
-                $this->deductions = 0;
-                
+
+                // Definir conta bancária se disponível
+                if ($employee->bank_account) {
+                    $this->bank_account = $employee->bank_account;
+                }
+
+                // Calcular os valores com base nos novos dados
+                $this->calculateAttendanceAndLeavePay();
                 $this->calculatePayroll();
             }
+        } else {
+            // Redefinir valores se nenhum funcionário for selecionado
+            $this->reset([
+                'basic_salary',
+                'bank_account',
+                'tax',
+                'social_security',
+                'net_salary',
+                'attendance_hours',
+                'base_hourly_rate',
+                'total_hours_pay',
+                'leave_days',
+                'leave_deduction',
+                'maternity_days',
+                'special_leave_days',
+                'employee'
+            ]);
         }
     }
 
@@ -172,22 +218,114 @@ class Payroll extends Component
         $this->calculatePayroll();
     }
 
-    private function calculatePayroll()
+    /**
+     * Calcula pagamentos baseados em horas de presença e dias de licença
+     */
+    public function calculateAttendanceAndLeavePay()
     {
-        // Calculate gross salary (base + allowances + overtime + bonuses)
-        $grossSalary = $this->basic_salary + $this->allowances + $this->overtime + $this->bonuses;
+        // Calcular o pagamento com base nas horas trabalhadas
+        if ($this->attendance_hours > 0 && $this->base_hourly_rate > 0) {
+            $this->total_hours_pay = round($this->attendance_hours * $this->base_hourly_rate, 2);
+        } else {
+            $this->total_hours_pay = 0;
+        }
         
-        // Calculate social security (INSS) - 3% of basic salary and allowances
-        // Based on Angolan regulations 
-        $inssBase = $this->basic_salary + $this->allowances;
-        $this->social_security = $inssBase * 0.03;
+        // Calcular deduções baseadas em dias de licença
+        // Considerar 22 dias úteis por mês como base para cálculo
+        $workingDaysInMonth = 22;
         
-        // Calculate tax (IRT) - Angolan Income Tax
-        $this->tax = $this->calculateIncomeTax();
+        if ($this->leave_days > 0 && $this->basic_salary > 0) {
+            // Cálculo da dedução por dias de licença (excluindo maternidade e licença especial)
+            // Note que licença maternidade não gera dedução, conforme a legislação angolana
+            $dailyRate = $this->basic_salary / $workingDaysInMonth;
+            $this->leave_deduction = round($dailyRate * $this->leave_days, 2);
+        } else {
+            $this->leave_deduction = 0;
+        }
+    }
+    
+    /**
+     * Método para atualizar cálculos quando há alteração nas horas de presença
+     */
+    public function updatedAttendanceHours()
+    {
+        $this->calculateAttendanceAndLeavePay();
+        $this->calculatePayroll();
+    }
+    
+    /**
+     * Método para atualizar cálculos quando há alteração na taxa horária
+     */
+    public function updatedBaseHourlyRate()
+    {
+        $this->calculateAttendanceAndLeavePay();
+        $this->calculatePayroll();
+    }
+    
+    /**
+     * Método para atualizar cálculos quando há alteração nos dias de licença
+     */
+    public function updatedLeaveDays()
+    {
+        $this->calculateAttendanceAndLeavePay();
+        $this->calculatePayroll();
+    }
+    
+    /**
+     * Método para atualizar cálculos quando há alteração nos dias de maternidade
+     */
+    public function updatedMaternityDays()
+    {
+        // Apenas mulheres podem ter dias de maternidade
+        if ($this->employee && $this->employee->gender !== 'female') {
+            $this->maternity_days = 0;
+            session()->flash('error', 'Licença maternidade só pode ser atribuída a funcionárias mulheres.');
+        }
         
-        // Calculate net salary
-        $totalDeductions = $this->deductions + $this->tax + $this->social_security;
-        $this->net_salary = $grossSalary - $totalDeductions;
+        $this->calculateAttendanceAndLeavePay();
+        $this->calculatePayroll();
+    }
+    
+    /**
+     * Método para atualizar cálculos quando há alteração nos dias de licença especial
+     */
+    public function updatedSpecialLeaveDays()
+    {
+        $this->calculateAttendanceAndLeavePay();
+        $this->calculatePayroll();
+    }
+    
+    public function calculatePayroll()
+    {
+        // Calcular o total de ganhos
+        // Se tiver horas de presença registradas, usar o total_hours_pay em vez do salário base
+        $baseEarnings = $this->attendance_hours > 0 ? $this->total_hours_pay : $this->basic_salary;
+        
+        // Subtrair deduções por licenças não-especiais
+        $baseEarnings = $baseEarnings - $this->leave_deduction;
+        
+        // Garantir que o salário base não seja negativo
+        if ($baseEarnings < 0) {
+            $baseEarnings = 0;
+        }
+        
+        // Calcular o total de ganhos incluindo adicionais
+        $totalEarnings = $baseEarnings + $this->allowances + $this->overtime + $this->bonuses;
+        
+        // Calcular imposto (15% flat rate, ajuste conforme necessário)
+        $this->tax = $totalEarnings * 0.15;
+        
+        // Calcular seguro social (4% flat rate, ajuste conforme necessário)
+        $this->social_security = $totalEarnings * 0.04;
+        
+        // Calcular salário líquido
+        $totalDeductions = $this->tax + $this->social_security + $this->deductions;
+        $this->net_salary = $totalEarnings - $totalDeductions;
+        
+        // Garantir que o salário líquido não seja negativo
+        if ($this->net_salary < 0) {
+            $this->net_salary = 0;
+        }
     }
 
     private function calculateIncomeTax()
@@ -225,8 +363,14 @@ class Payroll extends Component
             'payroll_id', 'employee_id', 'payroll_period_id', 'basic_salary',
             'allowances', 'overtime', 'bonuses', 'deductions', 'tax',
             'social_security', 'net_salary', 'payment_method', 'bank_account',
-            'payment_date', 'status', 'remarks', 'payrollItems'
+            'payment_date', 'status', 'remarks', 'payrollItems',
+            // Resetar campos de presença e licença
+            'attendance_hours', 'base_hourly_rate', 'total_hours_pay',
+            'leave_days', 'leave_deduction', 'maternity_days', 'special_leave_days',
+            'employee'
         ]);
+        
+        // Inicialização dos campos financeiros
         $this->allowances = 0;
         $this->overtime = 0;
         $this->bonuses = 0;
@@ -236,12 +380,23 @@ class Payroll extends Component
         $this->net_salary = 0;
         $this->payment_method = 'bank_transfer';
         $this->status = 'draft';
+        
+        // Inicialização dos campos de presença e licença
+        $this->attendance_hours = 0;
+        $this->base_hourly_rate = 0;
+        $this->total_hours_pay = 0;
+        $this->leave_days = 0;
+        $this->leave_deduction = 0;
+        $this->maternity_days = 0;
+        $this->special_leave_days = 0;
+        
         $this->isEditing = false;
         $this->showModal = true;
     }
 
     public function edit(PayrollModel $payroll)
     {
+        // Carregar dados básicos da folha de pagamento
         $this->payroll_id = $payroll->id;
         $this->employee_id = $payroll->employee_id;
         $this->payroll_period_id = $payroll->payroll_period_id;
@@ -258,8 +413,20 @@ class Payroll extends Component
         $this->payment_date = $payroll->payment_date ? $payroll->payment_date->format('Y-m-d') : null;
         $this->status = $payroll->status;
         $this->remarks = $payroll->remarks;
+        
+        // Carregar campos de presença e licença
+        $this->attendance_hours = $payroll->attendance_hours ?? 0;
+        $this->base_hourly_rate = $payroll->base_hourly_rate ?? 0;
+        $this->total_hours_pay = $payroll->total_hours_pay ?? 0;
+        $this->leave_days = $payroll->leave_days ?? 0;
+        $this->leave_deduction = $payroll->leave_deduction ?? 0;
+        $this->maternity_days = $payroll->maternity_days ?? 0;
+        $this->special_leave_days = $payroll->special_leave_days ?? 0;
+        
+        // Carregar dados completos do funcionário
+        $this->employee = Employee::find($this->employee_id);
 
-        // Load payroll items
+        // Carregar itens da folha
         $this->payrollItems = $payroll->payrollItems->toArray();
 
         $this->isEditing = true;
@@ -384,9 +551,10 @@ class Payroll extends Component
                     $tax = ($taxableIncome - 350000) * 0.19 + 56754.81;
                 }
                 
-                // Calculate net salary
+                // Calcular salário líquido
                 $netSalary = $basicSalary - ($tax + $socialSecurity);
 
+                // Criar folha de pagamento com valores calculados
                 PayrollModel::create([
                     'employee_id' => $employee->id,
                     'payroll_period_id' => $this->payroll_period_id,
@@ -409,48 +577,103 @@ class Payroll extends Component
         }
 
         $this->showGenerateModal = false;
-        session()->flash('message', "Generated {$count} payroll records successfully.");
+        session()->flash('message', "Geradas {$count} folhas de pagamento com sucesso.");
     }
 
     public function save()
     {
-        $validatedData = $this->validate();
-
+        $this->validate();
+        
+        // Verificar dias de maternidade para funcionários homens
+        if ($this->employee && $this->employee->gender !== 'female' && $this->maternity_days > 0) {
+            $this->addError('maternity_days', 'Licença maternidade só pode ser atribuída a funcionárias mulheres.');
+            return;
+        }
+        
+        // Atualizar cálculos finais antes de salvar
+        $this->calculateAttendanceAndLeavePay();
+        $this->calculatePayroll();
+        
+        $payrollData = [
+            'employee_id' => $this->employee_id,
+            'payroll_period_id' => $this->payroll_period_id,
+            'basic_salary' => $this->basic_salary,
+            'allowances' => $this->allowances,
+            'overtime' => $this->overtime,
+            'bonuses' => $this->bonuses,
+            'deductions' => $this->deductions,
+            'tax' => $this->tax,
+            'social_security' => $this->social_security,
+            'net_salary' => $this->net_salary,
+            'payment_method' => $this->payment_method,
+            'bank_account' => $this->bank_account,
+            'payment_date' => $this->payment_date ? Carbon::parse($this->payment_date) : null,
+            'status' => $this->status,
+            'remarks' => $this->remarks,
+            // Campos de presença e licença
+            'attendance_hours' => $this->attendance_hours ?? 0,
+            'base_hourly_rate' => $this->base_hourly_rate ?? 0,
+            'total_hours_pay' => $this->total_hours_pay ?? 0,
+            'leave_days' => $this->leave_days ?? 0,
+            'leave_deduction' => $this->leave_deduction ?? 0,
+            'maternity_days' => $this->maternity_days ?? 0,
+            'special_leave_days' => $this->special_leave_days ?? 0
+        ];
+        
         if ($this->isEditing) {
+            // Verificar se já existe um registo para este período
+            $existing = PayrollModel::where('employee_id', $this->employee_id)
+                ->where('payroll_period_id', $this->payroll_period_id)
+                ->where('id', '!=', $this->payroll_id)
+                ->exists();
+                
+            if ($existing) {
+                session()->flash('error', 'Já existe um registo de folha de pagamento para este funcionário neste período.');
+                return;
+            }
+            
+            // Atualizar folha de pagamento existente
             $payroll = PayrollModel::find($this->payroll_id);
-            $payroll->update($validatedData);
-            session()->flash('message', 'Payroll updated successfully.');
+            $payroll->update($payrollData);
+            session()->flash('message', 'Folha de pagamento atualizada com sucesso.');
         } else {
-            // Check if there's already a payroll record for this employee and period
+            // Verificar se já existe um registo para este período
             $exists = PayrollModel::where('employee_id', $this->employee_id)
                 ->where('payroll_period_id', $this->payroll_period_id)
                 ->exists();
 
             if ($exists) {
-                session()->flash('error', 'A payroll record already exists for this employee in this period.');
+                session()->flash('error', 'Já existe um registo de folha de pagamento para este funcionário neste período.');
                 return;
             }
 
-            $validatedData['generated_by'] = auth()->id();
-            PayrollModel::create($validatedData);
-            session()->flash('message', 'Payroll created successfully.');
+            // Adicionar ID do utilizador que gerou a folha
+            $payrollData['generated_by'] = auth()->id();
+            
+            // Criar nova folha de pagamento
+            PayrollModel::create($payrollData);
+            session()->flash('message', 'Folha de pagamento criada com sucesso.');
         }
-
-        $this->showModal = false;
+        
+        $this->closeModal();
         $this->reset([
-            'payroll_id', 'employee_id', 'payroll_period_id', 'basic_salary',
-            'allowances', 'overtime', 'bonuses', 'deductions', 'tax',
-            'social_security', 'net_salary', 'payment_method', 'bank_account',
-            'payment_date', 'status', 'remarks', 'payrollItems'
+            'attendance_hours',
+            'base_hourly_rate',
+            'total_hours_pay',
+            'leave_days',
+            'leave_deduction',
+            'maternity_days',
+            'special_leave_days',
+            'employee'
         ]);
     }
-
+    
     public function delete()
     {
         $payroll = PayrollModel::find($this->payroll_id);
         $payroll->delete();
         $this->showDeleteModal = false;
-        session()->flash('message', 'Payroll record deleted successfully.');
+        session()->flash('message', 'Folha de pagamento eliminada com sucesso.');
     }
 
     public function closeModal()

@@ -244,7 +244,8 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:hr.attendance.view'])->get('/shifts', App\Livewire\HR\ShiftManagement::class)->name('shifts');
         
         // Work Equipment Categories Management
-        Route::middleware(['permission:hr.equipment.view'])->get('/work-equipment-categories', App\Livewire\HR\WorkEquipmentCategories::class)->name('work-equipment-categories'); // O prefixo 'hr.' é adicionado automaticamente pelo grupo
+        // ATENÇÃO: Como estamos dentro de um grupo com prefixo 'hr.', o nome da rota deve ser apenas 'work-equipment-categories'
+        Route::middleware(['permission:hr.equipment.view'])->get('/work-equipment-categories', App\Livewire\HR\WorkEquipmentCategories::class)->name('work-equipment-categories');
         
         // Payroll Management
         Route::middleware(['permission:hr.leave.view'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');

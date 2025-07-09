@@ -17,7 +17,7 @@
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                             <i class="fas fa-plus mr-1"></i>
-                            Record Attendance
+                            Registar Presença
                         </button>
                     </div>
 
@@ -129,12 +129,12 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span>Time In</span>
+                                                <span>Hora Entrada</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span>Time Out</span>
+                                                <span>Hora Saída</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -145,6 +145,11 @@
                                                 @else
                                                     <i class="fas fa-sort"></i>
                                                 @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1">
+                                                <span>Maternidade</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -185,6 +190,15 @@
                                                     {{ ucfirst($attendance->status) }}
                                                 </span>
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @if($attendance->is_maternity_related)
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                        {{ $attendance->maternity_type ?: 'Sim' }}
+                                                    </span>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
                                                     wire:click="edit({{ $attendance->id }})"
@@ -202,7 +216,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-6 py-12 text-center">
+                                            <td colspan="7" class="px-6 py-12 text-center">
                                                 <div class="flex flex-col items-center justify-center text-gray-500">
                                                     <i class="fas fa-clock text-gray-400 text-4xl mb-4"></i>
                                                     <span class="text-lg font-medium">No attendance records found</span>
@@ -358,23 +372,109 @@
                             </div>
                         </div>
 
-                        <!-- Approval Status -->
-                        <div class="md:col-span-2">
-                            <div class="relative flex items-start">
-                                <div class="flex items-center h-5">
-                                    <input id="is_approved" type="checkbox"
-                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                        wire:model.live="is_approved">
+                        <!-- Campos de Pagamento -->
+                        <div class="border-t border-gray-200 pt-4 mb-4">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Informações de Pagamento</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="hourly_rate" class="block text-sm font-medium text-gray-700 mb-1">Taxa Horária (AOA)</label>
+                                    <input type="number" min="0" step="0.01" id="hourly_rate"
+                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                        wire:model.live="hourly_rate">
+                                    @error('hourly_rate')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="is_approved" class="font-medium text-gray-700">Approved</label>
-                                    <p class="text-gray-500">Mark this attendance record as approved</p>
+                                
+                                <div>
+                                    <label for="overtime_hours" class="block text-sm font-medium text-gray-700 mb-1">Horas Extra</label>
+                                    <input type="number" min="0" step="0.5" id="overtime_hours"
+                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                        wire:model.live="overtime_hours">
+                                    @error('overtime_hours')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                
+                                <div>
+                                    <label for="overtime_rate" class="block text-sm font-medium text-gray-700 mb-1">Taxa Hora Extra (AOA)</label>
+                                    <input type="number" min="0" step="0.01" id="overtime_rate"
+                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                        wire:model.live="overtime_rate">
+                                    @error('overtime_rate')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
-                            @error('is_approved')
+                            
+                            <div class="flex items-start mt-4">
+                                <div class="flex items-center h-5">
+                                    <input id="affects_payroll" type="checkbox"
+                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        wire:model.live="affects_payroll">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="affects_payroll" class="font-medium text-gray-700">Afeta Folha de Pagamento</label>
+                                    <p class="text-gray-500">Se selecionado, este registo será considerado no cálculo da folha de pagamento</p>
+                                </div>
+                            </div>
+                            @error('affects_payroll')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+                        
+                        <!-- Campos específicos para género -->
+                        <div class="border-t border-gray-200 pt-4 mb-4">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Informações Específicas (Género)</h3>
+                            
+                            <div class="flex items-start mb-4">
+                                <div class="flex items-center h-5">
+                                    <input id="is_maternity_related" type="checkbox"
+                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        wire:model.live="is_maternity_related">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="is_maternity_related" class="font-medium text-gray-700">Relacionado com Maternidade</label>
+                                    <p class="text-gray-500">Ausência, ajuste de horário ou dispensa por motivos de maternidade</p>
+                                </div>
+                            </div>
+                            @error('is_maternity_related')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            
+                            @if($is_maternity_related)
+                            <div>
+                                <label for="maternity_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Ausência por Maternidade</label>
+                                <select id="maternity_type"
+                                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                    wire:model.live="maternity_type">
+                                    <option value="">Selecione o tipo</option>
+                                    <option value="pre_natal_care">Consulta Pré-natal</option>
+                                    <option value="maternity_leave">Licença Maternidade</option>
+                                    <option value="nursing_break">Pausa para Amamentação</option>
+                                    <option value="child_care">Cuidados com Criança</option>
+                                </select>
+                                @error('maternity_type')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            @endif
+                        </div>
+                        
+                        <div class="flex items-start mb-6">
+                            <div class="flex items-center h-5">
+                                <input id="is_approved" type="checkbox"
+                                    class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                    wire:model.live="is_approved">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="is_approved" class="font-medium text-gray-700">Aprovado</label>
+                                <p class="text-gray-500">Marcar este registo de presença como aprovado</p>
+                            </div>
+                        </div>
+                        @error('is_approved')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div class="flex justify-end space-x-3 mt-6">
@@ -385,7 +485,7 @@
                         </button>
                         <button type="submit"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {{ $isEditing ? 'Update' : 'Save' }}
+                            {{ $isEditing ? 'Atualizar' : 'Salvar' }}
                         </button>
                     </div>
                 </form>
@@ -400,7 +500,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-red-600">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Delete Attendance Record
+                        Eliminar Registo de Presença
                     </h3>
                     <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeDeleteModal">
                         <i class="fas fa-times"></i>
@@ -408,7 +508,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-gray-700">Are you sure you want to delete this attendance record? This action cannot be undone.</p>
+                    <p class="text-gray-700">Tem certeza que deseja eliminar este registo de presença? Esta ação não pode ser desfeita.</p>
                 </div>
 
                 <div class="flex justify-end space-x-3">

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\HR;
 
 use App\Models\HR\Attendance as AttendanceModel;
@@ -33,6 +35,14 @@ class Attendance extends Component
     public $status;
     public $remarks;
     public $is_approved = false;
+    
+    // Campos para cálculo de pagamento
+    public $hourly_rate;
+    public $overtime_hours;
+    public $overtime_rate;
+    public $is_maternity_related = false;
+    public $maternity_type;
+    public $affects_payroll = true;
 
     // Modal flags
     public $showModal = false;
@@ -53,6 +63,14 @@ class Attendance extends Component
             'status' => 'required|in:present,absent,late,half_day,leave',
             'remarks' => 'nullable',
             'is_approved' => 'boolean',
+            
+            // Campos para cálculo de pagamento
+            'hourly_rate' => 'nullable|numeric|min:0',
+            'overtime_hours' => 'nullable|numeric|min:0',
+            'overtime_rate' => 'nullable|numeric|min:0',
+            'is_maternity_related' => 'boolean',
+            'maternity_type' => 'nullable|string|required_if:is_maternity_related,true',
+            'affects_payroll' => 'boolean',
         ];
     }
 
@@ -80,11 +98,14 @@ class Attendance extends Component
     {
         $this->reset([
             'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
-            'status', 'remarks'
+            'status', 'remarks', 'hourly_rate', 'overtime_hours', 'overtime_rate',
+            'is_maternity_related', 'maternity_type', 'affects_payroll'
         ]);
         $this->date = Carbon::today()->format('Y-m-d');
         $this->status = 'present';
         $this->is_approved = false;
+        $this->affects_payroll = true;
+        $this->is_maternity_related = false;
         $this->isEditing = false;
         $this->showModal = true;
     }
@@ -99,6 +120,14 @@ class Attendance extends Component
         $this->status = $attendance->status;
         $this->remarks = $attendance->remarks;
         $this->is_approved = $attendance->is_approved;
+        
+        // Campos de pagamento
+        $this->hourly_rate = $attendance->hourly_rate;
+        $this->overtime_hours = $attendance->overtime_hours;
+        $this->overtime_rate = $attendance->overtime_rate;
+        $this->is_maternity_related = $attendance->is_maternity_related;
+        $this->maternity_type = $attendance->maternity_type;
+        $this->affects_payroll = $attendance->affects_payroll;
 
         $this->isEditing = true;
         $this->showModal = true;
@@ -128,11 +157,22 @@ class Attendance extends Component
         } else {
             $validatedData['approved_by'] = null;
         }
+        
+        // Gerenciar campos específicos de maternidade
+        if ($this->is_maternity_related) {
+            $employee = Employee::find($this->employee_id);
+            if ($employee && $employee->gender !== 'female') {
+                $this->addError('is_maternity_related', 'Registos relacionados com maternidade só podem ser atribuídos a funcionárias mulher.');
+                return;
+            }
+        } else {
+            $validatedData['maternity_type'] = null;
+        }
 
         if ($this->isEditing) {
             $attendance = AttendanceModel::find($this->attendance_id);
             $attendance->update($validatedData);
-            session()->flash('message', 'Attendance updated successfully.');
+            session()->flash('message', 'Registo de presença atualizado com sucesso.');
         } else {
             // Check if there's already an attendance record for this employee on this date
             $exists = AttendanceModel::where('employee_id', $this->employee_id)
@@ -140,18 +180,30 @@ class Attendance extends Component
                 ->exists();
 
             if ($exists) {
-                session()->flash('error', 'An attendance record already exists for this employee on this date.');
+                session()->flash('error', 'Já existe um registo de presença para este funcionário nesta data.');
                 return;
+            }
+            
+            // Para novos registos, se não for especificado, usar o valor base do funcionário
+            if (empty($this->hourly_rate) && $this->employee_id) {
+                $employee = Employee::find($this->employee_id);
+                if ($employee) {
+                    // Converter o salário base para valor hora (assumindo 8 horas/dia, 22 dias/mês)
+                    $validatedData['hourly_rate'] = $employee->base_salary / (8 * 22);
+                    // Valor de hora extra é 1.5x o valor normal
+                    $validatedData['overtime_rate'] = $validatedData['hourly_rate'] * 1.5;
+                }
             }
 
             AttendanceModel::create($validatedData);
-            session()->flash('message', 'Attendance created successfully.');
+            session()->flash('message', 'Registo de presença criado com sucesso.');
         }
 
         $this->showModal = false;
         $this->reset([
             'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
-            'status', 'remarks', 'is_approved'
+            'status', 'remarks', 'is_approved', 'hourly_rate', 'overtime_hours',
+            'overtime_rate', 'is_maternity_related', 'maternity_type', 'affects_payroll'
         ]);
     }
 

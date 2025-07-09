@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\HR;
 
 use App\Models\HR\Employee;
@@ -39,6 +41,17 @@ class Leaves extends Component
     public $rejection_reason;
     public $attachment;
     public $temp_attachment;
+    
+    // Campos específicos para género
+    public $is_gender_specific = false;
+    public $gender_leave_type;
+    public $medical_certificate_details;
+    
+    // Campos de pagamento
+    public $is_paid_leave = true;
+    public $payment_percentage = 100.00;
+    public $payment_notes;
+    public $affects_payroll = true;
 
     // UI States
     public $showLeaveModal = false;
@@ -68,6 +81,17 @@ class Leaves extends Component
         'status' => 'nullable|string|in:pending,approved,rejected,cancelled',
         'rejection_reason' => 'nullable|string|max:500',
         'temp_attachment' => 'nullable|file|max:10240', // 10MB max
+        
+        // Campos específicos para género
+        'is_gender_specific' => 'boolean',
+        'gender_leave_type' => 'nullable|string|required_if:is_gender_specific,true',
+        'medical_certificate_details' => 'nullable|string|max:1000',
+        
+        // Campos de pagamento
+        'is_paid_leave' => 'boolean',
+        'payment_percentage' => 'required|numeric|min:0|max:100',
+        'payment_notes' => 'nullable|string|max:500',
+        'affects_payroll' => 'boolean',
     ];
 
     protected $validationAttributes = [
@@ -77,6 +101,13 @@ class Leaves extends Component
         'end_date' => 'end date',
         'rejection_reason' => 'rejection reason',
         'temp_attachment' => 'attachment',
+        'is_gender_specific' => 'gender specific leave',
+        'gender_leave_type' => 'gender leave type',
+        'medical_certificate_details' => 'medical certificate details',
+        'is_paid_leave' => 'paid leave',
+        'payment_percentage' => 'payment percentage',
+        'payment_notes' => 'payment notes',
+        'affects_payroll' => 'affects payroll',
     ];
 
     public function mount()
@@ -164,7 +195,6 @@ class Leaves extends Component
 
     public function editLeave($id)
     {
-        $this->resetData();
         $this->isEditing = true;
         $this->leave_id = $id;
         
@@ -181,6 +211,17 @@ class Leaves extends Component
         $this->approved_by = $leave->approved_by;
         $this->approved_date = $leave->approved_date ? $leave->approved_date->format('Y-m-d') : null;
         $this->rejection_reason = $leave->rejection_reason;
+        
+        // Campos específicos para género
+        $this->is_gender_specific = $leave->is_gender_specific;
+        $this->gender_leave_type = $leave->gender_leave_type;
+        $this->medical_certificate_details = $leave->medical_certificate_details;
+        
+        // Campos de pagamento
+        $this->is_paid_leave = $leave->is_paid_leave;
+        $this->payment_percentage = $leave->payment_percentage;
+        $this->payment_notes = $leave->payment_notes;
+        $this->affects_payroll = $leave->affects_payroll;
         
         $this->showLeaveModal = true;
     }
@@ -257,6 +298,17 @@ class Leaves extends Component
             'total_days' => $this->total_days,
             'reason' => $this->reason,
             'status' => $this->status ?? Leave::STATUS_PENDING,
+            
+            // Campos específicos para género
+            'is_gender_specific' => $this->is_gender_specific,
+            'gender_leave_type' => $this->is_gender_specific ? $this->gender_leave_type : null,
+            'medical_certificate_details' => $this->is_gender_specific ? $this->medical_certificate_details : null,
+            
+            // Campos de pagamento
+            'is_paid_leave' => $this->is_paid_leave,
+            'payment_percentage' => $this->payment_percentage,
+            'payment_notes' => $this->payment_notes,
+            'affects_payroll' => $this->affects_payroll,
         ];
         
         // Handle attachment upload
@@ -275,13 +327,24 @@ class Leaves extends Component
             }
         }
         
+        // Verificar se é licença específica para mulher e validar
+        if ($this->is_gender_specific) {
+            // Obter o funcionário
+            $employee = Employee::find($this->leave_employee_id);
+            
+            if ($employee && $employee->gender !== 'female') {
+                $this->addError('is_gender_specific', 'Licença específica de género só pode ser atribuída a funcionárias mulher.');
+                return;
+            }
+        }
+        
         if ($this->isEditing) {
             $leave = Leave::findOrFail($this->leave_id);
             $leave->update($data);
-            session()->flash('message', 'Leave request updated successfully.');
+            session()->flash('message', 'Pedido de licença atualizado com sucesso.');
         } else {
             Leave::create($data);
-            session()->flash('message', 'Leave request created successfully.');
+            session()->flash('message', 'Pedido de licença criado com sucesso.');
         }
         
         $this->closeModal();
@@ -303,6 +366,18 @@ class Leaves extends Component
         $this->rejection_reason = '';
         $this->attachment = '';
         $this->temp_attachment = null;
+        
+        // Campos específicos para género
+        $this->is_gender_specific = false;
+        $this->gender_leave_type = null;
+        $this->medical_certificate_details = null;
+        
+        // Campos de pagamento
+        $this->is_paid_leave = true;
+        $this->payment_percentage = 100.00;
+        $this->payment_notes = null;
+        $this->affects_payroll = true;
+        
         $this->isEditing = false;
     }
 }
