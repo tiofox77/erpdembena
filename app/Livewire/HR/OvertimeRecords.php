@@ -69,7 +69,63 @@ class OvertimeRecords extends Component
     public string $sortDirection = 'desc';
     
     // Proteção contra mass assignment
-    protected $listeners = ['refreshOvertimeRecords' => '$refresh'];
+    protected $listeners = [
+        'refreshOvertimeRecords' => '$refresh',
+        'approveOvertime' => 'approve',
+        'rejectOvertime' => 'reject'
+    ];
+
+    /**
+     * Aprova um registro de horas extras
+     */
+    public function approve(int $id): void
+    {
+        $record = OvertimeRecord::findOrFail($id);
+        
+        // Verifica se o usuário tem permissão para aprovar
+        if (!Auth::user()->can('approve_overtime')) {
+            $this->dispatch('error', message: __('messages.unauthorized_action'));
+            return;
+        }
+
+        try {
+            $record->status = 'approved';
+            $record->approver_id = Auth::id();
+            $record->approved_at = now();
+            $record->save();
+
+            $this->dispatch('success', message: __('messages.overtime_approved'));
+            $this->dispatch('refreshOvertimeRecords');
+        } catch (\Exception $e) {
+            $this->dispatch('error', message: __('messages.error_approving_overtime'));
+        }
+    }
+
+    /**
+     * Recusa um registro de horas extras
+     */
+    public function reject(int $id): void
+    {
+        $record = OvertimeRecord::findOrFail($id);
+        
+        // Verifica se o usuário tem permissão para recusar
+        if (!Auth::user()->can('reject_overtime')) {
+            $this->dispatch('error', message: __('messages.unauthorized_action'));
+            return;
+        }
+
+        try {
+            $record->status = 'rejected';
+            $record->approver_id = Auth::id();
+            $record->rejected_at = now();
+            $record->save();
+
+            $this->dispatch('success', message: __('messages.overtime_rejected'));
+            $this->dispatch('refreshOvertimeRecords');
+        } catch (\Exception $e) {
+            $this->dispatch('error', message: __('messages.error_rejecting_overtime'));
+        }
+    }
     
     /**
      * Método de inicialização do componente

@@ -133,7 +133,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->id }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $item->payroll->employee->full_name ?? ($item->payroll->employee->first_name . ' ' . $item->payroll->employee->last_name) }}
+                                {{ $item->payroll->employee->full_name ?? '-' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -207,7 +207,7 @@
                                     <option value="">Select Payroll</option>
                                     @foreach($payrolls as $payroll)
                                         <option value="{{ $payroll->id }}">
-                                            {{ $payroll->employee->full_name ?? ($payroll->employee->first_name . ' ' . $payroll->employee->last_name) }} - {{ optional($payroll->payrollPeriod)->name }}
+                                            {{ $payroll->employee->full_name ?? '-' }} - {{ optional($payroll->payrollPeriod)->name }}
                                         </option>
                                     @endforeach
                                 </select>

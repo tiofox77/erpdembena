@@ -117,7 +117,7 @@ class Leaves extends Component
 
     public function render()
     {
-        $employees = Employee::orderBy('first_name')->get();
+        $employees = Employee::orderBy('full_name')->get();
         $departments = Department::orderBy('name')->get();
         $leaveTypes = LeaveType::where('is_active', true)->orderBy('name')->get();
 
@@ -125,8 +125,7 @@ class Leaves extends Component
             ->with(['employee', 'employee.department', 'leaveType'])
             ->when($this->searchQuery, function ($query) {
                 $query->whereHas('employee', function ($q) {
-                    $q->where('first_name', 'like', '%' . $this->searchQuery . '%')
-                    ->orWhere('last_name', 'like', '%' . $this->searchQuery . '%');
+                    $q->where('full_name', 'like', '%' . $this->searchQuery . '%');
                 });
             })
             ->when($this->filters['employee_id'], function ($query) {

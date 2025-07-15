@@ -373,10 +373,8 @@ class UserManagement extends Component
         return User::with('roles')
             ->when($this->search, function ($query) {
                 return $query->where(function ($q) {
-                    $q->where('first_name', 'like', '%' . $this->search . '%')
-                      ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ['%' . $this->search . '%']);
+                    $q->where('full_name', 'like', '%' . $this->search . '%')
+                      ->orWhere('email', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->filterRole, function ($query) {

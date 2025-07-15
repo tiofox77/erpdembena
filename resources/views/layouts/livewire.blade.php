@@ -982,11 +982,12 @@
                 <i class="fas fa-calendar-week text-gray-500"></i>
                 <span>{{ trans('messages.payroll_periods') }}</span>
             </a>
-            
+            <!--
             <a href="{{ route('hr.payroll-items') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-items') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-list-alt text-gray-500"></i>
                 <span>{{ trans('messages.payroll_items') }}</span>
             </a>
+            -->
             @endcan
             
             @can('hr.attendance.view')
@@ -1035,7 +1036,7 @@
                     {{ substr(auth()->user()->first_name ?? 'U', 0, 1) }}
                 </div>
                 <div class="ml-3 truncate">
-                    <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
+                    <div class="text-sm font-medium text-gray-800">{{ auth()->user()->full_name ?? 'User' }}</div>
                     <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'No role' }}</div>
                 </div>
                 <form method="POST" action="{{ route('logout') }}" class="ml-auto">
@@ -1139,7 +1140,7 @@
                         <!-- User info visible in header -->
                         <div class="flex items-center ml-2 cursor-pointer hover:bg-gray-100 rounded-full px-2 py-1 transition-colors duration-150" @click="open = !open">
                             <div class="text-right mr-2">
-                                <div class="text-sm font-medium text-gray-800">{{ strtoupper(auth()->user()->first_name ?? 'User') }} {{ strtoupper(auth()->user()->last_name ?? '') }}</div>
+                                <div class="text-sm font-medium text-gray-800">{{ strtoupper(auth()->user()->full_name ?? 'User') }}</div>
                                 <div class="text-xs text-gray-500">{{ strtolower(auth()->user()->roles->first()->name ?? 'no role') }}</div>
                             </div>
                             <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-sm">
@@ -1151,7 +1152,7 @@
                         <div x-show="open" @click.away="open = false" class="absolute right-0 top-12 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
                             <div class="py-3 border-b border-gray-100 md:hidden">
                                 <div class="px-4">
-                                    <div class="text-sm font-medium text-gray-800">{{ auth()->user()->first_name ?? 'User' }} {{ auth()->user()->last_name ?? '' }}</div>
+                                    <div class="text-sm font-medium text-gray-800">{{ auth()->user()->full_name ?? 'User' }}</div>
                                     <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'Not defined' }}</div>
                                 </div>
                             </div>

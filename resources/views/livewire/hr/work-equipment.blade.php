@@ -402,7 +402,7 @@
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                     <option value="">Select employee</option>
                                     @foreach($employees as $employee)
-                                        <option value="{{ $employee->id }}">{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                                        <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
                                     @endforeach
                                 </select>
                                 @error('employee_id') <div class="mt-1 text-red-600 text-sm flex items-center"><i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}</div> @enderror
