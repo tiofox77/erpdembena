@@ -217,16 +217,23 @@ class ShiftManagement extends Component
         $this->showAssignmentModal = true;
     }
 
+    // Este método foi removido por ser duplicado
+
     public function saveAssignment()
     {
-        // Rename shift_id_assignment to shift_id for validation
-        $this->shift_id = $this->shift_id_assignment;
+        // Corrigir o problema com o shift_id_assignment
+        $this->validate($this->assignmentRules());
         
-        $validatedData = $this->validate($this->assignmentRules());
-        
-        // Fix field name back for database
-        $validatedData['shift_id'] = $validatedData['shift_id_assignment'];
-        unset($validatedData['shift_id_assignment']);
+        // Preparar dados validados para salvar
+        $validatedData = [
+            'employee_id' => $this->employee_id,
+            'shift_id' => $this->shift_id_assignment,
+            'start_date' => $this->start_date,
+            'end_date' => $this->is_permanent ? null : $this->end_date,
+            'is_permanent' => $this->is_permanent,
+            'rotation_pattern' => $this->rotation_pattern,
+            'notes' => $this->notes,
+        ];
         
         // Add the current user as assigned_by
         $validatedData['assigned_by'] = auth()->id();

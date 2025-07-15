@@ -256,6 +256,12 @@ Route::middleware(['auth'])->group(function () {
         // Payroll Items Management
         Route::middleware(['permission:hr.leave.view'])->get('/payroll-items', App\Livewire\HR\PayrollItems::class)->name('payroll-items');
         
+        // Salary Advances Management
+        Route::middleware(['permission:hr.leave.view'])->get('/salary-advances', App\Livewire\HR\SalaryAdvances::class)->name('salary-advances');
+        
+        // Overtime Records Management
+        Route::middleware(['permission:hr.leave.view'])->get('/overtime-records', App\Livewire\HR\OvertimeRecords::class)->name('overtime-records');
+        
         // Equipment Management
         Route::middleware(['permission:hr.employees.view'])->get('/equipment', App\Livewire\HR\WorkEquipment::class)->name('equipment');
         

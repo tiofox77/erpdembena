@@ -45,6 +45,9 @@ class Employees extends Component
     public $employment_status;
     public $inss_number;
     public $base_salary;
+    public $food_benefit;
+    public $transport_benefit;
+    public $bonus_amount;
 
     // Document management
     public $newDocumentType = '';
@@ -88,6 +91,9 @@ class Employees extends Component
             'employment_status' => 'required|in:active,on_leave,terminated,suspended,retired',
             'inss_number' => 'nullable|string|max:30',
             'base_salary' => 'nullable|numeric|min:0',
+            'food_benefit' => 'nullable|numeric|min:0',
+            'transport_benefit' => 'nullable|numeric|min:0',
+            'bonus_amount' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -117,7 +123,8 @@ class Employees extends Component
             'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'tax_number',
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_name', 'bank_account', 'position_id', 'department_id', 'hire_date',
-            'employment_status', 'inss_number', 'base_salary'
+            'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
+            'transport_benefit', 'bonus_amount'
         ]);
         $this->isEditing = false;
         $this->showModal = true;
@@ -145,6 +152,9 @@ class Employees extends Component
         $this->employment_status = $employee->employment_status;
         $this->inss_number = $employee->inss_number;
         $this->base_salary = $employee->base_salary;
+        $this->food_benefit = $employee->food_benefit;
+        $this->transport_benefit = $employee->transport_benefit;
+        $this->bonus_amount = $employee->bonus_amount;
 
         // Load employee documents if available
         $this->employeeDocuments = $employee->documents()->latest()->get();
@@ -226,7 +236,8 @@ class Employees extends Component
             'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'tax_number',
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_name', 'bank_account', 'position_id', 'department_id', 'hire_date',
-            'employment_status'
+            'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
+            'transport_benefit', 'bonus_amount'
         ]);
     }
 

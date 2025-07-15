@@ -28,6 +28,9 @@ class Employee extends Model
         'position_id',
         'department_id',
         'hire_date',
+        'food_benefit',
+        'transport_benefit',
+        'bonus_amount',
         'employment_status',
         'inss_number',
         'base_salary',
@@ -114,5 +117,13 @@ class Employee extends Model
     public function equipment(): HasMany
     {
         return $this->hasMany(EmployeeEquipment::class);
+    }
+    
+    /**
+     * Get the shift assignments for this employee
+     */
+    public function shiftAssignments(): HasMany
+    {
+        return $this->hasMany(ShiftAssignment::class);
     }
 }

@@ -333,6 +333,16 @@
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div class="flex items-center cursor-pointer" wire:click="sortBy('bill_of_lading')">
+                                    B.L
+                                    @if($sortField === 'bill_of_lading')
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
+                                    @else
+                                        <i class="fas fa-sort ml-1 opacity-50"></i>
+                                    @endif
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center cursor-pointer" wire:click="sortBy('status')">
                                     {{ __('messages.status') }}
                                     @if($sortField === 'status')
@@ -382,6 +392,19 @@
                                         {{ $order->other_reference }}
                                         <i class="fas fa-external-link-alt ml-1 text-xs opacity-70"></i>
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($order->bill_of_lading)
+                                        <div class="flex items-center text-sm font-medium text-green-700">
+                                            <i class="fas fa-ship mr-1 text-xs opacity-70"></i>
+                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium">{{ $order->bill_of_lading }}</span>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400 text-sm italic">
+                                            <i class="fas fa-minus mr-1"></i>
+                                            Não definido
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($order->status)

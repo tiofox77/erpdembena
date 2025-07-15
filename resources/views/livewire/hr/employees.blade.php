@@ -106,6 +106,12 @@
                                                 <span>{{ __('messages.position') }}</span>
                                             </div>
                                         </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1">
+                                                <span>{{ __('messages.benefits') }}</span>
+                                                <i class="fas fa-hand-holding-usd ml-1 text-green-500"></i>
+                                            </div>
+                                        </th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ __('messages.actions') }}
                                         </th>
@@ -125,6 +131,21 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $employee->position->title ?? __('messages.not_assigned') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                @php
+                                                    $totalBenefits = ($employee->food_benefit ?? 0) + ($employee->transport_benefit ?? 0) + ($employee->bonus_amount ?? 0);
+                                                @endphp
+                                                @if($totalBenefits > 0)
+                                                    <div class="flex items-center">
+                                                        <span class="text-green-600 font-medium">AOA {{ number_format($totalBenefits, 2, ',', '.') }}</span>
+                                                        <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            <i class="fas fa-check-circle mr-1"></i>
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    <span class="text-gray-400 text-sm">{{ __('messages.not_applicable') }}</span>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
@@ -537,6 +558,65 @@
                         </div>
                     </div>
 
+                    <div class="px-6 py-4">
+                        <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">
+                            <i class="fas fa-hand-holding-usd mr-2 text-green-600"></i>
+                            {{ __('messages.benefits') }}
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <!-- Benefício de Alimentação -->
+                            <div>
+                                <label for="food_benefit" class="block text-sm font-medium text-gray-700">{{ __('messages.food_benefit') }}</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">AOA</span>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" id="food_benefit"
+                                        class="mt-1 pl-12 block w-full rounded-md shadow-sm border-gray-300 focus:border-green-500 focus:ring-green-500 bg-white @error('food_benefit') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="food_benefit" placeholder="0.00">
+                                    @error('food_benefit')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{ __('messages.optional_benefit') }}</p>
+                            </div>
+
+                            <!-- Subsídio de Transporte -->
+                            <div>
+                                <label for="transport_benefit" class="block text-sm font-medium text-gray-700">{{ __('messages.transport_benefit') }}</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">AOA</span>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" id="transport_benefit"
+                                        class="mt-1 pl-12 block w-full rounded-md shadow-sm border-gray-300 focus:border-green-500 focus:ring-green-500 bg-white @error('transport_benefit') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="transport_benefit" placeholder="0.00">
+                                    @error('transport_benefit')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{ __('messages.optional_benefit') }}</p>
+                            </div>
+
+                            <!-- Bónus -->
+                            <div>
+                                <label for="bonus_amount" class="block text-sm font-medium text-gray-700">{{ __('messages.bonus_amount') }}</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">AOA</span>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" id="bonus_amount"
+                                        class="mt-1 pl-12 block w-full rounded-md shadow-sm border-gray-300 focus:border-green-500 focus:ring-green-500 bg-white @error('bonus_amount') border-red-300 text-red-900 @enderror"
+                                        wire:model.live="bonus_amount" placeholder="0.00">
+                                    @error('bonus_amount')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{ __('messages.optional_benefit') }}</p>
+                            </div>
+                        </div>
+                    </div>
+
                     @if($isEditing)
                     <div class="px-6 py-4">
                         <h4 class="text-md font-medium text-gray-700 mb-2 border-b pb-1">{{ __('messages.documents') }}</h4>
@@ -896,6 +976,54 @@
                                 </p>
                                 <p class="font-medium pl-6">{{ $base_salary ? number_format($base_salary, 2, ',', '.') : 'N/A' }}</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Benefits -->
+            <div class="px-6 pb-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 class="text-md font-semibold text-green-700 mb-3 border-b pb-2 flex items-center">
+                        <i class="fas fa-hand-holding-usd mr-2 text-green-500"></i>
+                        {{ __('messages.benefits') }}
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4 text-sm">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-gray-600 flex items-center mb-1">
+                                <i class="fas fa-utensils text-green-400 mr-2"></i>{{ __('messages.food_benefit') }}:
+                            </p>
+                            <p class="font-medium pl-6">
+                                @if($food_benefit)
+                                    AOA {{ number_format($food_benefit, 2, ',', '.') }}
+                                @else
+                                    <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-gray-600 flex items-center mb-1">
+                                <i class="fas fa-bus text-green-400 mr-2"></i>{{ __('messages.transport_benefit') }}:
+                            </p>
+                            <p class="font-medium pl-6">
+                                @if($transport_benefit)
+                                    AOA {{ number_format($transport_benefit, 2, ',', '.') }}
+                                @else
+                                    <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-gray-600 flex items-center mb-1">
+                                <i class="fas fa-gift text-green-400 mr-2"></i>{{ __('messages.bonus_amount') }}:
+                            </p>
+                            <p class="font-medium pl-6">
+                                @if($bonus_amount)
+                                    AOA {{ number_format($bonus_amount, 2, ',', '.') }}
+                                @else
+                                    <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
+                                @endif
+                            </p>
                         </div>
                     </div>
                 </div>
