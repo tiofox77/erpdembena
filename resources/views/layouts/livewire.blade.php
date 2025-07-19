@@ -928,6 +928,11 @@
                 <span>{{ trans('messages.salary_advances') }}</span>
             </a>
             
+            <a href="{{ route('hr.salary-discounts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-discounts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-minus-circle text-gray-500"></i>
+                <span>{{ trans('messages.salary_discounts') }}</span>
+            </a>
+            
             <a href="{{ route('hr.overtime-records') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.overtime-records') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-clock text-gray-500"></i>
                 <span>{{ trans('messages.overtime_records') }}</span>

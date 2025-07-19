@@ -48,6 +48,23 @@ class SalaryAdvance extends Model
     ];
     
     /**
+     * Atributos calculados que devem ser anexados ao modelo.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['remaining_amount'];
+    
+    /**
+     * Calcula o valor restante baseado nas parcelas restantes.
+     *
+     * @return float
+     */
+    public function getRemainingAmountAttribute(): float
+    {
+        return $this->remaining_installments * $this->installment_amount;
+    }
+    
+    /**
      * Obtém o funcionário associado a este adiantamento salarial.
      */
     public function employee(): BelongsTo

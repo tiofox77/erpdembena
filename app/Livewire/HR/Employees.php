@@ -6,6 +6,7 @@ use App\Models\HR\Department;
 use App\Models\HR\Employee;
 use App\Models\HR\EmployeeDocument;
 use App\Models\HR\JobPosition;
+use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -22,6 +23,10 @@ class Employees extends Component
         'department_id' => '',
         'position_id' => '',
         'employment_status' => '',
+        'gender' => '',
+        'hire_date_from' => '',
+        'salary_range' => '',
+        'has_advances' => '',
     ];
 
     // Form properties
@@ -53,16 +58,22 @@ class Employees extends Component
     public $newDocumentType = '';
     public $newDocumentTitle = '';
     public $newDocumentFile = null;
-    public $newDocumentExpiryDate = null;
+    public $newDocumentExpiryDate = '';
     public $newDocumentRemarks = '';
     public $employeeDocuments = [];
     public $showDocumentModal = false;
     public $documentToDelete = null;
+    public $showDuplicateConfirmation = false;
+    public $existingDocument = null;
+    public $pendingUploadData = [];
 
-    // Modal flags
+    // Modal control
     public $showModal = false;
-    public $showDeleteModal = false;
     public $showViewModal = false;
+    public $showDeleteModal = false;
+    public $viewEmployee = null;
+    public $expiringDocuments = [];
+    public $employeeToDelete = null;
     public $isEditing = false;
 
     // Listeners
@@ -172,6 +183,14 @@ class Employees extends Component
     public function save()
     {
         $validatedData = $this->validate();
+        
+        // Ensure numeric fields have default values instead of null
+        $numericFields = ['dependents', 'base_salary', 'food_benefit', 'transport_benefit', 'bonus_amount'];
+        foreach ($numericFields as $field) {
+            if (is_null($validatedData[$field]) || $validatedData[$field] === '') {
+                $validatedData[$field] = 0;
+            }
+        }
 
         if ($this->isEditing) {
             $employee = Employee::find($this->employee_id);
@@ -306,22 +325,61 @@ class Employees extends Component
             return;
         }
 
+        // Check if document of same type already exists
+        $existingDocument = \App\Models\HR\EmployeeDocument::where('employee_id', $this->employee_id)
+            ->where('document_type', $this->newDocumentType)
+            ->first();
+
+        if ($existingDocument) {
+            // Store pending upload data for later use
+            $this->pendingUploadData = [
+                'type' => $this->newDocumentType,
+                'title' => $this->newDocumentTitle,
+                'file' => $this->newDocumentFile,
+                'expiry_date' => $this->newDocumentExpiryDate,
+                'remarks' => $this->newDocumentRemarks,
+            ];
+            
+            $this->existingDocument = $existingDocument;
+            $this->showDuplicateConfirmation = true;
+            return;
+        }
+
+        // Proceed with normal upload
+        $this->processDocumentUpload();
+    }
+
+    /**
+     * Process the actual document upload
+     */
+    private function processDocumentUpload($data = null)
+    {
+        // Use pending data if replacing, otherwise use current form data
+        $uploadData = $data ?? [
+            'type' => $this->newDocumentType,
+            'title' => $this->newDocumentTitle,
+            'file' => $this->newDocumentFile,
+            'expiry_date' => $this->newDocumentExpiryDate,
+            'remarks' => $this->newDocumentRemarks,
+        ];
+
         // Store the file
-        $filePath = $this->newDocumentFile->store('employee-documents', 'public');
+        $filePath = $uploadData['file']->store('employee-documents', 'public');
+        
         // Store the filename in the title if not provided
-        if (empty($this->newDocumentTitle)) {
-            $this->newDocumentTitle = $this->newDocumentFile->getClientOriginalName();
+        if (empty($uploadData['title'])) {
+            $uploadData['title'] = $uploadData['file']->getClientOriginalName();
         }
 
         // Create the document record
         $document = \App\Models\HR\EmployeeDocument::create([
             'employee_id' => $this->employee_id,
-            'document_type' => $this->newDocumentType,
-            'title' => $this->newDocumentTitle,
+            'document_type' => $uploadData['type'],
+            'title' => $uploadData['title'],
             'file_path' => $filePath,
-            'expiry_date' => $this->newDocumentExpiryDate,
+            'expiry_date' => $uploadData['expiry_date'],
             'is_verified' => false,
-            'remarks' => $this->newDocumentRemarks,
+            'remarks' => $uploadData['remarks'],
         ]);
 
         // Refresh documents list
@@ -331,7 +389,45 @@ class Employees extends Component
         $this->reset(['newDocumentType', 'newDocumentTitle', 'newDocumentFile', 'newDocumentExpiryDate', 'newDocumentRemarks']);
         $this->showDocumentModal = false;
         
-        session()->flash('message', 'Document uploaded successfully.');
+        session()->flash('message', __('messages.document_uploaded_successfully'));
+    }
+
+    /**
+     * Confirm replacement of existing document
+     */
+    public function confirmDocumentReplacement()
+    {
+        if (!$this->existingDocument || empty($this->pendingUploadData)) {
+            return;
+        }
+
+        // Delete the old document file
+        if (Storage::disk('public')->exists($this->existingDocument->file_path)) {
+            Storage::disk('public')->delete($this->existingDocument->file_path);
+        }
+
+        // Delete the old document record
+        $this->existingDocument->delete();
+
+        // Process the new upload
+        $this->processDocumentUpload($this->pendingUploadData);
+
+        // Reset confirmation state
+        $this->showDuplicateConfirmation = false;
+        $this->existingDocument = null;
+        $this->pendingUploadData = [];
+
+        session()->flash('message', __('messages.document_replaced_successfully'));
+    }
+
+    /**
+     * Cancel document replacement
+     */
+    public function cancelDocumentReplacement()
+    {
+        $this->showDuplicateConfirmation = false;
+        $this->existingDocument = null;
+        $this->pendingUploadData = [];
     }
 
     /**
@@ -466,18 +562,11 @@ class Employees extends Component
         
         $this->showViewModal = true;
     }
-    
-    /**
-     * Close the view modal
-     */
-    public function closeViewModal()
-    {
-        $this->showViewModal = false;
-    }
 
     public function render()
     {
-        $employees = Employee::where('full_name', 'like', "%{$this->search}%")
+        $employees = Employee::with(['department', 'position', 'salaryAdvances'])
+            ->where('full_name', 'like', "%{$this->search}%")
             ->when($this->filters['department_id'], function ($query) {
                 return $query->where('department_id', $this->filters['department_id']);
             })
@@ -486,6 +575,37 @@ class Employees extends Component
             })
             ->when($this->filters['employment_status'], function ($query) {
                 return $query->where('employment_status', $this->filters['employment_status']);
+            })
+            ->when($this->filters['gender'], function ($query) {
+                return $query->where('gender', $this->filters['gender']);
+            })
+            ->when($this->filters['hire_date_from'], function ($query) {
+                return $query->where('hire_date', '>=', $this->filters['hire_date_from']);
+            })
+            ->when($this->filters['salary_range'], function ($query) {
+                $range = explode('-', $this->filters['salary_range']);
+                if (count($range) === 2) {
+                    if ($range[1] === '+') {
+                        return $query->where('base_salary', '>=', (int)$range[0]);
+                    } else {
+                        return $query->whereBetween('base_salary', [(int)$range[0], (int)$range[1]]);
+                    }
+                }
+                return $query;
+            })
+            ->when($this->filters['has_advances'], function ($query) {
+                switch ($this->filters['has_advances']) {
+                    case 'with_advances':
+                        return $query->whereHas('salaryAdvances');
+                    case 'without_advances':
+                        return $query->whereDoesntHave('salaryAdvances');
+                    case 'pending_advances':
+                        return $query->whereHas('salaryAdvances', function ($q) {
+                            $q->where('status', 'pending');
+                        });
+                    default:
+                        return $query;
+                }
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
@@ -498,5 +618,53 @@ class Employees extends Component
             'departments' => $departments,
             'positions' => $positions,
         ]);
+    }
+
+    public function view($employeeId)
+    {
+        $this->viewEmployee = Employee::with(['department', 'position', 'documents'])->find($employeeId);
+        
+        if ($this->viewEmployee) {
+            $this->employeeDocuments = $this->viewEmployee->documents;
+            
+            // Check for documents expiring within 30 days
+            $this->expiringDocuments = $this->employeeDocuments->filter(function ($document) {
+                if ($document->expiry_date) {
+                    $expiryDate = \Carbon\Carbon::parse($document->expiry_date);
+                    $now = \Carbon\Carbon::now();
+                    $thirtyDaysFromNow = $now->copy()->addDays(30);
+                    
+                    return $expiryDate->between($now, $thirtyDaysFromNow);
+                }
+                return false;
+            });
+            
+            $this->showViewModal = true;
+        }
+    }
+
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewEmployee = null;
+        $this->employeeDocuments = [];
+        $this->expiringDocuments = [];
+    }
+
+    public function manageDocuments($employeeId)
+    {
+        $this->employee_id = $employeeId;
+        $employee = Employee::find($employeeId);
+        
+        if ($employee) {
+            // Load employee documents
+            $this->employeeDocuments = $employee->documents()->latest()->get();
+            
+            // Reset document form fields
+            $this->reset(['newDocumentType', 'newDocumentTitle', 'newDocumentFile', 'newDocumentExpiryDate', 'newDocumentRemarks']);
+            
+            // Show document management modal
+            $this->showDocumentModal = true;
+        }
     }
 }

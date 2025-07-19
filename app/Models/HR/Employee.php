@@ -126,4 +126,12 @@ class Employee extends Model
     {
         return $this->hasMany(ShiftAssignment::class);
     }
+
+    /**
+     * Get the salary advances for this employee
+     */
+    public function salaryAdvances(): HasMany
+    {
+        return $this->hasMany(SalaryAdvance::class);
+    }
 }

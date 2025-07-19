@@ -83,48 +83,108 @@
                                 
                                 <!-- Tipo de Pagamento -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ __('messages.payment_type') }}</label>
-                                    <div class="mt-2 space-y-4">
-                                        <div class="flex items-center">
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">{{ __('messages.payment_type') }}</label>
+                                    <div class="space-y-3">
+                                        <!-- Parcela Regular -->
+                                        <div class="relative">
                                             <input id="payment_type_installment" wire:model="payment_type" value="installment" type="radio" 
-                                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
-                                            <label for="payment_type_installment" class="ml-3 block text-sm font-medium text-gray-700">
-                                                {{ __('messages.regular_installment') }} ({{ number_format($paymentAdvance?->installment_amount ?? 0, 2) }} Kz)
+                                                class="sr-only peer" />
+                                            <label for="payment_type_installment" class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="w-4 h-4 border-2 border-gray-300 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 flex items-center justify-center">
+                                                        <div class="w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100"></div>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <div class="text-sm font-medium text-gray-900">{{ __('messages.regular_installment') }}</div>
+                                                        <div class="text-sm text-gray-500">{{ number_format($paymentAdvance?->installment_amount ?? 0, 2) }} Kz</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ml-auto">
+                                                    <i class="fas fa-calendar-check text-blue-500"></i>
+                                                </div>
                                             </label>
                                         </div>
-                                        <div class="flex items-center">
+                                        
+                                        <!-- Valor Personalizado -->
+                                        <div class="relative">
                                             <input id="payment_type_custom" wire:model="payment_type" value="custom" type="radio" 
-                                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
-                                            <label for="payment_type_custom" class="ml-3 block text-sm font-medium text-gray-700">
-                                                {{ __('messages.custom_amount') }}
+                                                class="sr-only peer" />
+                                            <label for="payment_type_custom" class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 transition-all duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="w-4 h-4 border-2 border-gray-300 rounded-full peer-checked:border-yellow-500 peer-checked:bg-yellow-500 flex items-center justify-center">
+                                                        <div class="w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100"></div>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <div class="text-sm font-medium text-gray-900">{{ __('messages.custom_amount') }}</div>
+                                                        <div class="text-sm text-gray-500">{{ __('messages.enter_custom_amount') }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ml-auto">
+                                                    <i class="fas fa-edit text-yellow-500"></i>
+                                                </div>
                                             </label>
+                                            
+                                            <!-- Campo de Valor Personalizado -->
+                                            <div x-show="$wire.payment_type === 'custom'" 
+                                                 x-transition:enter="transition ease-out duration-300" 
+                                                 x-transition:enter-start="opacity-0 scale-95" 
+                                                 x-transition:enter-end="opacity-100 scale-100" 
+                                                 x-transition:leave="transition ease-in duration-200" 
+                                                 x-transition:leave-start="opacity-100 scale-100" 
+                                                 x-transition:leave-end="opacity-0 scale-95"
+                                                 x-cloak
+                                                 class="mt-3 ml-7 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                <label for="payment_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                                    <i class="fas fa-coins text-yellow-600 mr-2"></i>
+                                                    {{ __('messages.payment_amount') }} *
+                                                </label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <span class="text-gray-500 text-sm font-medium">Kz</span>
+                                                    </div>
+                                                    <input type="number" step="0.01" id="payment_amount" wire:model="payment_amount" 
+                                                        placeholder="0.00" max="{{ $paymentAdvance?->remaining_amount ?? 0 }}"
+                                                        class="pl-12 block w-full border-yellow-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm bg-white">
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <span class="text-xs text-gray-400">máx: {{ number_format($paymentAdvance?->remaining_amount ?? 0, 2) }}</span>
+                                                    </div>
+                                                </div>
+                                                @error('payment_amount') 
+                                                    <p class="mt-2 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                        {{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
                                         </div>
-                                        <div class="flex items-center">
+                                        
+                                        <!-- Pagamento Completo -->
+                                        <div class="relative">
                                             <input id="payment_type_full" wire:model="payment_type" value="full" type="radio" 
-                                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
-                                            <label for="payment_type_full" class="ml-3 block text-sm font-medium text-gray-700">
-                                                {{ __('messages.pay_full_remaining') }} ({{ number_format($paymentAdvance?->remaining_amount ?? 0, 2) }} Kz)
+                                                class="sr-only peer" />
+                                            <label for="payment_type_full" class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-green-500 peer-checked:bg-green-50 transition-all duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="w-4 h-4 border-2 border-gray-300 rounded-full peer-checked:border-green-500 peer-checked:bg-green-500 flex items-center justify-center">
+                                                        <div class="w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100"></div>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <div class="text-sm font-medium text-gray-900">{{ __('messages.pay_full_remaining') }}</div>
+                                                        <div class="text-sm text-gray-500">{{ number_format($paymentAdvance?->remaining_amount ?? 0, 2) }} Kz</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ml-auto">
+                                                    <i class="fas fa-check-double text-green-500"></i>
+                                                </div>
                                             </label>
                                         </div>
                                     </div>
-                                    @error('payment_type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    @error('payment_type') 
+                                        <p class="mt-2 text-sm text-red-600 flex items-center">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            {{ $message }}
+                                        </p>
+                                    @enderror
                                 </div>
-                                
-                                <!-- Valor Personalizado -->
-                                @if($payment_type === 'custom')
-                                <div>
-                                    <label for="payment_amount" class="block text-sm font-medium text-gray-700">{{ __('messages.payment_amount') }} *</label>
-                                    <div class="mt-1 relative rounded-md shadow-sm">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">Kz</span>
-                                        </div>
-                                        <input type="number" step="0.01" id="payment_amount" wire:model="payment_amount" 
-                                            placeholder="0.00" max="{{ $paymentAdvance?->remaining_amount ?? 0 }}"
-                                            class="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
-                                    </div>
-                                    @error('payment_amount') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                @endif
                                 
                                 <!-- Observações -->
                                 <div>

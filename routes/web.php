@@ -259,6 +259,9 @@ Route::middleware(['auth'])->group(function () {
         // Salary Advances Management
         Route::middleware(['permission:hr.leave.view'])->get('/salary-advances', App\Livewire\HR\SalaryAdvances::class)->name('salary-advances');
         
+        // Salary Discounts Management
+        Route::middleware(['permission:hr.leave.view'])->get('/salary-discounts', App\Livewire\HR\SalaryDiscounts::class)->name('salary-discounts');
+        
         // Overtime Records Management
         Route::middleware(['permission:hr.leave.view'])->get('/overtime-records', App\Livewire\HR\OvertimeRecords::class)->name('overtime-records');
         

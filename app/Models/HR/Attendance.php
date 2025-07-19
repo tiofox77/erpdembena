@@ -19,26 +19,15 @@ class Attendance extends Model
         'time_out',
         'status',
         'remarks',
-        'is_approved',
-        'approved_by',
         'hourly_rate',
-        'overtime_hours',
-        'overtime_rate',
-        'is_maternity_related',
-        'maternity_type',
         'affects_payroll',
-        'payroll_id',
     ];
 
     protected $casts = [
         'date' => 'date',
         'time_in' => 'datetime',
         'time_out' => 'datetime',
-        'is_approved' => 'boolean',
         'hourly_rate' => 'decimal:2',
-        'overtime_hours' => 'decimal:2',
-        'overtime_rate' => 'decimal:2',
-        'is_maternity_related' => 'boolean',
         'affects_payroll' => 'boolean',
     ];
 

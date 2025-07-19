@@ -34,11 +34,13 @@ class ShiftManagement extends Component
     public $assignment_id;
     public $employee_id;
     public $shift_id_assignment;
+    public $selected_shifts = []; // Para múltiplos shifts
     public $start_date;
     public $end_date;
     public $is_permanent = false;
     public $rotation_pattern;
     public $notes;
+    public $has_rotation = false; // Para controlar se permite rotação
 
     // Filters
     public $searchShift = '';
@@ -80,15 +82,23 @@ class ShiftManagement extends Component
     // Rules for shift assignments
     protected function assignmentRules()
     {
-        return [
-            'employee_id' => 'required|exists:employees,id',
-            'shift_id_assignment' => 'required|exists:shifts,id',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'is_permanent' => 'boolean',
-            'rotation_pattern' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
+        $rules = [
+            'employee_id' => ['required', 'exists:employees,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => $this->is_permanent ? ['nullable'] : ['required', 'date', 'after_or_equal:start_date'],
+            'rotation_pattern' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
+        
+        // Validação condicional para shifts
+        if ($this->has_rotation) {
+            $rules['selected_shifts'] = ['required', 'array', 'min:2'];
+            $rules['selected_shifts.*'] = ['exists:shifts,id'];
+        } else {
+            $rules['shift_id_assignment'] = ['required', 'exists:shifts,id'];
+        }
+        
+        return $rules;
     }
 
     public function setActiveTab($tab)
@@ -188,11 +198,13 @@ class ShiftManagement extends Component
     public function openAssignmentModal()
     {
         $this->reset([
-            'assignment_id', 'employee_id', 'shift_id_assignment', 'start_date',
-            'end_date', 'is_permanent', 'rotation_pattern', 'notes'
+            'assignment_id', 'employee_id', 'shift_id_assignment', 'selected_shifts', 'start_date',
+            'end_date', 'is_permanent', 'rotation_pattern', 'notes', 'has_rotation'
         ]);
         $this->start_date = Carbon::today()->format('Y-m-d');
         $this->is_permanent = false;
+        $this->has_rotation = false;
+        $this->selected_shifts = [];
         $this->isEditing = false;
         $this->showAssignmentModal = true;
     }
@@ -221,36 +233,104 @@ class ShiftManagement extends Component
 
     public function saveAssignment()
     {
-        // Corrigir o problema com o shift_id_assignment
         $this->validate($this->assignmentRules());
         
-        // Preparar dados validados para salvar
-        $validatedData = [
-            'employee_id' => $this->employee_id,
-            'shift_id' => $this->shift_id_assignment,
-            'start_date' => $this->start_date,
-            'end_date' => $this->is_permanent ? null : $this->end_date,
-            'is_permanent' => $this->is_permanent,
-            'rotation_pattern' => $this->rotation_pattern,
-            'notes' => $this->notes,
-        ];
+        // Determinar quais shifts usar
+        $shiftsToAssign = $this->has_rotation && !empty($this->selected_shifts) 
+            ? $this->selected_shifts 
+            : [$this->shift_id_assignment];
         
-        // Add the current user as assigned_by
-        $validatedData['assigned_by'] = auth()->id();
-
+        // Validar que pelo menos um shift foi selecionado
+        if (empty($shiftsToAssign) || (count($shiftsToAssign) === 1 && !$shiftsToAssign[0])) {
+            $this->addError('shifts', __('shifts.shifts_required'));
+            return;
+        }
+        
+        $successCount = 0;
+        $errors = [];
+        
         if ($this->isEditing) {
+            // Para edição, atualizar o assignment existente
             $assignment = ShiftAssignment::find($this->assignment_id);
+            $validatedData = [
+                'employee_id' => $this->employee_id,
+                'shift_id' => $this->has_rotation ? $shiftsToAssign[0] : $this->shift_id_assignment,
+                'start_date' => $this->start_date,
+                'end_date' => $this->is_permanent ? null : $this->end_date,
+                'is_permanent' => $this->is_permanent,
+                'rotation_pattern' => $this->has_rotation ? json_encode(['shifts' => $shiftsToAssign, 'pattern' => $this->rotation_pattern]) : $this->rotation_pattern,
+                'notes' => $this->notes,
+                'assigned_by' => auth()->id(),
+            ];
             $assignment->update($validatedData);
-            session()->flash('message', 'Shift assignment updated successfully.');
+            session()->flash('message', __('shifts.assignment_updated'));
         } else {
-            ShiftAssignment::create($validatedData);
-            session()->flash('message', 'Shift assignment created successfully.');
+            // Para criação nova, criar um assignment para cada shift se houver rotação
+            foreach ($shiftsToAssign as $shiftId) {
+                try {
+                    // Verificar se já existe assignment para este funcionário e shift no período
+                    $existingAssignment = ShiftAssignment::where('employee_id', $this->employee_id)
+                        ->where('shift_id', $shiftId)
+                        ->where(function($query) {
+                            $query->where(function($q) {
+                                $q->where('start_date', '<=', $this->start_date)
+                                  ->where(function($q2) {
+                                      $q2->whereNull('end_date')
+                                         ->orWhere('end_date', '>=', $this->start_date);
+                                  });
+                            });
+                            if (!$this->is_permanent && $this->end_date) {
+                                $query->orWhere(function($q) {
+                                    $q->where('start_date', '<=', $this->end_date)
+                                      ->where(function($q2) {
+                                          $q2->whereNull('end_date')
+                                             ->orWhere('end_date', '>=', $this->end_date);
+                                      });
+                                });
+                            }
+                        })
+                        ->exists();
+                        
+                    if (!$existingAssignment) {
+                        $validatedData = [
+                            'employee_id' => $this->employee_id,
+                            'shift_id' => $shiftId,
+                            'start_date' => $this->start_date,
+                            'end_date' => $this->is_permanent ? null : $this->end_date,
+                            'is_permanent' => $this->is_permanent,
+                            'rotation_pattern' => $this->has_rotation ? json_encode(['shifts' => $shiftsToAssign, 'pattern' => $this->rotation_pattern]) : $this->rotation_pattern,
+                            'notes' => $this->notes,
+                            'assigned_by' => auth()->id(),
+                        ];
+                        
+                        ShiftAssignment::create($validatedData);
+                        $successCount++;
+                    } else {
+                        $shift = Shift::find($shiftId);
+                        $errors[] = __('shifts.employee_already_assigned') . ' (' . $shift->name . ')';
+                    }
+                } catch (\Exception $e) {
+                    $shift = Shift::find($shiftId);
+                    $errors[] = 'Erro ao atribuir turno ' . $shift->name . ': ' . $e->getMessage();
+                }
+            }
+            
+            if ($successCount > 0) {
+                $message = $successCount === 1 
+                    ? __('shifts.assignment_created')
+                    : __('shifts.bulk_assignments_created') . ' (' . $successCount . ')';
+                session()->flash('message', $message);
+            }
+            
+            if (!empty($errors)) {
+                session()->flash('errors', $errors);
+            }
         }
 
         $this->showAssignmentModal = false;
         $this->reset([
-            'assignment_id', 'employee_id', 'shift_id_assignment', 'shift_id', 'start_date',
-            'end_date', 'is_permanent', 'rotation_pattern', 'notes'
+            'assignment_id', 'employee_id', 'shift_id_assignment', 'selected_shifts', 'start_date',
+            'end_date', 'is_permanent', 'rotation_pattern', 'notes', 'has_rotation'
         ]);
     }
 
@@ -418,7 +498,8 @@ class ShiftManagement extends Component
             ->orderBy($this->sortFieldShift, $this->sortDirectionShift)
             ->paginate($this->perPage);
 
-        $shiftAssignments = ShiftAssignment::with(['employee', 'shift'])
+        // Buscar assignments com relações
+        $rawAssignments = ShiftAssignment::with(['employee.department', 'shift'])
             ->when($this->searchAssignment, function ($query) {
                 return $query->whereHas('employee', function ($query) {
                     $query->where('full_name', 'like', "%{$this->searchAssignment}%");
@@ -433,9 +514,56 @@ class ShiftManagement extends Component
                 return $query->where('shift_id', $this->filters['shift_id']);
             })
             ->orderBy($this->sortFieldAssignment, $this->sortDirectionAssignment)
-            ->paginate($this->perPage);
+            ->get();
+        
+        // Agrupar assignments por funcionário
+        $groupedAssignments = $rawAssignments->groupBy('employee_id')->map(function ($assignments) {
+            $firstAssignment = $assignments->first();
+            $shifts = $assignments->map(function ($assignment) {
+                return [
+                    'id' => $assignment->shift->id,
+                    'name' => $assignment->shift->name,
+                    'start_time' => $assignment->shift->start_time->format('H:i'),
+                    'end_time' => $assignment->shift->end_time->format('H:i'),
+                    'assignment_id' => $assignment->id,
+                ];
+            });
+            
+            return (object) [
+                'id' => $firstAssignment->id,
+                'employee' => $firstAssignment->employee,
+                'shifts' => $shifts,
+                'start_date' => $firstAssignment->start_date,
+                'end_date' => $firstAssignment->end_date,
+                'is_permanent' => $firstAssignment->is_permanent,
+                'rotation_pattern' => $firstAssignment->rotation_pattern,
+                'notes' => $firstAssignment->notes,
+                'created_at' => $firstAssignment->created_at,
+                'updated_at' => $firstAssignment->updated_at,
+            ];
+        });
+        
+        // Convert to paginated collection (simplified for demo)
+        $currentPage = request()->get('page', 1);
+        $perPage = $this->perPage;
+        $total = $groupedAssignments->count();
+        $items = $groupedAssignments->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        
+        $shiftAssignments = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'pageName' => 'page']
+        );
 
-        $employees = Employee::where('employment_status', 'active')->get();
+        // Obter IDs de funcionários que já têm turnos atribuídos
+    $employeesWithAssignments = ShiftAssignment::pluck('employee_id')->unique();
+    
+    // Carregar apenas funcionários ativos que NÃO têm turnos atribuídos
+    $employees = Employee::where('employment_status', 'active')
+        ->whereNotIn('id', $employeesWithAssignments)
+        ->get();
         $departments = Department::where('is_active', true)->get();
         $shiftsForSelect = Shift::where('is_active', true)->get();
 
