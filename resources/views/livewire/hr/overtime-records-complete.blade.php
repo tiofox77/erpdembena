@@ -253,13 +253,13 @@
                                     <div class="mb-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-amber-200 rounded-lg p-3 animate__animated animate__fadeIn">
                                         <div class="flex items-center mb-2">
                                             <i class="fas fa-lightbulb text-amber-500 mr-2"></i>
-                                            <h4 class="text-sm font-medium text-amber-800">{{ $input_type === 'daily' ? 'Modo Diário: Como Funciona' : 'Modo Mensal: Como Funciona' }}</h4>
+                                            <h4 class="text-sm font-medium text-amber-800">{{ $input_type === 'daily' ? __('messages.daily_mode_how_it_works') : __('messages.monthly_mode_how_it_works') }}</h4>
                                         </div>
                                         <p class="text-xs text-amber-700">
                                             @if($input_type === 'daily')
-                                                <span class="font-medium">Insira apenas as horas extras trabalhadas além da jornada normal.</span> Por exemplo, se trabalhou 2 horas extras num dia, insira "2". O sistema calculará o valor dessas horas com os multiplicadores aplicáveis (dias úteis, feriados, fins de semana). <span class="font-medium">Limitado a {{ number_format($dailyLimit, 1) }} horas/dia conforme legislação.</span>
+                                                {{ __('messages.daily_mode_explanation', ['limit' => number_format($dailyLimit, 1)]) }}
                                             @else
-                                                <span class="font-medium">Insira o total de horas extras do mês inteiro.</span> Esse valor é o total acumulado além da jornada normal de trabalho. Por exemplo, se fez 20 horas extras no mês, insira "20". <span class="font-medium">Não é necessário subtrair as horas normais.</span> O modo mensal não verifica o limite diário, apenas o limite mensal de {{ number_format($monthlyLimit, 1) }} horas.
+                                                {{ __('messages.monthly_mode_explanation', ['limit' => number_format($monthlyLimit, 1)]) }}
                                             @endif
                                         </p>
                                     </div>
@@ -268,11 +268,11 @@
                                          <div>
                                             <label for="direct_hours" class="block text-sm font-medium text-gray-700 mb-1">
                                                 {{ $input_type === 'daily' ? __('messages.daily_hours') : __('messages.monthly_hours') }} <span class="text-red-500">*</span>
-                                                <span class="ml-1 text-xs font-medium text-blue-600">{{ $input_type === 'daily' ? '(Apenas horas extras)' : '(Total de horas extras do mês)' }}</span>
+                                                <span class="ml-1 text-xs font-medium text-blue-600">{{ $input_type === 'daily' ? __('messages.only_overtime_hours') : __('messages.total_monthly_overtime') }}</span>
                                             </label>
                                             <div class="relative">
                                                 <input type="number" step="0.01" wire:model.live="direct_hours" id="direct_hours"
-                                                    placeholder="{{ $input_type === 'daily' ? 'Ex: 2 (para 2h extras)' : 'Ex: 20 (para 20h extras no mês)' }}"
+                                                    placeholder="{{ $input_type === 'daily' ? __('messages.daily_example_placeholder') : __('messages.monthly_example_placeholder') }}"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <i class="fas fa-hourglass-half text-gray-400"></i>

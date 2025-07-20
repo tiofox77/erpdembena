@@ -64,7 +64,7 @@
                                             {{ __('messages.department') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="filters.department_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.department_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="">{{ __('messages.all_departments') }}</option>
                                                 @foreach($departments as $department)
                                                     <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -91,7 +91,7 @@
                                             {{ __('messages.position') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="filters.position_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.position_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="">{{ __('messages.all_positions') }}</option>
                                                 @foreach($positions as $position)
                                                     <option value="{{ $position->id }}">{{ $position->title }}</option>
@@ -118,7 +118,7 @@
                                             {{ __('messages.employment_status') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="filters.employment_status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.employment_status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="">{{ __('messages.all_statuses') }}</option>
                                                 <option value="active">{{ __('messages.active') }}</option>
                                                 <option value="on_leave">{{ __('messages.on_leave') }}</option>
@@ -147,7 +147,7 @@
                                             {{ __('messages.gender') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="filters.gender" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring focus:ring-pink-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.gender" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring focus:ring-pink-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="">{{ __('messages.all_genders') }}</option>
                                                 <option value="male">{{ __('messages.male') }}</option>
                                                 <option value="female">{{ __('messages.female') }}</option>
@@ -176,7 +176,7 @@
                                             </div>
                                             {{ __('messages.hired_after') }}
                                         </label>
-                                        <input type="date" wire:model="filters.hire_date_from" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 bg-white transition-all duration-200">
+                                        <input type="date" wire:model.live="filters.hire_date_from" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 bg-white transition-all duration-200">
                                         @if($filters['hire_date_from'])
                                             <div class="flex items-center text-xs text-indigo-600">
                                                 <i class="fas fa-filter mr-1"></i>
@@ -194,7 +194,7 @@
                                             {{ __('messages.salary_range') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="filters.salary_range" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.salary_range" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="">{{ __('messages.all_salaries') }}</option>
                                                 <option value="0-50000">0 - 50.000 AOA</option>
                                                 <option value="50000-100000">50.000 - 100.000 AOA</option>
@@ -222,7 +222,7 @@
                                             {{ __('messages.salary_advances') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="filters.has_advances" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.has_advances" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="">{{ __('messages.all_employees') }}</option>
                                                 <option value="with_advances">{{ __('messages.with_advances') }}</option>
                                                 <option value="without_advances">{{ __('messages.without_advances') }}</option>
@@ -249,7 +249,7 @@
                                             {{ __('messages.per_page') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model="perPage" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-500 focus:ring focus:ring-gray-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="perPage" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-500 focus:ring focus:ring-gray-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
                                                 <option value="10">10</option>
                                                 <option value="25">25</option>
                                                 <option value="50">50</option>
@@ -2609,6 +2609,283 @@
                             <p class="text-gray-500">{{ __('messages.no_documents_found') }}</p>
                         </div>
                     @endif
+                </div>
+
+                <!-- Salary Information Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <!-- Salary Advances Section -->
+                    <div class="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="bg-amber-100 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-hand-holding-usd text-amber-600"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-800">{{ __('messages.salary_advances') }}</h4>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ $viewEmployee->salaryAdvances?->count() ?? 0 }} {{ __('messages.total') }}</span>
+                        </div>
+                        
+                        @if($viewEmployee->salaryAdvances?->count() > 0)
+                            <div class="space-y-3 max-h-40 overflow-y-auto">
+                                @foreach($viewEmployee->salaryAdvances()->latest()->take(5)->get() as $advance)
+                                <div class="bg-white rounded-lg p-3 border border-amber-200">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-1">
+                                                <span class="font-medium text-gray-800">{{ number_format($advance->amount, 2) }} AOA</span>
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                    @if($advance->status === 'approved') bg-green-100 text-green-800
+                                                    @elseif($advance->status === 'pending') bg-yellow-100 text-yellow-800
+                                                    @else bg-red-100 text-red-800 @endif">
+                                                    {{ ucfirst($advance->status) }}
+                                                </span>
+                                            </div>
+                                            <p class="text-xs text-gray-600">{{ __('messages.requested_on') }}: {{ \Carbon\Carbon::parse($advance->request_date)->format('d/m/Y') }}</p>
+                                            @if($advance->reason)
+                                                <p class="text-xs text-gray-500 mt-1">{{ Str::limit($advance->reason, 50) }}</p>
+                                            @endif
+                                            @if($advance->status === 'approved' && $advance->remaining_amount > 0)
+                                                <div class="mt-2">
+                                                    <div class="flex justify-between text-xs text-gray-600">
+                                                        <span>{{ __('messages.remaining') }}</span>
+                                                        <span>{{ number_format($advance->remaining_amount, 2) }} AOA</span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                                        <div class="bg-amber-500 h-1.5 rounded-full" style="width: {{ (($advance->amount - $advance->remaining_amount) / $advance->amount) * 100 }}%"></div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-6">
+                                <i class="fas fa-hand-holding text-amber-300 text-2xl mb-2"></i>
+                                <p class="text-gray-500 text-sm">{{ __('messages.no_salary_advances') }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Salary Discounts Section -->
+                    <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="bg-red-100 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-minus-circle text-red-600"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-800">{{ __('messages.salary_discounts') }}</h4>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ $viewEmployee->salaryDiscounts?->count() ?? 0 }} {{ __('messages.total') }}</span>
+                        </div>
+                        
+                        @if($viewEmployee->salaryDiscounts?->count() > 0)
+                            <div class="space-y-3 max-h-40 overflow-y-auto">
+                                @foreach($viewEmployee->salaryDiscounts()->latest()->take(5)->get() as $discount)
+                                <div class="bg-white rounded-lg p-3 border border-red-200">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-1">
+                                                <span class="font-medium text-gray-800">{{ number_format($discount->amount, 2) }} AOA</span>
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                    @if($discount->status === 'active') bg-red-100 text-red-800
+                                                    @else bg-gray-100 text-gray-800 @endif">
+                                                    {{ ucfirst($discount->status) }}
+                                                </span>
+                                            </div>
+                                            <p class="text-xs text-gray-600">{{ __('messages.type') }}: {{ ucfirst($discount->type) }}</p>
+                                            @if($discount->reason)
+                                                <p class="text-xs text-gray-500 mt-1">{{ Str::limit($discount->reason, 50) }}</p>
+                                            @endif
+                                            @if($discount->start_date)
+                                                <p class="text-xs text-gray-600 mt-1">
+                                                    {{ __('messages.period') }}: {{ \Carbon\Carbon::parse($discount->start_date)->format('d/m/Y') }}
+                                                    @if($discount->end_date)
+                                                        - {{ \Carbon\Carbon::parse($discount->end_date)->format('d/m/Y') }}
+                                                    @endif
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-6">
+                                <i class="fas fa-minus text-red-300 text-2xl mb-2"></i>
+                                <p class="text-gray-500 text-sm">{{ __('messages.no_salary_discounts') }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Attendance & Overtime Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <!-- Recent Attendance Section -->
+                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="bg-blue-100 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-clock text-blue-600"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-800">{{ __('messages.recent_attendance') }}</h4>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ __('messages.last_30_days') }}</span>
+                        </div>
+                        
+                        @php
+                            $recentAttendance = $viewEmployee->attendances()
+                                ->where('date', '>=', now()->subDays(30))
+                                ->orderBy('date', 'desc')
+                                ->take(5)
+                                ->get();
+                        @endphp
+                        
+                        @if($recentAttendance->count() > 0)
+                            <div class="space-y-3 max-h-40 overflow-y-auto">
+                                @foreach($recentAttendance as $attendance)
+                                <div class="bg-white rounded-lg p-3 border border-blue-200">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-1">
+                                                <span class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($attendance->date)->format('d/m/Y') }}</span>
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                    @if($attendance->status === 'present') bg-green-100 text-green-800
+                                                    @elseif($attendance->status === 'absent') bg-red-100 text-red-800
+                                                    @elseif($attendance->status === 'late') bg-yellow-100 text-yellow-800
+                                                    @else bg-blue-100 text-blue-800 @endif">
+                                                    {{ ucfirst($attendance->status) }}
+                                                </span>
+                                            </div>
+                                            @if($attendance->time_in || $attendance->time_out)
+                                                <div class="flex items-center text-xs text-gray-600 space-x-4">
+                                                    @if($attendance->time_in)
+                                                        <span><i class="fas fa-sign-in-alt mr-1"></i>{{ \Carbon\Carbon::parse($attendance->time_in)->format('H:i') }}</span>
+                                                    @endif
+                                                    @if($attendance->time_out)
+                                                        <span><i class="fas fa-sign-out-alt mr-1"></i>{{ \Carbon\Carbon::parse($attendance->time_out)->format('H:i') }}</span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            @if($attendance->overtime_hours > 0)
+                                                <div class="text-xs text-orange-600 mt-1">
+                                                    <i class="fas fa-clock mr-1"></i>{{ __('messages.overtime') }}: {{ $attendance->overtime_hours }}h
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            
+                            <!-- Attendance Summary -->
+                            @php
+                                $monthlyAttendance = $viewEmployee->attendances()
+                                    ->where('date', '>=', now()->subDays(30))
+                                    ->get();
+                                $presentDays = $monthlyAttendance->where('status', 'present')->count();
+                                $absentDays = $monthlyAttendance->where('status', 'absent')->count();
+                                $lateDays = $monthlyAttendance->where('status', 'late')->count();
+                                $totalDays = $monthlyAttendance->count();
+                            @endphp
+                            
+                            @if($totalDays > 0)
+                                <div class="mt-4 pt-4 border-t border-blue-200">
+                                    <div class="grid grid-cols-3 gap-4 text-center">
+                                        <div>
+                                            <div class="text-lg font-bold text-green-600">{{ $presentDays }}</div>
+                                            <div class="text-xs text-gray-600">{{ __('messages.present') }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-lg font-bold text-yellow-600">{{ $lateDays }}</div>
+                                            <div class="text-xs text-gray-600">{{ __('messages.late') }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-lg font-bold text-red-600">{{ $absentDays }}</div>
+                                            <div class="text-xs text-gray-600">{{ __('messages.absent') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @else
+                            <div class="text-center py-6">
+                                <i class="fas fa-calendar-times text-blue-300 text-2xl mb-2"></i>
+                                <p class="text-gray-500 text-sm">{{ __('messages.no_recent_attendance') }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Overtime Records Section -->
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="bg-purple-100 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-clock text-purple-600"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-800">{{ __('messages.overtime_records') }}</h4>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ __('messages.last_30_days') }}</span>
+                        </div>
+                        
+                        @php
+                            $overtimeRecords = $viewEmployee->overtimeRecords()
+                                ->where('date', '>=', now()->subDays(30))
+                                ->where('hours', '>', 0)
+                                ->orderBy('date', 'desc')
+                                ->take(5)
+                                ->get();
+                            $totalOvertimeHours = $overtimeRecords->sum('hours');
+                        @endphp
+                        
+                        @if($overtimeRecords->count() > 0)
+                            <div class="space-y-3 max-h-40 overflow-y-auto">
+                                @foreach($overtimeRecords as $overtime)
+                                <div class="bg-white rounded-lg p-3 border border-purple-200">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-1">
+                                                <span class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($overtime->date)->format('d/m/Y') }}</span>
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                    {{ $overtime->hours }}h
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center text-xs text-gray-600 space-x-4">
+                                                @if($overtime->start_time)
+                                                    <span><i class="fas fa-sign-in-alt mr-1"></i>{{ \Carbon\Carbon::parse($overtime->start_time)->format('H:i') }}</span>
+                                                @endif
+                                                @if($overtime->end_time)
+                                                    <span><i class="fas fa-sign-out-alt mr-1"></i>{{ \Carbon\Carbon::parse($overtime->end_time)->format('H:i') }}</span>
+                                                @endif
+                                            </div>
+                                            @if($overtime->description)
+                                                <p class="text-xs text-gray-500 mt-1">{{ Str::limit($overtime->description, 50) }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            
+                            <!-- Overtime Summary -->
+                            <div class="mt-4 pt-4 border-t border-purple-200">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-purple-600">{{ $totalOvertimeHours }}h</div>
+                                    <div class="text-xs text-gray-600">{{ __('messages.total_overtime_hours') }}</div>
+                                    @if($totalOvertimeHours > 0)
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {{ __('messages.average_per_day') }}: {{ number_format($totalOvertimeHours / max($overtimeRecords->count(), 1), 1) }}h
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            <div class="text-center py-6">
+                                <i class="fas fa-clock text-purple-300 text-2xl mb-2"></i>
+                                <p class="text-gray-500 text-sm">{{ __('messages.no_overtime_records') }}</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 

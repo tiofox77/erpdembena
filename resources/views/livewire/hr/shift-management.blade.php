@@ -495,7 +495,7 @@
                                                 <select wire:model="employee_id" id="employee_id" 
                                                     class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm bg-white transition-all duration-200">
                                                     <option value="">{{ __('shifts.select_employee') }}</option>
-                                                    @foreach($employeesWithoutShifts as $employee)
+                                                    @foreach($employees as $employee)
                                                         <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
                                                     @endforeach
                                                 </select>

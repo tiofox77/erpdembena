@@ -1,101 +1,191 @@
-<div>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <!-- Header -->
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">
-                            <i class="fas fa-money-bill-wave mr-2 text-gray-600"></i>
-                            Gestão de Folha de Pagamento
-                        </h2>
-                        <div class="flex space-x-2">
-                            <a href="{{ route('hr.payroll-guide') }}" 
-                                class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 flex items-center">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Guia de Cálculos
-                            </a>
-                            <button
-                                wire:click="create"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            >
-                                <i class="fas fa-plus mr-1"></i>
-                                Criar Folha
-                            </button>
-                            <button
-                                wire:click="exportPayroll"
-                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                            >
-                                <i class="fas fa-file-export mr-1"></i>
-                                Exportar
-                            </button>
+{{-- Modern Full Width Payroll Management Interface --}}
+<div class="min-h-screen bg-gray-50">
+    <div class="w-full h-full">
+        <div class="flex flex-col min-h-screen">
+            
+            {{-- Header Section with Gradient - Full Width --}}
+            <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-6 py-8 text-white flex-shrink-0">
+                <div class="w-full flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3">
+                            <i class="fas fa-money-bill-wave text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold">{{ __('messages.payroll_management') }}</h1>
+                            <p class="text-blue-100 mt-1">{{ __('messages.payroll_management_description') }}</p>
                         </div>
                     </div>
+                    <div class="flex items-center space-x-3">
+                        <button
+                            wire:click="openEmployeeSearch"
+                            class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-white/20"
+                        >
+                            <i class="fas fa-search text-lg"></i>
+                            <span>{{ __('messages.process_payroll') }}</span>
+                        </button>
+                        <button
+                            wire:click="exportPayroll"
+                            class="bg-green-500/90 hover:bg-green-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                        >
+                            <i class="fas fa-file-export text-lg"></i>
+                            <span>{{ __('messages.export') }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- Filters and Search -->
-                    <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div class="md:col-span-1">
-                                <label for="search" class="sr-only">Search</label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-search text-gray-400"></i>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        id="search"
-                                        wire:model.live.debounce.300ms="search"
-                                        placeholder="Buscar funcionário..."
-                                        class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
-                                    >
+            {{-- Stats Cards - Full Width --}}
+            <div class="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200 hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-600 font-medium text-sm">{{ __('messages.total_processed') }}</p>
+                                <p class="text-3xl font-bold text-green-700">{{ number_format($payrolls->count()) }}</p>
+                            </div>
+                            <div class="bg-green-500 p-3 rounded-full">
+                                <i class="fas fa-check text-white text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-600 font-medium text-sm">{{ __('messages.pending_approval') }}</p>
+                                <p class="text-3xl font-bold text-blue-700">{{ $payrolls->where('status', 'draft')->count() }}</p>
+                            </div>
+                            <div class="bg-blue-500 p-3 rounded-full">
+                                <i class="fas fa-clock text-white text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-600 font-medium text-sm">{{ __('messages.approved') }}</p>
+                                <p class="text-3xl font-bold text-purple-700">{{ $payrolls->where('status', 'approved')->count() }}</p>
+                            </div>
+                            <div class="bg-purple-500 p-3 rounded-full">
+                                <i class="fas fa-user-check text-white text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-amber-50 to-yellow-100 p-6 rounded-xl border border-amber-200 hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-amber-600 font-medium text-sm">{{ __('messages.paid') }}</p>
+                                <p class="text-3xl font-bold text-amber-700">{{ $payrolls->where('status', 'paid')->count() }}</p>
+                            </div>
+                            <div class="bg-amber-500 p-3 rounded-full">
+                                <i class="fas fa-money-bill text-white text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Filters Section - Full Width --}}
+            <div class="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 flex items-center">
+                            <i class="fas fa-filter text-blue-500 mr-2"></i>
+                            {{ __('messages.filters_and_search') }}
+                        </h3>
+                        <button
+                            wire:click="resetFilters"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors flex items-center space-x-2"
+                        >
+                            <i class="fas fa-undo text-sm"></i>
+                            <span class="text-sm font-medium">{{ __('messages.reset') }}</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div>
+                            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-search text-gray-400 mr-1"></i>
+                                {{ __('messages.search_employee') }}
+                            </label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="search"
+                                    wire:model.live.debounce.300ms="search"
+                                    placeholder="{{ __('messages.search_employee_placeholder') }}"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                >
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-gray-400"></i>
                                 </div>
                             </div>
-
-                            <div>
-                                <label for="filterPeriod" class="sr-only">Period</label>
-                                <select
-                                    id="filterPeriod"
-                                    wire:model.live="filters.period_id"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                    <option value="">Todos os Períodos</option>
-                                    @foreach($payrollPeriods as $period)
-                                        <option value="{{ $period->id }}">{{ $period->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="filterDepartment" class="sr-only">Department</label>
-                                <select
-                                    id="filterDepartment"
-                                    wire:model.live="filters.department_id"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                    <option value="">All Departments</option>
-                                    @foreach($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="filterStatus" class="sr-only">Status</label>
-                                <select
-                                    id="filterStatus"
-                                    wire:model.live="filters.status"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                    <option value="">All Status</option>
-                                    <option value="draft">Draft</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="paid">Paid</option>
-                                </select>
-                            </div>
+                        </div>
+                        <div>
+                            <label for="department_filter" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-building text-gray-400 mr-1"></i>
+                                {{ __('messages.department') }}
+                            </label>
+                            <select
+                                id="department_filter"
+                                wire:model.live="filters.department_id"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            >
+                                <option value="">{{ __('messages.all_departments') }}</option>
+                                @foreach(\App\Models\HR\Department::all() as $department)
+                                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="month_filter" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                                {{ __('messages.month') }}
+                            </label>
+                            <select
+                                id="month_filter"
+                                wire:model.live="filters.month"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            >
+                                <option value="">{{ __('messages.all_months') }}</option>
+                                @for($i = 1; $i <= 12; $i++)
+                                    <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
+                                        {{ \Carbon\Carbon::createFromDate(null, $i, 1)->format('F') }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <label for="status_filter" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-flag text-gray-400 mr-1"></i>
+                                {{ __('messages.status') }}
+                            </label>
+                            <select
+                                id="status_filter"
+                                wire:model.live="filters.status"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            >
+                                <option value="">{{ __('messages.all_status') }}</option>
+                                <option value="draft">{{ __('messages.draft') }}</option>
+                                <option value="approved">{{ __('messages.approved') }}</option>
+                                <option value="paid">{{ __('messages.paid') }}</option>
+                                <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                            </select>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Payroll Table -->
+            {{-- Main Content Area - Payroll Table --}}
+            <div class="flex-1 bg-white px-6 py-6">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 flex items-center mb-4">
+                        <i class="fas fa-table text-blue-500 mr-2"></i>
+                        {{ __('messages.payroll_records') }}
+                    </h3>
+                    
+                    {{-- Payroll Table --}}
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -892,4 +982,10 @@
             {{ session('message') }}
         </div>
     @endif
+
+    {{-- Include Employee Search Modal --}}
+    @include('livewire.hr.payroll-employee-search-modal')
+    
+    {{-- Include Advanced Payroll Processing Modal --}}
+    @include('livewire.hr.payroll-process-modal')
 </div>

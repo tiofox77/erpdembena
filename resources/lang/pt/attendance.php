@@ -18,6 +18,10 @@ return [
     'all_employees' => 'Todos os Funcionários',
     'all_departments' => 'Todos os Departamentos',
     'all_statuses' => 'Todos os Estados',
+    'all_status' => 'Todos os Status',
+    'search_employee' => 'Pesquisar funcionário...',
+    'department' => 'Departamento',
+    'status' => 'Status',
     
     // Calendar
     'attendance_calendar' => 'Calendário de Presenças',

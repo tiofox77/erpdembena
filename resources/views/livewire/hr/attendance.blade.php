@@ -53,43 +53,43 @@
                                         type="text"
                                         id="search"
                                         wire:model.live.debounce.300ms="search"
-                                        placeholder="Search employee..."
+                                        placeholder="{{ __('attendance.search_employee') }}"
                                         class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                                     >
                                 </div>
                             </div>
 
                             <div>
-                                <label for="filterEmployee" class="sr-only">Employee</label>
+                                <label for="filterDepartment" class="sr-only">{{ __('attendance.department') }}</label>
                                 <select
-                                    id="filterEmployee"
-                                    wire:model.live="filters.employee_id"
+                                    id="filterDepartment"
+                                    wire:model.live="filters.department_id"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Employees</option>
-                                    @foreach($employees as $employee)
-                                        <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
+                                    <option value="">{{ __('attendance.all_departments') }}</option>
+                                    @foreach($departments as $department)
+                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <div>
-                                <label for="filterStatus" class="sr-only">Status</label>
+                                <label for="filterStatus" class="sr-only">{{ __('attendance.status') }}</label>
                                 <select
                                     id="filterStatus"
                                     wire:model.live="filters.status"
                                     class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 >
-                                    <option value="">All Status</option>
-                                    <option value="present">Present</option>
-                                    <option value="absent">Absent</option>
-                                    <option value="late">Late</option>
-                                    <option value="half_day">Half Day</option>
+                                    <option value="">{{ __('attendance.all_status') }}</option>
+                                    <option value="present">{{ __('attendance.present') }}</option>
+                                    <option value="absent">{{ __('attendance.absent') }}</option>
+                                    <option value="late">{{ __('attendance.late') }}</option>
+                                    <option value="half_day">{{ __('attendance.half_day') }}</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label for="dateFrom" class="sr-only">Date From</label>
+                                <label for="dateFrom" class="sr-only">{{ __('attendance.date_from') }}</label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-calendar text-gray-400"></i>
@@ -97,14 +97,15 @@
                                     <input
                                         type="date"
                                         id="dateFrom"
-                                        wire:model.live="filters.dateFrom"
+                                        wire:model.live="filters.start_date"
+                                        placeholder="{{ __('attendance.date_from') }}"
                                         class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                                     >
                                 </div>
                             </div>
 
                             <div>
-                                <label for="dateTo" class="sr-only">Date To</label>
+                                <label for="dateTo" class="sr-only">{{ __('attendance.date_to') }}</label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-calendar text-gray-400"></i>
@@ -112,7 +113,8 @@
                                     <input
                                         type="date"
                                         id="dateTo"
-                                        wire:model.live="filters.dateTo"
+                                        wire:model.live="filters.end_date"
+                                        placeholder="{{ __('attendance.date_to') }}"
                                         class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                                     >
                                 </div>

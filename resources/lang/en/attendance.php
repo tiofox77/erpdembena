@@ -18,6 +18,10 @@ return [
     'all_employees' => 'All Employees',
     'all_departments' => 'All Departments',
     'all_statuses' => 'All Statuses',
+    'all_status' => 'All Status',
+    'search_employee' => 'Search employee...',
+    'department' => 'Department',
+    'status' => 'Status',
     
     // Calendar
     'attendance_calendar' => 'Attendance Calendar',

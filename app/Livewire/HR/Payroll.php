@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\HR;
 
 use App\Models\HR\Payroll as PayrollModel;
@@ -7,95 +9,611 @@ use App\Models\HR\PayrollPeriod;
 use App\Models\HR\PayrollItem;
 use App\Models\HR\Department;
 use App\Models\HR\Employee;
+use App\Models\HR\Attendance;
+use App\Models\HR\OvertimeRecord;
+use App\Models\HR\SalaryAdvance;
+use App\Models\HR\SalaryDiscount;
+use App\Models\HR\HRSetting;
+use App\Models\HR\ShiftAssignment;
+use App\Models\HR\Leave;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class Payroll extends Component
 {
     use WithPagination;
 
-    public $search = '';
-    public $perPage = 10;
-    public $sortField = 'payment_date';
-    public $sortDirection = 'desc';
-    public $filters = [
+    public string $search = '';
+    public int $perPage = 10;
+    public string $sortField = 'created_at';
+    public string $sortDirection = 'desc';
+    public array $filters = [
         'department_id' => '',
-        'payroll_period_id' => '',
+        'period_id' => '',
         'status' => '',
+        'month' => '',
+        'year' => '',
     ];
 
-    // Form properties
-    public $payroll_id;
-    public $employee_id;
-    public $payroll_period_id;
-    public $basic_salary;
-    public $allowances;
-    public $overtime;
-    public $bonuses;
-    public $deductions;
-    public $tax;
-    public $social_security;
-    public $net_salary;
-    public $payment_method = 'bank_transfer';
-    public $bank_account;
-    public $payment_date;
-    public $status = 'draft';
-    public $remarks;
+    // Additional Search Properties
+    public int $selectedMonth = 0;
+    public int $selectedYear = 0;
+
+    // Form properties - Employee Selection
+    public ?int $payroll_id = null;
+    public ?int $employee_id = null;
+    public ?int $payroll_period_id = null;
+    public ?Employee $selectedEmployee = null;
     
-    // Propriedades para integração com presença e licenças
-    public $attendance_hours = 0; // Horas de presença
-    public $base_hourly_rate = 0; // Taxa horária base
-    public $total_hours_pay = 0; // Pagamento calculado com base nas horas
-    public $leave_days = 0; // Dias de licença regular
-    public $leave_deduction = 0; // Dedução calculada com base nas licenças
-    public $maternity_days = 0; // Dias de licença maternidade
-    public $special_leave_days = 0; // Dias de licença especial
-    public $employee = null; // Para armazenar dados completos do funcionário
+    // Basic Salary Components
+    public float $basic_salary = 0.0;
+    public float $hourly_rate = 0.0;
+    public float $monthly_hours = 0.0;
+    
+    // Attendance & Hours Data
+    public float $total_attendance_hours = 0.0;
+    public float $regular_hours_pay = 0.0;
+    public int $total_present_days = 0;
+    public int $total_absent_days = 0;
+    public int $total_late_days = 0;
+    public array $attendanceData = [];
+    
+    // Overtime Data
+    public float $total_overtime_hours = 0.0;
+    public float $total_overtime_amount = 0.0;
+    public array $overtimeRecords = [];
+    
+    // Leave Data
+    public int $total_leave_days = 0;
+    public float $leave_deduction = 0.0;
+    public int $unpaid_leave_days = 0;
+    public array $leaveRecords = [];
+    
+    // Salary Advances
+    public float $total_salary_advances = 0.0;
+    public float $advance_deduction = 0.0;
+    public array $salaryAdvances = [];
+    
+    // Salary Discounts
+    public float $total_salary_discounts = 0.0;
+    public array $salaryDiscounts = [];
+    
+    // Additional Components
+    public float $transport_allowance = 0.0;
+    public float $meal_allowance = 0.0;
+    public float $housing_allowance = 0.0;
+    public float $performance_bonus = 0.0;
+    public float $custom_bonus = 0.0;
+    public string $custom_bonus_description = '';
+    
+    // Holiday Subsidies
+    public bool $include_vacation_subsidy = false;
+    public float $vacation_subsidy = 0.0;
+    public bool $include_christmas_subsidy = false;
+    public float $christmas_subsidy = 0.0;
+    
+    // Deductions
+    public float $income_tax = 0.0;
+    public float $social_security = 0.0;
+    public float $other_deductions = 0.0;
+    public string $other_deductions_description = '';
+    
+    // Calculated Totals
+    public float $gross_salary = 0.0;
+    public float $total_deductions = 0.0;
+    public float $net_salary = 0.0;
+    
+    // Payment Information
+    public string $payment_method = 'bank_transfer';
+    public ?string $bank_account = null;
+    public ?string $payment_date = null;
+    public string $status = 'draft';
+    public ?string $remarks = null;
+    
+    // Period Selection
+    public ?string $selected_month = null;
+    public ?string $selected_year = null;
+    
+    // HR Settings Cache
+    public array $hrSettings = [];
     
     // Payroll items
-    public $payrollItems = [];
+    public array $payrollItems = [];
 
     // Modal flags
-    public $showModal = false;
-    public $showDeleteModal = false;
-    public $showApproveModal = false;
-    public $showPayModal = false;
-    public $showGenerateModal = false;
-    public $showViewModal = false;
-    public $isEditing = false;
+    public bool $showModal = false;
+    public bool $showDeleteModal = false;
+    public bool $showProcessModal = false;
+    public bool $showViewModal = false;
+    public bool $showApproveModal = false;
+    public bool $showPayModal = false;
+    public bool $isEditing = false;
+    public bool $showEmployeeSearch = false;
     
-    // Current payroll for view modal
-    public $currentPayroll = null;
+    // Current payroll for operations
+    public ?PayrollModel $currentPayroll = null;
+    
+    // Employee search and selection
+    public string $employeeSearch = '';
+    public array $searchResults = [];
+    public bool $dataLoaded = false;
 
     // Listeners
-    protected $listeners = ['refreshPayrolls' => '$refresh'];
+    protected $listeners = [
+        'refreshPayrolls' => '$refresh',
+        'employeeSelected' => 'selectEmployee',
+        'recalculatePayroll' => 'calculatePayrollComponents'
+    ];
 
-    // Rules
-    protected function rules()
+    /**
+     * Initialize component and load HR settings
+     */
+    public function mount(): void
+    {
+        // Initialize current month and year for payroll processing
+        $this->selectedMonth = (int) now()->month;
+        $this->selectedYear = (int) now()->year;
+        $this->selected_month = now()->format('m');
+        $this->selected_year = now()->format('Y');
+        $this->loadHRSettings();
+    }
+
+    /**
+     * Load HR Settings for payroll calculations
+     */
+    public function loadHRSettings(): void
+    {
+        $this->hrSettings = [
+            'working_hours_per_day' => (float) \App\Models\HR\HRSetting::get('working_hours_per_day', 8),
+            'working_days_per_month' => (int) \App\Models\HR\HRSetting::get('working_days_per_month', 22),
+            'vacation_subsidy_percentage' => (float) \App\Models\HR\HRSetting::get('vacation_subsidy_percentage', 50),
+            'christmas_subsidy_percentage' => (float) \App\Models\HR\HRSetting::get('christmas_subsidy_percentage', 100),
+            'income_tax_percentage' => (float) \App\Models\HR\HRSetting::get('income_tax_percentage', 15),
+            'social_security_percentage' => (float) \App\Models\HR\HRSetting::get('social_security_percentage', 3),
+        ];
+    }
+
+
+
+    /**
+     * Calculate hourly rate based on monthly salary
+     */
+    private function calculateHourlyRate(): float
+    {
+        $workingDays = $this->hrSettings['working_days_per_month'] ?? 22;
+        $workingHours = $this->hrSettings['working_hours_per_day'] ?? 8;
+        $totalMonthlyHours = $workingDays * $workingHours;
+        
+        return $totalMonthlyHours > 0 ? $this->basic_salary / $totalMonthlyHours : 0;
+    }
+
+    /**
+     * Load all employee payroll data for the selected period
+     */
+    public function loadEmployeePayrollData(): void
+    {
+        if (!$this->selectedEmployee || !$this->selected_month || !$this->selected_year) {
+            return;
+        }
+
+        $startDate = Carbon::createFromDate($this->selected_year, $this->selected_month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $this->loadAttendanceData($startDate, $endDate);
+        $this->loadOvertimeData($startDate, $endDate);
+        $this->loadSalaryAdvances($startDate, $endDate);
+        $this->loadSalaryDiscounts($startDate, $endDate);
+        $this->loadLeaveData($startDate, $endDate);
+    }
+
+    /**
+     * Load attendance data for the period
+     */
+    private function loadAttendanceData(Carbon $startDate, Carbon $endDate): void
+    {
+        $attendances = \App\Models\HR\Attendance::where('employee_id', $this->employee_id)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('is_approved', true)
+            ->get();
+
+        // Calculate working days in the period (excluding weekends)
+        $this->total_working_days = 0;
+        $current = $startDate->copy();
+        while ($current <= $endDate) {
+            if ($current->isWeekday()) {
+                $this->total_working_days++;
+            }
+            $current->addDay();
+        }
+
+        // Count different attendance types
+        $this->present_days = $attendances->where('attendance_type', 'present')->count();
+        $this->absent_days = $attendances->where('attendance_type', 'absent')->count();
+        $this->late_arrivals = $attendances->where('attendance_type', 'late')->count();
+        
+        // Calculate total attendance hours
+        $this->total_attendance_hours = 0;
+        foreach ($attendances as $attendance) {
+            if (in_array($attendance->attendance_type, ['present', 'late']) && $attendance->time_in && $attendance->time_out) {
+                $timeIn = Carbon::parse($attendance->time_in);
+                $timeOut = Carbon::parse($attendance->time_out);
+                $this->total_attendance_hours += $timeIn->diffInHours($timeOut);
+            }
+        }
+
+        $this->regular_hours_pay = $this->total_attendance_hours * $this->hourly_rate;
+        $this->attendanceData = $attendances->toArray();
+    }
+
+    /**
+     * Load overtime records for the period
+     */
+    private function loadOvertimeData(Carbon $startDate, Carbon $endDate): void
+    {
+        $overtimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $this->employee_id)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('status', 'approved')
+            ->get();
+
+        $this->total_overtime_hours = $overtimeRecords->sum('hours');
+        $this->total_overtime_amount = $overtimeRecords->sum('amount');
+        $this->overtimeRecords = $overtimeRecords->toArray();
+    }
+
+    /**
+     * Load salary advances for the period
+     */
+    private function loadSalaryAdvances(Carbon $startDate, Carbon $endDate): void
+    {
+        // Load all active advances for this employee (not just for this period)
+        $advances = \App\Models\HR\SalaryAdvance::where('employee_id', $this->employee_id)
+            ->where('status', 'approved')
+            ->where('remaining_installments', '>', 0)
+            ->get();
+
+        $this->total_salary_advances = $advances->sum('amount');
+        $this->advance_deduction = $advances->sum('installment_amount'); // Current month deduction
+        
+        // Map advances with installment details
+        $this->salaryAdvances = $advances->map(function($advance) {
+            return [
+                'id' => $advance->id,
+                'request_date' => $advance->request_date->format('d/m/Y'),
+                'amount' => $advance->amount,
+                'installments' => $advance->installments,
+                'installment_amount' => $advance->installment_amount,
+                'remaining_installments' => $advance->remaining_installments,
+                'reason' => $advance->reason,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Load salary discounts for the period
+     */
+    private function loadSalaryDiscounts(Carbon $startDate, Carbon $endDate): void
+    {
+        // Load all active discounts for this employee (not just for this period)
+        $discounts = \App\Models\HR\SalaryDiscount::where('employee_id', $this->employee_id)
+            ->where('status', 'active')
+            ->where('remaining_installments', '>', 0)
+            ->get();
+
+        $this->total_salary_discounts = $discounts->sum('installment_amount'); // Current month deduction
+        
+        // Map discounts with installment details
+        $this->salaryDiscounts = $discounts->map(function($discount) {
+            return [
+                'id' => $discount->id,
+                'request_date' => $discount->request_date->format('d/m/Y'),
+                'amount' => $discount->amount,
+                'installments' => $discount->installments,
+                'installment_amount' => $discount->installment_amount,
+                'remaining_installments' => $discount->remaining_installments,
+                'reason' => $discount->reason,
+                'discount_type' => $discount->discount_type,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Load leave data for the period
+     */
+    private function loadLeaveData(Carbon $startDate, Carbon $endDate): void
+    {
+        $leaves = \App\Models\HR\Leave::where('employee_id', $this->employee_id)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                      ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+            })
+            ->where('status', 'approved')
+            ->get();
+
+        $this->total_leave_days = 0;
+        $this->unpaid_leave_days = 0;
+
+        foreach ($leaves as $leave) {
+            $leaveDays = Carbon::parse($leave->start_date)->diffInDays(Carbon::parse($leave->end_date)) + 1;
+            $this->total_leave_days += $leaveDays;
+            
+            // Check if leave type is unpaid
+            $leaveType = \App\Models\HR\LeaveType::find($leave->leave_type_id);
+            if ($leaveType && !$leaveType->is_paid) {
+                $this->unpaid_leave_days += $leaveDays;
+            }
+        }
+
+        // Calculate leave deduction based on unpaid days
+        $dailyRate = $this->basic_salary / ($this->hrSettings['working_days_per_month'] ?? 22);
+        $this->leave_deduction = $this->unpaid_leave_days * $dailyRate;
+        $this->leaveRecords = $leaves->toArray();
+    }
+
+    /**
+     * Calculate all payroll components automatically
+     */
+    public function calculatePayrollComponents(): void
+    {
+        // Calculate gross salary
+        $this->gross_salary = $this->basic_salary + $this->regular_hours_pay + $this->total_overtime_amount 
+                            + $this->transport_allowance + $this->meal_allowance + $this->housing_allowance 
+                            + $this->performance_bonus + $this->custom_bonus;
+
+        // Add holiday subsidies if enabled
+        if ($this->include_vacation_subsidy) {
+            $this->vacation_subsidy = ($this->basic_salary * $this->hrSettings['vacation_subsidy_percentage']) / 100;
+            $this->gross_salary += $this->vacation_subsidy;
+            $this->createOrUpdateSubsidySetting('vacation_subsidy', $this->vacation_subsidy);
+        }
+
+        if ($this->include_christmas_subsidy) {
+            $this->christmas_subsidy = ($this->basic_salary * $this->hrSettings['christmas_subsidy_percentage']) / 100;
+            $this->gross_salary += $this->christmas_subsidy;
+            $this->createOrUpdateSubsidySetting('christmas_subsidy', $this->christmas_subsidy);
+        }
+
+        // Calculate deductions
+        $this->income_tax = ($this->gross_salary * $this->hrSettings['income_tax_percentage']) / 100;
+        $this->social_security = ($this->gross_salary * $this->hrSettings['social_security_percentage']) / 100;
+        
+        $this->total_deductions = $this->income_tax + $this->social_security + $this->advance_deduction 
+                                + $this->total_salary_discounts + $this->leave_deduction + $this->other_deductions;
+
+        // Calculate net salary
+        $this->net_salary = $this->gross_salary - $this->total_deductions;
+    }
+
+    /**
+     * Create or update HR settings for subsidies
+     */
+    private function createOrUpdateSubsidySetting(string $type, float $amount): void
+    {
+        if ($amount > 0) {
+            \App\Models\HR\HRSetting::updateOrCreate(
+                [
+                    'employee_id' => $this->employee_id,
+                    'setting_type' => $type,
+                    'period' => $this->selected_year . '-' . str_pad($this->selected_month, 2, '0', STR_PAD_LEFT)
+                ],
+                [
+                    'setting_value' => (string) $amount,
+                    'is_active' => true,
+                    'created_by' => Auth::id()
+                ]
+            );
+        }
+    }
+
+    /**
+     * Search employees for payroll processing
+     */
+    public function searchEmployees(): void
+    {
+        if (strlen($this->employeeSearch) >= 2) {
+            $this->searchResults = Employee::where('full_name', 'like', '%' . $this->employeeSearch . '%')
+                ->orWhere('id_card', 'like', '%' . $this->employeeSearch . '%')
+                ->orWhere('email', 'like', '%' . $this->employeeSearch . '%')
+                ->orWhere('tax_number', 'like', '%' . $this->employeeSearch . '%')
+                ->where('employment_status', 'active')
+                ->with(['department'])
+                ->select('id', 'full_name', 'id_card', 'email', 'department_id')
+                ->limit(10)
+                ->get()
+                ->map(function ($employee) {
+                    return [
+                        'id' => $employee->id,
+                        'full_name' => $employee->full_name,
+                        'id_card' => $employee->id_card,
+                        'email' => $employee->email,
+                        'department_name' => $employee->department?->name
+                    ];
+                })
+                ->toArray();
+        } else {
+            $this->searchResults = [];
+        }
+    }
+
+    /**
+     * Open employee search modal
+     */
+    public function openEmployeeSearch(): void
+    {
+        $this->showEmployeeSearch = true;
+        $this->employeeSearch = '';
+        $this->searchResults = [];
+    }
+
+    /**
+     * Close employee search modal
+     */
+    public function closeEmployeeSearch(): void
+    {
+        $this->showEmployeeSearch = false;
+        $this->employeeSearch = '';
+        $this->searchResults = [];
+    }
+
+    /**
+     * Select employee and open process modal
+     */
+    public function selectEmployee(int $employeeId): void
+    {
+        $this->selectedEmployee = Employee::with(['department', 'position'])->find($employeeId);
+        $this->employee_id = $employeeId;
+        
+        if ($this->selectedEmployee) {
+            // Initialize basic salary from employee
+            $this->basic_salary = (float) ($this->selectedEmployee->base_salary ?? 0);
+            
+            // Set default month/year to current if not set
+            if (!$this->selected_month) {
+                $this->selected_month = now()->month;
+            }
+            if (!$this->selected_year) {
+                $this->selected_year = now()->year;
+            }
+            
+            // Load HR settings
+            $this->loadHRSettings();
+            
+            // Calculate hourly rate
+            $this->hourly_rate = $this->calculateHourlyRate();
+            
+            // Load employee payroll data
+            $this->loadEmployeePayrollData();
+            $this->calculatePayrollComponents();
+            
+            // Close search modal and open process modal
+            $this->showEmployeeSearch = false;
+            $this->showProcessModal = true;
+        }
+    }
+
+    /**
+     * Open payroll processing modal
+     */
+    public function openProcessModal(): void
+    {
+        $this->showProcessModal = true;
+        $this->showEmployeeSearch = false;
+    }
+
+    /**
+     * Close payroll processing modal
+     */
+    public function closeProcessModal(): void
+    {
+        $this->showProcessModal = false;
+        $this->resetPayrollData();
+    }
+
+    /**
+     * Reset payroll data
+     */
+    private function resetPayrollData(): void
+    {
+        $this->selectedEmployee = null;
+        $this->employee_id = null;
+        $this->basic_salary = 0.0;
+        $this->gross_salary = 0.0;
+        $this->total_deductions = 0.0;
+        $this->net_salary = 0.0;
+    }
+
+    // Updated properties for search functionality
+    public function updatedEmployeeSearch(): void
+    {
+        $this->searchEmployees();
+    }
+
+    public function updatedSelectedMonth(): void
+    {
+        if ($this->selectedEmployee) {
+            $this->loadEmployeePayrollData();
+            $this->calculatePayrollComponents();
+        }
+    }
+
+    public function updatedSelectedYear(): void
+    {
+        if ($this->selectedEmployee) {
+            $this->loadEmployeePayrollData();
+            $this->calculatePayrollComponents();
+        }
+    }
+
+    // Auto-recalculate when bonus values change
+    public function updatedCustomBonus(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedTransportAllowance(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedMealAllowance(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedHousingAllowance(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedPerformanceBonus(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedOtherDeductions(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedIncludeVacationSubsidy(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    public function updatedIncludeChristmasSubsidy(): void
+    {
+        $this->calculatePayrollComponents();
+    }
+
+    // Validation Rules
+    protected function rules(): array
     {
         return [
             'employee_id' => 'required|exists:employees,id',
-            'payroll_period_id' => 'required|exists:payroll_periods,id',
+            'payroll_period_id' => 'nullable|exists:payroll_periods,id',
+            'selected_month' => 'required|string',
+            'selected_year' => 'required|string',
             'basic_salary' => 'required|numeric|min:0',
-            'allowances' => 'required|numeric|min:0',
-            'overtime' => 'required|numeric|min:0',
-            'bonuses' => 'required|numeric|min:0',
-            'deductions' => 'required|numeric|min:0',
-            'tax' => 'required|numeric|min:0',
-            'social_security' => 'required|numeric|min:0',
-            'net_salary' => 'required|numeric|min:0',
+            'hourly_rate' => 'nullable|numeric|min:0',
+            'transport_allowance' => 'nullable|numeric|min:0',
+            'meal_allowance' => 'nullable|numeric|min:0',
+            'housing_allowance' => 'nullable|numeric|min:0',
+            'performance_bonus' => 'nullable|numeric|min:0',
+            'custom_bonus' => 'nullable|numeric|min:0',
+            'custom_bonus_description' => 'nullable|string|max:255',
+            'vacation_subsidy' => 'nullable|numeric|min:0',
+            'christmas_subsidy' => 'nullable|numeric|min:0',
+            'income_tax' => 'nullable|numeric|min:0',
+            'social_security' => 'nullable|numeric|min:0',
+            'other_deductions' => 'nullable|numeric|min:0',
+            'other_deductions_description' => 'nullable|string|max:255',
             'payment_method' => 'required|in:bank_transfer,cash,check',
-            'bank_account' => 'nullable|required_if:payment_method,bank_transfer',
+            'bank_account' => 'nullable|required_if:payment_method,bank_transfer|string|max:50',
             'payment_date' => 'nullable|date',
             'status' => 'required|in:draft,approved,paid,cancelled',
-            'remarks' => 'nullable',
-            // Novos campos de presença e licença
-            'attendance_hours' => 'nullable|numeric|min:0',
-            'base_hourly_rate' => 'nullable|numeric|min:0',
-            'leave_days' => 'nullable|numeric|min:0',
-            'maternity_days' => 'nullable|numeric|min:0',
-            'special_leave_days' => 'nullable|numeric|min:0',
+            'remarks' => 'nullable|string|max:500',
         ];
     }
 
@@ -796,8 +1314,8 @@ class Payroll extends Component
                     $query->where('department_id', $this->filters['department_id']);
                 });
             })
-            ->when($this->filters['payroll_period_id'], function ($query) {
-                return $query->where('payroll_period_id', $this->filters['payroll_period_id']);
+            ->when($this->filters['period_id'], function ($query) {
+                return $query->where('payroll_period_id', $this->filters['period_id']);
             })
             ->when($this->filters['status'], function ($query) {
                 return $query->where('status', $this->filters['status']);

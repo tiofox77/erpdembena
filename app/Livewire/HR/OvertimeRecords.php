@@ -80,24 +80,25 @@ class OvertimeRecords extends Component
      */
     public function approve(int $id): void
     {
-        $record = OvertimeRecord::findOrFail($id);
-        
-        // Verifica se o usuário tem permissão para aprovar
-        if (!Auth::user()->can('approve_overtime')) {
-            $this->dispatch('error', message: __('messages.unauthorized_action'));
-            return;
-        }
-
         try {
-            $record->status = 'approved';
-            $record->approver_id = Auth::id();
-            $record->approved_at = now();
-            $record->save();
-
-            $this->dispatch('success', message: __('messages.overtime_approved'));
-            $this->dispatch('refreshOvertimeRecords');
+            $record = OvertimeRecord::findOrFail($id);
+            
+            // Verificar se o registo ainda está pendente
+            if ($record->status !== 'pending') {
+                session()->flash('error', __('messages.overtime_already_processed'));
+                return;
+            }
+            
+            $record->update([
+                'status' => 'approved',
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+            ]);
+            
+            session()->flash('message', __('messages.overtime_approved_successfully'));
+            
         } catch (\Exception $e) {
-            $this->dispatch('error', message: __('messages.error_approving_overtime'));
+            session()->flash('error', __('messages.error_approving_overtime'));
         }
     }
 
@@ -106,24 +107,25 @@ class OvertimeRecords extends Component
      */
     public function reject(int $id): void
     {
-        $record = OvertimeRecord::findOrFail($id);
-        
-        // Verifica se o usuário tem permissão para recusar
-        if (!Auth::user()->can('reject_overtime')) {
-            $this->dispatch('error', message: __('messages.unauthorized_action'));
-            return;
-        }
-
         try {
-            $record->status = 'rejected';
-            $record->approver_id = Auth::id();
-            $record->rejected_at = now();
-            $record->save();
-
-            $this->dispatch('success', message: __('messages.overtime_rejected'));
-            $this->dispatch('refreshOvertimeRecords');
+            $record = OvertimeRecord::findOrFail($id);
+            
+            // Verificar se o registo ainda está pendente
+            if ($record->status !== 'pending') {
+                session()->flash('error', __('messages.overtime_already_processed'));
+                return;
+            }
+            
+            $record->update([
+                'status' => 'rejected',
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+            ]);
+            
+            session()->flash('message', __('messages.overtime_rejected_successfully'));
+            
         } catch (\Exception $e) {
-            $this->dispatch('error', message: __('messages.error_rejecting_overtime'));
+            session()->flash('error', __('messages.error_rejecting_overtime'));
         }
     }
     
@@ -901,10 +903,6 @@ class OvertimeRecords extends Component
     {
         $this->showViewModal = false;
     }
-    
-
-
-
     
     /**
      * Método para confirmar a exclusão de um registro

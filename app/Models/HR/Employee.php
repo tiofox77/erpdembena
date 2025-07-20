@@ -134,4 +134,20 @@ class Employee extends Model
     {
         return $this->hasMany(SalaryAdvance::class);
     }
+
+    /**
+     * Get the salary discounts for this employee
+     */
+    public function salaryDiscounts(): HasMany
+    {
+        return $this->hasMany(SalaryDiscount::class);
+    }
+
+    /**
+     * Get the overtime records for this employee
+     */
+    public function overtimeRecords(): HasMany
+    {
+        return $this->hasMany(OvertimeRecord::class);
+    }
 }
