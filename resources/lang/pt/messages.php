@@ -1419,4 +1419,27 @@ return [
     'night_shift_detection' => 'Detecção de Turno Noturno',
     'automatic_for_time_range' => 'Automática para intervalo de tempo',
     'manual_selection' => 'Seleção manual',
+    
+    // Payroll Subsidy Translations
+    'subsidies_and_payments' => 'Subsídios e Pagamentos Adicionais',
+    'christmas_subsidy' => 'Subsídio de Natal',
+    'vacation_subsidy' => 'Subsídio de Férias',
+    'christmas_subsidy_desc' => 'Pagamento adicional de Natal',
+    'vacation_subsidy_desc' => 'Pagamento adicional de férias',
+    'additional_bonus' => 'Bónus Adicional',
+    'income_tax' => 'Imposto sobre Rendimento',
+    'bonus_amount' => 'Valor do Bónus',
+    'deductions' => 'Descontos',
+    'taxable_benefits' => 'Benefícios Tributáveis',
+    
+    // Melhorias na Exibição de Presenças
+    'total_hours_worked' => 'Total de Horas Trabalhadas',
+    'regular_hours_pay' => 'Pagamento de Horas Regulares',
+    'attendance_records' => 'Registos de Presença',
+    'no_attendance_records_found' => 'Nenhum Registo de Presença Encontrado',
+    'no_times_recorded' => 'Horários Não Registados',
+    'click_to_expand' => 'Clique para expandir',
+    'back' => 'Voltar',
+    'back_to_employee_selection' => 'Voltar à Selecção de Funcionários',
+    'period' => 'Período',
 ];

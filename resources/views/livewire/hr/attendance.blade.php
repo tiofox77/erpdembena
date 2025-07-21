@@ -504,30 +504,30 @@
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             @foreach($availableShifts as $shift)
                                                 <div class="relative">
-                                                    <input type="radio" wire:click="selectShift({{ $shift->id }})" 
+                                                    <input type="radio" wire:click="selectShift({{ $shift['id'] }})" 
                                                            name="shift_selection" 
-                                                           value="{{ $shift->id }}" 
-                                                           {{ $selectedShift == $shift->id ? 'checked' : '' }}
+                                                           value="{{ $shift['id'] }}" 
+                                                           {{ $selectedShift == $shift['id'] ? 'checked' : '' }}
                                                            class="sr-only" 
-                                                           id="shift_{{ $shift->id }}">
-                                                    <label for="shift_{{ $shift->id }}" 
-                                                           class="block p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-300 {{ $selectedShift == $shift->id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' }}">
+                                                           id="shift_{{ $shift['id'] }}">
+                                                    <label for="shift_{{ $shift['id'] }}" 
+                                                           class="block p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-300 {{ $selectedShift == $shift['id'] ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' }}">
                                                         <div class="flex items-center justify-between">
                                                             <div class="flex items-center">
                                                                 <div class="flex-shrink-0">
                                                                     <i class="fas fa-clock text-blue-600 text-lg"></i>
                                                                 </div>
                                                                 <div class="ml-3">
-                                                                    <h5 class="text-sm font-medium text-gray-900">{{ $shift->name }}</h5>
+                                                                    <h5 class="text-sm font-medium text-gray-900">{{ $shift['name'] }}</h5>
                                                                     <p class="text-sm text-gray-500">
-                                                                        {{ $shift->start_time->format('H:i') }} - {{ $shift->end_time->format('H:i') }}
+                                                                        {{ $shift['start_time'] }} - {{ $shift['end_time'] }}
                                                                     </p>
-                                                                    @if($shift->description)
-                                                                        <p class="text-xs text-gray-400 mt-1">{{ $shift->description }}</p>
+                                                                    @if($shift['description'] ?? false)
+                                                                        <p class="text-xs text-gray-400 mt-1">{{ $shift['description'] }}</p>
                                                                     @endif
                                                                 </div>
                                                             </div>
-                                                            @if($selectedShift == $shift->id)
+                                                            @if($selectedShift == $shift['id'])
                                                                 <div class="flex-shrink-0">
                                                                     <i class="fas fa-check-circle text-blue-600 text-lg"></i>
                                                                 </div>

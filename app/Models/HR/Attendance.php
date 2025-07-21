@@ -19,16 +19,12 @@ class Attendance extends Model
         'time_out',
         'status',
         'remarks',
-        'hourly_rate',
-        'affects_payroll',
     ];
 
     protected $casts = [
         'date' => 'date',
         'time_in' => 'datetime',
         'time_out' => 'datetime',
-        'hourly_rate' => 'decimal:2',
-        'affects_payroll' => 'boolean',
     ];
 
     /**
@@ -46,6 +42,27 @@ class Attendance extends Model
     const MATERNITY_PRENATAL = 'prenatal';
     const MATERNITY_POSTNATAL = 'postnatal';
     const MATERNITY_BREASTFEEDING = 'breastfeeding';
+    
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Set defaults when creating new attendance records
+        static::creating(function ($attendance) {
+            if (is_null($attendance->is_approved)) {
+                $attendance->is_approved = true; // Auto-approve all new records
+            }
+            if (is_null($attendance->status)) {
+                $attendance->status = self::STATUS_PRESENT; // Default to present
+            }
+            if (is_null($attendance->affects_payroll)) {
+                $attendance->affects_payroll = true; // Default affects payroll
+            }
+        });
+    }
 
     /**
      * Get the employee that the attendance belongs to

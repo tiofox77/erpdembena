@@ -404,508 +404,283 @@
         </div>
     </div>
 
-    <!-- Modal Forms and other components go here -->
-    @if($showModal)
-        <!-- Simplified payroll form modal for brevity -->
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 max-h-screen overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium">
-                        <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-plus-circle' }} mr-2"></i>
-                        {{ $isEditing ? 'Editar' : 'Criar' }} Folha de Pagamento
-                    </h3>
-                    <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeModal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                @if($errors->any())
-                    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-                        <p class="font-bold">Please correct the following errors:</p>
-                        <ul class="mt-2 list-disc list-inside text-sm">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                <form wire:submit.prevent="save">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Basic information -->
-                        <div class="md:col-span-2 border-b border-gray-200 pb-4 mb-4">
-                            <h4 class="text-md font-medium mb-2">Informações Básicas</h4>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Period -->
-                                <div>
-                                    <label for="payroll_period_id" class="block text-sm font-medium text-gray-700">Período</label>
-                                    <select id="payroll_period_id"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('payroll_period_id') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="payroll_period_id">
-                                        <option value="">Selecionar Período</option>
-                                        @foreach($payrollPeriods as $period)
-                                            <option value="{{ $period->id }}">{{ $period->name }} ({{ $period->start_date->format('M d') }} - {{ $period->end_date->format('M d, Y') }})</option>
-                                        @endforeach
-                                    </select>
-                                    @error('payroll_period_id')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Employee -->
-                                <div>
-                                    <label for="employee_id" class="block text-sm font-medium text-gray-700">Funcionário</label>
-                                    <select id="employee_id"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('employee_id') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="employee_id">
-                                        <option value="">Selecionar Funcionário</option>
-                                        @foreach($employees as $employee)
-                                            <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('employee_id')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+    <!-- Modal de Processamento de Payroll -->
+    @include('livewire.hr.payroll-process-modal')
+    
+    <!-- Modal de Visualização Moderna do Payroll -->
+    @if($showViewModal && $currentPayroll)
+        <div class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col">
+                
+                <!-- Header com Gradiente -->
+                <div class="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 text-white rounded-t-2xl">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                            <div class="bg-white/20 backdrop-blur-sm rounded-xl p-2 sm:p-3 flex-shrink-0">
+                                <i class="fas fa-file-invoice-dollar text-lg sm:text-2xl"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-lg sm:text-xl lg:text-2xl font-bold truncate">Detalhes da Folha de Pagamento</h3>
+                                <p class="text-blue-100 text-xs sm:text-sm mt-1 truncate">{{ $currentPayroll->employee->full_name }} • {{ $currentPayroll->payrollPeriod->name ?? 'N/A' }}</p>
                             </div>
                         </div>
-
-                        <!-- Earnings -->
-                        <div class="border-b border-gray-200 pb-4 mb-4">
-                            <h4 class="text-md font-medium mb-2">Ganhos</h4>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label for="basic_salary" class="block text-sm font-medium text-gray-700">Salário Base</label>
-                                    <input type="number" id="basic_salary" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('basic_salary') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="basic_salary">
-                                    @error('basic_salary')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="overtime" class="block text-sm font-medium text-gray-700">Horas Extras</label>
-                                    <input type="number" id="overtime" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('overtime') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="overtime">
-                                    @error('overtime')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="bonuses" class="block text-sm font-medium text-gray-700">Bónus</label>
-                                    <input type="number" id="bonuses" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('bonuses') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="bonuses">
-                                    @error('bonuses')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="allowances" class="block text-sm font-medium text-gray-700">Subsídios</label>
-                                    <input type="number" id="allowances" step="0.01" min="0"
-                                        class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('allowances') border-red-300 text-red-900 @enderror"
-                                        wire:model.live="allowances">
-                                    @error('allowances')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Presenças e Horas Extras -->
-                        <div class="border-b border-gray-200 pb-4 mb-4">
-                            <h4 class="text-md font-medium mb-2 flex items-center">
-                                <i class="fas fa-clock text-blue-600 mr-2"></i>
-                                Presenças e Horas Extras
-                            </h4>
-                            
-                            <div class="space-y-3 bg-blue-50 p-3 rounded-lg">
-                                <div>
-                                    <label for="attendance_hours" class="block text-sm font-medium text-gray-700">Total Horas Trabalhadas</label>
-                                    <div class="mt-1 relative rounded-md shadow-sm">
-                                        <input type="number" id="attendance_hours" step="0.1" min="0"
-                                            class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('attendance_hours') border-red-300 text-red-900 @enderror bg-white"
-                                            wire:model.live="attendance_hours">
-                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">horas</span>
-                                        </div>
-                                    </div>
-                                    @error('attendance_hours')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="base_hourly_rate" class="block text-sm font-medium text-gray-700">Taxa Horária Base</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="number" id="base_hourly_rate" step="0.01" min="0"
-                                                class="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white"
-                                                wire:model.live="base_hourly_rate">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="text-gray-500 sm:text-sm">$</span>
-                                            </div>
-                                        </div>
-                                        @error('base_hourly_rate')
-                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="total_hours_pay" class="block text-sm font-medium text-gray-700">Pagamento por Horas (Calculado)</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="number" id="total_hours_pay" step="0.01" min="0"
-                                                class="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-gray-100"
-                                                wire:model="total_hours_pay" readonly>
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="text-gray-500 sm:text-sm">$</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Licenças -->
-                        <div class="border-b border-gray-200 pb-4 mb-4">
-                            <h4 class="text-md font-medium mb-2 flex items-center">
-                                <i class="fas fa-calendar-alt text-purple-600 mr-2"></i>
-                                Licenças e Ausências
-                            </h4>
-                            
-                            <div class="space-y-3 bg-purple-50 p-3 rounded-lg">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="leave_days" class="block text-sm font-medium text-gray-700">Total Dias de Licença</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="number" id="leave_days" step="0.5" min="0"
-                                                class="block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('leave_days') border-red-300 text-red-900 @enderror bg-white"
-                                                wire:model.live="leave_days">
-                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                <span class="text-gray-500 sm:text-sm">dias</span>
-                                            </div>
-                                        </div>
-                                        @error('leave_days')
-                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="leave_deduction" class="block text-sm font-medium text-gray-700">Deduções por Licença (Calculado)</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="number" id="leave_deduction" step="0.01" min="0"
-                                                class="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-gray-100"
-                                                wire:model="leave_deduction" readonly>
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="text-gray-500 sm:text-sm">$</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Maternidade (apenas para mulheres) -->
-                                @if($employee && $employee->gender === 'female')
-                                    <div class="border-t border-gray-200 pt-3 mt-3">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <h5 class="text-sm font-medium text-pink-700">Licença Maternidade</h5>
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-pink-100 text-pink-800">Apenas Mulheres</span>
-                                        </div>
-                                        
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label for="maternity_days" class="block text-sm font-medium text-gray-700">Dias de Licença Maternidade</label>
-                                                <div class="mt-1 relative rounded-md shadow-sm">
-                                                    <input type="number" id="maternity_days" step="0.5" min="0"
-                                                        class="block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('maternity_days') border-red-300 text-red-900 @enderror bg-white"
-                                                        wire:model.live="maternity_days">
-                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                        <span class="text-gray-500 sm:text-sm">dias</span>
-                                                    </div>
-                                                </div>
-                                                @error('maternity_days')
-                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                                @enderror
-                                            </div>
-
-                                            <div>
-                                                <label for="special_leave_days" class="block text-sm font-medium text-gray-700">Dias de Licença Especial</label>
-                                                <div class="mt-1 relative rounded-md shadow-sm">
-                                                    <input type="number" id="special_leave_days" step="0.5" min="0"
-                                                        class="block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('special_leave_days') border-red-300 text-red-900 @enderror bg-white"
-                                                        wire:model.live="special_leave_days">
-                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                        <span class="text-gray-500 sm:text-sm">dias</span>
-                                                    </div>
-                                                </div>
-                                                @error('special_leave_days')
-                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Deduções -->
-                        <div class="border-b border-gray-200 pb-4 mb-4">
-                            <h4 class="text-md font-medium mb-2 flex items-center">
-                                <i class="fas fa-minus-circle text-red-600 mr-2"></i>
-                                Deduções
-                            </h4>
-                            
-                            <div class="space-y-3 bg-red-50 p-3 rounded-lg">
-                                <div>
-                                    <label for="tax" class="block text-sm font-medium text-gray-700">Imposto</label>
-                                    <div class="mt-1 relative rounded-md shadow-sm">
-                                        <input type="number" id="tax" step="0.01" min="0"
-                                            class="pl-7 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('tax') border-red-300 text-red-900 @enderror bg-gray-100"
-                                            wire:model="tax" readonly>
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                    </div>
-                                    @error('tax')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="social_security" class="block text-sm font-medium text-gray-700">Segurança Social</label>
-                                    <div class="mt-1 relative rounded-md shadow-sm">
-                                        <input type="number" id="social_security" step="0.01" min="0"
-                                            class="pl-7 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('social_security') border-red-300 text-red-900 @enderror bg-gray-100"
-                                            wire:model="social_security" readonly>
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                    </div>
-                                    @error('social_security')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="deductions" class="block text-sm font-medium text-gray-700">Outras Deduções</label>
-                                    <div class="mt-1 relative rounded-md shadow-sm">
-                                        <input type="number" id="deductions" step="0.01" min="0"
-                                            class="pl-7 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('deductions') border-red-300 text-red-900 @enderror bg-white"
-                                            wire:model.live="deductions">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                    </div>
-                                    @error('deductions')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Summary -->
-                        <div class="md:col-span-2 border-b border-gray-200 pb-4 mb-4">
-                            <h4 class="text-md font-medium mb-2">Resumo da Folha</h4>
-                            
-                            <div class="bg-gray-50 p-4 rounded-md">
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-sm text-gray-500">Salário Base</p>
-                                        <p class="font-medium">{{ number_format($basic_salary ?? 0, 2) }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Subsídios</p>
-                                        <p class="font-medium">{{ number_format($allowances ?? 0, 2) }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Overtime</p>
-                                        <p class="font-medium">{{ number_format($overtime ?? 0, 2) }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Bonuses</p>
-                                        <p class="font-medium">{{ number_format($bonuses ?? 0, 2) }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Gross Salary</p>
-                                        <p class="font-medium text-green-600">{{ number_format(($basic_salary + $allowances + $overtime + $bonuses) ?? 0, 2) }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Total Deductions</p>
-                                        <p class="font-medium text-red-600">{{ number_format(($deductions + $tax + $social_security) ?? 0, 2) }}</p>
-                                    </div>
-                                    <div class="col-span-2 pt-2 border-t">
-                                        <p class="text-sm text-gray-500">Net Salary</p>
-                                        <p class="font-medium text-lg text-blue-700">{{ number_format($net_salary ?? 0, 2) }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Notes -->
-                        <div class="md:col-span-2">
-                            <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                            <textarea id="notes" rows="3"
-                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('notes') border-red-300 text-red-900 @enderror"
-                                wire:model.live="notes"></textarea>
-                            @error('notes')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button"
-                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            wire:click="closeModal">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {{ $isEditing ? 'Update' : 'Save' }}
+                        <button type="button" class="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-all flex-shrink-0 ml-2" wire:click="closeViewModal">
+                            <i class="fas fa-times text-lg sm:text-xl"></i>
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    <!-- Modal de Visualização do Payroll -->
-    @if($showViewModal)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 max-h-screen overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium">
-                        <i class="fas fa-file-invoice-dollar mr-2"></i>
-                        Detalhes da Folha de Pagamento
-                    </h3>
-                    <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeViewModal">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
 
-                @if($currentPayroll)
-                <div class="space-y-6">
-                    <!-- Informações básicas -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div>
-                            <h4 class="font-medium text-gray-700 mb-2">Informações do Funcionário</h4>
-                            <div class="space-y-1">
-                                <p class="text-sm"><span class="font-medium">Nome:</span> {{ $currentPayroll->employee->full_name }}</p>
-                                <p class="text-sm"><span class="font-medium">ID:</span> {{ $currentPayroll->employee->employee_id }}</p>
-                                <p class="text-sm"><span class="font-medium">Departamento:</span> {{ $currentPayroll->employee->department->name ?? 'N/A' }}</p>
-                                <p class="text-sm"><span class="font-medium">Cargo:</span> {{ $currentPayroll->employee->position->name ?? 'N/A' }}</p>
+                <!-- Conteúdo Principal -->
+                <div class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+                    
+                    <!-- Cards de Informações Principais -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        
+                        <!-- Card Funcionário -->
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border border-blue-200">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-blue-500 rounded-lg p-2 mr-3">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-800">Funcionário</h4>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Nome:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->full_name }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">ID:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->id }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Departamento:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->department->name ?? 'N/A' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Cargo:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->position->name ?? 'N/A' }}</span>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="font-medium text-gray-700 mb-2">Informações do Pagamento</h4>
-                            <div class="space-y-1">
-                                <p class="text-sm"><span class="font-medium">Período:</span> 
-                                    @if($currentPayroll->payrollPeriod && $currentPayroll->payrollPeriod->start_date && $currentPayroll->payrollPeriod->end_date)
-                                        {{ $currentPayroll->payrollPeriod->name }} ({{ $currentPayroll->payrollPeriod->start_date->format('d/m/Y') }} - {{ $currentPayroll->payrollPeriod->end_date->format('d/m/Y') }})
-                                    @else
-                                        N/A
-                                    @endif
-                                </p>
-                                <p class="text-sm"><span class="font-medium">Status:</span> <span class="px-2 py-1 text-xs rounded-full 
-                                    {{ $currentPayroll->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
-                                    ($currentPayroll->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
-                                    'bg-green-100 text-green-800') }}">{{ ucfirst($currentPayroll->status) }}</span></p>
-                                <p class="text-sm"><span class="font-medium">Data de Pagamento:</span> {{ $currentPayroll->payment_date ? date('d/m/Y', strtotime($currentPayroll->payment_date)) : 'N/A' }}</p>
-                                <p class="text-sm"><span class="font-medium">Método de Pagamento:</span> {{ ucfirst(str_replace('_', ' ', $currentPayroll->payment_method)) }}</p>
+
+                        <!-- Card Período -->
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl p-6 border border-green-200">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-green-500 rounded-lg p-2 mr-3">
+                                    <i class="fas fa-calendar-alt text-white"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-800">Período</h4>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Período:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payrollPeriod->name ?? 'N/A' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Início:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payrollPeriod?->start_date?->format('d/m/Y') ?? 'N/A' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Fim:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payrollPeriod?->end_date?->format('d/m/Y') ?? 'N/A' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Horas:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ number_format((float)$currentPayroll->attendance_hours, 1) }}h</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Status -->
+                        <div class="bg-gradient-to-br from-purple-50 to-violet-100 rounded-xl p-6 border border-purple-200">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-purple-500 rounded-lg p-2 mr-3">
+                                    <i class="fas fa-info-circle text-white"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-800">Status</h4>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-600">Status:</span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                        {{ $currentPayroll->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                                        ($currentPayroll->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
+                                        'bg-green-100 text-green-800') }}">
+                                        <i class="fas fa-circle text-xs mr-1"></i>
+                                        {{ ucfirst($currentPayroll->status) }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Gerado em:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->created_at->format('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Pagamento:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payment_method ? ucfirst(str_replace('_', ' ', $currentPayroll->payment_method)) : 'N/A' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Conta:</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->bank_account ?? 'N/A' }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Rendimentos e Deduções -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Rendimentos -->
-                        <div class="border rounded-lg p-4">
-                            <h4 class="font-medium text-gray-700 mb-3 border-b pb-2">Rendimentos</h4>
-                            <div class="space-y-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Salário Base</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->basic_salary, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Subsídios</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->allowances, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Horas Extras</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->overtime, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Bônus</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->bonuses, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center border-t pt-2 mt-2">
-                                    <span class="text-sm font-medium">Total Rendimentos</span>
-                                    <span class="text-sm font-bold">{{ number_format($currentPayroll->basic_salary + $currentPayroll->allowances + $currentPayroll->overtime + $currentPayroll->bonuses, 2, ',', '.') }}</span>
+                    <!-- Breakdown Detalhado dos Componentes -->
+                    @if($currentPayroll->payrollItems && $currentPayroll->payrollItems->count() > 0)
+                    <div class="mb-8">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-list-ul text-blue-500 mr-2"></i>
+                            Breakdown Detalhado dos Componentes
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            
+                            <!-- Rendimentos Detalhados -->
+                            <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                                <h5 class="font-semibold text-green-800 mb-4 flex items-center">
+                                    <i class="fas fa-plus-circle text-green-600 mr-2"></i>
+                                    Rendimentos
+                                </h5>
+                                <div class="space-y-3">
+                                    @php $totalEarnings = 0; @endphp
+                                    @foreach($currentPayroll->payrollItems->whereIn('type', ['earning', 'allowance', 'bonus']) as $item)
+                                        @php $totalEarnings += (float)$item->amount; @endphp
+                                        <div class="flex justify-between items-center py-2 border-b border-green-200 last:border-b-0">
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-800">{{ $item->name }}</span>
+                                                @if($item->description)
+                                                    <p class="text-xs text-gray-600 mt-1">{{ $item->description }}</p>
+                                                @endif
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                        {{ $item->type === 'earning' ? 'bg-blue-100 text-blue-800' : 
+                                                        ($item->type === 'allowance' ? 'bg-purple-100 text-purple-800' : 
+                                                        'bg-orange-100 text-orange-800') }}">
+                                                        {{ ucfirst($item->type) }}
+                                                    </span>
+                                                    @if($item->is_taxable)
+                                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                                            Tributável
+                                                        </span>
+                                                    @else
+                                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                            Isento
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <span class="text-sm font-bold text-green-700">{{ number_format((float)$item->amount, 2, ',', '.') }} AOA</span>
+                                        </div>
+                                    @endforeach
+                                    <div class="flex justify-between items-center pt-3 border-t-2 border-green-300">
+                                        <span class="font-semibold text-green-800">Total Rendimentos:</span>
+                                        <span class="text-lg font-bold text-green-700">{{ number_format($totalEarnings, 2, ',', '.') }} AOA</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Deduções -->
-                        <div class="border rounded-lg p-4">
-                            <h4 class="font-medium text-gray-700 mb-3 border-b pb-2">Deduções</h4>
-                            <div class="space-y-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Imposto de Renda (IRT)</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->tax, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Segurança Social (INSS)</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->social_security, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">Outras Deduções</span>
-                                    <span class="text-sm font-medium">{{ number_format($currentPayroll->deductions, 2, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between items-center border-t pt-2 mt-2">
-                                    <span class="text-sm font-medium">Total Deduções</span>
-                                    <span class="text-sm font-bold">{{ number_format($currentPayroll->tax + $currentPayroll->social_security + $currentPayroll->deductions, 2, ',', '.') }}</span>
+                            <!-- Deduções Detalhadas -->
+                            <div class="bg-red-50 rounded-xl p-6 border border-red-200">
+                                <h5 class="font-semibold text-red-800 mb-4 flex items-center">
+                                    <i class="fas fa-minus-circle text-red-600 mr-2"></i>
+                                    Deduções
+                                </h5>
+                                <div class="space-y-3">
+                                    @php $totalDeductions = 0; @endphp
+                                    @foreach($currentPayroll->payrollItems->whereIn('type', ['deduction', 'tax']) as $item)
+                                        @php $totalDeductions += abs((float)$item->amount); @endphp
+                                        <div class="flex justify-between items-center py-2 border-b border-red-200 last:border-b-0">
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-800">{{ $item->name }}</span>
+                                                @if($item->description)
+                                                    <p class="text-xs text-gray-600 mt-1">{{ $item->description }}</p>
+                                                @endif
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                        {{ $item->type === 'tax' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800' }}">
+                                                        {{ $item->type === 'tax' ? 'Imposto' : 'Dedução' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <span class="text-sm font-bold text-red-700">-{{ number_format(abs((float)$item->amount), 2, ',', '.') }} AOA</span>
+                                        </div>
+                                    @endforeach
+                                    <div class="flex justify-between items-center pt-3 border-t-2 border-red-300">
+                                        <span class="font-semibold text-red-800">Total Deduções:</span>
+                                        <span class="text-lg font-bold text-red-700">-{{ number_format($totalDeductions, 2, ',', '.') }} AOA</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    <!-- Salário Líquido -->
-                    <div class="bg-gray-100 p-4 rounded-lg">
-                        <div class="flex justify-between items-center">
-                            <h4 class="font-medium text-gray-700">Salário Líquido</h4>
-                            <span class="text-lg font-bold">{{ number_format($currentPayroll->net_salary, 2, ',', '.') }}</span>
+                    <!-- Resumo Final -->
+                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-calculator text-blue-500 mr-2"></i>
+                            Resumo Final
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="bg-green-100 rounded-lg p-4">
+                                    <i class="fas fa-arrow-up text-green-600 text-2xl mb-2"></i>
+                                    <p class="text-sm text-gray-600 mb-1">Total Bruto</p>
+                                    <p class="text-xl font-bold text-green-700">{{ number_format((float)$currentPayroll->basic_salary + (float)$currentPayroll->allowances + (float)$currentPayroll->overtime + (float)$currentPayroll->bonuses, 2, ',', '.') }} AOA</p>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="bg-red-100 rounded-lg p-4">
+                                    <i class="fas fa-arrow-down text-red-600 text-2xl mb-2"></i>
+                                    <p class="text-sm text-gray-600 mb-1">Total Deduções</p>
+                                    <p class="text-xl font-bold text-red-700">{{ number_format((float)$currentPayroll->tax + (float)$currentPayroll->social_security + (float)$currentPayroll->deductions, 2, ',', '.') }} AOA</p>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="bg-blue-100 rounded-lg p-4">
+                                    <i class="fas fa-wallet text-blue-600 text-2xl mb-2"></i>
+                                    <p class="text-sm text-gray-600 mb-1">Salário Líquido</p>
+                                    <p class="text-2xl font-bold text-blue-700">{{ number_format((float)$currentPayroll->net_salary, 2, ',', '.') }} AOA</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Observações -->
                     @if($currentPayroll->remarks)
-                    <div class="border-t pt-4">
-                        <h4 class="font-medium text-gray-700 mb-2">Observações</h4>
-                        <p class="text-sm text-gray-600">{{ $currentPayroll->remarks }}</p>
+                    <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                        <h4 class="font-semibold text-yellow-800 mb-3 flex items-center">
+                            <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
+                            Observações
+                        </h4>
+                        <p class="text-sm text-gray-700 leading-relaxed">{{ $currentPayroll->remarks }}</p>
                     </div>
                     @endif
                 </div>
 
-                <!-- Botões de Ações -->
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button"
-                        class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        wire:click="closeViewModal">
-                        Fechar
-                    </button>
-                    <button type="button"
-                        wire:click="downloadPayslip({{ $currentPayroll->id }})"
-                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        <i class="fas fa-file-pdf mr-1"></i>
-                        Baixar Contracheque
-                    </button>
+                <!-- Footer com Botões -->
+                <div class="bg-gray-50 px-4 sm:px-8 py-4 sm:py-6 border-t border-gray-200 rounded-b-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+                        <i class="fas fa-clock mr-1"></i>
+                        Gerado em {{ $currentPayroll->created_at->format('d/m/Y às H:i') }}
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                        <button type="button"
+                            class="w-full sm:w-auto px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+                            wire:click="closeViewModal">
+                            <i class="fas fa-times mr-2"></i>
+                            Fechar
+                        </button>
+                        <button type="button"
+                            wire:click="downloadPayslip({{ $currentPayroll->id }})"
+                            class="w-full sm:w-auto px-4 sm:px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
+                            <i class="fas fa-file-pdf mr-2"></i>
+                            Baixar Recibo
+                        </button>
+                    </div>
                 </div>
-                @endif
             </div>
         </div>
     @endif
@@ -983,9 +758,7 @@
         </div>
     @endif
 
-    {{-- Include Employee Search Modal --}}
-    @include('livewire.hr.payroll-employee-search-modal')
-    
+
     {{-- Include Advanced Payroll Processing Modal --}}
     @include('livewire.hr.payroll-process-modal')
 </div>

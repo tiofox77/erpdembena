@@ -67,7 +67,7 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                             >
                                 @for($i = 1; $i <= 12; $i++)
-                                    <option value="{{ $i }}">
+                                    <option value="{{ $i }}" {{ $selectedMonth == $i ? 'selected' : '' }}>
                                         {{ \Carbon\Carbon::create(null, $i, 1)->format('F') }}
                                     </option>
                                 @endfor
@@ -84,7 +84,7 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                             >
                                 @for($year = (now()->year - 2); $year <= (now()->year + 1); $year++)
-                                    <option value="{{ $year }}">{{ $year }}</option>
+                                    <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>{{ $year }}</option>
                                 @endfor
                             </select>
                         </div>

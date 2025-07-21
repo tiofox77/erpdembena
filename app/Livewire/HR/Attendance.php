@@ -126,6 +126,25 @@ class Attendance extends Component
 
     public function create()
     {
+        // Reset form fields
+        $this->reset([
+            'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
+            'status', 'remarks', 'is_approved', 'hourly_rate', 'overtime_hours',
+            'overtime_rate', 'is_maternity_related', 'maternity_type', 'affects_payroll'
+        ]);
+        
+        // Set defaults for new attendance records
+        $this->date = Carbon::today()->format('Y-m-d');
+        $this->status = 'present'; // Default to present
+        $this->is_approved = true; // Auto-approve new records
+        $this->affects_payroll = true;
+        $this->is_maternity_related = false;
+        
+        $this->showModal = true;
+    }
+    
+    public function openCalendar()
+    {
         // Abrir modal de batch attendance ligada ao calendário
         $this->selectedDate = Carbon::today()->format('Y-m-d');
         $this->loadShiftEmployees($this->selectedDate);
@@ -179,11 +198,12 @@ class Attendance extends Component
             $validatedData['time_out'] = Carbon::parse($this->date . ' ' . $this->time_out);
         }
 
-        // Add the current user as approver - all new records are approved by default
+        // All new records are auto-approved by default
         if (!$this->isEditing) {
-            // New records are approved by default
+            // Force approve all new records
             $validatedData['is_approved'] = true;
             $validatedData['approved_by'] = auth()->id();
+            $validatedData['status'] = $this->status ?: 'present'; // Ensure status is set
         } else {
             // For editing, keep the current approval status
             if ($this->is_approved) {
@@ -342,7 +362,7 @@ class Attendance extends Component
                         'has_rotation' => $rotationInfo['has_rotation'],
                         'rotation_type' => $rotationInfo['type'],
                         'next_rotation' => $rotationInfo['next_rotation'],
-                        'is_permanent' => $rotationInfo['is_permanent'],
+                        'is_permanent' => $rotationInfo['is_permanent'] ?? $assignment->is_permanent ?? true,
                         'assignment_id' => $assignment->id,
                     ];
                 })->toArray(),

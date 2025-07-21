@@ -195,6 +195,7 @@ class ShiftAssignment extends Model
                 'shifts_count' => 1,
                 'next_rotation' => null,
                 'current_shift_id' => $this->shift_id,
+                'is_permanent' => $this->is_permanent,
             ];
         }
         

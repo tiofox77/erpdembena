@@ -3229,4 +3229,27 @@ return [
     'delete' => 'Delete',
     'clear_filters' => 'Clear Filters',
     'export_pdf' => 'Export PDF',
+    
+    // Payroll Subsidy Translations
+    'subsidies_and_payments' => 'Subsidies and Additional Payments',
+    'christmas_subsidy' => 'Christmas Subsidy',
+    'vacation_subsidy' => 'Vacation Subsidy',
+    'christmas_subsidy_desc' => 'Additional Christmas payment',
+    'vacation_subsidy_desc' => 'Additional vacation payment',
+    'additional_bonus' => 'Additional Bonus',
+    'income_tax' => 'Income Tax',
+    'bonus_amount' => 'Bonus Amount',
+    'deductions' => 'Deductions',
+    'taxable_benefits' => 'Taxable Benefits',
+    
+    // Attendance Display Enhancements
+    'total_hours_worked' => 'Total Hours Worked',
+    'regular_hours_pay' => 'Regular Hours Pay',
+    'attendance_records' => 'Attendance Records',
+    'no_attendance_records_found' => 'No Attendance Records Found',
+    'no_times_recorded' => 'No Times Recorded',
+    'click_to_expand' => 'Click to expand',
+    'period' => 'Period',
+    'back' => 'Back',
+    'back_to_employee_selection' => 'Back to Employee Selection',
 ];

@@ -13,9 +13,11 @@ class PayrollItem extends Model
     protected $fillable = [
         'payroll_id',
         'type',
+        'name',
         'description',
         'amount',
         'is_taxable',
+        'is_recurring',
     ];
 
     protected $casts = [
