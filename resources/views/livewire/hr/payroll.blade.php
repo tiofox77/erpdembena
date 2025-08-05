@@ -218,7 +218,7 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
-                                                <span><i class="fas fa-clock text-gray-400 mr-1"></i>Presenças</span>
+                                                <span><i class="fas fa-clock text-gray-400 mr-1"></i>{{ __('messages.attendance') }}</span>
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -228,7 +228,7 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div wire:click="sortBy('gross_salary')" class="cursor-pointer flex items-center space-x-1">
-                                                <span>Bruto</span>
+                                                <span>{{ __('messages.gross_salary') }}</span>
                                                 @if($sortField === 'gross_salary')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -237,11 +237,11 @@
                                             </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Deduções
+                                            {{ __('payroll.deductions') }}
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div wire:click="sortBy('net_salary')" class="cursor-pointer flex items-center space-x-1">
-                                                <span>Líquido</span>
+                                                <span>{{ __('messages.net_salary') }}</span>
                                                 @if($sortField === 'net_salary')
                                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                                 @else
@@ -420,7 +420,7 @@
                                 <i class="fas fa-file-invoice-dollar text-lg sm:text-2xl"></i>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <h3 class="text-lg sm:text-xl lg:text-2xl font-bold truncate">Detalhes da Folha de Pagamento</h3>
+                                <h3 class="text-lg sm:text-xl lg:text-2xl font-bold truncate">{{ __('messages.payroll_details') }}</h3>
                                 <p class="text-blue-100 text-xs sm:text-sm mt-1 truncate">{{ $currentPayroll->employee->full_name }} • {{ $currentPayroll->payrollPeriod->name ?? 'N/A' }}</p>
                             </div>
                         </div>
@@ -436,29 +436,29 @@
                     <!-- Cards de Informações Principais -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                         
-                        <!-- Card Funcionário -->
+                        <!-- Card {{ __('messages.employee') }} -->
                         <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border border-blue-200">
                             <div class="flex items-center mb-4">
                                 <div class="bg-blue-500 rounded-lg p-2 mr-3">
                                     <i class="fas fa-user text-white"></i>
                                 </div>
-                                <h4 class="font-semibold text-gray-800">Funcionário</h4>
+                                <h4 class="font-semibold text-gray-800">{{ __('messages.employee') }}</h4>
                             </div>
                             <div class="space-y-2">
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Nome:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.name') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->full_name }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">ID:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.id') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->id }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Departamento:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.department') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->department->name ?? 'N/A' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Cargo:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.position') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->employee->position->name ?? 'N/A' }}</span>
                                 </div>
                             </div>
@@ -470,23 +470,23 @@
                                 <div class="bg-green-500 rounded-lg p-2 mr-3">
                                     <i class="fas fa-calendar-alt text-white"></i>
                                 </div>
-                                <h4 class="font-semibold text-gray-800">Período</h4>
+                                <h4 class="font-semibold text-gray-800">{{ __('messages.period') }}</h4>
                             </div>
                             <div class="space-y-2">
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Período:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.period') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payrollPeriod->name ?? 'N/A' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Início:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.start_date') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payrollPeriod?->start_date?->format('d/m/Y') ?? 'N/A' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Fim:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.end_date') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payrollPeriod?->end_date?->format('d/m/Y') ?? 'N/A' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Horas:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.hours') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ number_format((float)$currentPayroll->attendance_hours, 1) }}h</span>
                                 </div>
                             </div>
@@ -498,11 +498,11 @@
                                 <div class="bg-purple-500 rounded-lg p-2 mr-3">
                                     <i class="fas fa-info-circle text-white"></i>
                                 </div>
-                                <h4 class="font-semibold text-gray-800">Status</h4>
+                                <h4 class="font-semibold text-gray-800">{{ __('messages.status') }}</h4>
                             </div>
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Status:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.status') }}:</span>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                         {{ $currentPayroll->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
                                         ($currentPayroll->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
@@ -512,15 +512,15 @@
                                     </span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Gerado em:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.created_at') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->created_at->format('d/m/Y H:i') }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Pagamento:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.payment') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->payment_method ? ucfirst(str_replace('_', ' ', $currentPayroll->payment_method)) : 'N/A' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600">Conta:</span>
+                                    <span class="text-sm text-gray-600">{{ __('messages.account') }}:</span>
                                     <span class="text-sm font-medium text-gray-800">{{ $currentPayroll->bank_account ?? 'N/A' }}</span>
                                 </div>
                             </div>
@@ -532,7 +532,7 @@
                     <div class="mb-8">
                         <h4 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
                             <i class="fas fa-list-ul text-blue-500 mr-2"></i>
-                            Breakdown Detalhado dos Componentes
+                            {{ __('payroll.detailed_breakdown_components') }}
                         </h4>
                         
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -541,7 +541,7 @@
                             <div class="bg-green-50 rounded-xl p-6 border border-green-200">
                                 <h5 class="font-semibold text-green-800 mb-4 flex items-center">
                                     <i class="fas fa-plus-circle text-green-600 mr-2"></i>
-                                    Rendimentos
+                                    {{ __('payroll.earnings') }}
                                 </h5>
                                 <div class="space-y-3">
                                     @php $totalEarnings = 0; @endphp
@@ -549,34 +549,34 @@
                                         @php $totalEarnings += (float)$item->amount; @endphp
                                         <div class="flex justify-between items-center py-2 border-b border-green-200 last:border-b-0">
                                             <div>
-                                                <span class="text-sm font-medium text-gray-800">{{ $item->name }}</span>
+                                                <span class="text-sm font-medium text-gray-800">{{ \App\Helpers\PayrollTranslationHelper::getTranslatedName($item->name) }}</span>
                                                 @if($item->description)
-                                                    <p class="text-xs text-gray-600 mt-1">{{ $item->description }}</p>
+                                                    <p class="text-xs text-gray-600 mt-1">{{ \App\Helpers\PayrollTranslationHelper::getTranslatedDescription($item->name, $item->description) }}</p>
                                                 @endif
                                                 <div class="flex items-center mt-1">
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                                                         {{ $item->type === 'earning' ? 'bg-blue-100 text-blue-800' : 
                                                         ($item->type === 'allowance' ? 'bg-purple-100 text-purple-800' : 
                                                         'bg-orange-100 text-orange-800') }}">
-                                                        {{ ucfirst($item->type) }}
+                                                        {{ __('payroll.' . $item->type) }}
                                                     </span>
                                                     @if($item->is_taxable)
                                                         <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                                                            Tributável
+                                                             {{ __('payroll.taxable') }}
                                                         </span>
                                                     @else
                                                         <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                                            Isento
+                                                             {{ __('payroll.exempt') }}
                                                         </span>
                                                     @endif
                                                 </div>
                                             </div>
-                                            <span class="text-sm font-bold text-green-700">{{ number_format((float)$item->amount, 2, ',', '.') }} AOA</span>
+                                            <span class="text-sm font-bold text-green-700">{{ number_format((float)$item->amount, 2, ',', '.') }} {{ __('payroll.currency') }}</span>
                                         </div>
                                     @endforeach
                                     <div class="flex justify-between items-center pt-3 border-t-2 border-green-300">
-                                        <span class="font-semibold text-green-800">Total Rendimentos:</span>
-                                        <span class="text-lg font-bold text-green-700">{{ number_format($totalEarnings, 2, ',', '.') }} AOA</span>
+                                        <span class="font-semibold text-green-800">{{ __('messages.total_earnings') }}:</span>
+                                        <span class="text-lg font-bold text-green-700">{{ number_format($totalEarnings, 2, ',', '.') }} {{ __('payroll.currency') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -585,7 +585,7 @@
                             <div class="bg-red-50 rounded-xl p-6 border border-red-200">
                                 <h5 class="font-semibold text-red-800 mb-4 flex items-center">
                                     <i class="fas fa-minus-circle text-red-600 mr-2"></i>
-                                    Deduções
+                                    {{ __('payroll.deductions') }}
                                 </h5>
                                 <div class="space-y-3">
                                     @php $totalDeductions = 0; @endphp
@@ -593,23 +593,23 @@
                                         @php $totalDeductions += abs((float)$item->amount); @endphp
                                         <div class="flex justify-between items-center py-2 border-b border-red-200 last:border-b-0">
                                             <div>
-                                                <span class="text-sm font-medium text-gray-800">{{ $item->name }}</span>
+                                                <span class="text-sm font-medium text-gray-800">{{ \App\Helpers\PayrollTranslationHelper::getTranslatedName($item->name) }}</span>
                                                 @if($item->description)
-                                                    <p class="text-xs text-gray-600 mt-1">{{ $item->description }}</p>
+                                                    <p class="text-xs text-gray-600 mt-1">{{ \App\Helpers\PayrollTranslationHelper::getTranslatedDescription($item->name, $item->description) }}</p>
                                                 @endif
                                                 <div class="flex items-center mt-1">
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                                                         {{ $item->type === 'tax' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800' }}">
-                                                        {{ $item->type === 'tax' ? 'Imposto' : 'Dedução' }}
+                                                        {{ $item->type === 'tax' ? __('messages.tax') : __('messages.deduction') }}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <span class="text-sm font-bold text-red-700">-{{ number_format(abs((float)$item->amount), 2, ',', '.') }} AOA</span>
+                                            <span class="text-sm font-bold text-red-700">-{{ number_format(abs((float)$item->amount), 2, ',', '.') }} {{ __('payroll.currency') }}</span>
                                         </div>
                                     @endforeach
                                     <div class="flex justify-between items-center pt-3 border-t-2 border-red-300">
-                                        <span class="font-semibold text-red-800">Total Deduções:</span>
-                                        <span class="text-lg font-bold text-red-700">-{{ number_format($totalDeductions, 2, ',', '.') }} AOA</span>
+                                        <span class="font-semibold text-red-800">{{ __('messages.total_deductions') }}:</span>
+                                        <span class="text-lg font-bold text-red-700">-{{ number_format($totalDeductions, 2, ',', '.') }} {{ __('payroll.currency') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -621,28 +621,28 @@
                     <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 mb-6">
                         <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-calculator text-blue-500 mr-2"></i>
-                            Resumo Final
+                            {{ __('payroll.final_summary') }}
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div class="text-center">
                                 <div class="bg-green-100 rounded-lg p-4">
                                     <i class="fas fa-arrow-up text-green-600 text-2xl mb-2"></i>
-                                    <p class="text-sm text-gray-600 mb-1">Total Bruto</p>
-                                    <p class="text-xl font-bold text-green-700">{{ number_format((float)$currentPayroll->basic_salary + (float)$currentPayroll->allowances + (float)$currentPayroll->overtime + (float)$currentPayroll->bonuses, 2, ',', '.') }} AOA</p>
+                                    <p class="text-sm text-gray-600 mb-1">{{ __('payroll.gross_total') }}</p>
+                                     <p class="text-xl font-bold text-green-700">{{ number_format((float)$currentPayroll->basic_salary + (float)$currentPayroll->allowances + (float)$currentPayroll->overtime + (float)$currentPayroll->bonuses, 2, ',', '.') }} {{ __('payroll.currency') }}</p>
                                 </div>
                             </div>
                             <div class="text-center">
                                 <div class="bg-red-100 rounded-lg p-4">
                                     <i class="fas fa-arrow-down text-red-600 text-2xl mb-2"></i>
-                                    <p class="text-sm text-gray-600 mb-1">Total Deduções</p>
-                                    <p class="text-xl font-bold text-red-700">{{ number_format((float)$currentPayroll->tax + (float)$currentPayroll->social_security + (float)$currentPayroll->deductions, 2, ',', '.') }} AOA</p>
+                                    <p class="text-sm text-gray-600 mb-1">{{ __('payroll.total_deductions') }}</p>
+                                     <p class="text-xl font-bold text-red-700">{{ number_format((float)$currentPayroll->tax + (float)$currentPayroll->social_security + (float)$currentPayroll->deductions, 2, ',', '.') }} {{ __('payroll.currency') }}</p>
                                 </div>
                             </div>
                             <div class="text-center">
                                 <div class="bg-blue-100 rounded-lg p-4">
                                     <i class="fas fa-wallet text-blue-600 text-2xl mb-2"></i>
-                                    <p class="text-sm text-gray-600 mb-1">Salário Líquido</p>
-                                    <p class="text-2xl font-bold text-blue-700">{{ number_format((float)$currentPayroll->net_salary, 2, ',', '.') }} AOA</p>
+                                    <p class="text-sm text-gray-600 mb-1">{{ __('payroll.net_salary') }}</p>
+                                     <p class="text-2xl font-bold text-blue-700">{{ number_format((float)$currentPayroll->net_salary, 2, ',', '.') }} {{ __('payroll.currency') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -653,7 +653,7 @@
                     <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
                         <h4 class="font-semibold text-yellow-800 mb-3 flex items-center">
                             <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
-                            Observações
+                            {{ __('payroll.observations') }}
                         </h4>
                         <p class="text-sm text-gray-700 leading-relaxed">{{ $currentPayroll->remarks }}</p>
                     </div>
@@ -664,20 +664,20 @@
                 <div class="bg-gray-50 px-4 sm:px-8 py-4 sm:py-6 border-t border-gray-200 rounded-b-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div class="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
                         <i class="fas fa-clock mr-1"></i>
-                        Gerado em {{ $currentPayroll->created_at->format('d/m/Y às H:i') }}
+                        {{ __('payroll.generated_on') }} {{ $currentPayroll->created_at->format('d/m/Y às H:i') }}
                     </div>
                     <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                         <button type="button"
                             class="w-full sm:w-auto px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
                             wire:click="closeViewModal">
                             <i class="fas fa-times mr-2"></i>
-                            Fechar
+                            {{ __('messages.close') }}
                         </button>
                         <button type="button"
                             wire:click="downloadPayslip({{ $currentPayroll->id }})"
                             class="w-full sm:w-auto px-4 sm:px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
                             <i class="fas fa-file-pdf mr-2"></i>
-                            Baixar Recibo
+                            {{ __('payroll.download_payslip') }}
                         </button>
                     </div>
                 </div>
@@ -703,7 +703,7 @@
 
                 <form wire:submit.prevent="pay">
                     <div class="mb-4">
-                        <label for="payment_date" class="block text-sm font-medium text-gray-700">Data de Pagamento</label>
+                        <label for="payment_date" class="block text-sm font-medium text-gray-700">{{ __('messages.payment_date') }}</label>
                         <input type="date" id="payment_date"
                             class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('payment_date') border-red-300 text-red-900 @enderror"
                             wire:model.live="payment_date">
@@ -716,11 +716,11 @@
                         <button type="button"
                             class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             wire:click="$set('showPayModal', false)">
-                            Cancelar
+                            {{ __('messages.cancel') }}
                         </button>
                         <button type="submit"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Confirmar Pagamento
+                            {{ __('messages.confirm_payment') }}
                         </button>
                     </div>
                 </form>

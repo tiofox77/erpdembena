@@ -456,24 +456,24 @@
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">{{ __('messages.basic_salary') }}</p>
-                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($basic_salary ?? 0, 2) }} AOA</p>
+                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($basic_salary ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">{{ __('messages.hourly_rate') }}</p>
-                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($hourly_rate ?? 0, 2) }} AOA/h</p>
+                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($hourly_rate ?? 0, 2) }} {{ __('messages.currency_aoa') }}{{ __('messages.per_hour') }}</p>
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">IRT ({{ __('messages.income_tax') }})</p>
-                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format(($basic_salary ?? 0) * 0.065, 2) }} AOA</p>
+                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format(($basic_salary ?? 0) * 0.065, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">INSS (3%)</p>
-                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format(($basic_salary ?? 0) * 0.03, 2) }} AOA</p>
+                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format(($basic_salary ?? 0) * 0.03, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         @if(isset($bonus_amount) && $bonus_amount > 0)
                                             <div class="bg-white/60 p-3 rounded-lg">
                                                 <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">{{ __('messages.bonus_amount') }}</p>
-                                                <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($bonus_amount, 2) }} AOA</p>
+                                                <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($bonus_amount, 2) }} {{ __('messages.currency_aoa') }}</p>
                                             </div>
                                         @endif
                                     </div>
@@ -518,7 +518,7 @@
                                                         {{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA
                                                     </span>
                                                     <span x-show="!$wire.christmas_subsidy" class="text-gray-500" x-transition>
-                                                        0.00 AOA
+                                                        0.00 {{ __('messages.currency_aoa') }}
                                                     </span>
                                                 </p>
                                             </div>
@@ -556,7 +556,7 @@
                                                         {{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA
                                                     </span>
                                                     <span x-show="!$wire.vacation_subsidy" class="text-gray-500" x-transition>
-                                                        0.00 AOA
+                                                        0.00 {{ __('messages.currency_aoa') }}
                                                     </span>
                                                 </p>
                                             </div>
@@ -579,7 +579,7 @@
                                                     class="w-full pl-12 pr-4 py-3 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm lg:text-base"
                                                 >
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span class="text-emerald-600 font-medium">AOA</span>
+                                                    <span class="text-emerald-600 font-medium">{{ __('messages.currency_aoa') }}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -619,7 +619,7 @@
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg text-center">
                                             <p class="text-xs text-green-600 font-medium mb-1">{{ __('messages.regular_hours_pay') }}</p>
-                                            <p class="text-lg text-green-800 font-bold">{{ number_format($regular_hours_pay ?? 0, 2) }} AOA</p>
+                                            <p class="text-lg text-green-800 font-bold">{{ number_format($regular_hours_pay ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                     </div>
                                     
@@ -685,7 +685,7 @@
                                         </div>
                                         <div>
                                             <p class="text-sm text-purple-600 font-medium">{{ __('messages.overtime_amount') }}</p>
-                                            <p class="text-purple-800 font-semibold">{{ number_format($total_overtime_amount ?? 0, 2) }} AOA</p>
+                                            <p class="text-purple-800 font-semibold">{{ number_format($total_overtime_amount ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                     </div>
                                     @if(isset($overtimeRecords) && count($overtimeRecords) > 0)
@@ -695,7 +695,7 @@
                                                 @foreach($overtimeRecords as $overtime)
                                                     <div class="text-xs bg-purple-100 px-2 py-1 rounded flex justify-between">
                                                         <span>{{ $overtime['date'] ?? 'N/A' }}</span>
-                                                        <span>{{ $overtime['hours'] ?? 0 }}h - {{ number_format($overtime['amount'] ?? 0, 2) }} AOA</span>
+                                                        <span>{{ $overtime['hours'] ?? 0 }}h - {{ number_format($overtime['amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}</span>
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -712,11 +712,11 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <p class="text-sm text-orange-600 font-medium">{{ __('messages.total_advances') }}</p>
-                                            <p class="text-orange-800 font-semibold">{{ number_format($total_salary_advances ?? 0, 2) }} AOA</p>
+                                            <p class="text-orange-800 font-semibold">{{ number_format($total_salary_advances ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-orange-600 font-medium">{{ __('messages.deduction_amount') }}</p>
-                                            <p class="text-orange-800 font-semibold">{{ number_format($advance_deduction ?? 0, 2) }} AOA</p>
+                                            <p class="text-orange-800 font-semibold">{{ number_format($advance_deduction ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                     </div>
                                     @if(isset($salaryAdvances) && count($salaryAdvances) > 0)
@@ -727,11 +727,11 @@
                                                     <div class="bg-orange-100 p-3 rounded-lg">
                                                         <div class="flex justify-between items-start mb-1">
                                                             <span class="text-xs font-medium text-orange-700">{{ $advance['request_date'] ?? 'N/A' }}</span>
-                                                            <span class="text-xs font-bold text-orange-800">{{ number_format($advance['amount'] ?? 0, 2) }} AOA</span>
+                                                            <span class="text-xs font-bold text-orange-800">{{ number_format($advance['amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}</span>
                                                         </div>
                                                         <div class="flex justify-between text-xs text-orange-600">
                                                             <span>{{ $advance['remaining_installments'] ?? 0 }}/{{ $advance['installments'] ?? 0 }} parcelas</span>
-                                                            <span class="font-medium">{{ number_format($advance['installment_amount'] ?? 0, 2) }} AOA/mês</span>
+                                                            <span class="font-medium">{{ number_format($advance['installment_amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}{{ __('messages.per_month') }}</span>
                                                         </div>
                                                         @if(isset($advance['reason']))
                                                             <p class="text-xs text-orange-500 mt-1 truncate">{{ $advance['reason'] }}</p>
@@ -752,7 +752,7 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <p class="text-sm text-red-600 font-medium">{{ __('messages.total_discounts') }}</p>
-                                            <p class="text-red-800 font-semibold">{{ number_format($total_salary_discounts ?? 0, 2) }} AOA</p>
+                                            <p class="text-red-800 font-semibold">{{ number_format($total_salary_discounts ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-red-600 font-medium">{{ __('messages.active_discounts') }}</p>
@@ -767,11 +767,11 @@
                                                     <div class="bg-red-100 p-3 rounded-lg">
                                                         <div class="flex justify-between items-start mb-1">
                                                             <span class="text-xs font-medium text-red-700">{{ $discount['request_date'] ?? 'N/A' }}</span>
-                                                            <span class="text-xs font-bold text-red-800">{{ number_format($discount['amount'] ?? 0, 2) }} AOA</span>
+                                                            <span class="text-xs font-bold text-red-800">{{ number_format($discount['amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}</span>
                                                         </div>
                                                         <div class="flex justify-between text-xs text-red-600">
                                                             <span>{{ $discount['remaining_installments'] ?? 0 }}/{{ $discount['installments'] ?? 0 }} parcelas</span>
-                                                            <span class="font-medium">{{ number_format($discount['installment_amount'] ?? 0, 2) }} AOA/mês</span>
+                                                            <span class="font-medium">{{ number_format($discount['installment_amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}{{ __('messages.per_month') }}</span>
                                                         </div>
                                                         <div class="flex justify-between text-xs text-red-500 mt-1">
                                                             <span class="capitalize">{{ $discount['discount_type'] ?? 'outros' }}</span>
@@ -797,13 +797,13 @@
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.food_benefit') }} 
                                                 <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full ml-1">Não Tributável</span>
                                             </p>
-                                            <p class="text-teal-800 font-semibold">{{ number_format($selectedEmployee->food_benefit ?? 0, 2) }} AOA</p>
+                                            <p class="text-teal-800 font-semibold">{{ number_format($selectedEmployee->food_benefit ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.transport_benefit') }}
                                                 <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full ml-1">Tributável</span>
                                             </p>
-                                            <p class="text-teal-800 font-semibold">{{ number_format($transport_allowance ?? 0, 2) }} AOA</p>
+                                            <p class="text-teal-800 font-semibold">{{ number_format($transport_allowance ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.bonus_amount') }}
@@ -890,10 +890,10 @@
                                             <span class="font-bold text-sm lg:text-lg" 
                                                   :class="{'text-emerald-800': $wire.christmas_subsidy, 'text-gray-500': !$wire.christmas_subsidy}">
                                                 <span x-show="$wire.christmas_subsidy" x-transition>
-                                                    +{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA
+                                                    +{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} {{ __('messages.currency_aoa') }}
                                                 </span>
                                                 <span x-show="!$wire.christmas_subsidy" x-transition>
-                                                    0.00 AOA
+                                                    0.00 {{ __('messages.currency_aoa') }}
                                                 </span>
                                             </span>
                                         </div>
@@ -909,10 +909,10 @@
                                             <span class="font-bold text-sm lg:text-lg" 
                                                   :class="{'text-emerald-800': $wire.vacation_subsidy, 'text-gray-500': !$wire.vacation_subsidy}">
                                                 <span x-show="$wire.vacation_subsidy" x-transition>
-                                                    +{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA
+                                                    +{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} {{ __('messages.currency_aoa') }}
                                                 </span>
                                                 <span x-show="!$wire.vacation_subsidy" x-transition>
-                                                    0.00 AOA
+                                                    0.00 {{ __('messages.currency_aoa') }}
                                                 </span>
                                             </span>
                                         </div>

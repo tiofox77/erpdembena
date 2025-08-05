@@ -1639,12 +1639,15 @@ class Payroll extends Component
         $this->isEditing = false;
         $this->reset([
             'payroll_id', 'employee_id', 'payroll_period_id', 'basic_salary',
-            'allowances', 'overtime', 'bonuses', 'deductions', 'tax',
-            'social_security', 'net_salary', 'payment_method', 'bank_account',
-            'payment_date', 'status', 'remarks', 'payrollItems',
-            'attendance_hours', 'base_hourly_rate', 'total_hours_pay',
-            'leave_days', 'leave_deduction', 'maternity_days', 'special_leave_days',
-            'christmas_subsidy', 'vacation_subsidy'
+            'transport_allowance', 'meal_allowance', 'housing_allowance',
+            'total_overtime_amount', 'performance_bonus', 'custom_bonus', 'bonus_amount',
+            'income_tax', 'social_security', 'total_deductions', 'net_salary', 'gross_salary',
+            'payment_method', 'bank_account', 'payment_date', 'status', 'remarks', 'payrollItems',
+            'total_attendance_hours', 'regular_hours_pay', 'hourly_rate',
+            'total_leave_days', 'leave_deduction', 'unpaid_leave_days',
+            'total_salary_advances', 'advance_deduction', 'total_salary_discounts',
+            'late_deduction', 'absence_deduction', 'other_deductions',
+            'christmas_subsidy', 'vacation_subsidy', 'christmas_subsidy_amount', 'vacation_subsidy_amount'
         ]);
     }
 

@@ -992,7 +992,6 @@
                                 <div class="space-y-2">
                                     <label for="email" class="flex items-center text-sm font-medium text-gray-700">
                                         <i class="fas fa-envelope text-blue-500 mr-2"></i>
-                                        {{ __('messages.email') }} <span class="text-red-500 ml-1">*</span>
                                     </label>
                                     <div class="relative">
                                         <input type="email" id="email"

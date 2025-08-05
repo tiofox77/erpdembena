@@ -121,4 +121,50 @@ return [
     'add_deduction' => 'Add Deduction',
     'total_earnings' => 'Total Earnings',
     'total_deductions' => 'Total Deductions',
+    
+    // View Modal Specific Keys
+    'detailed_breakdown_components' => 'Detailed Component Breakdown',
+    'taxable' => 'Taxable',
+    'exempt' => 'Exempt',
+    'currency' => 'AOA',
+    'final_summary' => 'Final Summary',
+    'gross_total' => 'Gross Total',
+    'net_salary' => 'Net Salary',
+    'observations' => 'Observations',
+    'generated_on' => 'Generated on',
+    'download_payslip' => 'Download Payslip',
+    'deductions' => 'Deductions',
+    
+    // Detailed Payroll Components
+    'basic_salary_description' => 'Monthly basic salary of the employee',
+    'transport_allowance' => 'Transport Allowance',
+    'transport_allowance_description' => 'Monthly transport allowance',
+    'meal_allowance' => 'Meal Allowance',
+    'meal_allowance_description' => 'Monthly meal allowance',
+    'overtime_hours' => 'Overtime Hours',
+    'overtime_payment_description' => 'Payment for :hours overtime hours',
+    'performance_bonus_description' => 'Performance and other bonuses',
+    'christmas_subsidy_description' => 'Christmas Subsidy (13th salary)',
+    'vacation_subsidy_description' => 'Vacation Subsidy (14th salary)',
+    
+    // Payment Types
+    'earning' => 'Earning',
+    'allowance' => 'Allowance',
+    'bonus' => 'Bonus',
+    'deduction' => 'Deduction',
+    'tax' => 'Tax',
+    
+    // Deductions
+    'late_deduction' => 'Late Penalty',
+    'late_deduction_description' => 'Deduction for :days late days',
+    'absence_deduction' => 'Absence Penalty',
+    'absence_deduction_description' => 'Deduction for :days absent days',
+    'social_security' => 'Social Security',
+    'social_security_description' => 'Social Security Contribution (3%)',
+    'income_tax' => 'Income Tax',
+    'income_tax_description' => 'Income Tax on Labor',
+    'salary_discounts' => 'Salary Discounts',
+    'salary_discounts_description' => 'Various discounts applied to salary',
+    'salary_advances' => 'Salary Advances',
+    'salary_advances_description' => 'Deduction for granted salary advances',
 ];

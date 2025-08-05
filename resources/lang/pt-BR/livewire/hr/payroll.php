@@ -121,4 +121,50 @@ return [
     'add_deduction' => 'Adicionar Dedução',
     'total_earnings' => 'Total de Ganhos',
     'total_deductions' => 'Total de Deduções',
+    
+    // View Modal Specific Keys
+    'detailed_breakdown_components' => 'Breakdown Detalhado dos Componentes',
+    'taxable' => 'Tributável',
+    'exempt' => 'Isento',
+    'currency' => 'AOA',
+    'final_summary' => 'Resumo Final',
+    'gross_total' => 'Total Bruto',
+    'net_salary' => 'Salário Líquido',
+    'observations' => 'Observações',
+    'generated_on' => 'Gerado em',
+    'download_payslip' => 'Baixar Recibo',
+    'deductions' => 'Deduções',
+    
+    // Detailed Payroll Components
+    'basic_salary_description' => 'Salário base mensal do funcionário',
+    'transport_allowance' => 'Subsídio de Transporte',
+    'transport_allowance_description' => 'Subsídio mensal de transporte',
+    'meal_allowance' => 'Subsídio de Alimentação',
+    'meal_allowance_description' => 'Subsídio mensal de alimentação',
+    'overtime_hours' => 'Horas Extras',
+    'overtime_payment_description' => 'Pagamento de :hours horas extras',
+    'performance_bonus_description' => 'Bónus de performance e outros',
+    'christmas_subsidy_description' => 'Subsídio de Natal (13º salário)',
+    'vacation_subsidy_description' => 'Subsídio de férias (14º salário)',
+    
+    // Payment Types
+    'earning' => 'Ganho',
+    'allowance' => 'Benefício',
+    'bonus' => 'Bónus',
+    'deduction' => 'Dedução',
+    'tax' => 'Imposto',
+    
+    // Deductions
+    'late_deduction' => 'Desconto por Atrasos',
+    'late_deduction_description' => 'Desconto por :days dias de atraso',
+    'absence_deduction' => 'Desconto por Faltas',
+    'absence_deduction_description' => 'Desconto por :days dias de falta',
+    'social_security' => 'INSS',
+    'social_security_description' => 'Contribuição para Segurança Social (3%)',
+    'income_tax' => 'IRT',
+    'income_tax_description' => 'Imposto sobre Rendimento do Trabalho',
+    'salary_discounts' => 'Descontos Salariais',
+    'salary_discounts_description' => 'Descontos diversos aplicados ao salário',
+    'salary_advances' => 'Adiantamentos Salariais',
+    'salary_advances_description' => 'Desconto de adiantamentos salariais concedidos',
 ];

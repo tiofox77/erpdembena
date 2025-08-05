@@ -147,14 +147,83 @@ class Attendance extends Component
     {
         // Abrir modal de batch attendance ligada ao calendário
         $this->selectedDate = Carbon::today()->format('Y-m-d');
-        $this->loadShiftEmployees($this->selectedDate);
+        $this->loadAllAvailableShifts();
+        $this->resetBatchForm();
         $this->showCalendarModal = true;
+    }
+    
+    /**
+     * Método chamado quando um dia do calendário é clicado
+     */
+    public function selectDate($date)
+    {
+        $this->selectedDate = $date;
+        $this->loadAllAvailableShifts();
+        $this->resetBatchForm();
+        $this->showCalendarModal = true;
+    }
+    
+    /**
+     * Carregar todos os shifts disponíveis para seleção
+     */
+    public function loadAllAvailableShifts()
+    {
+        $this->availableShifts = Shift::with(['assignments.employee.department'])
+            ->where('is_active', true)
+            ->get()
+            ->map(function($shift) {
+                $employeeCount = $this->getEmployeeCountForShift($shift->id, $this->selectedDate);
+                
+                return [
+                    'id' => $shift->id,
+                    'name' => $shift->name,
+                    'start_time' => $shift->start_time->format('H:i'),
+                    'end_time' => $shift->end_time->format('H:i'),
+                    'employee_count' => $employeeCount,
+                    'description' => $shift->description ?? '',
+                ];
+            })
+            ->toArray();
+    }
+    
+    /**
+     * Obter contagem de funcionários para um shift numa data específica
+     */
+    private function getEmployeeCountForShift($shiftId, $date)
+    {
+        $targetDate = Carbon::parse($date);
         
-        // Definir configurações padrão para batch attendance
+        $assignments = ShiftAssignment::with(['employee'])
+            ->where('start_date', '<=', $targetDate)
+            ->where(function($query) use ($targetDate) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', $targetDate);
+            })
+            ->get();
+        
+        return $assignments->filter(function($assignment) use ($shiftId, $targetDate) {
+            if (!$assignment->hasRotation()) {
+                return $assignment->shift_id === $shiftId;
+            }
+            
+            $activeShiftId = $assignment->getActiveShiftForDate($targetDate);
+            return $activeShiftId === $shiftId;
+        })->count();
+    }
+    
+    /**
+     * Reset form de batch attendance
+     */
+    private function resetBatchForm()
+    {
+        $this->selectedEmployees = [];
+        $this->selectedShift = null;
         $this->batchStatus = 'present';
-        $this->batchTimeIn = '09:00';
+        $this->batchTimeIn = '08:00';
         $this->batchTimeOut = '17:00';
-        $this->batchObservations = '';
+        $this->batchRemarks = '';
+        $this->shiftEmployees = [];
+        $this->selectAllEmployees = false;
     }
 
     public function edit(AttendanceModel $attendance)
@@ -308,12 +377,7 @@ class Attendance extends Component
         $this->currentYear = $date->year;
     }
     
-    public function selectDate($date)
-    {
-        $this->selectedDate = $date;
-        $this->loadAvailableShifts($date);
-        $this->showCalendarModal = true;
-    }
+
     
     /**
      * Load available shifts for a specific date considering rotations
@@ -467,11 +531,86 @@ class Attendance extends Component
         }
     }
     
+    /**
+     * Método para selecionar um shift da modal do calendário
+     */
+    public function selectShift($shiftId)
+    {
+        $this->selectedShift = $shiftId;
+        $this->selectedEmployees = []; // Limpar seleções anteriores
+        $this->selectAllEmployees = false;
+        
+        // Carregar funcionários do shift selecionado
+        $this->loadEmployeesForSelectedShift();
+        
+        // Preencher automaticamente horários do shift
+        $this->setShiftDefaultTimes();
+    }
+    
     public function updatedSelectedShift()
     {
         if ($this->selectedShift) {
             $this->loadEmployeesForSelectedShift();
         }
+    }
+    
+    /**
+     * Carregar funcionários para o shift selecionado
+     */
+    public function loadEmployeesForSelectedShift()
+    {
+        if (!$this->selectedShift || !$this->selectedDate) {
+            $this->shiftEmployees = [];
+            return;
+        }
+        
+        $targetDate = Carbon::parse($this->selectedDate);
+        
+        // Obter todas as atribuições de shift válidas para a data
+        $assignments = ShiftAssignment::with(['employee.department', 'shift'])
+            ->where('start_date', '<=', $targetDate)
+            ->where(function($query) use ($targetDate) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', $targetDate);
+            })
+            ->get();
+        
+        // Filtrar funcionários que devem estar no shift selecionado na data específica
+        $shiftEmployees = $assignments->filter(function($assignment) use ($targetDate) {
+            if (!$assignment->hasRotation()) {
+                return $assignment->shift_id == $this->selectedShift;
+            }
+            
+            $activeShiftId = $assignment->getActiveShiftForDate($targetDate);
+            return $activeShiftId == $this->selectedShift;
+        })->map(function($assignment) use ($targetDate) {
+            $rotationInfo = $assignment->getRotationSummary();
+            
+            // Verificar se já tem presença registada para este dia
+            $alreadyMarked = AttendanceModel::where('employee_id', $assignment->employee->id)
+                ->where('date', $this->selectedDate)
+                ->exists();
+            
+            return [
+                'id' => $assignment->employee->id,
+                'name' => $assignment->employee->full_name,
+                'department' => $assignment->employee->department->name ?? 'N/A',
+                'shift_name' => $assignment->shift->name,
+                'has_rotation' => $rotationInfo['has_rotation'],
+                'rotation_type' => $rotationInfo['type'] ?? null,
+                'rotation_interval' => $rotationInfo['interval'] ?? null,
+                'next_rotation' => $rotationInfo['next_rotation'] ?? null,
+                'is_permanent' => $rotationInfo['is_permanent'] ?? true,
+                'assignment_start' => $assignment->start_date,
+                'assignment_id' => $assignment->id,
+                'already_marked' => $alreadyMarked,
+            ];
+        })->values()->toArray();
+        
+        $this->shiftEmployees = $shiftEmployees;
+        
+        // Preencher automaticamente os horários do shift selecionado
+        $this->setShiftDefaultTimes();
     }
     
     /**
