@@ -36,15 +36,14 @@ class Attendance extends Component
     public $time_out;
     public $status;
     public $remarks;
-    public $is_approved = false;
     
-    // Campos para cálculo de pagamento
-    public $hourly_rate;
-    public $overtime_hours;
-    public $overtime_rate;
-    public $is_maternity_related = false;
-    public $maternity_type;
-    public $affects_payroll = true;
+    // Campos para cálculo de pagamento (removidos - não existem na tabela)
+    // public $hourly_rate;
+    // public $overtime_hours;
+    // public $overtime_rate;
+    // public $is_maternity_related = false;
+    // public $maternity_type;
+    // public $affects_payroll = true;
 
     // Modal flags
     public $showModal = false;
@@ -57,6 +56,7 @@ class Attendance extends Component
     public $currentYear;
     public $selectedDate;
     public $showCalendarModal = false;
+
     
     // Batch attendance properties
     public $selectedEmployees = [];
@@ -71,7 +71,11 @@ class Attendance extends Component
     public $availableShifts = []; // Shifts disponíveis
     
     // Listeners
-    protected $listeners = ['refreshAttendance' => '$refresh'];
+    protected $listeners = [
+        'refreshAttendance' => '$refresh',
+        'attendance-saved' => 'refreshData',
+        'attendanceUpdated' => '$refresh'
+    ];
 
     // Rules
     protected function rules()
@@ -118,10 +122,13 @@ class Attendance extends Component
     public function mount()
     {
         $this->date = Carbon::today()->format('Y-m-d');
-        $this->filters['start_date'] = Carbon::today()->subDays(30)->format('Y-m-d');
-        $this->filters['end_date'] = Carbon::today()->format('Y-m-d');
+        // Não aplicar filtros por padrão - deixar vazios para mostrar todos os dados
+        $this->filters['start_date'] = '';
+        $this->filters['end_date'] = '';
         $this->currentMonth = Carbon::now()->month;
         $this->currentYear = Carbon::now()->year;
+        
+
     }
 
     public function create()
@@ -129,16 +136,12 @@ class Attendance extends Component
         // Reset form fields
         $this->reset([
             'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
-            'status', 'remarks', 'is_approved', 'hourly_rate', 'overtime_hours',
-            'overtime_rate', 'is_maternity_related', 'maternity_type', 'affects_payroll'
+            'status', 'remarks'
         ]);
         
         // Set defaults for new attendance records
         $this->date = Carbon::today()->format('Y-m-d');
         $this->status = 'present'; // Default to present
-        $this->is_approved = true; // Auto-approve new records
-        $this->affects_payroll = true;
-        $this->is_maternity_related = false;
         
         $this->showModal = true;
     }
@@ -168,7 +171,7 @@ class Attendance extends Component
      */
     public function loadAllAvailableShifts()
     {
-        $this->availableShifts = Shift::with(['assignments.employee.department'])
+        $this->availableShifts = Shift::with(['shiftAssignments.employee.department'])
             ->where('is_active', true)
             ->get()
             ->map(function($shift) {
@@ -478,47 +481,7 @@ class Attendance extends Component
         })->toArray();
     }
     
-    /**
-     * Load employees for selected shift considering rotation
-     */
-    public function loadEmployeesForSelectedShift()
-    {
-        if (!$this->selectedShift || !$this->selectedDate) {
-            $this->shiftEmployees = [];
-            return;
-        }
-        
-        $employeesWithRotation = $this->getEmployeesWithRotationInfo($this->selectedShift, $this->selectedDate);
-        
-        $this->shiftEmployees = collect($employeesWithRotation)->map(function($employee) {
-            // Check if attendance already exists for this date
-            $existingAttendance = AttendanceModel::where('employee_id', $employee['id'])
-                ->whereDate('date', $this->selectedDate)
-                ->first();
-            
-            return array_merge($employee, [
-                'already_marked' => $existingAttendance ? true : false,
-                'existing_status' => $existingAttendance ? $existingAttendance->status : null,
-            ]);
-        })->toArray();
-    }
-    
-    public function selectShift($shiftId)
-    {
-        $this->selectedShift = $shiftId;
-        
-        // Carregar dados do shift selecionado
-        $shift = \App\Models\HR\Shift::find($shiftId);
-        
-        if ($shift) {
-            // Preencher automaticamente os horários baseado no shift
-            $this->batchTimeIn = $shift->start_time->format('H:i');
-            $this->batchTimeOut = $shift->end_time->format('H:i');
-        }
-        
-        // Carregar funcionários do shift selecionado
-        $this->loadShiftEmployees($this->selectedDate);
-    }
+
     
     public function setShiftDefaultTimes()
     {
@@ -602,6 +565,7 @@ class Attendance extends Component
                 'next_rotation' => $rotationInfo['next_rotation'] ?? null,
                 'is_permanent' => $rotationInfo['is_permanent'] ?? true,
                 'assignment_start' => $assignment->start_date,
+                'assignment_end' => $assignment->end_date,
                 'assignment_id' => $assignment->id,
                 'already_marked' => $alreadyMarked,
             ];
@@ -657,61 +621,8 @@ class Attendance extends Component
     public function getAvailableShifts($date)
     {
         return \App\Models\HR\Shift::where('is_active', true)
-            ->with([
-                'department:id,name',
-                'shiftAssignments' => function($query) use ($date) {
-                    $query->where('shift_id', $this->selectedShift)
-                        ->whereDate('start_date', '<=', $date)
-                        ->where(function($q) use ($date) {
-                            $q->whereNull('end_date')
-                              ->orWhereDate('end_date', '>=', $date);
-                        })
-                        ->with('shift:id,name,start_time,end_time');
-                }
-            ])
-            ->whereHas('shiftAssignments', function($query) use ($date) {
-                $query->where('shift_id', $this->selectedShift)
-                    ->whereDate('start_date', '<=', $date)
-                    ->where(function($q) use ($date) {
-                        $q->whereNull('end_date')
-                          ->orWhereDate('end_date', '>=', $date);
-                    });
-            })
+            ->with('department:id,name')
             ->get();
-            
-        // Se não há funcionários com assignments, carregar todos os funcionários ativos para debug
-        if ($employees->isEmpty()) {
-            $employees = Employee::where('employment_status', 'active')
-                ->select('id', 'full_name', 'department_id')
-                ->with('department:id,name')
-                ->get();
-        }
-            
-        // Verificar quais funcionários já têm presença registada neste dia
-        $existingAttendances = AttendanceModel::whereDate('date', $date)
-            ->pluck('employee_id')
-            ->toArray();
-            
-        // Processar dados dos funcionários
-        $this->shiftEmployees = $employees->map(function($employee) use ($existingAttendances) {
-            $currentShift = $employee->shiftAssignments->first();
-            
-            // Obter dados do shift selecionado
-            $selectedShiftData = \App\Models\HR\Shift::find($this->selectedShift);
-            
-            return [
-                'id' => $employee->id,
-                'full_name' => $employee->full_name,
-                'department_id' => $employee->department_id,
-                'department' => $employee->department,
-                'shift_id' => $this->selectedShift,
-                'shift_name' => $selectedShiftData ? $selectedShiftData->name : __('attendance.no_shift'),
-                'shift_time' => $selectedShiftData 
-                    ? $selectedShiftData->start_time->format('H:i') . ' - ' . $selectedShiftData->end_time->format('H:i')
-                    : '',
-                'has_attendance' => in_array($employee->id, $existingAttendances),
-            ];
-        })->toArray();
     }
     
     public function toggleSelectAll()
@@ -811,14 +722,12 @@ class Attendance extends Component
                     'overtimeRate' => $overtimeRate
                 ]);
                 
-                // Criar dados para salvar
+                // Criar dados para salvar (apenas campos que existem na tabela)
                 $attendanceData = [
                     'employee_id' => $employeeId,
                     'date' => Carbon::parse($this->selectedDate)->format('Y-m-d'),
                     'status' => $this->batchStatus,
-                    'remarks' => $this->batchRemarks,
-                    'hourly_rate' => $hourlyRate,
-                    'affects_payroll' => true,
+                    'remarks' => $this->batchRemarks ?? '',
                 ];
                 
                 // Adicionar horários se status for 'present'
@@ -920,71 +829,115 @@ class Attendance extends Component
         $this->availableShifts = [];
     }
     
+    /**
+     * Refresh data after attendance operations
+     */
+    public function refreshData()
+    {
+        // Trigger component refresh to reload the attendance list
+        $this->render();
+        
+        // Log for debugging
+        \Log::info('Attendance data refreshed after save operation');
+    }
+    
     public function getCalendarData()
     {
-        $startOfMonth = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1);
-        $endOfMonth = $startOfMonth->copy()->endOfMonth();
-        
-        // Debug: log para verificar o período sendo consultado
-        \Log::info('Carregando dados do calendário', [
-            'startOfMonth' => $startOfMonth->format('Y-m-d'),
-            'endOfMonth' => $endOfMonth->format('Y-m-d')
-        ]);
-        
-        // Obter dados de presença para o mês usando DB::table para evitar conversão automática
-        $attendances = \DB::table('attendances')
-            ->whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-            ->selectRaw('DATE(date) as date, COUNT(*) as count, status')
-            ->groupBy('date', 'status')
-            ->get();
-            
-        // Debug: log dos dados encontrados
-        \Log::info('Dados de presença encontrados', [
-            'total_records' => $attendances->count(),
-            'records' => $attendances->toArray()
-        ]);
-        
-        // Converter para collection e agrupar por data
-        $groupedAttendances = $attendances->groupBy('date');
-        
-        // Calcular estatísticas agregadas por dia
-        $calendarData = collect();
-        
-        foreach ($groupedAttendances as $date => $dayAttendances) {
-            $stats = [
-                'date' => $date,
-                'total_attendances' => $dayAttendances->sum('count'),
-                'present' => $dayAttendances->where('status', 'present')->sum('count'),
-                'absent' => $dayAttendances->where('status', 'absent')->sum('count'),
-                'late' => $dayAttendances->where('status', 'late')->sum('count'),
-                'half_day' => $dayAttendances->where('status', 'half_day')->sum('count'),
-                'leave' => $dayAttendances->where('status', 'leave')->sum('count'),
-                'sick_leave' => $dayAttendances->where('status', 'sick_leave')->sum('count'),
-                'vacation' => $dayAttendances->where('status', 'vacation')->sum('count'),
-                'overtime' => $dayAttendances->where('status', 'overtime')->sum('count'),
-            ];
-            
-            // Calcular percentagem de presença
-            $stats['attendance_rate'] = $stats['total_attendances'] > 0 
-                ? round(($stats['present'] / $stats['total_attendances']) * 100, 1) 
-                : 0;
-                
-            $calendarData->put($date, $stats);
+        // Garantir que currentYear e currentMonth estejam definidos
+        if (!$this->currentYear || !$this->currentMonth) {
+            $this->currentMonth = Carbon::now()->month;
+            $this->currentYear = Carbon::now()->year;
         }
         
-        // Debug: log dos dados do calendário calculados
-        \Log::info('Dados do calendário calculados', [
-            'calendar_data_count' => $calendarData->count(),
-            'calendar_data' => $calendarData->toArray()
-        ]);
-        
-        return $calendarData;
+        try {
+            $startOfMonth = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1);
+            $endOfMonth = $startOfMonth->copy()->endOfMonth();
+            
+            $calendarData = collect();
+            
+            // Iterar sobre cada dia do mês
+            for ($day = 1; $day <= $endOfMonth->day; $day++) {
+                $currentDate = Carbon::createFromDate($this->currentYear, $this->currentMonth, $day);
+                $dateString = $currentDate->format('Y-m-d');
+                
+                // Obter funcionários programados para trabalhar neste dia (baseado nos shifts)
+                $scheduledEmployees = $this->getScheduledEmployeesForDate($currentDate);
+                $totalScheduled = $scheduledEmployees->count();
+                
+                if ($totalScheduled === 0) {
+                    continue; // Pular dias sem funcionários programados
+                }
+                
+                // Obter presenças registradas para este dia
+                $attendances = \DB::table('attendances')
+                    ->whereDate('date', $dateString)
+                    ->select('employee_id', 'status')
+                    ->get()
+                    ->groupBy('status');
+                    
+                $stats = [
+                    'date' => $dateString,
+                    'total_scheduled' => $totalScheduled, // Total programado para trabalhar
+                    'total_attendances' => $attendances->flatten()->count(), // Total com registros de presença
+                    'present' => $attendances->get('present', collect())->count(),
+                    'absent' => $attendances->get('absent', collect())->count(),
+                    'late' => $attendances->get('late', collect())->count(),
+                    'half_day' => $attendances->get('half_day', collect())->count(),
+                    'leave' => $attendances->get('leave', collect())->count(),
+                    'sick_leave' => $attendances->get('sick_leave', collect())->count(),
+                    'vacation' => $attendances->get('vacation', collect())->count(),
+                    'overtime' => $attendances->get('overtime', collect())->count(),
+                ];
+                
+                // Funcionários não marcados (sem registo de presença)
+                $stats['not_marked'] = $totalScheduled - $stats['total_attendances'];
+                
+                // Calcular taxa de presença baseada no total programado
+                $effectivePresent = $stats['present'] + $stats['late'] + $stats['half_day'];
+                $stats['attendance_rate'] = $totalScheduled > 0 
+                    ? round(($effectivePresent / $totalScheduled) * 100, 1) 
+                    : 0;
+                    
+                // Taxa de cobertura (quantos foram marcados vs programados)
+                $stats['coverage_rate'] = $totalScheduled > 0 
+                    ? round(($stats['total_attendances'] / $totalScheduled) * 100, 1) 
+                    : 0;
+                    
+                $calendarData->put($dateString, $stats);
+            }
+            
+            return $calendarData;
+            
+        } catch (\Exception $e) {
+            \Log::error('Erro ao carregar dados do calendário: ' . $e->getMessage());
+            // Retornar collection vazia em caso de erro
+            return collect();
+        }
     }
 
+    /**
+     * Obter funcionários programados para trabalhar numa data específica
+     */
+    private function getScheduledEmployeesForDate($date)
+    {
+        $targetDate = Carbon::parse($date);
+        
+        // Por simplicidade, considerar todos os funcionários ativos como programados para trabalhar
+        // em dias úteis (segunda a sexta-feira)
+        $dayOfWeek = $targetDate->dayOfWeek; // 0=domingo, 1=segunda, ..., 6=sábado
+        
+        // Apenas dias úteis (segunda a sexta)
+        if ($dayOfWeek >= 1 && $dayOfWeek <= 5) {
+            return \DB::table('employees')
+                ->where('employment_status', 'active')
+                ->select('id', 'full_name')
+                ->get();
+        }
+        
+        // Fins de semana - nenhum funcionário programado por padrão
+        return collect();
+    }
 
-    
-
-    
     /**
      * Carrega funcionários para um shift específico numa data específica
      */
@@ -1108,11 +1061,28 @@ class Attendance extends Component
         $attendances = $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
+        // Debug: verificar quantos registros estão sendo retornados
+        \Log::info('Attendance query results', [
+            'total_count' => $attendances->total(),
+            'per_page' => $this->perPage,
+            'current_page' => $attendances->currentPage(),
+            'search' => $this->search,
+            'filters' => $this->filters,
+            'sort_field' => $this->sortField,
+            'sort_direction' => $this->sortDirection
+        ]);
+
         $employees = Employee::where('employment_status', 'active')->get();
         $departments = Department::where('is_active', true)->get();
         
-        // Dados do calendário
+        // Dados do calendário - sempre calcular fresh
         $calendarData = $this->getCalendarData();
+        
+        // Garantir que sempre retorna uma collection válida
+        if (!$calendarData || !($calendarData instanceof \Illuminate\Support\Collection)) {
+            $calendarData = collect();
+        }
+        
         $currentMonthName = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1)->format('F Y');
         $daysInMonth = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1)->daysInMonth;
         $startOfMonth = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1);

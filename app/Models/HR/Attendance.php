@@ -52,14 +52,8 @@ class Attendance extends Model
         
         // Set defaults when creating new attendance records
         static::creating(function ($attendance) {
-            if (is_null($attendance->is_approved)) {
-                $attendance->is_approved = true; // Auto-approve all new records
-            }
             if (is_null($attendance->status)) {
                 $attendance->status = self::STATUS_PRESENT; // Default to present
-            }
-            if (is_null($attendance->affects_payroll)) {
-                $attendance->affects_payroll = true; // Default affects payroll
             }
         });
     }

@@ -1,123 +1,193 @@
 <div>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
+    <div class="py-4">
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-4 sm:p-6">
                     <!-- Header -->
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex items-center space-x-4">
-                            <h2 class="text-xl font-semibold text-gray-800">
-                                <i class="fas fa-clock mr-2 text-gray-600"></i>
-                                {{ __('attendance.attendance_management') }}
-                            </h2>
-                            <x-hr-guide-link />
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <!-- View Toggle -->
-                            <div class="bg-gray-100 p-1 rounded-lg flex">
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg px-6 py-8 mb-6 shadow-lg">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h1 class="text-2xl font-bold text-white flex items-center">
+                                    <i class="fas fa-clock mr-3 text-blue-200 animate-pulse"></i>
+                                    {{ __('attendance.attendance_management') }}
+                                </h1>
+                                <p class="text-blue-100 mt-2">{{ __('attendance.manage_attendance_description') }}</p>
+                            </div>
+                            <div class="flex space-x-3">
+                                <!-- View Toggle -->
+                                <div class="bg-white bg-opacity-20 p-1 rounded-lg flex">
+                                    <button
+                                        wire:click="switchView('list')"
+                                        class="{{ $viewMode === 'list' ? 'bg-white text-blue-700 shadow-sm' : 'text-blue-100 hover:text-white' }} px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ease-in-out"
+                                    >
+                                        <i class="fas fa-list mr-1"></i>
+                                        {{ __('attendance.list_view') }}
+                                    </button>
+                                    <button
+                                        wire:click="switchView('calendar')"
+                                        class="{{ $viewMode === 'calendar' ? 'bg-white text-blue-700 shadow-sm' : 'text-blue-100 hover:text-white' }} px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ease-in-out"
+                                    >
+                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                        {{ __('attendance.calendar_view') }}
+                                    </button>
+                                </div>
                                 <button
-                                    wire:click="switchView('list')"
-                                    class="{{ $viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800' }} px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ease-in-out"
+                                    wire:click="openCalendar"
+                                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105"
                                 >
-                                    <i class="fas fa-list mr-1"></i>
-                                    {{ __('attendance.list_view') }}
+                                    <i class="fas fa-users mr-2"></i>
+                                    {{ __('attendance.batch_attendance') }}
                                 </button>
                                 <button
-                                    wire:click="switchView('calendar')"
-                                    class="{{ $viewMode === 'calendar' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800' }} px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ease-in-out"
+                                    wire:click="create"
+                                    class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
                                 >
-                                    <i class="fas fa-calendar-alt mr-1"></i>
-                                    {{ __('attendance.calendar_view') }}
+                                    <i class="fas fa-plus mr-2"></i>
+                                    {{ __('attendance.register_attendance') }}
                                 </button>
                             </div>
-                            <button
-                                wire:click="create"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out transform hover:scale-105"
-                            >
-                                <i class="fas fa-plus mr-1"></i>
-                                {{ __('attendance.register_attendance') }}
-                            </button>
                         </div>
                     </div>
 
                     <!-- Filters and Search -->
-                    <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                            <div class="md:col-span-2">
-                                <label for="search" class="sr-only">Search</label>
-                                <div class="relative rounded-md shadow-sm">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-filter text-gray-600 mr-2"></i>
+                                <h3 class="text-lg font-medium text-gray-700">{{ __('attendance.search_and_filters') }}</h3>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6">
+                            <!-- Search Bar -->
+                            <div class="mb-6">
+                                <div class="relative max-w-md">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-search text-gray-400"></i>
                                     </div>
                                     <input
                                         type="text"
-                                        id="search"
                                         wire:model.live.debounce.300ms="search"
-                                        placeholder="{{ __('attendance.search_employee') }}"
-                                        class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                        placeholder="{{ __('attendance.search_employee_placeholder') }}"
                                     >
                                 </div>
                             </div>
 
-                            <div>
-                                <label for="filterDepartment" class="sr-only">{{ __('attendance.department') }}</label>
-                                <select
-                                    id="filterDepartment"
-                                    wire:model.live="filters.department_id"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                    <option value="">{{ __('attendance.all_departments') }}</option>
-                                    @foreach($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="filterStatus" class="sr-only">{{ __('attendance.status') }}</label>
-                                <select
-                                    id="filterStatus"
-                                    wire:model.live="filters.status"
-                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                    <option value="">{{ __('attendance.all_status') }}</option>
-                                    <option value="present">{{ __('attendance.present') }}</option>
-                                    <option value="absent">{{ __('attendance.absent') }}</option>
-                                    <option value="late">{{ __('attendance.late') }}</option>
-                                    <option value="half_day">{{ __('attendance.half_day') }}</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="dateFrom" class="sr-only">{{ __('attendance.date_from') }}</label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-calendar text-gray-400"></i>
+                            <!-- Advanced Filters -->
+                            <div class="space-y-6">
+                                <!-- Primary Filters Row -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <!-- Department Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-building text-blue-600 text-xs"></i>
+                                            </div>
+                                            {{ __('attendance.department') }}
+                                        </label>
+                                        <div class="relative">
+                                            <select wire:model.live="filters.department_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                                <option value="">{{ __('attendance.all_departments') }}</option>
+                                                @foreach($departments as $department)
+                                                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            </div>
+                                        </div>
+                                        @if($filters['department_id'])
+                                            <div class="flex items-center text-xs text-blue-600">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ __('attendance.filtered') }}
+                                            </div>
+                                        @endif
                                     </div>
-                                    <input
-                                        type="date"
-                                        id="dateFrom"
-                                        wire:model.live="filters.start_date"
-                                        placeholder="{{ __('attendance.date_from') }}"
-                                        class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
-                                    >
+
+                                    <!-- Status Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-user-check text-green-600 text-xs"></i>
+                                            </div>
+                                            {{ __('attendance.status') }}
+                                        </label>
+                                        <div class="relative">
+                                            <select wire:model.live="filters.status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                                <option value="">{{ __('attendance.all_status') }}</option>
+                                                <option value="present">{{ __('attendance.present') }}</option>
+                                                <option value="absent">{{ __('attendance.absent') }}</option>
+                                                <option value="late">{{ __('attendance.late') }}</option>
+                                                <option value="half_day">{{ __('attendance.half_day') }}</option>
+                                                <option value="leave">{{ __('attendance.leave') }}</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            </div>
+                                        </div>
+                                        @if($filters['status'])
+                                            <div class="flex items-center text-xs text-green-600">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ __('attendance.filtered') }}
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Date From Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
+                                            </div>
+                                            {{ __('attendance.date_from') }}
+                                        </label>
+                                        <div class="relative">
+                                            <input type="date" wire:model.live="filters.start_date" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                        </div>
+                                        @if($filters['start_date'])
+                                            <div class="flex items-center text-xs text-indigo-600">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ __('attendance.filtered') }}
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Date To Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-calendar-minus text-purple-600 text-xs"></i>
+                                            </div>
+                                            {{ __('attendance.date_to') }}
+                                        </label>
+                                        <div class="relative">
+                                            <input type="date" wire:model.live="filters.end_date" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 transition-all duration-200">
+                                        </div>
+                                        @if($filters['end_date'])
+                                            <div class="flex items-center text-xs text-purple-600">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ __('attendance.filtered') }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
-                            <div>
-                                <label for="dateTo" class="sr-only">{{ __('attendance.date_to') }}</label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-calendar text-gray-400"></i>
-                                    </div>
-                                    <input
-                                        type="date"
-                                        id="dateTo"
-                                        wire:model.live="filters.end_date"
-                                        placeholder="{{ __('attendance.date_to') }}"
-                                        class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
-                                    >
+                            <!-- Filter Actions -->
+                            <div class="mt-6 flex items-center justify-between">
+                                <div class="text-sm text-gray-600">
+                                    <span class="font-medium">{{ $attendances->total() ?? 0 }}</span> {{ __('attendance.total_records') }}
+                                    @if(array_filter($filters))
+                                        <span class="text-blue-600 ml-2">({{ __('attendance.filtered') }})</span>
+                                    @endif
                                 </div>
+                                @if(array_filter($filters))
+                                    <button wire:click="resetFilters" class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                                        <i class="fas fa-times mr-1"></i>
+                                        {{ __('attendance.clear_filters') }}
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -143,13 +213,13 @@
                             <div class="p-4">
                                 <div class="grid grid-cols-7 gap-2">
                                     <!-- Days of Week Header -->
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Dom</div>
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Seg</div>
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Ter</div>
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Qua</div>
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Qui</div>
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Sex</div>
-                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Sáb</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.sunday') }}</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.monday') }}</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.tuesday') }}</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.wednesday') }}</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.thursday') }}</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.friday') }}</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">{{ __('attendance.saturday') }}</div>
                                     
                                     <!-- Empty cells for days before month start -->
                                     @for($i = 0; $i < $startDayOfWeek; $i++)
@@ -158,18 +228,20 @@
                                     
                                     <!-- Days of the month -->
                                     @for($day = 1; $day <= $daysInMonth; $day++)
-                                        @php
-                                            $currentDate = \Carbon\Carbon::createFromDate($currentYear, $currentMonth, $day)->format('Y-m-d');
-                                            $dayStats = $calendarData->get($currentDate) ?? null;
-                                            $isToday = $currentDate === \Carbon\Carbon::today()->format('Y-m-d');
-                                            $isPast = $currentDate < \Carbon\Carbon::today()->format('Y-m-d');
+                                         @php
+                                             $currentDate = \Carbon\Carbon::createFromDate($currentYear, $currentMonth, $day)->format('Y-m-d');
+                                             $dayStats = $calendarData->get($currentDate);
+                                             $isToday = $currentDate === \Carbon\Carbon::today()->format('Y-m-d');
+                                             $isPast = $currentDate < \Carbon\Carbon::today()->format('Y-m-d');
                                         @endphp
                                         <div 
                                             wire:click="selectDate('{{ $currentDate }}')"
                                             class="h-32 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-md 
                                                 {{ $isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300' }}
-                                                {{ $isPast && $dayStats && $dayStats['total_attendances'] > 0 ? 'bg-green-50' : '' }}
-                                                {{ $isPast && (!$dayStats || $dayStats['total_attendances'] === 0) ? 'bg-red-50' : '' }}"
+                                                {{ $isPast && $dayStats && $dayStats['attendance_rate'] >= 90 ? 'bg-green-50' : '' }}
+                                                {{ $isPast && $dayStats && $dayStats['attendance_rate'] >= 70 && $dayStats['attendance_rate'] < 90 ? 'bg-yellow-50' : '' }}
+                                                {{ $isPast && $dayStats && $dayStats['attendance_rate'] < 70 ? 'bg-red-50' : '' }}
+                                                {{ $isPast && (!$dayStats || $dayStats['total_scheduled'] === 0) ? 'bg-gray-50' : '' }}"
                                         >
                                             <div class="p-2 h-full flex flex-col">
                                                 <!-- Cabeçalho do dia -->
@@ -177,15 +249,15 @@
                                                     <span class="text-sm font-bold {{ $isToday ? 'text-blue-600' : 'text-gray-900' }}">
                                                         {{ $day }}
                                                     </span>
-                                                    @if($dayStats && $dayStats['total_attendances'] > 0)
-                                                        <span class="text-xs bg-blue-100 text-blue-800 px-1 rounded-full font-medium">
-                                                            {{ $dayStats['total_attendances'] }}
-                                                        </span>
-                                                    @endif
+                                                     @if($dayStats && $dayStats['total_scheduled'] > 0)
+                                                         <span class="text-xs bg-blue-100 text-blue-800 px-1 rounded-full font-medium">
+                                                             {{ $dayStats['total_attendances'] }}/{{ $dayStats['total_scheduled'] }}
+                                                         </span>
+                                                     @endif
                                                 </div>
                                                 
                                                 <!-- Estatísticas detalhadas -->
-                                                @if($dayStats && $dayStats['total_attendances'] > 0)
+                                                @if($dayStats && $dayStats['total_scheduled'] > 0)
                                                     <div class="flex-1 space-y-1">
                                                         <!-- Presentes -->
                                                         @if($dayStats['present'] > 0)
@@ -231,10 +303,21 @@
                                                             </div>
                                                         @endif
                                                         
+                                                        <!-- Não marcados -->
+                                                        @if($dayStats['not_marked'] > 0)
+                                                            <div class="flex items-center justify-between text-xs">
+                                                                <div class="flex items-center">
+                                                                    <div class="w-2 h-2 bg-gray-400 rounded-full mr-1"></div>
+                                                                    <span class="text-gray-700">{{ __('attendance.not_marked') }}</span>
+                                                                </div>
+                                                                <span class="font-medium text-gray-700">{{ $dayStats['not_marked'] }}</span>
+                                                            </div>
+                                                        @endif
+                                                        
                                                         <!-- Taxa de presença -->
                                                         <div class="mt-1 pt-1 border-t border-gray-200">
                                                             <div class="flex items-center justify-between text-xs">
-                                                                <span class="text-gray-600">Taxa:</span>
+                                                                        <span class="text-gray-600">{{ __('attendance.rate') }}:</span>
                                                                 <span class="font-medium 
                                                                     {{ $dayStats['attendance_rate'] >= 90 ? 'text-green-600' : '' }}
                                                                     {{ $dayStats['attendance_rate'] >= 70 && $dayStats['attendance_rate'] < 90 ? 'text-yellow-600' : '' }}
@@ -285,111 +368,140 @@
                     
                     <!-- Attendance Records Table -->
                     @if($viewMode === 'list')
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-table text-gray-600 mr-2"></i>
+                                        <h3 class="text-lg font-medium text-gray-700">{{ __('attendance.attendance_records') }}</h3>
+                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {{ $attendances->total() ?? 0 }} {{ __('attendance.records') }}
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ __('attendance.showing_records') }}
+                                    </div>
+                                </div>
+                            </div>
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('date')">
-                                                    <i class="fas fa-calendar-alt text-gray-400"></i>
-                                                    <span>Date</span>
+                                            <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('date')">
+                                                    <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                                                    <span>{{ __('attendance.date') }}</span>
                                                     @if($sortField === 'date')
-                                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-gray-400"></i>
+                                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500 ml-1"></i>
+                                                    @else
+                                                        <i class="fas fa-sort text-gray-400 ml-1 opacity-0 group-hover:opacity-100"></i>
                                                     @endif
                                                 </div>
                                             </th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('employee_id')">
-                                                    <i class="fas fa-user text-gray-400"></i>
-                                                    <span>Employee</span>
+                                            <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('employee_id')">
+                                                    <i class="fas fa-user text-gray-400 mr-1"></i>
+                                                    <span>{{ __('attendance.employee') }}</span>
                                                     @if($sortField === 'employee_id')
-                                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-gray-400"></i>
+                                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500 ml-1"></i>
+                                                    @else
+                                                        <i class="fas fa-sort text-gray-400 ml-1 opacity-0 group-hover:opacity-100"></i>
                                                     @endif
                                                 </div>
                                             </th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1">
-                                                    <i class="fas fa-clock text-gray-400"></i>
-                                                    <span>Times</span>
+                                            <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-clock text-gray-400 mr-1"></i>
+                                                    <span>{{ __('attendance.times') }}</span>
                                                 </div>
                                             </th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('status')">
-                                                    <i class="fas fa-info-circle text-gray-400"></i>
-                                                    <span>Status</span>
+                                            <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('status')">
+                                                    <i class="fas fa-user-check text-gray-400 mr-1"></i>
+                                                    <span>{{ __('attendance.status') }}</span>
                                                     @if($sortField === 'status')
-                                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-gray-400"></i>
+                                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500 ml-1"></i>
+                                                    @else
+                                                        <i class="fas fa-sort text-gray-400 ml-1 opacity-0 group-hover:opacity-100"></i>
                                                     @endif
                                                 </div>
                                             </th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1">
-                                                    <i class="fas fa-check-circle text-gray-400"></i>
-                                                    <span>Approved</span>
+                                            <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-comment text-gray-400 mr-1"></i>
+                                                    <span>{{ __('attendance.remarks') }}</span>
                                                 </div>
                                             </th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1">
-                                                    <i class="fas fa-sticky-note text-gray-400"></i>
-                                                    <span>Remarks</span>
-                                                </div>
-                                            </th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div class="flex items-center space-x-1">
-                                                    <i class="fas fa-cog text-gray-400"></i>
-                                                    <span>Actions</span>
+                                            <th scope="col" class="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <div class="flex items-center justify-center">
+                                                    <i class="fas fa-cog text-gray-400 mr-1"></i>
+                                                    <span>{{ __('attendance.actions') }}</span>
                                                 </div>
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         @forelse($attendances as $attendance)
-                                            <tr class="hover:bg-gray-50 transition-colors duration-200">
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm font-medium text-gray-900">{{ $attendance->date->format('M d, Y') }}</div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="flex items-center">
-                                                        @if($attendance->employee->photo)
-                                                            <img src="{{ asset('storage/' . $attendance->employee->photo) }}" alt="{{ $attendance->employee->full_name }}" class="h-8 w-8 rounded-full mr-2">
-                                                        @else
-                                                            <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-                                                                <i class="fas fa-user text-gray-400"></i>
-                                                            </div>
-                                                        @endif
-                                                        <div class="text-sm text-gray-900">{{ $attendance->employee->full_name }}</div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">
-                                                        <div>In: {{ $attendance->time_in ? \Carbon\Carbon::parse($attendance->time_in)->format('H:i') : 'N/A' }}</div>
-                                                        <div>Out: {{ $attendance->time_out ? \Carbon\Carbon::parse($attendance->time_out)->format('H:i') : 'N/A' }}</div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                        {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800' : 
-                                                        ($attendance->status === 'absent' ? 'bg-red-100 text-red-800' : 
-                                                        ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800' : 
-                                                        ($attendance->status === 'half_day' ? 'bg-orange-100 text-orange-800' : 
-                                                        'bg-purple-100 text-purple-800'))) }}">
-                                                        {{ ucfirst($attendance->status) }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    @if($attendance->is_approved)
-                                                        <span class="text-green-600">
-                                                            <i class="fas fa-check-circle mr-1"></i>
-                                                            Approved
-                                                        </span>
-                                                    @else
-                                                        <span class="text-yellow-600">
-                                                            <i class="fas fa-clock mr-1"></i>
-                                                            Pending
-                                                        </span>
-                                                    @endif
-                                                </td>
+                                             <tr class="hover:bg-gray-50 transition-colors duration-200 group">
+                                                 <td class="px-4 py-4">
+                                                     <div class="flex items-center">
+                                                         <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                                                             <i class="fas fa-calendar text-blue-600 text-sm"></i>
+                                                         </div>
+                                                         <div>
+                                                             <div class="text-sm font-medium text-gray-900">{{ $attendance->date->format('M d, Y') }}</div>
+                                                             <div class="text-sm text-gray-500">{{ $attendance->date->format('l') }}</div>
+                                                         </div>
+                                                     </div>
+                                                 </td>
+                                                 <td class="px-4 py-4">
+                                                     <div class="flex items-center">
+                                                         @if($attendance->employee->photo)
+                                                             <img src="{{ asset('storage/' . $attendance->employee->photo) }}" alt="{{ $attendance->employee->full_name }}" class="w-10 h-10 rounded-full mr-3 border-2 border-gray-200">
+                                                         @else
+                                                             <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center mr-3">
+                                                                 <span class="text-white font-medium text-sm">{{ strtoupper(substr($attendance->employee->full_name, 0, 1)) }}</span>
+                                                             </div>
+                                                         @endif
+                                                         <div>
+                                                             <div class="text-sm font-medium text-gray-900">{{ $attendance->employee->full_name }}</div>
+                                                             <div class="text-sm text-gray-500">{{ $attendance->employee->employee_id ?? 'N/A' }}</div>
+                                                         </div>
+                                                     </div>
+                                                 </td>
+                                                 <td class="px-3 py-4">
+                                                     <div class="space-y-1">
+                                                         <div class="flex items-center text-sm text-gray-700">
+                                                             <i class="fas fa-sign-in-alt text-green-500 mr-2 text-xs"></i>
+                                                             <span class="font-medium">{{ $attendance->time_in ? \Carbon\Carbon::parse($attendance->time_in)->format('H:i') : 'N/A' }}</span>
+                                                         </div>
+                                                         <div class="flex items-center text-sm text-gray-700">
+                                                             <i class="fas fa-sign-out-alt text-red-500 mr-2 text-xs"></i>
+                                                             <span class="font-medium">{{ $attendance->time_out ? \Carbon\Carbon::parse($attendance->time_out)->format('H:i') : 'N/A' }}</span>
+                                                         </div>
+                                                     </div>
+                                                 </td>
+                                                <td class="px-3 py-4">
+                                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                                         {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                                                         ($attendance->status === 'absent' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                                                         ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : 
+                                                         ($attendance->status === 'half_day' ? 'bg-orange-100 text-orange-800 border border-orange-200' : 
+                                                         'bg-purple-100 text-purple-800 border border-purple-200'))) }}">
+                                                         @if($attendance->status === 'present')
+                                                             <i class="fas fa-check-circle mr-1"></i>
+                                                         @elseif($attendance->status === 'absent')
+                                                             <i class="fas fa-times-circle mr-1"></i>
+                                                         @elseif($attendance->status === 'late')
+                                                             <i class="fas fa-clock mr-1"></i>
+                                                         @elseif($attendance->status === 'half_day')
+                                                             <i class="fas fa-adjust mr-1"></i>
+                                                         @else
+                                                             <i class="fas fa-calendar-check mr-1"></i>
+                                                         @endif
+                                                         {{ __("attendance.status_" . $attendance->status) ?? ucfirst($attendance->status) }}
+                                                     </span>
+                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {{ $attendance->remarks ?: '-' }}
                                                 </td>
@@ -611,18 +723,18 @@
                                         @if(count($shiftEmployees) > 0)
                                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                 @foreach($shiftEmployees as $employee)
-                                                    <div class="flex items-center p-3 border rounded-lg {{ $employee['already_marked'] ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200 hover:border-blue-300' }} transition-all duration-200">
+                                                    <div class="flex items-center p-3 border rounded-lg {{ isset($employee['already_marked']) && $employee['already_marked'] ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200 hover:border-blue-300' }} transition-all duration-200">
                                                         <div class="flex items-center w-full">
                                                             <input type="checkbox" wire:model="selectedEmployees" value="{{ $employee['id'] }}" 
                                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                                                   @if($employee['already_marked']) disabled @endif>
+                                                                   @if(isset($employee['already_marked']) && $employee['already_marked']) disabled @endif>
                                                             <div class="ml-3 flex-1">
                                                                 <div class="flex items-center justify-between">
                                                                     <div>
                                                                         <label class="text-sm font-medium text-gray-700">{{ $employee['name'] }}</label>
                                                                         <div class="text-xs text-gray-500">{{ $employee['department'] }}</div>
                                                                     </div>
-                                                                    @if($employee['has_rotation'])
+                                                                    @if(isset($employee['has_rotation']) && $employee['has_rotation'])
                                                                         <div class="flex items-center">
                                                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                                                                 <i class="fas fa-sync-alt mr-1"></i>
@@ -633,7 +745,7 @@
                                                                 </div>
                                                                 
                                                                 <!-- Informações de Rotação -->
-                                                                @if($employee['has_rotation'])
+                                                                @if(isset($employee['has_rotation']) && $employee['has_rotation'])
                                                                     <div class="mt-2 p-2 bg-purple-50 rounded-lg border border-purple-200">
                                                                         <div class="flex items-center justify-between mb-1">
                                                                             <span class="text-xs font-medium text-purple-700">
@@ -672,12 +784,12 @@
                                                                                         @default
                                                                                             {{ __('shifts.custom_rotation') }}
                                                                                     @endswitch
-                                                                                    @if($employee['rotation_interval'] > 1)
+                                                                                    @if(isset($employee['rotation_interval']) && $employee['rotation_interval'] > 1)
                                                                                         ({{ $employee['rotation_interval'] }}x)
                                                                                     @endif
                                                                                 </span>
                                                                             </div>
-                                                                            @if($employee['next_rotation'])
+                                                                            @if(isset($employee['next_rotation']) && $employee['next_rotation'])
                                                                                 <div class="flex items-center">
                                                                                     <i class="fas fa-calendar-alt mr-1"></i>
                                                                                     <span class="font-medium">{{ __('shifts.next_rotation') }}:</span>
@@ -693,7 +805,7 @@
                                                                                     {{ \Carbon\Carbon::parse($employee['assignment_start'])->format('d/m/Y') }}
                                                                                 </span>
                                                                             </div>
-                                                                            @if($employee['assignment_end'])
+                                                                            @if(isset($employee['assignment_end']) && $employee['assignment_end'])
                                                                                 <div class="flex items-center">
                                                                                     <i class="fas fa-calendar-minus mr-1"></i>
                                                                                     <span class="font-medium">{{ __('shifts.rotation_ends') }}:</span>
@@ -726,7 +838,7 @@
                                                                                     {{ \Carbon\Carbon::parse($employee['assignment_start'])->format('d/m/Y') }}
                                                                                 </span>
                                                                             </div>
-                                                                            @if($employee['assignment_end'])
+                                                                            @if(isset($employee['assignment_end']) && $employee['assignment_end'])
                                                                                 <div class="flex items-center">
                                                                                     <i class="fas fa-calendar-minus mr-1"></i>
                                                                                     <span class="font-medium">{{ __('shifts.assignment_ends') }}:</span>
@@ -746,11 +858,11 @@
                                                                     </div>
                                                                 @endif
                                                                 
-                                                                @if($employee['already_marked'])
+                                                                @if(isset($employee['already_marked']) && $employee['already_marked'])
                                                                     <div class="mt-2 text-xs text-orange-600 font-medium">
                                                                         <i class="fas fa-check-circle mr-1"></i>
                                                                         {{ __('attendance.already_recorded') }}
-                                                                        @if($employee['existing_status'])
+                                                                        @if(isset($employee['existing_status']) && $employee['existing_status'])
                                                                             <span class="ml-1">({{ ucfirst($employee['existing_status']) }})</span>
                                                                         @endif
                                                                     </div>
@@ -817,7 +929,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium">
                         <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-plus-circle' }} mr-2"></i>
-                        {{ $isEditing ? 'Edit' : 'Record' }} Attendance
+                        {{ $isEditing ? __('attendance.edit_attendance') : __('attendance.record_attendance') }}
                     </h3>
                     <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeModal">
                         <i class="fas fa-times"></i>
@@ -828,7 +940,7 @@
                     <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
                         <p class="font-bold flex items-center">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Please correct the following errors:
+                            {{ __('common.correct_following_errors') }}:
                         </p>
                         <ul class="mt-2 list-disc list-inside text-sm">
                             @foreach($errors->all() as $error)
@@ -842,12 +954,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Employee -->
                         <div class="md:col-span-2">
-                            <label for="employee_id" class="block text-sm font-medium text-gray-700">Employee</label>
+                            <label for="employee_id" class="block text-sm font-medium text-gray-700">{{ __('attendance.employee') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <select id="employee_id"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('employee_id') border-red-300 text-red-900 @enderror"
                                     wire:model.live="employee_id">
-                                    <option value="">Select Employee</option>
+                                    <option value="">{{ __('attendance.select_employee') }}</option>
                                     @foreach($employees as $employee)
                                         <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
                                     @endforeach
@@ -860,7 +972,7 @@
 
                         <!-- Date -->
                         <div class="md:col-span-2">
-                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <label for="date" class="block text-sm font-medium text-gray-700">{{ __('attendance.date') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <input type="date" id="date"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('date') border-red-300 text-red-900 @enderror"
@@ -873,7 +985,7 @@
 
                         <!-- Time In -->
                         <div>
-                            <label for="time_in" class="block text-sm font-medium text-gray-700">Time In</label>
+                            <label for="time_in" class="block text-sm font-medium text-gray-700">{{ __('attendance.time_in') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <input type="time" id="time_in"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('time_in') border-red-300 text-red-900 @enderror"
@@ -886,7 +998,7 @@
 
                         <!-- Time Out -->
                         <div>
-                            <label for="time_out" class="block text-sm font-medium text-gray-700">Time Out</label>
+                            <label for="time_out" class="block text-sm font-medium text-gray-700">{{ __('attendance.time_out') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <input type="time" id="time_out"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('time_out') border-red-300 text-red-900 @enderror"
@@ -899,16 +1011,16 @@
 
                         <!-- Status -->
                         <div class="md:col-span-2">
-                            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                            <label for="status" class="block text-sm font-medium text-gray-700">{{ __('attendance.status') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <select id="status"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('status') border-red-300 text-red-900 @enderror"
                                     wire:model.live="status">
-                                    <option value="">Select Status</option>
-                                    <option value="present">Present</option>
-                                    <option value="absent">Absent</option>
-                                    <option value="late">Late</option>
-                                    <option value="half_day">Half Day</option>
+                                    <option value="">{{ __('attendance.select_status') }}</option>
+                                    <option value="present">{{ __('attendance.present') }}</option>
+                                    <option value="absent">{{ __('attendance.absent') }}</option>
+                                    <option value="late">{{ __('attendance.late') }}</option>
+                                    <option value="half_day">{{ __('attendance.half_day') }}</option>
                                 </select>
                                 @error('status')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -918,7 +1030,7 @@
 
                         <!-- Remarks -->
                         <div class="md:col-span-2">
-                            <label for="remarks" class="block text-sm font-medium text-gray-700">Remarks</label>
+                            <label for="remarks" class="block text-sm font-medium text-gray-700">{{ __('attendance.remarks') }}</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <textarea id="remarks" rows="3"
                                     class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('remarks') border-red-300 text-red-900 @enderror"
@@ -929,95 +1041,7 @@
                             </div>
                         </div>
 
-                        <!-- Campos de Pagamento -->
-                        <div class="border-t border-gray-200 pt-4 mb-4">
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Informações de Pagamento</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label for="hourly_rate" class="block text-sm font-medium text-gray-700 mb-1">Taxa Horária (AOA)</label>
-                                    <input type="number" min="0" step="0.01" id="hourly_rate"
-                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                        wire:model.live="hourly_rate">
-                                    @error('hourly_rate')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                
-                                <div>
-                                    <label for="overtime_hours" class="block text-sm font-medium text-gray-700 mb-1">Horas Extra</label>
-                                    <input type="number" min="0" step="0.5" id="overtime_hours"
-                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                        wire:model.live="overtime_hours">
-                                    @error('overtime_hours')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                
-                                <div>
-                                    <label for="overtime_rate" class="block text-sm font-medium text-gray-700 mb-1">Taxa Hora Extra (AOA)</label>
-                                    <input type="number" min="0" step="0.01" id="overtime_rate"
-                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                        wire:model.live="overtime_rate">
-                                    @error('overtime_rate')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start mt-4">
-                                <div class="flex items-center h-5">
-                                    <input id="affects_payroll" type="checkbox"
-                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                        wire:model.live="affects_payroll">
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="affects_payroll" class="font-medium text-gray-700">Afeta Folha de Pagamento</label>
-                                    <p class="text-gray-500">Se selecionado, este registo será considerado no cálculo da folha de pagamento</p>
-                                </div>
-                            </div>
-                            @error('affects_payroll')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        
-                        <!-- Campos específicos para género -->
-                        <div class="border-t border-gray-200 pt-4 mb-4">
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Informações Específicas (Género)</h3>
-                            
-                            <div class="flex items-start mb-4">
-                                <div class="flex items-center h-5">
-                                    <input id="is_maternity_related" type="checkbox"
-                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                        wire:model.live="is_maternity_related">
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="is_maternity_related" class="font-medium text-gray-700">Relacionado com Maternidade</label>
-                                    <p class="text-gray-500">Ausência, ajuste de horário ou dispensa por motivos de maternidade</p>
-                                </div>
-                            </div>
-                            @error('is_maternity_related')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                            
-                            @if($is_maternity_related)
-                            <div>
-                                <label for="maternity_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Ausência por Maternidade</label>
-                                <select id="maternity_type"
-                                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                    wire:model.live="maternity_type">
-                                    <option value="">Selecione o tipo</option>
-                                    <option value="pre_natal_care">Consulta Pré-natal</option>
-                                    <option value="maternity_leave">Licença Maternidade</option>
-                                    <option value="nursing_break">Pausa para Amamentação</option>
-                                    <option value="child_care">Cuidados com Criança</option>
-                                </select>
-                                @error('maternity_type')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                            @endif
-                        </div>
-                        
+                        <!-- Approval -->
                         <div class="flex items-start mb-6">
                             <div class="flex items-center h-5">
                                 <input id="is_approved" type="checkbox"
@@ -1025,8 +1049,8 @@
                                     wire:model.live="is_approved">
                             </div>
                             <div class="ml-3 text-sm">
-                                <label for="is_approved" class="font-medium text-gray-700">Aprovado</label>
-                                <p class="text-gray-500">Marcar este registo de presença como aprovado</p>
+                                <label for="is_approved" class="font-medium text-gray-700">{{ __('attendance.approved') }}</label>
+                                <p class="text-gray-500">{{ __('attendance.mark_record_approved') }}</p>
                             </div>
                         </div>
                         @error('is_approved')
@@ -1038,11 +1062,11 @@
                         <button type="button"
                             class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             wire:click="closeModal">
-                            Cancel
+                            {{ __('common.cancel') }}
                         </button>
                         <button type="submit"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {{ $isEditing ? 'Atualizar' : 'Salvar' }}
+                            {{ $isEditing ? __('common.update') : __('common.save') }}
                         </button>
                     </div>
                 </form>

@@ -33,6 +33,8 @@ return [
     'half_day' => 'Half Day',
     'leave' => 'On Leave',
     'holiday' => 'Holiday',
+    'showing_records' => 'Showing records',
+    'search_and_filters' => 'Search and Filters',
     
     // Modal Titles
     'add_attendance_record' => 'Add Attendance Record',
