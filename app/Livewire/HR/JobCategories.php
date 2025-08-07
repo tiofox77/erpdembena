@@ -141,6 +141,8 @@ class JobCategories extends Component
 
         return view('livewire.hr.job-categories', [
             'categories' => $categories,
+        ])->layout('layouts.livewire', [
+            'title' => __('livewire/hr/job-categories.job_categories_management')
         ]);
     }
 }

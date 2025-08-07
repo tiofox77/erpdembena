@@ -185,220 +185,289 @@
                         {{ __('messages.payroll_records') }}
                     </h3>
                     
-                    {{-- Payroll Table --}}
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('period_id')">
-                                                <span>Period</span>
-                                                @if($sortField === 'period_id')
-                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                                                @else
-                                                    <i class="fas fa-sort"></i>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center space-x-1 cursor-pointer" wire:click="sortBy('employee_id')">
-                                                <span>Employee</span>
-                                                @if($sortField === 'employee_id')
-                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                                                @else
-                                                    <i class="fas fa-sort"></i>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center space-x-1">
-                                                <span>Departamento</span>
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center space-x-1">
-                                                <span><i class="fas fa-clock text-gray-400 mr-1"></i>{{ __('messages.attendance') }}</span>
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center space-x-1">
-                                                <span><i class="fas fa-calendar-alt text-gray-400 mr-1"></i>Licenças</span>
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div wire:click="sortBy('gross_salary')" class="cursor-pointer flex items-center space-x-1">
-                                                <span>{{ __('messages.gross_salary') }}</span>
-                                                @if($sortField === 'gross_salary')
-                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                                                @else
-                                                    <i class="fas fa-sort"></i>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {{ __('payroll.deductions') }}
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div wire:click="sortBy('net_salary')" class="cursor-pointer flex items-center space-x-1">
-                                                <span>{{ __('messages.net_salary') }}</span>
-                                                @if($sortField === 'net_salary')
-                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                                                @else
-                                                    <i class="fas fa-sort"></i>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div wire:click="sortBy('status')" class="cursor-pointer flex items-center space-x-1">
-                                                <span>Status</span>
-                                                @if($sortField === 'status')
-                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                                                @else
-                                                    <i class="fas fa-sort"></i>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @forelse($payrolls as $payroll)
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900">{{ $payroll->period->name ?? 'N/A' }}</div>
-                                                <div class="text-sm text-gray-500">
-                                                    @if($payroll->period && $payroll->period->start_date && $payroll->period->end_date)
-                                                        {{ $payroll->period->start_date->format('M d') }} - {{ $payroll->period->end_date->format('M d, Y') }}
-                                                    @else
-                                                        N/A
-                                                    @endif
+                    {{-- Modern Payroll Cards --}}
+                    <div class="space-y-4">
+                        @forelse($payrolls as $payroll)
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300">
+                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                                    
+                                    <!-- Employee Info Column -->
+                                    <div class="lg:col-span-2">
+                                        <div class="flex items-center space-x-3">
+                                            @if($payroll->employee->photo)
+                                                <img src="{{ asset('storage/' . $payroll->employee->photo) }}" alt="{{ $payroll->employee->full_name }}" class="h-12 w-12 rounded-full border-2 border-gray-200">
+                                            @else
+                                                <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-2 border-blue-200">
+                                                    <i class="fas fa-user text-blue-600"></i>
                                                 </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="flex items-center">
-                                                    @if($payroll->employee->photo)
-                                                        <img src="{{ asset('storage/' . $payroll->employee->photo) }}" alt="{{ $payroll->employee->full_name }}" class="h-8 w-8 rounded-full mr-2">
-                                                    @else
-                                                        <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-                                                            <i class="fas fa-user text-gray-400"></i>
+                                            @endif
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $payroll->employee->full_name }}</p>
+                                                <p class="text-xs text-gray-500 truncate">{{ $payroll->employee->department->name ?? 'N/A' }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Period Info Column -->
+                                    <div class="lg:col-span-2">
+                                        <div class="space-y-1">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                                <span class="text-sm font-medium text-gray-900">{{ $payroll->payrollPeriod->name ?? 'N/A' }}</span>
+                                            </div>
+                                            @if($payroll->payrollPeriod && $payroll->payrollPeriod->start_date && $payroll->payrollPeriod->end_date)
+                                                <p class="text-xs text-gray-500 ml-4">{{ $payroll->payrollPeriod->start_date->format('d/m') }} - {{ $payroll->payrollPeriod->end_date->format('d/m/Y') }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Attendance & Leave Column -->
+                                    <div class="lg:col-span-2">
+                                        <div class="space-y-2">
+                                            <div class="flex items-center space-x-2 text-sm">
+                                                <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                                <i class="fas fa-clock text-green-500 text-xs"></i>
+                                                <span class="text-gray-700 font-medium">{{ number_format($payroll->attendance_hours ?? 0, 1) }}{{ __('payroll.hours') }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2 text-sm">
+                                                <div class="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                                <i class="fas fa-calendar-alt text-yellow-500 text-xs"></i>
+                                                <span class="text-gray-700">{{ number_format($payroll->leave_days ?? 0, 1) }} {{ __('payroll.days') }}</span>
+                                            </div>
+                                            @if(($payroll->maternity_days ?? 0) > 0)
+                                                <div class="flex items-center space-x-2 text-xs">
+                                                    <i class="fas fa-baby text-pink-500"></i>
+                                                    <span class="text-pink-600 font-medium">{{ number_format($payroll->maternity_days ?? 0, 1) }} {{ __('payroll.maternity') }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Salary Info & Advanced Discounts Column -->
+                                    <div class="lg:col-span-4">
+                                        <div class="space-y-3">
+                                            <!-- Salary Summary -->
+                                            <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div class="text-center">
+                                                        <p class="text-xs text-green-600 font-medium">{{ __('payroll.gross') }}</p>
+                                                        <p class="text-sm font-bold text-green-700">{{ number_format($payroll->gross_salary, 0) }}</p>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        <p class="text-xs text-green-600 font-medium">{{ __('payroll.net') }}</p>
+                                                        <p class="text-sm font-bold text-green-800">{{ number_format($payroll->net_salary, 0) }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Advanced Discounts Details -->
+                                            <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3 border border-red-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <div class="flex items-center space-x-2">
+                                                        <i class="fas fa-minus-circle text-red-500 text-xs"></i>
+                                                        <p class="text-xs text-red-700 font-semibold">{{ __('payroll.detailed_discounts') }}</p>
+                                                    </div>
+                                                    <p class="text-xs font-bold text-red-800">{{ number_format($payroll->total_deductions, 0) }}</p>
+                                                </div>
+                                                
+                                                <div class="space-y-1.5">
+                                                    <!-- Salary Advances -->
+                                                    @if($payroll->advance_deduction > 0)
+                                                        <div class="flex justify-between items-center text-xs">
+                                                            <div class="flex items-center space-x-1.5">
+                                                                <i class="fas fa-hand-holding-usd text-orange-500"></i>
+                                                                <span class="text-gray-700">{{ __('payroll.salary_advances') }}</span>
+                                                            </div>
+                                                            <span class="font-medium text-orange-700">-{{ number_format($payroll->advance_deduction, 0) }}</span>
                                                         </div>
                                                     @endif
-                                                    <div class="text-sm text-gray-900">{{ $payroll->employee->full_name }}</div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $payroll->employee->department->name ?? 'N/A' }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-clock text-blue-500 mr-1"></i>
-                                                    <span>{{ number_format($payroll->attendance_hours ?? 0, 1) }} h</span>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <div class="flex flex-col">
-                                                    <span>{{ number_format($payroll->leave_days ?? 0, 1) }} dias</span>
-                                                    @if(($payroll->maternity_days ?? 0) > 0)
-                                                        <span class="text-xs text-pink-600 font-medium">{{ number_format($payroll->maternity_days ?? 0, 1) }} maternidade</span>
+                                                    
+                                                    <!-- Salary Discounts -->
+                                                    @if($payroll->total_salary_discounts > 0)
+                                                        <div class="flex justify-between items-center text-xs">
+                                                            <div class="flex items-center space-x-1.5">
+                                                                <i class="fas fa-percentage text-purple-500"></i>
+                                                                <span class="text-gray-700">{{ __('payroll.salary_discounts') }}</span>
+                                                            </div>
+                                                            <span class="font-medium text-purple-700">-{{ number_format($payroll->total_salary_discounts, 0) }}</span>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Income Tax -->
+                                                    @if($payroll->income_tax > 0)
+                                                        <div class="flex justify-between items-center text-xs">
+                                                            <div class="flex items-center space-x-1.5">
+                                                                <i class="fas fa-receipt text-blue-500"></i>
+                                                                <span class="text-gray-700">{{ __('payroll.income_tax') }}</span>
+                                                            </div>
+                                                            <span class="font-medium text-blue-700">-{{ number_format($payroll->income_tax, 0) }}</span>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Social Security -->
+                                                    @if($payroll->social_security > 0)
+                                                        <div class="flex justify-between items-center text-xs">
+                                                            <div class="flex items-center space-x-1.5">
+                                                                <i class="fas fa-shield-alt text-indigo-500"></i>
+                                                                <span class="text-gray-700">{{ __('payroll.social_security') }}</span>
+                                                            </div>
+                                                            <span class="font-medium text-indigo-700">-{{ number_format($payroll->social_security, 0) }}</span>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Attendance Deductions -->
+                                                    @if(($payroll->late_deduction ?? 0) > 0 || ($payroll->absence_deduction ?? 0) > 0)
+                                                        <div class="flex justify-between items-center text-xs">
+                                                            <div class="flex items-center space-x-1.5">
+                                                                <i class="fas fa-clock text-yellow-500"></i>
+                                                                <span class="text-gray-700">{{ __('payroll.attendance_deductions') }}</span>
+                                                            </div>
+                                                            <span class="font-medium text-yellow-700">-{{ number_format(($payroll->late_deduction ?? 0) + ($payroll->absence_deduction ?? 0), 0) }}</span>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Other Deductions -->
+                                                    @if($payroll->other_deductions > 0)
+                                                        <div class="flex justify-between items-center text-xs">
+                                                            <div class="flex items-center space-x-1.5">
+                                                                <i class="fas fa-ellipsis-h text-gray-500"></i>
+                                                                <span class="text-gray-700">{{ __('payroll.other_deductions') }}</span>
+                                                            </div>
+                                                            <span class="font-medium text-gray-700">-{{ number_format($payroll->other_deductions, 0) }}</span>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Show message if no deductions -->
+                                                    @if($payroll->total_deductions == 0)
+                                                        <div class="text-center py-1">
+                                                            <p class="text-xs text-gray-500">{{ __('payroll.no_discounts') }}</p>
+                                                        </div>
                                                     @endif
                                                 </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ number_format($payroll->gross_salary, 2) }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ number_format($payroll->total_deductions, 2) }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ number_format($payroll->net_salary, 2) }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                    {{ $payroll->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
-                                                    ($payroll->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
-                                                    'bg-green-100 text-green-800') }}">
-                                                    {{ ucfirst($payroll->status) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Status Column -->
+                                    <div class="lg:col-span-1">
+                                        <div class="flex justify-center">
+                                            @if($payroll->status === 'draft')
+                                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div>
+                                                    {{ __('payroll.draft') }}
                                                 </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    wire:click="view({{ $payroll->id }})"
-                                                    class="text-blue-600 hover:text-blue-900 mr-2"
-                                                    title="View Details"
-                                                >
-                                                    <i class="fas fa-eye"></i>
+                                            @elseif($payroll->status === 'approved')
+                                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                                                    {{ __('payroll.approved') }}
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                                    {{ __('payroll.paid') }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions Column -->
+                                    <div class="lg:col-span-1">
+                                        <div class="flex items-center justify-end space-x-2">
+                                            <div class="relative group">
+                                                <button wire:click="view({{ $payroll->id }})" 
+                                                        class="flex items-center justify-center w-8 h-8 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-all duration-200 hover:scale-110">
+                                                    <i class="fas fa-eye text-sm"></i>
                                                 </button>
-                                                @if($payroll->status === 'draft')
-                                                    <button
-                                                        wire:click="edit({{ $payroll->id }})"
-                                                        class="text-indigo-600 hover:text-indigo-900 mr-2"
-                                                        title="Edit"
-                                                    >
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        wire:click="approve({{ $payroll->id }})"
-                                                        class="text-green-600 hover:text-green-900 mr-2"
-                                                        title="Approve"
-                                                    >
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                @endif
-                                                @if($payroll->status === 'approved')
-                                                    <button
-                                                        wire:click="markAsPaid({{ $payroll->id }})"
-                                                        class="text-green-600 hover:text-green-900 mr-2"
-                                                        title="Mark as Paid"
-                                                    >
-                                                        <i class="fas fa-money-bill-wave"></i>
-                                                    </button>
-                                                @endif
-                                                <button
-                                                    wire:click="downloadPayslip({{ $payroll->id }})"
-                                                    class="text-red-600 hover:text-red-900 mr-2"
-                                                    title="Download Payslip"
-                                                >
-                                                    <i class="fas fa-file-pdf"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                             <td colspan="9" class="px-6 py-12 text-center">
-                                                <div class="flex flex-col items-center justify-center text-gray-500">
-                                                    <i class="fas fa-money-bill-wave text-gray-400 text-4xl mb-4"></i>
-                                                     <span class="text-lg font-medium">Nenhum registo de folha de pagamento encontrado</span>
-                                                    <p class="text-sm mt-2">
-                                                        @if($search || !empty($filters['period_id']) || !empty($filters['department_id']) || !empty($filters['status']))
-                                                            Nenhum registo corresponde aos critérios de pesquisa. Tente ajustar os filtros.
-                                                            <button
-                                                                wire:click="resetFilters"
-                                                                class="text-blue-500 hover:text-blue-700 underline ml-1"
-                                                            >
-                                                                Limpar filtros
-                                                            </button>
-                                                        @else
-                                                            Ainda não existem registos de folha de pagamento no sistema. Clique em "Criar Folha" para adicionar.
-                                                        @endif
-                                                    </p>
+                                                <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                                    {{ __('payroll.view_details') }}
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                            @if(method_exists($payrolls, 'links'))
-                                {{ $payrolls->links() }}
-                            @endif
-                        </div>
+                                            </div>
+                                            
+                                            @if($payroll->status === 'draft')
+                                                <div class="relative group">
+                                                    <button wire:click="edit({{ $payroll->id }})" 
+                                                            class="flex items-center justify-center w-8 h-8 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-all duration-200 hover:scale-110">
+                                                        <i class="fas fa-edit text-sm"></i>
+                                                    </button>
+                                                    <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                                        {{ __('payroll.edit') }}
+                                                    </div>
+                                                </div>
+                                                <div class="relative group">
+                                                    <button wire:click="approve({{ $payroll->id }})" 
+                                                            class="flex items-center justify-center w-8 h-8 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-all duration-200 hover:scale-110">
+                                                        <i class="fas fa-check text-sm"></i>
+                                                    </button>
+                                                    <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                                        {{ __('payroll.approve') }}
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            @if($payroll->status === 'approved')
+                                                <div class="relative group">
+                                                    <button wire:click="markAsPaid({{ $payroll->id }})" 
+                                                            class="flex items-center justify-center w-8 h-8 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-all duration-200 hover:scale-110">
+                                                        <i class="fas fa-money-bill-wave text-sm"></i>
+                                                    </button>
+                                                    <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                                        {{ __('payroll.mark_as_paid') }}
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            <div class="relative group">
+                                                <button wire:click="downloadPayslip({{ $payroll->id }})" 
+                                                        class="flex items-center justify-center w-8 h-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-all duration-200 hover:scale-110">
+                                                    <i class="fas fa-file-pdf text-sm"></i>
+                                                </button>
+                                                <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                                    {{ __('payroll.download_payslip') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-16">
+                                <div class="bg-gradient-to-br from-gray-100 to-gray-200 w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-money-bill-wave text-4xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-3">
+                                    Nenhum registo de folha de pagamento encontrado
+                                </h3>
+                                <div class="max-w-md mx-auto">
+                                    @if($search || !empty($filters['period_id']) || !empty($filters['department_id']) || !empty($filters['status']))
+                                        <p class="text-gray-600 mb-4">
+                                            Nenhum registo corresponde aos critérios de pesquisa. Tente ajustar os filtros.
+                                        </p>
+                                        <button wire:click="resetFilters" 
+                                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300">
+                                            <i class="fas fa-filter mr-2"></i>
+                                            Limpar filtros
+                                        </button>
+                                    @else
+                                        <p class="text-gray-600 mb-4">
+                                            Ainda não existem registos de folha de pagamento no sistema.
+                                        </p>
+                                        <button wire:click="openEmployeeSearch" 
+                                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300">
+                                            <i class="fas fa-plus mr-2"></i>
+                                            Processar Primeiro Salário
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforelse
                     </div>
+                    
+                    {{-- Pagination --}}
+                    @if($payrolls->hasPages())
+                        <div class="mt-6 bg-white rounded-xl border border-gray-200 px-6 py-4">
+                            {{ $payrolls->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -406,6 +475,9 @@
 
     <!-- Modal de Processamento de Payroll -->
     @include('livewire.hr.payroll-process-modal')
+    
+    <!-- Modal de Seleção de Período de Payroll -->
+    @include('livewire.hr.payroll-period-selection-modal')
     
     <!-- Modal de Visualização Moderna do Payroll -->
     @if($showViewModal && $currentPayroll)

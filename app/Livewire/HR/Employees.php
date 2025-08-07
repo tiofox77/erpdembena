@@ -617,6 +617,8 @@ class Employees extends Component
             'employees' => $employees,
             'departments' => $departments,
             'positions' => $positions,
+        ])->layout('layouts.livewire', [
+            'title' => __('employees.employee_management')
         ]);
     }
 

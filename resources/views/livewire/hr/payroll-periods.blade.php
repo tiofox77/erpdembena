@@ -1,53 +1,149 @@
 <div>
-    <div class="p-4 bg-white rounded-lg shadow-md">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold mb-2 md:mb-0">Payroll Periods</h2>
-            
-            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <button wire:click="openPeriodModal" class="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
-                    <i class="fas fa-plus-circle mr-2"></i> New Period
-                </button>
-            </div>
-        </div>
+    <div class="py-4">
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-4 sm:p-6">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-lg px-6 py-8 mb-6 shadow-lg">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h1 class="text-2xl font-bold text-white flex items-center">
+                                    <i class="fas fa-calendar-alt mr-3 text-indigo-200 animate-pulse"></i>
+                                    {{ __('payroll.payroll_periods_management') }}
+                                </h1>
+                                <p class="text-indigo-100 mt-2">{{ __('payroll.manage_payroll_periods_description') }}</p>
+                            </div>
+                            <div class="flex space-x-3">
+                                <button wire:click="exportToExcel" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                    <i class="fas fa-file-excel mr-2"></i>
+                                    {{ __('common.export_excel') }}
+                                </button>
+                                <button wire:click="openPeriodModal" class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-indigo-700 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    {{ __('payroll.new_period') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters and Search -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-filter text-gray-600 mr-2"></i>
+                                <h3 class="text-lg font-medium text-gray-700">{{ __('common.search_and_filters') }}</h3>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6">
+                            <!-- Search Bar -->
+                            <div class="mb-6">
+                                <div class="relative max-w-md">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        wire:model.debounce.300ms="search"
+                                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                        placeholder="{{ __('payroll.search_periods_placeholder') }}"
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Advanced Filters -->
+                            <div class="space-y-6">
+                                <!-- Primary Filters Row -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <!-- Status Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-toggle-on text-indigo-600 text-xs"></i>
+                                            </div>
+                                            {{ __('payroll.status') }}
+                                        </label>
+                                        <div class="relative">
+                                            <select wire:model.live="filters.status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                                <option value="">{{ __('payroll.all_status') }}</option>
+                                                <option value="open">{{ __('payroll.open') }}</option>
+                                                <option value="processing">{{ __('payroll.processing') }}</option>
+                                                <option value="closed">{{ __('payroll.closed') }}</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            </div>
+                                        </div>
+                                        @if($filters['status'] ?? false)
+                                            <div class="flex items-center text-xs text-indigo-600">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ __('common.filtered') }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    
+                                    <!-- Date Range Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-calendar-alt text-green-600 text-xs"></i>
+                                            </div>
+                                            {{ __('payroll.date_range') }}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            wire:model.live.debounce.300ms="filters.date_range"
+                                            placeholder="{{ __('payroll.date_range_placeholder') }}"
+                                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                                        />
+                                        @if($filters['date_range'] ?? false)
+                                            <div class="flex items-center text-xs text-green-600">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ __('common.filtered') }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    
+                                    <!-- Reset Filters -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                            <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-2">
+                                                <i class="fas fa-times-circle text-red-600 text-xs"></i>
+                                            </div>
+                                            {{ __('common.actions') }}
+                                        </label>
+                                        <button 
+                                            wire:click="resetFilters"
+                                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                                        >
+                                            <i class="fas fa-times-circle mr-2"></i>
+                                            {{ __('common.reset_filters') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filter Summary -->
+                            <div class="mt-6 flex items-center justify-between">
+                                <div class="text-sm text-gray-600">
+                                    @php
+                                        $activeFilters = collect($filters)->filter()->count();
+                                    @endphp
+                                    @if($activeFilters > 0)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            <i class="fas fa-filter mr-1"></i>
+                                            {{ $activeFilters }} {{ __('common.active_filters') }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-500">{{ __('common.no_filters_applied') }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
         
-        <!-- Filters -->
-        <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <div>
-                <label for="filterStatus" class="sr-only">Status</label>
-                <select
-                    id="filterStatus"
-                    wire:model.live="filters.status"
-                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                    <option value="">All Status</option>
-                    <option value="open">Open</option>
-                    <option value="processing">Processing</option>
-                    <option value="closed">Closed</option>
-                </select>
-            </div>
-            
-            <div class="sm:col-span-1">
-                <input
-                    type="text"
-                    wire:model.live.debounce.300ms="filters.date_range"
-                    placeholder="Date range (YYYY-MM-DD to YYYY-MM-DD)"
-                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-            </div>
-            
-            <div class="sm:col-span-1">
-                <button 
-                    wire:click="resetFilters"
-                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                    <i class="fas fa-times-circle mr-2"></i>
-                    Reset Filters
-                </button>
-            </div>
-        </div>
-        
-        <!-- Search -->
-        <div class="mb-4 relative">
+        <!-- Hidden Search for backward compatibility -->
+        <div class="hidden mb-4 relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-search text-gray-400"></i>
             </div>
@@ -72,98 +168,212 @@
             </div>
         @endif
         
-        <!-- Table -->
-        <div class="overflow-x-auto mt-4">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('id')">
-                            ID
-                            @if ($sortField === 'id')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                            @else
-                                <i class="fas fa-sort ml-1"></i>
-                            @endif
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('name')">
-                            Name
-                            @if ($sortField === 'name')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                            @else
-                                <i class="fas fa-sort ml-1"></i>
-                            @endif
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('start_date')">
-                            Period
-                            @if ($sortField === 'start_date')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                            @else
-                                <i class="fas fa-sort ml-1"></i>
-                            @endif
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('payment_date')">
-                            Payment Date
-                            @if ($sortField === 'payment_date')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                            @else
-                                <i class="fas fa-sort ml-1"></i>
-                            @endif
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('status')">
-                            Status
-                            @if ($sortField === 'status')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                            @else
-                                <i class="fas fa-sort ml-1"></i>
-                            @endif
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
+                    <!-- Payroll Periods Table -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-gray-600 mr-2"></i>
+                                    <h3 class="text-lg font-medium text-gray-700">{{ __('payroll.periods_list') }}</h3>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    {{ __('common.showing_records', ['count' => $periods->count(), 'total' => $periods->total()]) }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('id')">
+                                                <i class="fas fa-hashtag text-gray-400 mr-1"></i>
+                                                <span>{{ __('payroll.id') }}</span>
+                                                @if ($sortField === 'id')
+                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-indigo-500"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-gray-300 group-hover:text-gray-500"></i>
+                                                @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('name')">
+                                                <i class="fas fa-tag text-gray-400 mr-1"></i>
+                                                <span>{{ __('payroll.name') }}</span>
+                                                @if ($sortField === 'name')
+                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-indigo-500"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-gray-300 group-hover:text-gray-500"></i>
+                                                @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('start_date')">
+                                                <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
+                                                <span>{{ __('payroll.period') }}</span>
+                                                @if ($sortField === 'start_date')
+                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-indigo-500"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-gray-300 group-hover:text-gray-500"></i>
+                                                @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('payment_date')">
+                                                <i class="fas fa-dollar-sign text-gray-400 mr-1"></i>
+                                                <span>{{ __('payroll.payment_date') }}</span>
+                                                @if ($sortField === 'payment_date')
+                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-indigo-500"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-gray-300 group-hover:text-gray-500"></i>
+                                                @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('status')">
+                                                <i class="fas fa-toggle-on text-gray-400 mr-1"></i>
+                                                <span>{{ __('payroll.status') }}</span>
+                                                @if ($sortField === 'status')
+                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-indigo-500"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-gray-300 group-hover:text-gray-500"></i>
+                                                @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center justify-center">
+                                                <i class="fas fa-cogs text-gray-400 mr-1"></i>
+                                                <span>{{ __('common.actions') }}</span>
+                                            </div>
+                                        </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($periods as $period)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $period->id }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $period->name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $period->payment_date->format('d/m/Y') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    {{ $period->status === 'open' ? 'bg-green-100 text-green-800' : 
-                                    ($period->status === 'processing' ? 'bg-yellow-100 text-yellow-800' : 
-                                    'bg-gray-100 text-gray-800') }}">
-                                    {{ ucfirst($period->status) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-1">
-                                <button wire:click="editPeriod({{ $period->id }})" class="text-blue-600 hover:text-blue-900">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                
-                                <button wire:click="confirmDelete({{ $period->id }})" class="text-red-600 hover:text-red-900">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                No payroll periods found.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="mt-4">
-            {{ $periods->links() }}
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @forelse($periods as $period)
+                                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                                                        <i class="fas fa-hashtag text-indigo-600 text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-medium text-gray-900">{{ $period->id }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                                        <i class="fas fa-calendar-alt text-blue-600 text-xs"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm font-medium text-gray-900">{{ $period->name }}</div>
+                                                        <div class="text-xs text-gray-500">{{ __('payroll.period_name') }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                                                        <i class="fas fa-clock text-green-600 text-xs"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm text-gray-900">{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}</div>
+                                                        <div class="text-xs text-gray-500">{{ $period->start_date->diffInDays($period->end_date) + 1 }} {{ __('payroll.days') }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                                                        <i class="fas fa-dollar-sign text-yellow-600 text-xs"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm text-gray-900">{{ $period->payment_date->format('d/m/Y') }}</div>
+                                                        <div class="text-xs text-gray-500">{{ $period->payment_date->format('l') }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                @switch($period->status)
+                                                    @case('open')
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            <i class="fas fa-circle text-green-500 mr-1" style="font-size: 6px;"></i>
+                                                            {{ __('payroll.open') }}
+                                                        </span>
+                                                        @break
+                                                    @case('processing')
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            <i class="fas fa-spinner fa-spin text-yellow-500 mr-1" style="font-size: 8px;"></i>
+                                                            {{ __('payroll.processing') }}
+                                                        </span>
+                                                        @break
+                                                    @case('closed')
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                            <i class="fas fa-lock text-gray-500 mr-1" style="font-size: 8px;"></i>
+                                                            {{ __('payroll.closed') }}
+                                                        </span>
+                                                        @break
+                                                    @default
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                            <i class="fas fa-question text-gray-500 mr-1" style="font-size: 8px;"></i>
+                                                            {{ ucfirst($period->status) }}
+                                                        </span>
+                                                @endswitch
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <button
+                                                        wire:click="editPeriod({{ $period->id }})"
+                                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105"
+                                                        title="{{ __('common.edit') }} {{ $period->name }}"
+                                                    >
+                                                        <i class="fas fa-edit mr-1"></i>
+                                                        {{ __('common.edit') }}
+                                                    </button>
+                                                    <button
+                                                        wire:click="confirmDelete({{ $period->id }})"
+                                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 transform hover:scale-105"
+                                                        title="{{ __('common.delete') }} {{ $period->name }}"
+                                                    >
+                                                        <i class="fas fa-trash mr-1"></i>
+                                                        {{ __('common.delete') }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-20">
+                                                <div class="text-center">
+                                                    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gray-100 mb-6">
+                                                        <i class="fas fa-calendar-times text-gray-400 text-2xl"></i>
+                                                    </div>
+                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('payroll.no_periods_found') }}</h3>
+                                                    <p class="text-gray-500 mb-6">{{ __('payroll.no_periods_description') }}</p>
+                                                    <button
+                                                        wire:click="openPeriodModal"
+                                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                    >
+                                                        <i class="fas fa-plus mr-2"></i>
+                                                        {{ __('payroll.create_first_period') }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                            @if(method_exists($periods, 'links'))
+                                {{ $periods->links() }}
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     

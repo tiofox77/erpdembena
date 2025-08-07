@@ -10,7 +10,7 @@
     @php
         $companyName = \App\Models\Setting::get('company_name', config('app.name', 'Dembena ERP'));
     @endphp
-    <title>{{ $companyName }} - {{ trans('messages.maintenance') }} {{ trans('messages.system') }}</title>
+    <title>{{ $companyName }} - {{ $title ?? config('app.name', 'Dembena ERP') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

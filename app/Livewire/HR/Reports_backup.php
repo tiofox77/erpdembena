@@ -33,17 +33,12 @@ class Reports extends Component
     public $totalSalaryDiscounts = 0;
     public $pendingLeaves = 0;
     public $avgDelayMinutes = 0;
-    public $totalPayroll = 0;
-    public $overtimeCost = 0;
-    public $daysToPayroll = 0;
-    public $upcomingEvaluations = 0;
     
     // Growth indicators
     public $employeeGrowth = 0;
     public $attendanceGrowth = 0;
     public $overtimeGrowth = 0;
     public $advancesGrowth = 0;
-    public $payrollGrowth = 0;
     
     // Chart data
     public $departmentData = [];
@@ -52,10 +47,6 @@ class Reports extends Component
     public $salaryTrendsData = [];
     public $leavesChartData = [];
     public $delayTrendsData = [];
-    public $overtimeByDepartmentData = [];
-    public $monthlyPayrollData = [];
-    public $advancesVsDiscountsData = [];
-    public $payrollTimelineData = [];
     
     public function mount(): void
     {
@@ -125,12 +116,6 @@ class Reports extends Component
         
         // Delay Metrics
         $this->calculateDelayMetrics($startDate, $endDate);
-        
-        // Payroll Metrics
-        $this->calculatePayrollMetrics($startDate, $endDate);
-        
-        // Additional Metrics
-        $this->calculateAdditionalMetrics($startDate, $endDate);
     }
     
     private function calculateEmployeeMetrics(Carbon $startDate, Carbon $endDate): void
@@ -142,7 +127,7 @@ class Reports extends Component
         }
         
         $this->totalEmployees = $query->count();
-        $this->activeEmployees = $query->where('employment_status', 'active')->count();
+        $this->activeEmployees = $query->where('status', 'active')->count();
         $this->newHires = $query->whereBetween('hire_date', [$startDate, $endDate])->count();
         
         // Calculate growth
@@ -192,13 +177,13 @@ class Reports extends Component
             });
         }
         
-        $this->avgOvertimeHours = round((float)($query->avg('hours') ?? 0), 1);
+        $this->avgOvertimeHours = round($query->avg('hours') ?? 0, 1);
         
         // Previous period for growth
         $previousStart = $startDate->copy()->subMonth();
         $previousEnd = $endDate->copy()->subMonth();
-        $previousAvg = (float)(OvertimeRecord::whereBetween('date', [$previousStart, $previousEnd])
-            ->avg('hours') ?? 0);
+        $previousAvg = OvertimeRecord::whereBetween('date', [$previousStart, $previousEnd])
+            ->avg('hours') ?? 0;
         
         $this->overtimeGrowth = $previousAvg > 0 ? 
             round((($this->avgOvertimeHours - $previousAvg) / $previousAvg) * 100, 1) : 0;
@@ -224,11 +209,11 @@ class Reports extends Component
         // Previous period for growth
         $previousStart = $startDate->copy()->subMonth();
         $previousEnd = $endDate->copy()->subMonth();
-        $previousAdvances = (float)(SalaryAdvance::whereBetween('request_date', [$previousStart, $previousEnd])
-            ->sum('amount'));
+        $previousAdvances = SalaryAdvance::whereBetween('request_date', [$previousStart, $previousEnd])
+            ->sum('amount');
         
         $this->advancesGrowth = $previousAdvances > 0 ? 
-            round((((float)$this->totalSalaryAdvances - $previousAdvances) / $previousAdvances) * 100, 1) : 0;
+            round((($this->totalSalaryAdvances - $previousAdvances) / $previousAdvances) * 100, 1) : 0;
     }
     
     private function calculateLeaveMetrics(Carbon $startDate, Carbon $endDate): void
@@ -248,7 +233,7 @@ class Reports extends Component
     {
         $query = Attendance::whereBetween('date', [$startDate, $endDate])
             ->where('status', 'late')
-            ->whereNotNull('time_in');
+            ->whereNotNull('check_in_time');
         
         if ($this->selectedDepartment) {
             $query->whereHas('employee', function($q) {
@@ -258,68 +243,17 @@ class Reports extends Component
         
         // Calculate average delay in minutes
         $delays = $query->get()->map(function($attendance) {
-            if ($attendance->time_in && $attendance->employee) {
-                // For simplicity, assume standard work start time of 8:00 AM
-                $expectedTime = Carbon::parse($attendance->date)->setTime(8, 0);
-                $actualTime = Carbon::parse($attendance->time_in);
-                
-                if ($actualTime->gt($expectedTime)) {
-                    return $actualTime->diffInMinutes($expectedTime);
-                }
+            if ($attendance->check_in_time && $attendance->employee && $attendance->employee->shift) {
+                $expectedTime = Carbon::parse($attendance->employee->shift->start_time);
+                $actualTime = Carbon::parse($attendance->check_in_time);
+                return $actualTime->diffInMinutes($expectedTime);
             }
             return 0;
         })->filter(function($delay) {
             return $delay > 0;
         });
         
-        $this->avgDelayMinutes = $delays->count() > 0 ? round((float)$delays->avg(), 1) : 0;
-    }
-    
-    private function calculatePayrollMetrics(Carbon $startDate, Carbon $endDate): void
-    {
-        $query = Payroll::whereBetween('payment_date', [$startDate, $endDate]);
-        
-        if ($this->selectedDepartment) {
-            $query->whereHas('employee', function($q) {
-                $q->where('department_id', $this->selectedDepartment);
-            });
-        }
-        
-        $this->totalPayroll = $query->sum('net_salary');
-        
-        // Calculate payroll growth
-        $previousStart = $startDate->copy()->subMonth();
-        $previousEnd = $endDate->copy()->subMonth();
-        $previousPayroll = (float)(Payroll::whereBetween('payment_date', [$previousStart, $previousEnd])
-            ->sum('net_salary'));
-        
-        $this->payrollGrowth = $previousPayroll > 0 ? 
-            round((((float)$this->totalPayroll - $previousPayroll) / $previousPayroll) * 100, 1) : 0;
-    }
-    
-    private function calculateAdditionalMetrics(Carbon $startDate, Carbon $endDate): void
-    {
-        // Calculate overtime cost
-        $overtimeQuery = OvertimeRecord::whereBetween('date', [$startDate, $endDate]);
-        
-        if ($this->selectedDepartment) {
-            $overtimeQuery->whereHas('employee', function($q) {
-                $q->where('department_id', $this->selectedDepartment);
-            });
-        }
-        
-        $this->overtimeCost = $overtimeQuery->sum('amount') ?? 0;
-        
-        // Calculate days to next payroll (assuming monthly payroll on 25th)
-        $today = Carbon::now();
-        $nextPayroll = Carbon::now()->day(25);
-        if ($today->day > 25) {
-            $nextPayroll->addMonth();
-        }
-        $this->daysToPayroll = $today->diffInDays($nextPayroll);
-        
-        // For now, set upcoming evaluations to 0 (would need performance evaluation system)
-        $this->upcomingEvaluations = 0;
+        $this->avgDelayMinutes = $delays->count() > 0 ? round($delays->avg(), 1) : 0;
     }
     
     private function generateChartData(): void
@@ -330,10 +264,6 @@ class Reports extends Component
         $this->generateSalaryTrendsChart();
         $this->generateLeavesChart();
         $this->generateDelayTrendsChart();
-        $this->generateOvertimeByDepartmentChart();
-        $this->generateMonthlyPayrollChart();
-        $this->generateAdvancesVsDiscountsChart();
-        $this->generatePayrollTimelineChart();
     }
     
     private function generateDepartmentChart(): void
@@ -477,13 +407,13 @@ class Reports extends Component
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => __('dashboard.advances'),
+                    'label' => 'Adiantamentos',
                     'data' => $advancesData,
                     'backgroundColor' => '#3B82F6',
                     'borderColor' => '#3B82F6'
                 ],
                 [
-                    'label' => __('dashboard.discounts'),
+                    'label' => 'Descontos',
                     'data' => $discountsData,
                     'backgroundColor' => '#EF4444',
                     'borderColor' => '#EF4444'
@@ -497,49 +427,30 @@ class Reports extends Component
         $startDate = Carbon::parse($this->startDate);
         $endDate = Carbon::parse($this->endDate);
         
-        try {
-            $query = Leave::selectRaw('status, COUNT(*) as count')
-                ->whereBetween('start_date', [$startDate, $endDate])
-                ->when($this->selectedDepartment, function($query) {
-                    $query->whereHas('employee', function($q) {
-                        $q->where('department_id', $this->selectedDepartment);
-                    });
-                })
-                ->groupBy('status');
-            
-            $data = $query->get();
-            
-            // If no data, create default empty chart
-            if ($data->isEmpty()) {
-                $this->leavesChartData = [
-                    'labels' => [__('dashboard.no_data')],
-                    'data' => [0],
-                    'backgroundColor' => ['#E5E7EB']
-                ];
-                return;
-            }
-            
-            $this->leavesChartData = [
-                'labels' => $data->pluck('status')->map(function($status) {
-                    return match($status) {
-                        'pending' => __('dashboard.pending'),
-                        'approved' => __('dashboard.approved'),
-                        'rejected' => __('dashboard.rejected'),
-                        'cancelled' => __('dashboard.cancelled'),
-                        default => $status
-                    };
-                })->toArray(),
-                'data' => $data->pluck('count')->toArray(),
-                'backgroundColor' => ['#F59E0B', '#10B981', '#EF4444', '#6B7280']
-            ];
-        } catch (\Exception $e) {
-            // Fallback in case of error
-            $this->leavesChartData = [
-                'labels' => [__('dashboard.error_loading')],
-                'data' => [0],
-                'backgroundColor' => ['#EF4444']
-            ];
-        }
+        $query = Leave::selectRaw('status, COUNT(*) as count')
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->when($this->selectedDepartment, function($query) {
+                $query->whereHas('employee', function($q) {
+                    $q->where('department_id', $this->selectedDepartment);
+                });
+            })
+            ->groupBy('status');
+        
+        $data = $query->get();
+        
+        $this->leavesChartData = [
+            'labels' => $data->pluck('status')->map(function($status) {
+                return match($status) {
+                    'pending' => 'Pendente',
+                    'approved' => 'Aprovada',
+                    'rejected' => 'Rejeitada',
+                    'cancelled' => 'Cancelada',
+                    default => $status
+                };
+            })->toArray(),
+            'data' => $data->pluck('count')->toArray(),
+            'backgroundColor' => ['#F59E0B', '#10B981', '#EF4444', '#6B7280']
+        ];
     }
     
     private function generateDelayTrendsChart(): void
@@ -568,141 +479,6 @@ class Reports extends Component
         ];
     }
     
-    private function generateOvertimeByDepartmentChart(): void
-    {
-        $startDate = Carbon::parse($this->startDate);
-        $endDate = Carbon::parse($this->endDate);
-        
-        $data = OvertimeRecord::selectRaw('departments.name, SUM(hours) as total_hours')
-            ->join('employees', 'overtime_records.employee_id', '=', 'employees.id')
-            ->join('departments', 'employees.department_id', '=', 'departments.id')
-            ->whereBetween('overtime_records.date', [$startDate, $endDate])
-            ->groupBy('departments.name')
-            ->get();
-        
-        $this->overtimeByDepartmentData = [
-            'labels' => $data->pluck('name')->toArray(),
-            'data' => $data->pluck('total_hours')->toArray(),
-            'backgroundColor' => ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444']
-        ];
-    }
-    
-    private function generateMonthlyPayrollChart(): void
-    {
-        $startDate = Carbon::parse($this->startDate)->startOfYear();
-        $endDate = Carbon::parse($this->endDate);
-        
-        $data = Payroll::selectRaw('DATE_FORMAT(payment_date, "%Y-%m") as month, SUM(net_salary) as total')
-            ->whereBetween('payment_date', [$startDate, $endDate])
-            ->when($this->selectedDepartment, function($query) {
-                $query->whereHas('employee', function($q) {
-                    $q->where('department_id', $this->selectedDepartment);
-                });
-            })
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-        
-        $this->monthlyPayrollData = [
-            'labels' => $data->pluck('month')->map(function($month) {
-                return Carbon::parse($month . '-01')->format('M Y');
-            })->toArray(),
-            'data' => $data->pluck('total')->toArray(),
-            'backgroundColor' => '#10B981',
-            'borderColor' => '#10B981'
-        ];
-    }
-    
-    private function generateAdvancesVsDiscountsChart(): void
-    {
-        $startDate = Carbon::parse($this->startDate);
-        $endDate = Carbon::parse($this->endDate);
-        
-        $advances = SalaryAdvance::selectRaw('DATE(request_date) as date, SUM(amount) as total')
-            ->whereBetween('request_date', [$startDate, $endDate])
-            ->when($this->selectedDepartment, function($query) {
-                $query->whereHas('employee', function($q) {
-                    $q->where('department_id', $this->selectedDepartment);
-                });
-            })
-            ->groupBy('date')
-            ->get()
-            ->keyBy('date');
-        
-        $discounts = SalaryDiscount::selectRaw('DATE(request_date) as date, SUM(amount) as total')
-            ->whereBetween('request_date', [$startDate, $endDate])
-            ->when($this->selectedDepartment, function($query) {
-                $query->whereHas('employee', function($q) {
-                    $q->where('department_id', $this->selectedDepartment);
-                });
-            })
-            ->groupBy('date')
-            ->get()
-            ->keyBy('date');
-        
-        $this->advancesVsDiscountsData = [
-            'advances_total' => $advances->sum('total'),
-            'discounts_total' => $discounts->sum('total'),
-            'labels' => [__('dashboard.advances'), __('dashboard.discounts')],
-            'data' => [$advances->sum('total'), $discounts->sum('total')],
-            'backgroundColor' => ['#3B82F6', '#EF4444']
-        ];
-    }
-    
-    private function generatePayrollTimelineChart(): void
-    {
-        $today = Carbon::now();
-        $labels = [];
-        $data = [];
-        
-        // Generate next 6 months of payroll dates (assuming 25th of each month)
-        for ($i = 0; $i < 6; $i++) {
-            $payrollDate = $today->copy()->addMonths($i)->day(25);
-            $labels[] = $payrollDate->format('M Y');
-            
-            // Estimated payroll based on current employees
-            $estimatedPayroll = Employee::where('employment_status', 'active')
-                ->when($this->selectedDepartment, function($query) {
-                    $query->where('department_id', $this->selectedDepartment);
-                })
-                ->sum('base_salary');
-            
-            $data[] = $estimatedPayroll;
-        }
-        
-        $this->payrollTimelineData = [
-            'labels' => $labels,
-            'data' => $data,
-            'backgroundColor' => '#8B5CF6',
-            'borderColor' => '#8B5CF6'
-        ];
-    }
-    
-    public function updated($propertyName): void
-    {
-        if (in_array($propertyName, ['selectedPeriod', 'selectedDepartment'])) {
-            // Recalculate all data when period or department changes
-            $this->initializeDateRange();
-            $this->calculateMetrics();
-            $this->generateChartData();
-            
-            // Dispatch events with data to frontend
-            $this->dispatch('charts-update');
-            $this->dispatch('periodsUpdated');
-            $this->dispatch('refresh-charts', [
-                'leavesChartData' => $this->leavesChartData,
-                'attendanceChartData' => $this->attendanceChartData,
-                'overtimeChartData' => $this->overtimeChartData,
-                'departmentData' => $this->departmentData,
-                'salaryTrendsData' => $this->salaryTrendsData,
-                'delayTrendsData' => $this->delayTrendsData,
-                'overtimeByDepartmentData' => $this->overtimeByDepartmentData,
-                'advancesVsDiscountsData' => $this->advancesVsDiscountsData,
-                'payrollTimelineData' => $this->payrollTimelineData
-            ]);
-        }
-    }
-    
     public function render()
     {
         $departments = Department::all();
@@ -710,5 +486,194 @@ class Reports extends Component
         return view('livewire.hr.reports', [
             'departments' => $departments
         ])->layout('layouts.livewire', ['title' => 'HR Dashboard']);
+    }
+            ->sum('net_salary');
+            
+        // Calcular crescimento na folha de pagamento (comparação com mês anterior)
+        $previousPayrollTotal = Payroll::whereBetween('payment_date', [$previousPeriodStart, $previousPeriodEnd])
+            ->when($this->departmentFilter, function($query) {
+                return $query->whereHas('employee', function($q) {
+                    $q->where('department_id', $this->departmentFilter);
+                });
+            })
+            ->sum('net_salary');
+            
+        $payrollGrowth = 0;
+        if ($previousPayrollTotal > 0) {
+            $payrollGrowth = round((($totalPayroll - $previousPayrollTotal) / $previousPayrollTotal) * 100, 1);
+        }
+        
+        // Preparar dados para os gráficos
+        // 1. Gráfico de distribuição de funcionários por departamento
+        $departmentData = Department::where('is_active', true)
+            ->withCount(['employees' => function($query) {
+                $query->where('employment_status', 'active');
+            }])
+            ->get();
+            
+        $departmentChartData = [
+            'labels' => $departmentData->pluck('name')->toArray(),
+            'data' => $departmentData->pluck('employees_count')->toArray()
+        ];
+        
+        // 2. Gráfico de assiduidade (dados para o último mês)
+        $attendanceData = [];
+        $attendanceLabels = [];
+        
+        // Preparar dados para os últimos 7 dias
+        for ($i = 6; $i >= 0; $i--) {
+            $day = Carbon::now()->subDays($i);
+            $attendanceLabels[] = $day->format('d/m');
+            
+            $present = Attendance::whereDate('date', $day->format('Y-m-d'))
+                ->where('status', 'present')
+                ->when($this->departmentFilter, function($query) {
+                    return $query->whereHas('employee', function($q) {
+                        $q->where('department_id', $this->departmentFilter);
+                    });
+                })
+                ->count();
+                
+            $absent = Attendance::whereDate('date', $day->format('Y-m-d'))
+                ->where('status', 'absent')
+                ->when($this->departmentFilter, function($query) {
+                    return $query->whereHas('employee', function($q) {
+                        $q->where('department_id', $this->departmentFilter);
+                    });
+                })
+                ->count();
+                
+            $late = Attendance::whereDate('date', $day->format('Y-m-d'))
+                ->where('status', 'late')
+                ->when($this->departmentFilter, function($query) {
+                    return $query->whereHas('employee', function($q) {
+                        $q->where('department_id', $this->departmentFilter);
+                    });
+                })
+                ->count();
+                
+            $attendanceData['present'][] = $present;
+            $attendanceData['absent'][] = $absent;
+            $attendanceData['late'][] = $late;
+        }
+        
+        $attendanceChartData = [
+            'labels' => $attendanceLabels,
+            'datasets' => [
+                [
+                    'label' => 'Presente',
+                    'data' => $attendanceData['present'] ?? [],
+                    'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+                    'borderColor' => 'rgba(75, 192, 192, 1)',
+                ],
+                [
+                    'label' => 'Ausente',
+                    'data' => $attendanceData['absent'] ?? [],
+                    'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
+                    'borderColor' => 'rgba(255, 99, 132, 1)',
+                ],
+                [
+                    'label' => 'Atrasado',
+                    'data' => $attendanceData['late'] ?? [],
+                    'backgroundColor' => 'rgba(255, 206, 86, 0.2)',
+                    'borderColor' => 'rgba(255, 206, 86, 1)',
+                ]
+            ]
+        ];
+        
+        // 3. Gráfico de licenças por tipo
+        $leaveData = Leave::whereBetween('start_date', [$startDate, $endDate])
+            ->when($this->departmentFilter, function($query) {
+                return $query->whereHas('employee', function($q) {
+                    $q->where('department_id', $this->departmentFilter);
+                });
+            })
+            ->selectRaw('leave_type_id, COUNT(*) as count')
+            ->groupBy('leave_type_id')
+            ->with('leaveType')
+            ->get();
+            
+        $leaveChartData = [
+            'labels' => $leaveData->pluck('leaveType.name')->toArray(),
+            'data' => $leaveData->pluck('count')->toArray()
+        ];
+        
+        // 4. Gráfico da folha de pagamento mensal
+        $payrollMonths = [];
+        $payrollAmounts = [];
+        
+        // Últimos 6 meses
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $monthStart = $month->copy()->startOfMonth();
+            $monthEnd = $month->copy()->endOfMonth();
+            
+            $payrollMonths[] = $month->format('M Y');
+            
+            $amount = Payroll::whereBetween('payment_date', [$monthStart, $monthEnd])
+                ->when($this->departmentFilter, function($query) {
+                    return $query->whereHas('employee', function($q) {
+                        $q->where('department_id', $this->departmentFilter);
+                    });
+                })
+                ->sum('net_salary');
+                
+            $payrollAmounts[] = $amount;
+        }
+        
+        $payrollChartData = [
+            'labels' => $payrollMonths,
+            'data' => $payrollAmounts
+        ];
+        
+        // Calcular os melhores funcionários com base na assiduidade e desempenho
+        $topEmployees = Employee::with(['department', 'position'])
+            ->where('employment_status', 'active')
+            ->when($this->departmentFilter, function($query) {
+                return $query->where('department_id', $this->departmentFilter);
+            })
+            ->get()
+            ->map(function($employee) use ($startDate, $endDate) {
+                // Calcular a taxa de presença
+                $totalDays = Attendance::where('employee_id', $employee->id)
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->count();
+                    
+                $presentDays = Attendance::where('employee_id', $employee->id)
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->where('status', 'present')
+                    ->count();
+                    
+                $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
+                
+                // Atribuir um valor de desempenho aleatório (em produção, isso seria baseado em avaliações reais)
+                $performanceScore = rand(60, 100);
+                
+                // Adicionar estas métricas ao objeto employee
+                $employee->attendance_rate = $attendanceRate;
+                $employee->performance_score = $performanceScore;
+                $employee->overall_score = ($attendanceRate * 0.4) + ($performanceScore * 0.6); // 40% presença, 60% desempenho
+                
+                return $employee;
+            })
+            ->sortByDesc('overall_score')
+            ->take(5); // Pegar os 5 melhores
+        
+        return view('livewire.hr.reports', [
+            'departments' => $departments,
+            'totalEmployees' => $totalEmployees,
+            'employeeGrowth' => $employeeGrowth,
+            'attendanceRate' => $attendanceRate,
+            'attendanceGrowth' => $attendanceGrowth,
+            'leaveRate' => $leaveRate,
+            'leaveGrowth' => $leaveGrowth,
+            'totalPayroll' => $totalPayroll,
+            'payrollGrowth' => $payrollGrowth,
+            'topEmployees' => $topEmployees,
+            'departmentChartData' => $departmentChartData,
+            'attendanceChartData' => $attendanceChartData,
+            'leaveChartData' => $leaveChartData,
+            'payrollChartData' => $payrollChartData
+        ]);
     }
 }

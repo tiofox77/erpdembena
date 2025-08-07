@@ -84,6 +84,8 @@ class Payroll extends Component
     public ?int $payroll_id = null;
     public ?int $employee_id = null;
     public ?int $payroll_period_id = null;
+    public ?PayrollPeriod $selectedPayrollPeriod = null;
+    public bool $showPeriodSelection = false;
     
     // Basic Salary Components
     public float $basic_salary = 0.0;
@@ -279,6 +281,38 @@ class Payroll extends Component
         
         // Load benefits and bonus from employee record
         $this->loadEmployeeBenefits();
+    }
+
+    /**
+     * Load employee payroll data for a specific payroll period
+     * This method uses the selected payroll period dates instead of month/year
+     */
+    public function loadEmployeePayrollDataForPeriod(): void
+    {
+        if (!$this->selectedEmployee || !$this->selectedPayrollPeriod) {
+            return;
+        }
+
+        $startDate = Carbon::parse($this->selectedPayrollPeriod->start_date);
+        $endDate = Carbon::parse($this->selectedPayrollPeriod->end_date);
+
+        $this->loadAttendanceData($startDate, $endDate);
+        $this->loadOvertimeData($startDate, $endDate);
+        $this->loadSalaryAdvances($startDate, $endDate);
+        $this->loadSalaryDiscounts($startDate, $endDate);
+        $this->loadLeaveData($startDate, $endDate);
+        
+        // Load benefits and bonus from employee record
+        $this->loadEmployeeBenefits();
+        
+        // Log for debugging
+        \Log::info('Employee payroll data loaded for period', [
+            'employee_id' => $this->selectedEmployee['id'],
+            'period_id' => $this->selectedPayrollPeriod->id,
+            'period_name' => $this->selectedPayrollPeriod->name,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d')
+        ]);
     }
 
     /**
@@ -1066,9 +1100,52 @@ class Payroll extends Component
     }
 
     /**
-     * Open employee search modal
+     * Open period selection modal first (required before employee search)
      */
     public function openEmployeeSearch(): void
+    {
+        // First check if period is already selected
+        if ($this->selectedPayrollPeriod) {
+            // Period already selected, proceed to employee search
+            $this->proceedToEmployeeSearch();
+        } else {
+            // Show period selection first
+            $this->showPeriodSelection = true;
+        }
+    }
+
+    /**
+     * Show period selection modal
+     */
+    public function openPeriodSelection(): void
+    {
+        $this->showPeriodSelection = true;
+        $this->selectedPayrollPeriod = null;
+        $this->payroll_period_id = null;
+    }
+
+    /**
+     * Select payroll period and proceed to employee search
+     */
+    public function selectPayrollPeriod(int $periodId): void
+    {
+        $this->selectedPayrollPeriod = PayrollPeriod::find($periodId);
+        $this->payroll_period_id = $periodId;
+        
+        if ($this->selectedPayrollPeriod) {
+            // Close period selection and proceed to employee search
+            $this->showPeriodSelection = false;
+            $this->proceedToEmployeeSearch();
+            
+            // Show success message
+            session()->flash('success', __('messages.payroll_period_selected', ['period' => $this->selectedPayrollPeriod->name]));
+        }
+    }
+
+    /**
+     * Proceed to employee search after period is selected
+     */
+    private function proceedToEmployeeSearch(): void
     {
         // Ensure properties are initialized before opening modal
         $this->initializeProperties();
@@ -1076,6 +1153,14 @@ class Payroll extends Component
         $this->showEmployeeSearch = true;
         $this->resetEmployeeSearchFilters();
         $this->loadAllEmployees();
+    }
+
+    /**
+     * Close period selection modal
+     */
+    public function closePeriodSelection(): void
+    {
+        $this->showPeriodSelection = false;
     }
 
     /**
@@ -1093,6 +1178,12 @@ class Payroll extends Component
      */
     public function selectEmployee(int $employeeId): void
     {
+        // Ensure period is selected before proceeding
+        if (!$this->selectedPayrollPeriod) {
+            session()->flash('error', __('messages.please_select_payroll_period_first'));
+            return;
+        }
+
         $this->selectedEmployee = Employee::with(['department', 'position'])->find($employeeId);
         $this->employee_id = $employeeId;
         
@@ -1100,13 +1191,9 @@ class Payroll extends Component
             // Initialize basic salary from employee
             $this->basic_salary = (float) ($this->selectedEmployee->base_salary ?? 0);
             
-            // Set default month/year to current if not set
-            if (!$this->selected_month) {
-                $this->selected_month = (string) now()->month;
-            }
-            if (!$this->selected_year) {
-                $this->selected_year = (string) now()->year;
-            }
+            // Use selected period dates for calculations
+            $this->selected_month = (string) $this->selectedPayrollPeriod->start_date->month;
+            $this->selected_year = (string) $this->selectedPayrollPeriod->start_date->year;
             
             // Load HR settings
             $this->loadHRSettings();
@@ -1114,8 +1201,8 @@ class Payroll extends Component
             // Calculate hourly rate
             $this->hourly_rate = $this->calculateHourlyRate();
             
-            // Load employee payroll data
-            $this->loadEmployeePayrollData();
+            // Load employee payroll data based on selected period
+            $this->loadEmployeePayrollDataForPeriod();
             $this->calculatePayrollComponents();
             
             // Close search modal and open process modal
@@ -2468,6 +2555,8 @@ class Payroll extends Component
             'employees' => $employees,
             'payrollPeriods' => $payrollPeriods,
             'departments' => $departments,
+        ])->layout('layouts.livewire', [
+            'title' => __('payroll.payroll_management')
         ]);
     }
 }

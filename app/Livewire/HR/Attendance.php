@@ -1096,6 +1096,8 @@ class Attendance extends Component
             'currentMonthName' => $currentMonthName,
             'daysInMonth' => $daysInMonth,
             'startDayOfWeek' => $startDayOfWeek,
+        ])->layout('layouts.livewire', [
+            'title' => __('attendance.attendance_management')
         ]);
     }
 }

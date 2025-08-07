@@ -18,6 +18,9 @@ class Leaves extends Component
 {
     use WithPagination, WithFileUploads;
 
+    // View mode
+    public $viewMode = 'grid'; // 'grid' or 'list'
+
     // Filters
     public $filters = [
         'employee_id' => '',
@@ -55,10 +58,15 @@ class Leaves extends Component
 
     // UI States
     public $showLeaveModal = false;
+    public $showViewModal = false;
     public $showDeleteModal = false;
     public $showApprovalModal = false;
     public $isEditing = false;
     public $searchQuery = '';
+    public $saving = false;
+    
+    // View modal data
+    public $viewLeaveData = null;
     
     // Sorting
     public $sortField = 'id';
@@ -153,14 +161,19 @@ class Leaves extends Component
             })
             ->orderBy($this->sortField, $this->sortDirection);
 
-        $leaves = $query->paginate(10);
+        $leaves = $query->paginate($this->perPage ?? 10);
 
         return view('livewire.hr.leaves', [
             'leaves' => $leaves,
             'employees' => $employees,
             'departments' => $departments,
             'leaveTypes' => $leaveTypes,
-        ]);
+        ])->layout('layouts.livewire', ['title' => __('livewire/hr/leaves.page_title')]);
+    }
+
+    public function toggleViewMode()
+    {
+        $this->viewMode = $this->viewMode === 'grid' ? 'list' : 'grid';
     }
 
     public function sortBy($field)
@@ -224,12 +237,21 @@ class Leaves extends Component
         
         $this->showLeaveModal = true;
     }
+    
+    public function viewLeave($id)
+    {
+        $this->viewLeaveData = Leave::with(['employee.department', 'leaveType', 'approver'])
+            ->findOrFail($id);
+        $this->showViewModal = true;
+    }
 
     public function closeModal()
     {
         $this->showLeaveModal = false;
+        $this->showViewModal = false;
         $this->showDeleteModal = false;
         $this->showApprovalModal = false;
+        $this->viewLeaveData = null;
     }
 
     public function confirmDelete($id)
@@ -282,12 +304,15 @@ class Leaves extends Component
 
     public function saveLeave()
     {
-        $this->validate();
+        $this->saving = true;
         
-        // Calculate total days
-        $startDate = Carbon::parse($this->start_date);
-        $endDate = Carbon::parse($this->end_date);
-        $this->total_days = $endDate->diffInDays($startDate) + 1;
+        try {
+            $this->validate();
+            
+            // Calculate total days
+            $startDate = Carbon::parse($this->start_date);
+            $endDate = Carbon::parse($this->end_date);
+            $this->total_days = $endDate->diffInDays($startDate) + 1;
         
         $data = [
             'employee_id' => $this->leave_employee_id,
@@ -318,7 +343,14 @@ class Leaves extends Component
         
         // Handle approval/rejection
         if (in_array($this->status, [Leave::STATUS_APPROVED, Leave::STATUS_REJECTED])) {
-            $data['approved_by'] = Auth::id();
+            // Verificar se o usuário autenticado existe como funcionário
+            $currentUserEmployee = Employee::where('user_id', Auth::id())->first();
+            if ($currentUserEmployee) {
+                $data['approved_by'] = $currentUserEmployee->id;
+            } else {
+                // Se não existe funcionário para o usuário, usar null (será permitido pelo SET NULL)
+                $data['approved_by'] = null;
+            }
             $data['approved_date'] = now();
             
             if ($this->status === Leave::STATUS_REJECTED) {
@@ -337,17 +369,23 @@ class Leaves extends Component
             }
         }
         
-        if ($this->isEditing) {
-            $leave = Leave::findOrFail($this->leave_id);
-            $leave->update($data);
-            session()->flash('message', 'Pedido de licença atualizado com sucesso.');
-        } else {
-            Leave::create($data);
-            session()->flash('message', 'Pedido de licença criado com sucesso.');
+            if ($this->isEditing) {
+                $leave = Leave::findOrFail($this->leave_id);
+                $leave->update($data);
+                session()->flash('message', 'Pedido de licença atualizado com sucesso.');
+            } else {
+                Leave::create($data);
+                session()->flash('message', 'Pedido de licença criado com sucesso.');
+            }
+            
+            $this->closeModal();
+            $this->resetData();
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
+        } finally {
+            $this->saving = false;
         }
-        
-        $this->closeModal();
-        $this->resetData();
     }
 
     private function resetData()
@@ -378,5 +416,6 @@ class Leaves extends Component
         $this->affects_payroll = true;
         
         $this->isEditing = false;
+        $this->saving = false;
     }
 }

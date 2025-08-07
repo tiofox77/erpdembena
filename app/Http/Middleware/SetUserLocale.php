@@ -17,7 +17,7 @@ class SetUserLocale
     {
         // Se o usuário estiver autenticado, define o idioma com base na preferência do usuário
         if (auth()->check()) {
-            $locale = auth()->user()->locale ?? 'en';
+            $locale = auth()->user()->locale ?? config('app.locale');
             
             // Sanitize locale to prevent UTF-8 issues
             $locale = preg_replace('/[^a-zA-Z_-]/', '', $locale);
@@ -26,8 +26,11 @@ class SetUserLocale
             if (in_array($locale, ['en', 'pt', 'pt_BR', 'pt-BR'])) {
                 app()->setLocale($locale);
             } else {
-                app()->setLocale('en'); // Default fallback
+                app()->setLocale(config('app.locale')); // Use app default instead of hardcoded 'en'
             }
+        } else {
+            // Se não autenticado, usa o locale da aplicação
+            app()->setLocale(config('app.locale'));
         }
         
         return $next($request);
