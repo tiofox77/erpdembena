@@ -9,6 +9,7 @@ use App\Models\HR\Employee;
 use App\Models\HR\Department;
 use App\Models\HR\Shift;
 use App\Models\HR\ShiftAssignment;
+use App\Models\HR\HRSetting;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -36,14 +37,15 @@ class Attendance extends Component
     public $time_out;
     public $status;
     public $remarks;
+    public $is_approved = false;
     
-    // Campos para cálculo de pagamento (removidos - não existem na tabela)
-    // public $hourly_rate;
-    // public $overtime_hours;
-    // public $overtime_rate;
-    // public $is_maternity_related = false;
-    // public $maternity_type;
-    // public $affects_payroll = true;
+    // Campos para cálculo de pagamento
+    public $hourly_rate;
+    public $overtime_hours;
+    public $overtime_rate;
+    public $is_maternity_related = false;
+    public $maternity_type;
+    public $affects_payroll = true;
 
     // Modal flags
     public $showModal = false;
@@ -315,10 +317,32 @@ class Attendance extends Component
             if (empty($this->hourly_rate) && $this->employee_id) {
                 $employee = Employee::find($this->employee_id);
                 if ($employee) {
-                    // Converter o salário base para valor hora (assumindo 8 horas/dia, 22 dias/mês)
-                    $validatedData['hourly_rate'] = $employee->base_salary / (8 * 22);
-                    // Valor de hora extra é 1.5x o valor normal
-                    $validatedData['overtime_rate'] = $validatedData['hourly_rate'] * 1.5;
+                    // Calcular valor hora com base nas configurações HR
+                    $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
+                    $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
+                    $validatedData['hourly_rate'] = $employee->base_salary > 0 ? round($employee->base_salary / $monthlyHours, 2) : 0.0;
+
+                    // Determinar multiplicador de overtime conforme dia útil/fim‑de‑semana/feriado
+                    $currentDate = $this->date ? Carbon::parse($this->date) : Carbon::now();
+                    $isWeekend = $currentDate->isWeekend();
+                    $holidays = [
+                        '01-01','02-04','03-08','04-04','05-01','09-17','11-02','11-11','12-25'
+                    ];
+                    $isHoliday = in_array($currentDate->format('m-d'), $holidays, true);
+
+                    if ($isHoliday) {
+                        $multiplier = (float) HRSetting::get('overtime_multiplier_holiday', 2.5);
+                    } elseif ($isWeekend) {
+                        $multiplier = (float) HRSetting::get('overtime_multiplier_weekend', 2.0);
+                    } else {
+                        // Preferir chave unificada quando existir; aceitar 0 como valor válido
+                        $weekdayMultiplier = (float) HRSetting::get('overtime_multiplier_weekday', -1);
+                        $multiplier = $weekdayMultiplier > 0 || $weekdayMultiplier === 0.0
+                            ? $weekdayMultiplier
+                            : (float) HRSetting::get('overtime_first_hour_weekday', 1.25);
+                    }
+
+                    $validatedData['overtime_rate'] = round($validatedData['hourly_rate'] * $multiplier, 2);
                 }
             }
 
@@ -712,8 +736,32 @@ class Attendance extends Component
                 // Obter dados do funcionário para calcular taxa horária
                 $employee = Employee::find($employeeId);
                 $baseSalary = $employee->base_salary ?? 0;
-                $hourlyRate = $baseSalary > 0 ? $baseSalary / (8 * 22) : 0; // 8 horas/dia, 22 dias/mês
-                $overtimeRate = $hourlyRate * 1.5;
+                // Calcular valor hora com base nas configurações HR
+                $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
+                $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
+                $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+
+                // Determinar multiplicador de overtime conforme dia seleccionado
+                $selectedDate = $this->selectedDate ? Carbon::parse($this->selectedDate) : Carbon::now();
+                $isWeekend = $selectedDate->isWeekend();
+                $holidays = [
+                    '01-01','02-04','03-08','04-04','05-01','09-17','11-02','11-11','12-25'
+                ];
+                $isHoliday = in_array($selectedDate->format('m-d'), $holidays, true);
+
+                if ($isHoliday) {
+                    $multiplier = (float) HRSetting::get('overtime_multiplier_holiday', 2.5);
+                } elseif ($isWeekend) {
+                    $multiplier = (float) HRSetting::get('overtime_multiplier_weekend', 2.0);
+                } else {
+                    // Preferir chave unificada quando existir; aceitar 0 como valor válido
+                    $weekdayMultiplier = (float) HRSetting::get('overtime_multiplier_weekday', -1);
+                    $multiplier = $weekdayMultiplier > 0 || $weekdayMultiplier === 0.0
+                        ? $weekdayMultiplier
+                        : (float) HRSetting::get('overtime_first_hour_weekday', 1.25);
+                }
+
+                $overtimeRate = round($hourlyRate * $multiplier, 2);
                 
                 \Log::info('Dados do funcionário obtidos', [
                     'employee' => $employee->full_name,

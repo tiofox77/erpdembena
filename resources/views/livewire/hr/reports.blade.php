@@ -316,18 +316,47 @@
     <!-- Chart Initialization Script -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Global chart instances
         let chartInstances = {};
+        let initializationTimeout = null;
+        let isInitializing = false;
+        
+        function debouncedInitializeCharts(delay = 200) {
+            if (initializationTimeout) {
+                clearTimeout(initializationTimeout);
+            }
+            
+            initializationTimeout = setTimeout(() => {
+                if (!isInitializing) {
+                    initializeCharts();
+                }
+            }, delay);
+        }
         
         function initializeCharts() {
-            // Destroy existing charts
-            Object.values(chartInstances).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            chartInstances = {};
+            if (isInitializing) {
+                console.log('Charts already initializing, skipping');
+                return;
+            }
+            
+            isInitializing = true;
+            console.log('Starting chart initialization');
+            // Safely destroy existing charts
+            try {
+                Object.values(chartInstances).forEach(chart => {
+                    if (chart && typeof chart.destroy === 'function') {
+                        chart.destroy();
+                    }
+                });
+                chartInstances = {};
+            } catch (error) {
+                console.log('Error destroying charts:', error);
+                chartInstances = {};
+            }
             
             // Department Chart
             const deptCtx = document.getElementById('departmentChart');
-            if (deptCtx) {
+            if (deptCtx && deptCtx.getContext) {
                 chartInstances.department = new Chart(deptCtx, {
                     type: 'doughnut',
                     data: {
@@ -357,7 +386,7 @@
 
             // Attendance Chart
             const attendanceCtx = document.getElementById('attendanceChart');
-            if (attendanceCtx) {
+            if (attendanceCtx && attendanceCtx.getContext) {
                 chartInstances.attendance = new Chart(attendanceCtx, {
                     type: 'line',
                     data: {
@@ -378,7 +407,7 @@
 
             // Overtime Chart
             const overtimeCtx = document.getElementById('overtimeChart');
-            if (overtimeCtx) {
+            if (overtimeCtx && overtimeCtx.getContext) {
                 chartInstances.overtime = new Chart(overtimeCtx, {
                     type: 'bar',
                     data: {
@@ -386,7 +415,7 @@
                         datasets: [{
                             label: 'Horas Extra',
                             data: @json($overtimeChartData['data'] ?? []),
-                            backgroundColor: '@json($overtimeChartData['backgroundColor'] ?? '#8B5CF6')',
+                            backgroundColor: @json($overtimeChartData['backgroundColor'] ?? '#8B5CF6'),
                             borderRadius: 6
                         }]
                     },
@@ -409,7 +438,7 @@
 
             // Leaves Chart
             const leavesCtx = document.getElementById('leavesChart');
-            if (leavesCtx) {
+            if (leavesCtx && leavesCtx.getContext) {
                 chartInstances.leaves = new Chart(leavesCtx, {
                     type: 'pie',
                     data: {
@@ -557,77 +586,319 @@
                     }
                 });
             }
+            
+            console.log('Chart initialization completed');
+            isInitializing = false;
         }
         
         // Initialize charts on load
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initializeCharts, 500);
+            // Wait for all elements to be ready
+            setTimeout(() => {
+                console.log('Initializing charts on page load');
+                debouncedInitializeCharts(100);
+            }, 800);
         });
         
         // Listen for custom chart update event
         window.addEventListener('charts-update', function() {
-            setTimeout(initializeCharts, 200);
+            // No-op: awaiting 'refresh-charts' payload
         });
         
         // Listen for Livewire updates (when period or department changes)
         document.addEventListener('livewire:morph-updated', function() {
-            setTimeout(initializeCharts, 300);
+            // No-op: awaiting 'refresh-charts' payload
         });
         
-        // Listen for Livewire component updates
-        Livewire.on('periodsUpdated', () => {
-            setTimeout(initializeCharts, 200);
+        // Wait for Livewire to be available
+        document.addEventListener('livewire:initialized', function() {
+            console.log('Livewire initialized - setting up chart listeners');
+            
+            // Listen for Livewire component updates
+            if (typeof Livewire !== 'undefined') {
+                Livewire.on('periodsUpdated', () => {
+                    // No-op: updates handled by 'refresh-charts'
+                });
+                
+                // Listen for dynamic chart data refresh
+                Livewire.on('refresh-charts', (event) => {
+                    console.log('Refreshing charts with new data:', event);
+                    
+                    // Safely destroy existing charts
+                    try {
+                        Object.values(chartInstances).forEach(chart => {
+                            if (chart && typeof chart.destroy === 'function') {
+                                chart.destroy();
+                            }
+                        });
+                        chartInstances = {};
+                    } catch (error) {
+                        console.log('Error destroying charts in refresh:', error);
+                        chartInstances = {};
+                    }
+                    
+                    // Recreate charts with new data
+                    setTimeout(() => {
+                        initializeChartsWithData(event);
+                    }, 300);
+                });
+            }
         });
         
-        // Force charts update on any Livewire update
+        // Livewire updated
         document.addEventListener('livewire:updated', function() {
-            console.log('Livewire updated - refreshing charts');
-            setTimeout(initializeCharts, 100);
-        });
-        
-        // Listen for dynamic chart data refresh
-        Livewire.on('refresh-charts', (event) => {
-            console.log('Refreshing charts with new data:', event);
-            
-            // Destroy existing charts
-            Object.values(chartInstances).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            chartInstances = {};
-            
-            // Recreate charts with new data
-            setTimeout(() => {
-                initializeChartsWithData(event[0]);
-            }, 200);
+            // No-op: updates are handled by 'refresh-charts'
         });
         
         function initializeChartsWithData(newData) {
-            // Update Leave Chart with new data
-            const leavesCtx = document.getElementById('leavesChart');
-            if (leavesCtx && newData.leavesChartData) {
-                chartInstances.leaves = new Chart(leavesCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: newData.leavesChartData.labels || [],
-                        datasets: [{
-                            data: newData.leavesChartData.data || [],
-                            backgroundColor: newData.leavesChartData.backgroundColor || []
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }
-                });
+            if (!newData || typeof newData !== 'object') {
+                console.log('No valid data provided to initializeChartsWithData');
+                debouncedInitializeCharts(300);
+                return;
             }
             
-            // Update other charts with fallback to page load data
-            setTimeout(initializeCharts, 100);
+            if (isInitializing) {
+                console.log('Charts are already initializing, deferring data update');
+                setTimeout(() => initializeChartsWithData(newData), 500);
+                return;
+            }
+            
+            try {
+                // Update Leave Chart with new data
+                const leavesCtx = document.getElementById('leavesChart');
+                if (leavesCtx && leavesCtx.getContext && newData.leavesChartData) {
+                    // Destroy existing leaves chart if it exists
+                    if (chartInstances.leaves && typeof chartInstances.leaves.destroy === 'function') {
+                        chartInstances.leaves.destroy();
+                    }
+                    
+                    chartInstances.leaves = new Chart(leavesCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: newData.leavesChartData.labels || [],
+                            datasets: [{
+                                data: newData.leavesChartData.data || [],
+                                backgroundColor: newData.leavesChartData.backgroundColor || []
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    console.log('Leaves chart canvas not found or invalid data');
+                }
+            } catch (error) {
+                console.log('Error creating chart with new data:', error);
+            }
+            
+            // Department Chart
+            try {
+                const deptCtx = document.getElementById('departmentChart');
+                if (deptCtx && deptCtx.getContext && newData.departmentData) {
+                    if (chartInstances.department && typeof chartInstances.department.destroy === 'function') {
+                        chartInstances.department.destroy();
+                    }
+                    chartInstances.department = new Chart(deptCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: newData.departmentData.labels || [],
+                            datasets: [{
+                                data: newData.departmentData.data || [],
+                                backgroundColor: newData.departmentData.backgroundColor || []
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom' } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating department chart:', e); }
+            
+            // Attendance Chart
+            try {
+                const attendanceCtx = document.getElementById('attendanceChart');
+                if (attendanceCtx && attendanceCtx.getContext && newData.attendanceChartData) {
+                    if (chartInstances.attendance && typeof chartInstances.attendance.destroy === 'function') {
+                        chartInstances.attendance.destroy();
+                    }
+                    chartInstances.attendance = new Chart(attendanceCtx, {
+                        type: 'line',
+                        data: {
+                            labels: newData.attendanceChartData.labels || [],
+                            datasets: newData.attendanceChartData.datasets || []
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating attendance chart:', e); }
+            
+            // Overtime Chart
+            try {
+                const overtimeCtx = document.getElementById('overtimeChart');
+                if (overtimeCtx && overtimeCtx.getContext && newData.overtimeChartData) {
+                    if (chartInstances.overtime && typeof chartInstances.overtime.destroy === 'function') {
+                        chartInstances.overtime.destroy();
+                    }
+                    chartInstances.overtime = new Chart(overtimeCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: newData.overtimeChartData.labels || [],
+                            datasets: [{
+                                label: 'Horas Extra',
+                                data: newData.overtimeChartData.data || [],
+                                backgroundColor: newData.overtimeChartData.backgroundColor || '#8B5CF6',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true } },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating overtime chart:', e); }
+            
+            // Salary Trends Chart
+            try {
+                const salaryCtx = document.getElementById('salaryTrendsChart');
+                if (salaryCtx && salaryCtx.getContext && newData.salaryTrendsData) {
+                    if (chartInstances.salary && typeof chartInstances.salary.destroy === 'function') {
+                        chartInstances.salary.destroy();
+                    }
+                    chartInstances.salary = new Chart(salaryCtx, {
+                        type: 'line',
+                        data: {
+                            labels: newData.salaryTrendsData.labels || [],
+                            datasets: newData.salaryTrendsData.datasets || []
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating salary trends chart:', e); }
+            
+            // Overtime by Department Chart
+            try {
+                const overtimeDeptCtx = document.getElementById('overtimeByDepartmentChart');
+                if (overtimeDeptCtx && overtimeDeptCtx.getContext && newData.overtimeByDepartmentData) {
+                    if (chartInstances.overtimeDept && typeof chartInstances.overtimeDept.destroy === 'function') {
+                        chartInstances.overtimeDept.destroy();
+                    }
+                    chartInstances.overtimeDept = new Chart(overtimeDeptCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: newData.overtimeByDepartmentData.labels || [],
+                            datasets: [{
+                                data: newData.overtimeByDepartmentData.data || [],
+                                backgroundColor: newData.overtimeByDepartmentData.backgroundColor || []
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating overtime by department chart:', e); }
+            
+            // Monthly Payroll Chart
+            try {
+                const payrollCtx = document.getElementById('monthlyPayrollChart');
+                if (payrollCtx && payrollCtx.getContext && newData.monthlyPayrollData) {
+                    if (chartInstances.payroll && typeof chartInstances.payroll.destroy === 'function') {
+                        chartInstances.payroll.destroy();
+                    }
+                    chartInstances.payroll = new Chart(payrollCtx, {
+                        type: 'line',
+                        data: {
+                            labels: newData.monthlyPayrollData.labels || [],
+                            datasets: [{
+                                label: '{{ __('dashboard.payroll') }}',
+                                data: newData.monthlyPayrollData.data || [],
+                                backgroundColor: newData.monthlyPayrollData.backgroundColor || '#10B981',
+                                borderColor: newData.monthlyPayrollData.borderColor || '#10B981',
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating monthly payroll chart:', e); }
+            
+            // Advances vs Discounts Chart
+            try {
+                const advDiscCtx = document.getElementById('advancesVsDiscountsChart');
+                if (advDiscCtx && advDiscCtx.getContext && newData.advancesVsDiscountsData) {
+                    if (chartInstances.advancesDiscounts && typeof chartInstances.advancesDiscounts.destroy === 'function') {
+                        chartInstances.advancesDiscounts.destroy();
+                    }
+                    chartInstances.advancesDiscounts = new Chart(advDiscCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: newData.advancesVsDiscountsData.labels || [],
+                            datasets: [{
+                                data: newData.advancesVsDiscountsData.data || [],
+                                backgroundColor: newData.advancesVsDiscountsData.backgroundColor || []
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom' } }
+                        }
+                    });
+                }
+            } catch (e) { console.log('Error updating advances vs discounts chart:', e); }
+            
+            // Payroll Timeline Chart
+            try {
+                const timelineCtx = document.getElementById('payrollTimelineChart');
+                if (timelineCtx && timelineCtx.getContext && newData.payrollTimelineData) {
+                    if (chartInstances.timeline && typeof chartInstances.timeline.destroy === 'function') {
+                        chartInstances.timeline.destroy();
+                    }
+                    chartInstances.timeline = new Chart(timelineCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: newData.payrollTimelineData.labels || [],
+                            datasets: [{
+                                label: '{{ __('dashboard.payroll_timeline') }}',
+                                data: newData.payrollTimelineData.data || [],
+                                backgroundColor: newData.payrollTimelineData.backgroundColor || '#8B5CF6',
+                                borderColor: newData.payrollTimelineData.borderColor || '#8B5CF6',
+                                fill: false
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                }
+            } catch (e) { console.log('Error updating payroll timeline chart:', e); }
+            
+            // All charts updated from payload; no fallback reinitialization.
         }
     </script>
 </div>

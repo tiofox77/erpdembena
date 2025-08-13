@@ -44,6 +44,7 @@ return [
     'select_period_title' => 'Select Payroll Period',
     'select_period_subtitle' => 'Choose the payroll period to process salary payments',
     'select_period_help' => 'Click on a period to select it and proceed with payroll processing',
+    'selected_period' => 'Selected Period',
     'no_periods_available' => 'No Payroll Periods Available',
     'create_period_first' => 'You need to create a payroll period before processing salaries',
     'create_period' => 'Create Period',

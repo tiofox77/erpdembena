@@ -31,7 +31,7 @@
     <script src="{{ asset('js/toastr.min.js') }}"></script>
     
     <!-- Script para memória de paginação -->
-    <script src="{{ asset('js/pagination-memory.js') }}"></script>
+    <script src="{{ asset('js/pagination-memory.js?v=3.0') }}"></script>
     
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
@@ -71,11 +71,8 @@
 
     {{-- Alpine.js is loaded by @livewireScripts, don't include it here --}}
 
-    <!-- FullCalendar Locale -->
-    <script src="{{ asset('js/fullcalendar-pt-br.min.js') }}"></script>
-
-    <!-- Chart.js - MOVED HERE TO AVOID DUPLICATION -->
-    <script src="{{ asset('js/chart.min.js') }}"></script>
+    {{-- Removed FullCalendar reference that was causing 404 errors --}}
+    {{-- Chart.js is loaded per component to avoid conflicts --}}
 
     <style>
         [x-cloak] { display: none !important; }

@@ -536,7 +536,8 @@ class OvertimeRecords extends Component
             $hours = $totalMinutes / 60;
             
             // Considera apenas as horas extras (acima do horário normal de trabalho)
-            $dailyWorkHours = (float) HRSetting::get('weekly_work_hours', 40) / 5;
+            $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
+            $dailyWorkHours = $weeklyHours / 5;
             $overtimeHours = max(0, $hours - $dailyWorkHours);
             
             return $allowPartialHours ? round($overtimeHours, 2) : ceil($overtimeHours);
@@ -625,10 +626,22 @@ class OvertimeRecords extends Component
                 $monthlyHours = $weeklyHours * 4.33; // 4.33 semanas por mês em média
                 
                 // Buscar multiplicadores conforme a lei angolana
-                $overtimeFirstHourWeekday = (float) HRSetting::get('overtime_first_hour_weekday', 1.25); // 1ª hora: +25%
-                $overtimeAdditionalHoursWeekday = (float) HRSetting::get('overtime_additional_hours_weekday', 1.375); // Demais horas: +37,5%
-                $overtimeMultiplierWeekend = (float) HRSetting::get('overtime_multiplier_weekend', 2.0); // Fins de semana: +100%
-                $overtimeMultiplierHoliday = (float) HRSetting::get('overtime_multiplier_holiday', 2.5); // Feriados: +150%
+                $overtimeFirstHourWeekday = (float) HRSetting::get('overtime_first_hour_weekday', 0.0); // 1ª hora: +25%
+                if ($overtimeFirstHourWeekday <= 0) {
+                    // Fallback para chave unificada
+                    $overtimeFirstHourWeekday = (float) HRSetting::get('overtime_multiplier_weekday', 1.25);
+                    if ($overtimeFirstHourWeekday <= 0) {
+                        $overtimeFirstHourWeekday = 1.25;
+                    }
+                }
+                $overtimeAdditionalHoursWeekday = (float) HRSetting::get('overtime_additional_hours_weekday', 0.0); // Demais horas: +37,5%
+                if ($overtimeAdditionalHoursWeekday <= 0) {
+                    // Se não existir configuração específica, usar o mesmo multiplicador da primeira hora
+                    $overtimeAdditionalHoursWeekday = $overtimeFirstHourWeekday;
+                }
+                // Suporte a chaves legadas e novas
+                $overtimeMultiplierWeekend = (float) HRSetting::get('overtime_multiplier_weekend', HRSetting::get('weekend_multiplier', 2.0)); // Fins de semana: +100%
+                $overtimeMultiplierHoliday = (float) HRSetting::get('overtime_multiplier_holiday', HRSetting::get('holiday_multiplier', 2.5)); // Feriados: +150%
                 
                 // Tenta buscar a taxa horária do funcionário se já estiver definida
                 if (isset($employee->hourly_rate) && $employee->hourly_rate > 0) {
@@ -645,8 +658,8 @@ class OvertimeRecords extends Component
                 }
                 
                 // Determinar qual multiplicador usar baseado no dia da semana e feriado
-                $isHoliday = $this->isHoliday($this->date ?? now()->toDateString());
-                $isWeekend = $this->isWeekend($this->date ?? now()->toDateString());
+                $isHoliday = $this->isHoliday();
+                $isWeekend = $this->isWeekend();
                 
                 if ($isHoliday) {
                     $this->rate = round($this->hourly_rate * $overtimeMultiplierHoliday, 2);
@@ -714,6 +727,8 @@ class OvertimeRecords extends Component
     }
     public function updatedDate(): void
     {
+        // Recarregar a taxa para refletir alteração entre dia útil/fim de semana/feriado
+        $this->loadHourlyRate();
         $this->calculateHoursAndAmount();
     }
     

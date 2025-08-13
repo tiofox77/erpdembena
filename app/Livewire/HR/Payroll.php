@@ -698,11 +698,21 @@ class Payroll extends Component
         // Apply status filter
         if ($this->statusFilter) {
             $query->where('employment_status', $this->statusFilter);
+        } else {
+            // Default to active employees only
+            $query->where('employment_status', 'active');
         }
 
         // Apply department filter
         if ($this->departmentFilter) {
             $query->where('department_id', $this->departmentFilter);
+        }
+
+        // Excluir funcionários já pagos no período selecionado (usar período da primeira modal)
+        if ($this->payroll_period_id) {
+            $query->whereDoesntHave('payrolls', function ($payrollQuery) {
+                $payrollQuery->where('payroll_period_id', $this->payroll_period_id);
+            });
         }
 
         // Apply search term if provided
@@ -1251,6 +1261,7 @@ class Payroll extends Component
 
     public function updatedSelectedMonth(): void
     {
+        // Campos selectedMonth/selectedYear são da modal de busca - não afetam filtro de período
         if ($this->selectedEmployee) {
             $this->loadEmployeePayrollData();
             $this->calculatePayrollComponents();
@@ -1259,6 +1270,7 @@ class Payroll extends Component
 
     public function updatedSelectedYear(): void
     {
+        // Campos selectedMonth/selectedYear são da modal de busca - não afetam filtro de período  
         if ($this->selectedEmployee) {
             $this->loadEmployeePayrollData();
             $this->calculatePayrollComponents();
@@ -2546,7 +2558,17 @@ class Payroll extends Component
         $payrolls = $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
-        $employees = Employee::where('employment_status', 'active')->get();
+        // Buscar funcionários ativos que NÃO foram pagos no período selecionado
+        $employeesQuery = Employee::where('employment_status', 'active');
+        
+        // Se há um período selecionado nos filtros, excluir funcionários já pagos nesse período
+        if (!empty($this->filters['period_id'])) {
+            $employeesQuery->whereDoesntHave('payrolls', function ($query) {
+                $query->where('payroll_period_id', $this->filters['period_id']);
+            });
+        }
+        
+        $employees = $employeesQuery->get();
         $payrollPeriods = PayrollPeriod::orderBy('start_date', 'desc')->get();
         $departments = Department::where('is_active', true)->get();
 

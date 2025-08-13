@@ -54,41 +54,46 @@
                         </div>
                     </div>
 
-                    {{-- Month and Year Selection --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label for="selected_month" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-calendar text-blue-500 mr-1"></i>
-                                {{ __('messages.month') }}
-                            </label>
-                            <select 
-                                id="selected_month" 
-                                wire:model.live="selectedMonth"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
-                            >
-                                @for($i = 1; $i <= 12; $i++)
-                                    <option value="{{ $i }}" {{ $selectedMonth == $i ? 'selected' : '' }}>
-                                        {{ \Carbon\Carbon::create(null, $i, 1)->format('F') }}
-                                    </option>
-                                @endfor
-                            </select>
+                    {{-- Selected Period Information --}}
+                    @if($selectedPayrollPeriod)
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-calendar-check text-blue-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900">{{ __('payroll.selected_period') }}</h4>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                                        <span class="font-medium text-blue-700">{{ $selectedPayrollPeriod->name }}</span>
+                                        <span class="text-gray-400">•</span>
+                                        <span>{{ \Carbon\Carbon::parse($selectedPayrollPeriod->start_date)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($selectedPayrollPeriod->end_date)->format('d/m/Y') }}</span>
+                                        @if($selectedPayrollPeriod->payment_date)
+                                            <span class="text-gray-400">•</span>
+                                            <span>{{ __('payroll.payment') }}: {{ \Carbon\Carbon::parse($selectedPayrollPeriod->payment_date)->format('d/m/Y') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    @if($selectedPayrollPeriod->status === 'open')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <div class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></div>
+                                            {{ __('payroll.status_open') }}
+                                        </span>
+                                    @elseif($selectedPayrollPeriod->status === 'processing')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <div class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5"></div>
+                                            {{ __('payroll.status_processing') }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <i class="fas fa-lock text-xs mr-1.5"></i>
+                                            {{ __('payroll.status_closed') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="selected_year" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-calendar-alt text-purple-500 mr-1"></i>
-                                {{ __('messages.year') }}
-                            </label>
-                            <select 
-                                id="selected_year" 
-                                wire:model.live="selectedYear"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
-                            >
-                                @for($year = (now()->year - 2); $year <= (now()->year + 1); $year++)
-                                    <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                    </div>
+                    @endif
 
                     {{-- Search Results --}}
                     <div class="space-y-3 max-h-96 overflow-y-auto">

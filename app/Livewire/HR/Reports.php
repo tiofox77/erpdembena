@@ -369,17 +369,17 @@ class Reports extends Component
             $dateStr = $current->format('Y-m-d');
             $labels[] = $current->format('M d');
             
-            $attendanceQuery = Attendance::whereDate('date', $dateStr);
+            $dayQuery = Attendance::whereDate('date', $dateStr);
             
             if ($this->selectedDepartment) {
-                $attendanceQuery->whereHas('employee', function($q) {
+                $dayQuery->whereHas('employee', function($q) {
                     $q->where('department_id', $this->selectedDepartment);
                 });
             }
             
-            $presentData[] = $attendanceQuery->where('status', 'present')->count();
-            $absentData[] = $attendanceQuery->where('status', 'absent')->count();
-            $lateData[] = $attendanceQuery->where('status', 'late')->count();
+            $presentData[] = (clone $dayQuery)->where('status', 'present')->count();
+            $absentData[] = (clone $dayQuery)->where('status', 'absent')->count();
+            $lateData[] = (clone $dayQuery)->where('status', 'late')->count();
             
             $current->addDay();
         }
@@ -589,7 +589,7 @@ class Reports extends Component
     
     private function generateMonthlyPayrollChart(): void
     {
-        $startDate = Carbon::parse($this->startDate)->startOfYear();
+        $startDate = Carbon::parse($this->startDate);
         $endDate = Carbon::parse($this->endDate);
         
         $data = Payroll::selectRaw('DATE_FORMAT(payment_date, "%Y-%m") as month, SUM(net_salary) as total')
