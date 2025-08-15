@@ -23,8 +23,10 @@ class Employee extends Model
         'marital_status',
         'dependents',
         'photo',
+        'bank_id',
         'bank_name',
         'bank_account',
+        'bank_iban',
         'position_id',
         'department_id',
         'hire_date',
@@ -69,6 +71,14 @@ class Employee extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get the bank that the employee belongs to
+     */
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(Bank::class);
     }
 
     /**

@@ -1083,40 +1083,27 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Bank Name -->
                                 <div class="space-y-2">
-                                    <label for="bank_name" class="flex items-center text-sm font-medium text-gray-700">
-                                        <i class="fas fa-building text-green-500 mr-2"></i>
+                                    <label for="bank_id" class="flex items-center text-sm font-medium text-gray-700">
+                                        <i class="fas fa-university text-green-500 mr-2"></i>
                                         {{ __('messages.bank_name') }}
                                     </label>
                                     <div class="relative">
-                                        <select id="bank_name"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 appearance-none bg-white @error('bank_name') border-red-500 bg-red-50 @enderror"
-                                            wire:model.live="bank_name">
+                                        <select id="bank_id"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 appearance-none bg-white @error('bank_id') border-red-500 bg-red-50 @enderror"
+                                            wire:model.live="bank_id">
                                             <option value="">{{ __('messages.select_bank') }}</option>
-                                            <option value="Banco Nacional de Angola (BNA)">Banco Nacional de Angola (BNA)</option>
-                                            <option value="Banco Angolano de Investimentos (BAI)">Banco Angolano de Investimentos (BAI)</option>
-                                            <option value="Banco de Fomento Angola (BFA)">Banco de Fomento Angola (BFA)</option>
-                                            <option value="Banco Económico">Banco Económico</option>
-                                            <option value="Banco de Poupança e Crédito (BPC)">Banco de Poupança e Crédito (BPC)</option>
-                                            <option value="Standard Bank Angola">Standard Bank Angola</option>
-                                            <option value="Banco Millennium Atlântico">Banco Millennium Atlântico</option>
-                                            <option value="Banco BIC">Banco BIC</option>
-                                            <option value="Banco Sol">Banco Sol</option>
-                                            <option value="Banco Keve">Banco Keve</option>
-                                            <option value="Banco BAI Micro Finanças">Banco BAI Micro Finanças</option>
-                                            <option value="Banco Comercial do Huambo">Banco Comercial do Huambo</option>
-                                            <option value="Banco de Negócios Internacional (BNI)">Banco de Negócios Internacional (BNI)</option>
-                                            <option value="Banco de Desenvolvimento de Angola (BDA)">Banco de Desenvolvimento de Angola (BDA)</option>
-                                            <option value="Banco Prestígio">Banco Prestígio</option>
-                                            <option value="Banco VTB África">Banco VTB África</option>
+                                            @foreach($banks as $bank)
+                                                <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                            @endforeach
                                         </select>
                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            @error('bank_name')
+                                            @error('bank_id')
                                                 <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
                                             @enderror
                                             <i class="fas fa-chevron-down text-gray-400"></i>
                                         </div>
                                     </div>
-                                    @error('bank_name')
+                                    @error('bank_id')
                                         <p class="flex items-center text-sm text-red-600">
                                             <i class="fas fa-info-circle mr-1"></i>
                                             {{ $message }}
@@ -1142,6 +1129,32 @@
                                         @enderror
                                     </div>
                                     @error('bank_account')
+                                        <p class="flex items-center text-sm text-red-600">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            {{ $message }}
+                                        </p>
+                                    @enderror
+                                </div>
+
+                                <!-- Bank IBAN -->
+                                <div class="space-y-2">
+                                    <label for="bank_iban" class="flex items-center text-sm font-medium text-gray-700">
+                                        <i class="fas fa-globe text-purple-500 mr-2"></i>
+                                        {{ __('messages.bank_iban') }}
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="bank_iban"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 @error('bank_iban') border-red-500 bg-red-50 @enderror"
+                                            wire:model.live="bank_iban" 
+                                            placeholder="{{ __('messages.iban_placeholder') }}"
+                                            maxlength="34">
+                                        @error('bank_iban')
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            </div>
+                                        @enderror
+                                    </div>
+                                    @error('bank_iban')
                                         <p class="flex items-center text-sm text-red-600">
                                             <i class="fas fa-info-circle mr-1"></i>
                                             {{ $message }}

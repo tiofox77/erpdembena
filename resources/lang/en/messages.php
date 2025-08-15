@@ -132,6 +132,12 @@ return [
     'bank_information' => 'Bank Information',
     'bank_name' => 'Bank Name',
     'select_bank' => 'Select Bank',
+    
+    // Employee management translations
+    'employees_management' => 'Employee Management',
+    'manage_employees_description' => 'Manage and track employee information',
+    'banks' => 'Banks',
+    'hr_settings' => 'HR Settings',
     'bank_account' => 'Bank Account',
     'account_number' => 'Account Number',
     
@@ -3226,7 +3232,7 @@ return [
     'shipping_status_delivered' => 'Delivered',
     'shipping_status_returned' => 'Returned',
     'shipping_status_custom_form' => 'Custom Form',
-    'hr_settings' => 'Configurações de RH',
+    'hr_settings' => 'HR Settings',
     'add_setting' => 'Adicionar Configuração',
     'edit_setting' => 'Editar Configuração',
     'new_setting' => 'Nova Configuração',

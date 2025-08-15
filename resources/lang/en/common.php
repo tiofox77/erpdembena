@@ -15,4 +15,10 @@ return array (
   'search_and_filters' => 'Search and Filters',
   'showing_records' => 'Showing :count of :total records',
   'update' => 'Update',
+  'create' => 'Create',
+  'active' => 'Active',
+  'inactive' => 'Inactive',
+  'status' => 'Status',
+  'auto_generated' => 'Auto Generated',
+  'close' => 'Close',
 );

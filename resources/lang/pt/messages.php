@@ -276,10 +276,21 @@ return [
     'downtime' => 'Tempo de Inatividade',
     
     // Additional maintenance plan translations
-    'basic_information' => 'Informações Básicas',
-    'equipment' => 'Equipamento',
-    'select_equipment' => 'Selecione o equipamento',
-    'days_between' => 'Dias entre',
+    'bank_information' => 'Informações Bancárias',
+    'bank_info_description' => 'Detalhes bancários para pagamento de salário',
+    'bank_name' => 'Nome do Banco',
+    'bank_account' => 'Conta Bancária',
+    'bank_iban' => 'IBAN do Banco',
+    'account_number' => 'Número da Conta',
+    'iban_placeholder' => 'Ex: AO06000600000100037131174',
+    'select_bank' => 'Selecionar Banco',
+    
+    // Employee management translations
+    'employees_management' => 'Gestão de Funcionários',
+    'manage_employees_description' => 'Gerir e acompanhar informações dos funcionários',
+    'banks' => 'Bancos',
+    'hr_settings' => 'Configurações de RH',
+    
     'day_of_week' => 'Dia da semana',
     'day_of_month' => 'Dia do mês',
     'month' => 'Mês',
@@ -1515,4 +1526,5 @@ return [
     'back' => 'Voltar',
     'back_to_employee_selection' => 'Voltar à Selecção de Funcionários',
     'period' => 'Período',
+    'banks' => 'Bancos',
 ];

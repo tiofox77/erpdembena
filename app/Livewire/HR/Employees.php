@@ -6,6 +6,7 @@ use App\Models\HR\Department;
 use App\Models\HR\Employee;
 use App\Models\HR\EmployeeDocument;
 use App\Models\HR\JobPosition;
+use App\Models\HR\Bank;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -42,8 +43,10 @@ class Employees extends Component
     public $marital_status;
     public $dependents;
     public $photo;
+    public $bank_id;
     public $bank_name;
     public $bank_account;
+    public $bank_iban;
     public $position_id;
     public $department_id;
     public $hire_date;
@@ -94,8 +97,10 @@ class Employees extends Component
             'marital_status' => 'nullable|in:single,married,divorced,widowed',
             'dependents' => 'nullable|integer|min:0',
             'photo' => $this->isEditing ? 'nullable|image|max:1024' : 'nullable|image|max:1024',
+            'bank_id' => 'nullable|exists:banks,id',
             'bank_name' => 'nullable',
             'bank_account' => 'nullable',
+            'bank_iban' => 'nullable|string|max:34',
             'position_id' => 'nullable|exists:job_positions,id',
             'department_id' => 'nullable|exists:departments,id',
             'hire_date' => 'required|date',
@@ -133,7 +138,7 @@ class Employees extends Component
         $this->reset([
             'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'tax_number',
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
-            'bank_name', 'bank_account', 'position_id', 'department_id', 'hire_date',
+            'bank_id', 'bank_name', 'bank_account', 'bank_iban', 'position_id', 'department_id', 'hire_date',
             'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
             'transport_benefit', 'bonus_amount'
         ]);
@@ -155,8 +160,10 @@ class Employees extends Component
         $this->marital_status = $employee->marital_status;
         $this->dependents = $employee->dependents;
         // Photo is a file upload so we don't set it
+        $this->bank_id = $employee->bank_id;
         $this->bank_name = $employee->bank_name;
         $this->bank_account = $employee->bank_account;
+        $this->bank_iban = $employee->bank_iban;
         $this->position_id = $employee->position_id;
         $this->department_id = $employee->department_id;
         $this->hire_date = $employee->hire_date;
@@ -565,7 +572,7 @@ class Employees extends Component
 
     public function render()
     {
-        $employees = Employee::with(['department', 'position', 'salaryAdvances'])
+        $employees = Employee::with(['department', 'position', 'bank', 'salaryAdvances'])
             ->where('full_name', 'like', "%{$this->search}%")
             ->when($this->filters['department_id'], function ($query) {
                 return $query->where('department_id', $this->filters['department_id']);
@@ -612,11 +619,13 @@ class Employees extends Component
 
         $departments = Department::where('is_active', true)->get();
         $positions = JobPosition::where('is_active', true)->get();
+        $banks = Bank::where('is_active', true)->orderBy('name')->get();
 
         return view('livewire.hr.employees', [
             'employees' => $employees,
             'departments' => $departments,
             'positions' => $positions,
+            'banks' => $banks,
         ])->layout('layouts.livewire', [
             'title' => __('employees.employee_management')
         ]);

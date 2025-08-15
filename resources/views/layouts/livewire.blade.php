@@ -1014,6 +1014,13 @@
             @endcan
             
             @can('hr.settings.view')
+            <a href="{{ route('hr.banks') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.banks') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-university text-gray-500"></i>
+                <span>{{ trans('messages.banks') }}</span>
+            </a>
+            @endcan
+            
+            @can('hr.settings.view')
             <a href="{{ route('hr.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-cogs text-gray-500"></i>
                 <span>{{ trans('messages.hr_settings') }}</span>
