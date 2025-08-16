@@ -391,7 +391,8 @@ class OvertimeRecords extends Component
             $roundToNearest = (int) HRSetting::get('round_to_nearest_minutes', 15);
             $allowPartialHours = (bool) HRSetting::get('allow_partial_hours', true);
             $dailyWorkHours = (float) HRSetting::get('daily_work_hours', 8);
-            $monthlyWorkHours = (float) HRSetting::get('monthly_work_hours', 176); // 22 dias x 8 horas
+            $monthlyWorkingDays = (int) HRSetting::get('monthly_working_days', 22);
+            $monthlyWorkHours = (float) HRSetting::get('monthly_work_hours', $monthlyWorkingDays * $dailyWorkHours);
             $weekendMultiplier = (float) HRSetting::get('weekend_multiplier', 1.5);
             $holidayMultiplier = (float) HRSetting::get('holiday_multiplier', 2.0);
             $nightShiftMultiplier = (float) HRSetting::get('night_shift_multiplier', 1.25);
@@ -660,8 +661,9 @@ class OvertimeRecords extends Component
             
             if ($employee) {
                 // Buscar configurações HR para cálculos
-                $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44); // Padrão: 44 horas semanais
-                $monthlyHours = $weeklyHours * 4.33; // 4.33 semanas por mês em média
+                $monthlyWorkingDays = (int) HRSetting::get('monthly_working_days', 22);
+                $dailyWorkHours = (float) HRSetting::get('daily_work_hours', 8);
+                $monthlyHours = $monthlyWorkingDays * $dailyWorkHours;
                 
                 // Buscar multiplicadores conforme a lei angolana
                 $overtimeFirstHourWeekday = (float) HRSetting::get('overtime_first_hour_weekday', 0.0); // 1ª hora: +25%
