@@ -23,7 +23,7 @@
             <div class="p-4 bg-gray-50 border-b border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <!-- Campo de pesquisa -->
-                    <div class="md:col-span-2">
+                    <div>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
@@ -34,25 +34,29 @@
                         </div>
                     </div>
                     
-                    <!-- Filtro de funcionário -->
-                    <div>
-                        <select wire:model="filters.employee_id" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md transition-all duration-200">
-                            <option value="">{{ __('messages.all_employees') }}</option>
-                            @foreach($employees as $employee)
-                                <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
                     <!-- Filtro de status -->
                     <div>
-                        <select wire:model="filters.status" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md transition-all duration-200">
+                        <select wire:model="filters.status" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                             <option value="">{{ __('messages.all_statuses') }}</option>
                             <option value="pending">{{ __('messages.pending') }}</option>
                             <option value="approved">{{ __('messages.approved') }}</option>
                             <option value="rejected">{{ __('messages.rejected') }}</option>
                             <option value="completed">{{ __('messages.completed') }}</option>
                         </select>
+                    </div>
+                    
+                    <!-- Data de -->
+                    <div>
+                        <input type="date" wire:model="filters.date_from" 
+                               placeholder="{{ __('messages.date_from') }}"
+                               class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
+                    </div>
+                    
+                    <!-- Data até -->
+                    <div>
+                        <input type="date" wire:model="filters.date_to" 
+                               placeholder="{{ __('messages.date_to') }}"
+                               class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                     </div>
                 </div>
             </div>
@@ -218,23 +222,52 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div class="flex items-center justify-end space-x-2">
-                                        <button wire:click="view({{ $advance->id }})" class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-all duration-200">
+                                    <div class="flex items-center justify-end space-x-1">
+                                        <!-- Visualizar -->
+                                        <button wire:click="view({{ $advance->id }})" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-all duration-200"
+                                                title="{{ __('messages.view') }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         
+                                        <!-- Editar (apenas se pending ou approved) -->
+                                        @if(in_array($advance->status, ['pending', 'approved']))
+                                            <button wire:click="edit({{ $advance->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endif
+                                        
+                                        <!-- Aprovar/Rejeitar (apenas se pending) -->
                                         @if($advance->status === 'pending')
-                                            <button wire:click="approve({{ $advance->id }})" class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 hover:text-green-900 hover:bg-green-50 rounded-md transition-all duration-200">
+                                            <button wire:click="approve({{ $advance->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 hover:text-green-900 hover:bg-green-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.approve') }}">
                                                 <i class="fas fa-check"></i>
                                             </button>
-                                            <button wire:click="reject({{ $advance->id }})" class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200">
+                                            <button wire:click="reject({{ $advance->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.reject') }}">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         @endif
                                         
+                                        <!-- Registrar Pagamento (apenas se approved com parcelas restantes) -->
                                         @if($advance->status === 'approved' && $advance->remaining_installments > 0)
-                                            <button wire:click="registerPaymentModal({{ $advance->id }})" class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-all duration-200">
+                                            <button wire:click="registerPaymentModal({{ $advance->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.register_payment') }}">
                                                 <i class="fas fa-dollar-sign"></i>
+                                            </button>
+                                        @endif
+                                        
+                                        <!-- Apagar (agora incluindo approved) -->
+                                        @if(in_array($advance->status, ['pending', 'approved', 'rejected', 'completed']))
+                                            <button wire:click="confirmDelete({{ $advance->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.delete') }}">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         @endif
                                     </div>
@@ -259,8 +292,7 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>                
-            </table>
+            </div>
         </div>
         
         <!-- Paginação -->

@@ -29,19 +29,22 @@
     <!-- Filtros -->
     <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="p-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                <!-- Campo de pesquisa -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('messages.search') }}</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-gray-400"></i>
                         </div>
-                        <input wire:model.live="search" type="text" class="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm" placeholder="{{ __('messages.search_employee') }}">
+                        <input wire:model.live="search" type="text" 
+                               placeholder="{{ __('messages.search_employee') }}"
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                     </div>
                 </div>
+                
+                <!-- Filtro de status -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('messages.status') }}</label>
-                    <select wire:model.live="statusFilter" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm">
+                    <select wire:model="statusFilter" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                         <option value="">{{ __('messages.all_statuses') }}</option>
                         <option value="pending">{{ __('messages.pending') }}</option>
                         <option value="approved">{{ __('messages.approved') }}</option>
@@ -49,13 +52,28 @@
                         <option value="completed">{{ __('messages.completed') }}</option>
                     </select>
                 </div>
+                
+                <!-- Filtro de tipo -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('messages.discount_type') }}</label>
-                    <select wire:model.live="typeFilter" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm">
+                    <select wire:model.live="typeFilter" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                         <option value="">{{ __('messages.all_types') }}</option>
                         <option value="union">{{ __('messages.union_discount') }}</option>
                         <option value="others">{{ __('messages.other_discount') }}</option>
                     </select>
+                </div>
+                
+                <!-- Data de -->
+                <div>
+                    <input type="date" wire:model="dateFrom" 
+                           placeholder="{{ __('messages.date_from') }}"
+                           class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
+                </div>
+                
+                <!-- Data até -->
+                <div>
+                    <input type="date" wire:model="dateTo" 
+                           placeholder="{{ __('messages.date_to') }}"
+                           class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                 </div>
                 <div class="flex items-end">
                     <button wire:click="$set('search', '')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200 text-sm">
@@ -227,30 +245,51 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center justify-end space-x-2">
-                                    <button wire:click="view({{ $discount->id }})" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                                <div class="flex items-center justify-end space-x-1">
+                                    <!-- Visualizar -->
+                                    <button wire:click="view({{ $discount->id }})" 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-all duration-200"
+                                            title="{{ __('messages.view') }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    @if($discount->status === 'pending')
-                                        <button wire:click="edit({{ $discount->id }})" class="text-yellow-600 hover:text-yellow-900 transition-colors duration-200">
+                                    
+                                    <!-- Editar (apenas se pending ou approved) -->
+                                    @if(in_array($discount->status, ['pending', 'approved']))
+                                        <button wire:click="edit({{ $discount->id }})" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-all duration-200"
+                                                title="{{ __('messages.edit') }}">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                     @endif
-                                    @if($discount->status === 'approved' && $discount->remaining_installments > 0)
-                                        <button wire:click="registerPaymentModal({{ $discount->id }})" class="text-green-600 hover:text-green-900 transition-colors duration-200">
-                                            <i class="fas fa-dollar-sign"></i>
-                                        </button>
-                                    @endif
+                                    
+                                    <!-- Aprovar/Rejeitar (apenas se pending) -->
                                     @if($discount->status === 'pending')
-                                        <button wire:click="approve({{ $discount->id }})" class="text-green-600 hover:text-green-900 transition-colors duration-200">
+                                        <button wire:click="approve({{ $discount->id }})" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 hover:text-green-900 hover:bg-green-50 rounded-md transition-all duration-200"
+                                                title="{{ __('messages.approve') }}">
                                             <i class="fas fa-check"></i>
                                         </button>
-                                        <button wire:click="reject({{ $discount->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200">
+                                        <button wire:click="reject({{ $discount->id }})" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
+                                                title="{{ __('messages.reject') }}">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     @endif
-                                    @if($discount->status === 'pending')
-                                        <button wire:click="confirmDelete({{ $discount->id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200">
+                                    
+                                    <!-- Registrar Pagamento (apenas se approved com parcelas restantes) -->
+                                    @if($discount->status === 'approved' && $discount->remaining_installments > 0)
+                                        <button wire:click="registerPaymentModal({{ $discount->id }})" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-all duration-200"
+                                                title="{{ __('messages.register_payment') }}">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </button>
+                                    @endif
+                                    
+                                    <!-- Apagar (agora incluindo approved) -->
+                                    @if(in_array($discount->status, ['pending', 'approved', 'rejected', 'completed']))
+                                        <button wire:click="confirmDelete({{ $discount->id }})" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
+                                                title="{{ __('messages.delete') }}">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     @endif

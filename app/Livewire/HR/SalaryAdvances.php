@@ -6,10 +6,10 @@ namespace App\Livewire\HR;
 
 use App\Models\HR\Employee;
 use App\Models\HR\SalaryAdvance;
-use App\Models\HR\SalaryAdvancePayment;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\HR\SalaryAdvancePayment;
+use Illuminate\Support\Facades\Auth;
 
 class SalaryAdvances extends Component
 {
@@ -52,12 +52,13 @@ class SalaryAdvances extends Component
     public ?SalaryAdvance $advanceToDelete = null;
     
     // Filtros
-    public array $filters = [
+    public $filters = [
         'search' => '',
         'status' => '',
+        'amount_min' => '',
+        'amount_max' => '',
         'date_from' => '',
         'date_to' => '',
-        'employee_id' => '',
     ];
     
     // Ordenação
@@ -134,39 +135,36 @@ class SalaryAdvances extends Component
     // Método view() removido para evitar duplicação - usando o método existente na linha 247
     
     /**
+     * Computed property para obter os adiantamentos salariais filtrados
+     */
+    public function getSalaryAdvancesProperty()
+    {
+        $query = SalaryAdvance::with('employee')
+            ->when($this->filters['search'], function ($q) {
+                $q->whereHas('employee', function ($eq) {
+                    $eq->where('full_name', 'like', '%' . $this->filters['search'] . '%')
+                       ->orWhere('employee_id', 'like', '%' . $this->filters['search'] . '%');
+                });
+            })
+            ->when($this->filters['status'], fn($q) => $q->where('status', $this->filters['status']))
+            ->when($this->filters['amount_min'], fn($q) => $q->where('amount', '>=', $this->filters['amount_min']))
+            ->when($this->filters['amount_max'], fn($q) => $q->where('amount', '<=', $this->filters['amount_max']))
+            ->when($this->filters['date_from'], fn($q) => $q->whereDate('request_date', '>=', $this->filters['date_from']))
+            ->when($this->filters['date_to'], fn($q) => $q->whereDate('request_date', '<=', $this->filters['date_to']))
+            ->orderBy($this->sortField, $this->sortDirection);
+
+        return $query->paginate(15);
+    }
+
+    /**
      * Método para renderizar o componente
      */
     public function render()
     {
         $employees = Employee::orderBy('full_name')->get();
         
-        $salaryAdvancesQuery = SalaryAdvance::query()
-            ->when($this->filters['search'] ?? false, function ($query, $search) {
-                return $query->where(function ($q) use ($search) {
-                    $q->whereHas('employee', function ($qe) use ($search) {
-                        $qe->where('full_name', 'like', "%{$search}%");
-                    })
-                    ->orWhere('reason', 'like', "%{$search}%");
-                });
-            })
-            ->when($this->filters['employee_id'] ?? false, function ($query, $employeeId) {
-                return $query->where('employee_id', $employeeId);
-            })
-            ->when($this->filters['status'] ?? false, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($this->filters['date_from'] ?? false, function ($query, $dateFrom) {
-                return $query->where('request_date', '>=', $dateFrom);
-            })
-            ->when($this->filters['date_to'] ?? false, function ($query, $dateTo) {
-                return $query->where('request_date', '<=', $dateTo);
-            })
-            ->orderBy($this->sortField, $this->sortDirection);
-        
-        $salaryAdvances = $salaryAdvancesQuery->paginate(10);
-        
         return view('livewire.hr.salary-advances', [
-            'salaryAdvances' => $salaryAdvances,
+            'salaryAdvances' => $this->salaryAdvances,
             'employees' => $employees,
         ]);
     }

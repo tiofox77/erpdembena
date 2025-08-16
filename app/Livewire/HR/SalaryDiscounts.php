@@ -59,6 +59,8 @@ class SalaryDiscounts extends Component
     public string $search = '';
     public string $statusFilter = '';
     public string $typeFilter = '';
+    public string $dateFrom = '';
+    public string $dateTo = '';
     public string $sortBy = 'request_date';
     public string $sortDirection = 'desc';
     
@@ -143,6 +145,8 @@ class SalaryDiscounts extends Component
             }))
             ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
             ->when($this->typeFilter, fn($q) => $q->where('discount_type', $this->typeFilter))
+            ->when($this->dateFrom, fn($q) => $q->whereDate('request_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn($q) => $q->whereDate('request_date', '<=', $this->dateTo))
             ->orderBy($this->sortBy, $this->sortDirection);
         
         $discounts = $query->paginate(10);

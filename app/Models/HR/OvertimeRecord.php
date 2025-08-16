@@ -31,6 +31,9 @@ class OvertimeRecord extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'input_type',
+        'period_type',
+        'is_night_shift',
     ];
     
     /**
