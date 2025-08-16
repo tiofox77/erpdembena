@@ -21,12 +21,12 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.search') }}</label>
-                <input type="text" wire:model.debounce.300ms="filters.search" placeholder="{{ __('messages.search_employee') }}" 
+                <input type="text" wire:model.live.debounce.300ms="filters.search" placeholder="{{ __('messages.search_employee') }}" 
                     class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.employee') }}</label>
-                <select wire:model="filters.employee_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <select wire:model.live="filters.employee_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">{{ __('messages.all_employees') }}</option>
                     @foreach($employees as $employee)
                         <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
@@ -35,7 +35,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.status') }}</label>
-                <select wire:model="filters.status" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <select wire:model.live="filters.status" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">{{ __('messages.all_statuses') }}</option>
                     <option value="pending">{{ __('messages.pending') }}</option>
                     <option value="approved">{{ __('messages.approved') }}</option>
@@ -45,8 +45,8 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.date_range') }}</label>
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="date" wire:model="filters.date_from" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <input type="date" wire:model="filters.date_to" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="date" wire:model.live="filters.date_from" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="date" wire:model.live="filters.date_to" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
             </div>
         </div>
@@ -184,6 +184,128 @@
                     </tr>
                 @endforelse
             </tbody>
+            
+            <!-- Footer com resumo quando há filtros aplicados -->
+            @if(!empty(array_filter($filters)) && $summary['total_records'] > 0)
+            <tfoot class="bg-gray-100 border-t-2 border-gray-300">
+                <tr>
+                    <td colspan="6" class="px-6 py-4">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-chart-bar text-blue-600 text-lg mr-2"></i>
+                                    <h3 class="text-lg font-semibold text-gray-800">{{ __('messages.overtime_summary') }}</h3>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <i class="fas fa-filter mr-1"></i>
+                                    {{ $summary['total_records'] }} {{ __('messages.records_found') }}
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <!-- Total Geral -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border-l-4 border-blue-500">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">{{ __('messages.total_hours') }}</p>
+                                            <p class="text-xl font-bold text-blue-600">{{ number_format($summary['total_hours'], 2) }}h</p>
+                                        </div>
+                                        <div class="text-blue-500">
+                                            <i class="fas fa-clock text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ number_format($summary['total_amount'], 2) }} Kz
+                                    </div>
+                                </div>
+                                
+                                <!-- Aprovadas -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border-l-4 border-green-500">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">{{ __('messages.approved_hours') }}</p>
+                                            <p class="text-xl font-bold text-green-600">{{ number_format($summary['approved_hours'], 2) }}h</p>
+                                        </div>
+                                        <div class="text-green-500">
+                                            <i class="fas fa-check-circle text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ number_format($summary['approved_amount'], 2) }} Kz
+                                    </div>
+                                </div>
+                                
+                                <!-- Pendentes -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border-l-4 border-yellow-500">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">{{ __('messages.pending_hours') }}</p>
+                                            <p class="text-xl font-bold text-yellow-600">{{ number_format($summary['pending_hours'], 2) }}h</p>
+                                        </div>
+                                        <div class="text-yellow-500">
+                                            <i class="fas fa-hourglass-half text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ number_format($summary['pending_amount'], 2) }} Kz
+                                    </div>
+                                </div>
+                                
+                                <!-- Média por Registro -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm border-l-4 border-purple-500">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">{{ __('messages.average_hours') }}</p>
+                                            <p class="text-xl font-bold text-purple-600">
+                                                {{ number_format($summary['total_records'] > 0 ? $summary['total_hours'] / $summary['total_records'] : 0, 2) }}h
+                                            </p>
+                                        </div>
+                                        <div class="text-purple-500">
+                                            <i class="fas fa-chart-line text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ __('messages.per_record') }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Informações adicionais quando filtro de funcionário específico -->
+                            @if(!empty($filters['employee_id']))
+                                @php
+                                    $selectedEmployee = $employees->firstWhere('id', $filters['employee_id']);
+                                @endphp
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user text-blue-600 mr-2"></i>
+                                        <span class="font-medium text-blue-800">
+                                            {{ __('messages.showing_records_for') }}: {{ $selectedEmployee->full_name ?? __('messages.unknown_employee') }}
+                                        </span>
+                                    </div>
+                                    @if(!empty($filters['date_from']) || !empty($filters['date_to']))
+                                        <div class="flex items-center mt-2 text-sm text-blue-700">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            {{ __('messages.period') }}: 
+                                            @if($filters['date_from'])
+                                                {{ \Carbon\Carbon::parse($filters['date_from'])->format('d/m/Y') }}
+                                            @else
+                                                {{ __('messages.beginning') }}
+                                            @endif
+                                            {{ __('messages.to') }}
+                                            @if($filters['date_to'])
+                                                {{ \Carbon\Carbon::parse($filters['date_to'])->format('d/m/Y') }}
+                                            @else
+                                                {{ __('messages.today') }}
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+            @endif
         </table>
     </div>
     

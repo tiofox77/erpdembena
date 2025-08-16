@@ -191,6 +191,41 @@ class OvertimeRecords extends Component
     }
     
     /**
+     * Calcula totais para resumo quando há filtro específico
+     */
+    public function getOvertimeSummaryProperty()
+    {
+        $query = OvertimeRecord::query()
+            ->when($this->filters['search'] ?? false, function ($query, $search) {
+                return $query->whereHas('employee', function ($subquery) use ($search) {
+                    $subquery->where('full_name', 'like', '%' . $search . '%');
+                });
+            })
+            ->when($this->filters['employee_id'] ?? false, function ($query, $employeeId) {
+                return $query->where('employee_id', $employeeId);
+            })
+            ->when($this->filters['status'] ?? false, function ($query, $status) {
+                return $query->where('status', $status);
+            })
+            ->when($this->filters['date_from'] ?? false, function ($query, $dateFrom) {
+                return $query->where('date', '>=', $dateFrom);
+            })
+            ->when($this->filters['date_to'] ?? false, function ($query, $dateTo) {
+                return $query->where('date', '<=', $dateTo);
+            });
+
+        return [
+            'total_records' => $query->count(),
+            'total_hours' => $query->sum('hours'),
+            'total_amount' => $query->sum('amount'),
+            'approved_hours' => $query->where('status', 'approved')->sum('hours'),
+            'approved_amount' => $query->where('status', 'approved')->sum('amount'),
+            'pending_hours' => $query->where('status', 'pending')->sum('hours'),
+            'pending_amount' => $query->where('status', 'pending')->sum('amount'),
+        ];
+    }
+
+    /**
      * Método para renderizar o componente
      */
     public function render()
@@ -217,11 +252,14 @@ class OvertimeRecords extends Component
             })
             ->orderBy($this->sortField, $this->sortDirection);
         
-        $overtimeRecords = $overtimeRecordsQuery->paginate(10);
+        // Aumentar paginação quando há filtro específico de funcionário
+        $perPage = !empty($this->filters['employee_id']) ? 25 : 10;
+        $overtimeRecords = $overtimeRecordsQuery->paginate($perPage);
         
         return view('livewire.hr.overtime-records', [
             'overtimeRecords' => $overtimeRecords,
             'employees' => $employees,
+            'summary' => $this->overtimeSummary,
         ]);
     }
     
@@ -259,7 +297,7 @@ class OvertimeRecords extends Component
         $this->isEditing = true;
         
         $overtime = OvertimeRecord::findOrFail($id);
-        $this->employee_id = $overtime->employee_id;
+        $this->employee_id = (int) $overtime->employee_id;
         $this->date = $overtime->date->format('Y-m-d');
         $this->start_time = $overtime->start_time;
         $this->end_time = $overtime->end_time;
@@ -293,7 +331,7 @@ class OvertimeRecords extends Component
         $overtime = OvertimeRecord::with(['employee', 'approver'])->findOrFail($id);
         
         // Dados básicos
-        $this->employee_id = $overtime->employee_id;
+        $this->employee_id = (int) $overtime->employee_id;
         $this->employee_name = $overtime->employee->full_name ?? '';
         $this->date = $overtime->date->format('Y-m-d');
         $this->start_time = $overtime->start_time;
