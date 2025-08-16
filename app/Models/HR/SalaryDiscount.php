@@ -62,6 +62,7 @@ class SalaryDiscount extends Model
      */
     public const TYPE_UNION = 'union';
     public const TYPE_OTHERS = 'others';
+    public const TYPE_QUIXIQUILA = 'quixiquila';
     
     /**
      * Constantes para status
@@ -180,6 +181,7 @@ class SalaryDiscount extends Model
         return match ($this->discount_type) {
             self::TYPE_UNION => __('messages.union_discount'),
             self::TYPE_OTHERS => __('messages.other_discount'),
+            self::TYPE_QUIXIQUILA => 'Quixiquila',
             default => $this->discount_type,
         };
     }

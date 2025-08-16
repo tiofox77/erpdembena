@@ -7,6 +7,8 @@ namespace App\Livewire\HR;
 use App\Models\HR\Employee;
 use App\Models\HR\SalaryDiscount;
 use App\Models\HR\SalaryDiscountPayment;
+use App\Models\Setting;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -153,7 +155,10 @@ class SalaryDiscounts extends Component
         
         $employees = Employee::orderBy('full_name')->get();
         
-        return view('livewire.hr.salary-discounts', compact('discounts', 'employees'));
+        return view('livewire.hr.salary-discounts', [
+            'discounts' => $discounts,
+            'employees' => $employees,
+        ]);
     }
     
     /**

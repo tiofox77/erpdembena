@@ -113,7 +113,10 @@ class Payroll extends Component
     // Overtime Data
     public float $total_overtime_hours = 0.0;
     public float $total_overtime_amount = 0.0;
-    public array $overtimeRecords = [];
+    public array $overtime_details = [];
+    public float $night_shift_allowance = 0.0;
+    public array $night_shift_details = [];
+    public int $night_shift_days = 0;
     
     // Leave Data
     public int $total_leave_days = 0;
@@ -177,18 +180,19 @@ class Payroll extends Component
     // Payroll items
     public array $payrollItems = [];
 
-    // Modal flags
+    // Modal states
     public bool $showModal = false;
-    public bool $showDeleteModal = false;
-    public bool $showProcessModal = false;
     public bool $showViewModal = false;
-    public bool $showApproveModal = false;
     public bool $showPayModal = false;
+    public bool $showDeleteModal = false;
+    public bool $showApproveModal = false;
+    public bool $showProcessModal = false;
     public bool $isEditing = false;
     public bool $showEmployeeSearch = false;
     
     // Current payroll for operations
     public ?PayrollModel $currentPayroll = null;
+    public ?PayrollModel $payrollToDelete = null;
     public ?Employee $selectedEmployee = null;
     
     // Employee search and selection
@@ -913,6 +917,57 @@ class Payroll extends Component
     }
 
     /**
+     * Show delete confirmation modal
+     */
+    public function delete(int $payrollId): void
+    {
+        $this->payrollToDelete = PayrollModel::with(['employee', 'payrollPeriod'])->findOrFail($payrollId);
+        
+        // Check if payroll can be deleted (only draft or rejected)
+        if (!in_array($this->payrollToDelete->status, ['draft', 'rejected'])) {
+            session()->flash('error', __('messages.cannot_delete_payroll_status'));
+            return;
+        }
+        
+        $this->showDeleteModal = true;
+    }
+
+    /**
+     * Confirm and execute delete
+     */
+    public function confirmDelete(): void
+    {
+        try {
+            if (!$this->payrollToDelete) {
+                session()->flash('error', __('messages.payroll_not_found'));
+                return;
+            }
+            
+            // Delete related payroll items first
+            $this->payrollToDelete->payrollItems()->delete();
+            
+            // Delete the payroll record
+            $this->payrollToDelete->delete();
+            
+            session()->flash('message', __('messages.payroll_deleted_successfully'));
+            
+            $this->cancelDelete();
+            
+        } catch (\Exception $e) {
+            session()->flash('error', __('messages.error_deleting_payroll'));
+        }
+    }
+
+    /**
+     * Cancel delete operation
+     */
+    public function cancelDelete(): void
+    {
+        $this->showDeleteModal = false;
+        $this->payrollToDelete = null;
+    }
+
+    /**
      * Calculate payroll components dynamically
      */
     public function calculatePayrollComponents(): void
@@ -954,6 +1009,12 @@ class Payroll extends Component
         // Add overtime amount if available
         if ($this->total_overtime_amount > 0) {
             $grossAmount += $this->total_overtime_amount;
+        }
+
+        // Calculate night shift allowance (20% additional)
+        $nightShiftData = $this->calculateNightShiftAllowance();
+        if ($nightShiftData['amount'] > 0) {
+            $grossAmount += $nightShiftData['amount'];
         }
 
         $this->gross_salary = $grossAmount;
@@ -1000,12 +1061,7 @@ class Payroll extends Component
         $deductions += $this->other_deductions;
 
         $this->total_deductions = $deductions;
-        $this->net_salary = $this->gross_salary - $this->total_deductions;
-
-        // Ensure net salary is not negative
-        if ($this->net_salary < 0) {
-            $this->net_salary = 0.0;
-        }
+        $this->net_salary = max(0, $this->gross_salary - $this->total_deductions);
     }
 
     /**
@@ -1834,7 +1890,7 @@ class Payroll extends Component
         $this->showGenerateModal = true;
     }
 
-    public function confirmDelete(PayrollModel $payroll)
+    public function showDeleteConfirmation(PayrollModel $payroll)
     {
         $this->payroll_id = $payroll->id;
         $this->showDeleteModal = true;
@@ -2376,7 +2432,7 @@ class Payroll extends Component
     
 
     
-    public function delete()
+    public function deletePayroll()
     {
         $payroll = PayrollModel::find($this->payroll_id);
         $payroll->delete();

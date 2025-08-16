@@ -70,6 +70,13 @@ class WorkingDaysSettingsSeeder extends Seeder
                 'group' => 'labor_rules',
                 'description' => 'Limite mensal de horas extras permitidas',
                 'is_system' => false
+            ],
+            [
+                'key' => 'night_shift_allowance_rate',
+                'value' => '0.20',
+                'group' => 'labor_rules',
+                'description' => 'Taxa adicional para turno noturno (20% sobre salário diário)',
+                'is_system' => false
             ]
         ];
 

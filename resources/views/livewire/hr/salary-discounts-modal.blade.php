@@ -84,6 +84,7 @@
                                     <select id="discount_type" wire:model="discount_type" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm">
                                         <option value="others">{{ __('messages.other_discount') }}</option>
                                         <option value="union">{{ __('messages.union_discount') }}</option>
+                                        <option value="quixiquila">Quixiquila</option>
                                     </select>
                                     @error('discount_type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>

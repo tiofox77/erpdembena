@@ -12,8 +12,8 @@
          x-transition:leave="transition ease-in duration-200" 
          x-transition:leave-start="opacity-100" 
          x-transition:leave-end="opacity-0">
-        <div class="relative top-20 mx-auto p-1 w-full max-w-2xl">
-            <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out" 
+        <div class="relative top-20 mx-auto p-1 w-full max-w-4xl max-h-[80vh] flex flex-col">
+            <div class="relative bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out flex flex-col h-full" 
                  x-transition:enter="transition ease-out duration-300" 
                  x-transition:enter-start="transform opacity-0 scale-95" 
                  x-transition:enter-end="transform opacity-100 scale-100" 
@@ -33,7 +33,7 @@
                 </div>
 
                 {{-- Body --}}
-                <div class="p-6">
+                <div class="p-6 flex-1 overflow-hidden flex flex-col">
                     {{-- Search Input --}}
                     <div class="mb-6">
                         <label for="employee_search" class="block text-sm font-medium text-gray-700 mb-2">
@@ -96,7 +96,8 @@
                     @endif
 
                     {{-- Search Results --}}
-                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                    <div class="flex-1 min-h-0">
+                        <div class="space-y-3 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-200 hover:scrollbar-thumb-blue-600 pr-2">
                         @if(strlen($employeeSearch) >= 2)
                             @if(count($searchResults) > 0)
                                 <div class="text-sm text-gray-600 mb-3 flex items-center">
@@ -161,6 +162,7 @@
                                 <p class="text-sm text-gray-500">{{ __('messages.type_at_least_2_characters') }}</p>
                             </div>
                         @endif
+                        </div>
                     </div>
                 </div>
 

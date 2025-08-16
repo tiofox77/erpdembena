@@ -247,6 +247,16 @@
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     
+                                    <!-- Gerar PDF -->
+                                    <button wire:click="generatePDF({{ $discount->id }})" 
+                                            wire:loading.attr="disabled"
+                                            wire:target="generatePDF({{ $discount->id }})"
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200 disabled:opacity-50"
+                                            title="Gerar PDF">
+                                        <i class="fas fa-file-pdf" wire:loading.remove wire:target="generatePDF({{ $discount->id }})"></i>
+                                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="generatePDF({{ $discount->id }})"></i>
+                                    </button>
+                                    
                                     <!-- Editar (apenas se pending ou approved) -->
                                     @if(in_array($discount->status, ['pending', 'approved']))
                                         <button wire:click="edit({{ $discount->id }})" 

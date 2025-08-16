@@ -10,6 +10,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\HR\SalaryAdvancePayment;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Setting;
 
 class SalaryAdvances extends Component
 {
@@ -164,11 +166,41 @@ class SalaryAdvances extends Component
         $employees = Employee::orderBy('full_name')->get();
         
         return view('livewire.hr.salary-advances', [
-            'salaryAdvances' => $this->salaryAdvances,
+            'advances' => $this->salaryAdvances,
             'employees' => $employees,
         ]);
     }
     
+    /**
+     * Generate PDF for salary advance
+     */
+    public function generatePDF(int $advanceId)
+    {
+        $advance = SalaryAdvance::with(['employee.department', 'payments'])->findOrFail($advanceId);
+        
+        // Get company information from settings
+        $companyName = Setting::where('key', 'company_name')->value('value') ?? 'ERPDEMBENA';
+        $companyAddress = Setting::where('key', 'company_address')->value('value') ?? 'Luanda, Angola';
+        $companyCity = Setting::where('key', 'company_city')->value('value') ?? 'Luanda';
+        
+        $pdf = Pdf::loadView('pdfs.salary-advance-form', [
+            'advance' => $advance,
+            'company_name' => $companyName,
+            'company_address' => $companyAddress,
+            'company_city' => $companyCity,
+            'approved_by' => Auth::user()->name ?? 'Sistema'
+        ]);
+        
+        $pdf->setPaper('A4', 'portrait');
+        
+        $filename = "adiantamento_salarial_{$advance->employee->full_name}_{$advance->id}.pdf";
+        $filename = str_replace(' ', '_', $filename);
+        
+        return response()->streamDownload(function() use ($pdf) {
+            echo $pdf->stream();
+        }, $filename);
+    }
+
     /**
      * Método para ordenar os registos
      */
