@@ -7,7 +7,10 @@ use App\Models\HR\Employee;
 use App\Models\HR\EmployeeDocument;
 use App\Models\HR\JobPosition;
 use App\Models\HR\Bank;
+use App\Exports\EmployeesExport;
+use App\Imports\EmployeesImport;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -74,8 +77,15 @@ class Employees extends Component
     public $showModal = false;
     public $showViewModal = false;
     public $showDeleteModal = false;
+    public ?int $deleteId = null;
     public $viewEmployee = null;
     public $expiringDocuments = [];
+
+    // Import/Export
+    public $importFile = null;
+    public $showImportModal = false;
+    public array $importResults = [];
+
     public $employeeToDelete = null;
     public $isEditing = false;
 
@@ -676,6 +686,122 @@ class Employees extends Component
             
             // Show document management modal
             $this->showDocumentModal = true;
+        }
+    }
+
+    public function exportToExcel()
+    {
+        try {
+            $fileName = 'funcionarios_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+            
+            return Excel::download(new EmployeesExport, $fileName);
+            
+        } catch (\Exception $e) {
+            session()->flash('error', __('messages.export_failed') . ': ' . $e->getMessage());
+        }
+    }
+
+    public function openImportModal()
+    {
+        $this->reset(['importFile', 'importResults']);
+        $this->showImportModal = true;
+    }
+
+    public function closeImportModal()
+    {
+        $this->showImportModal = false;
+        $this->reset(['importFile', 'importResults']);
+    }
+
+    public function importFromExcel()
+    {
+        \Log::info('DEBUG: importFromExcel method called');
+        \Log::info('DEBUG: importFile value:', ['file' => $this->importFile]);
+        
+        try {
+            $this->validate([
+                'importFile' => 'required|mimes:xlsx,xls,csv|max:10240', // Max 10MB
+            ]);
+            \Log::info('DEBUG: Validation passed');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('DEBUG: Validation failed:', $e->errors());
+            session()->flash('error', 'Erro de validação: ' . implode(', ', $e->validator->errors()->all()));
+            return;
+        }
+
+        try {
+            \Log::info('DEBUG: Starting import process');
+            $import = new EmployeesImport();
+            Excel::import($import, $this->importFile->getRealPath());
+            \Log::info('DEBUG: Import completed successfully');
+            
+            $this->importResults = [
+                'success' => true,
+                'message' => __('messages.import_completed_successfully'),
+                'details' => [
+                    'total_processed' => 0, // You can enhance this by tracking in the import class
+                    'created' => 0,
+                    'updated' => 0,
+                ]
+            ];
+
+            session()->flash('success', __('messages.employees_imported_successfully'));
+            $this->closeImportModal();
+            
+        } catch (\Exception $e) {
+            \Log::error('DEBUG: Import failed with exception:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->importResults = [
+                'success' => false,
+                'message' => __('messages.import_failed') . ': ' . $e->getMessage(),
+                'details' => []
+            ];
+            
+            session()->flash('error', __('messages.import_failed') . ': ' . $e->getMessage());
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        try {
+            // Create empty export with just headers
+            $templateData = collect([
+                // Empty row with all the expected column structure
+                [
+                    'full_name' => '',
+                    'id_card' => '',
+                    'tax_number' => '',
+                    'email' => '',
+                    'phone' => '',
+                    'date_of_birth' => '',
+                    'gender' => '',
+                    'marital_status' => '',
+                    'dependents' => '',
+                    'address' => '',
+                    'department' => '',
+                    'position' => '',
+                    'hire_date' => '',
+                    'employment_status' => '',
+                    'bank_name' => '',
+                    'bank_account' => '',
+                    'bank_iban' => '',
+                    'inss_number' => '',
+                    'base_salary' => '',
+                    'food_benefit' => '',
+                    'transport_benefit' => '',
+                    'bonus_amount' => '',
+                ]
+            ]);
+
+            $fileName = 'template_funcionarios.xlsx';
+            
+            return Excel::download(new EmployeesExport, $fileName);
+            
+        } catch (\Exception $e) {
+            session()->flash('error', __('messages.template_download_failed') . ': ' . $e->getMessage());
         }
     }
 }

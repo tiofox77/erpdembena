@@ -21,16 +21,29 @@
                     <div class="flex items-center space-x-2">
                         <label class="text-sm font-medium text-gray-700">{{ __('dashboard.period') }}:</label>
                         <select wire:model.live="selectedPeriod" 
-                                wire:change="$refresh"
-                                x-data="{ selectedValue: @entangle('selectedPeriod') }"
-                                x-on:change="selectedValue = $event.target.value"
                                 class="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                            <option value="current_month" {{ $selectedPeriod === 'current_month' ? 'selected' : '' }}>{{ __('dashboard.current_month') }}</option>
-                            <option value="last_month" {{ $selectedPeriod === 'last_month' ? 'selected' : '' }}>{{ __('dashboard.last_month') }}</option>
-                            <option value="current_quarter" {{ $selectedPeriod === 'current_quarter' ? 'selected' : '' }}>{{ __('dashboard.current_quarter') }}</option>
-                            <option value="current_year" {{ $selectedPeriod === 'current_year' ? 'selected' : '' }}>{{ __('dashboard.current_year') }}</option>
+                            <option value="current_period">Período Atual</option>
+                            <option value="current_month">{{ __('dashboard.current_month') }}</option>
+                            <option value="last_month">{{ __('dashboard.last_month') }}</option>
+                            <option value="current_quarter">{{ __('dashboard.current_quarter') }}</option>
+                            <option value="current_year">{{ __('dashboard.current_year') }}</option>
+                            <option value="payroll_period">Período Específico</option>
                         </select>
                     </div>
+                    
+                    @if($selectedPeriod === 'payroll_period')
+                    <!-- Payroll Period Selector -->
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-medium text-gray-700">{{ __('dashboard.select_period') }}:</label>
+                        <select wire:model.live="selectedPayrollPeriodId" 
+                                class="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <option value="">Selecionar período...</option>
+                            @foreach($availablePeriods as $period)
+                                <option value="{{ $period->id }}">{{ $period->name }} ({{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
                     
                     <!-- Department Filter -->
                     <div class="flex items-center space-x-2">

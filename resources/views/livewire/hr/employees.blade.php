@@ -14,11 +14,21 @@
                                 <p class="text-blue-100 mt-2">{{ __('messages.manage_employees_description') }}</p>
                             </div>
                             <div class="flex space-x-3">
+                                <!-- Export Button -->
                                 <button wire:click="exportToExcel" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                                     <i class="fas fa-file-excel mr-2"></i>
-                                    {{ __('messages.export_excel') }}
+                                    {{ __('messages.export') }}
                                 </button>
-                                <button wire:click="create" class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                
+                                <!-- Import Button -->
+                                <button wire:click="openImportModal" 
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                    <i class="fas fa-file-import mr-2"></i>
+                                    {{ __('messages.import') }}
+                                </button>
+                                
+                                <!-- Create Employee Button -->
+                                <button wire:click="create" class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                                     <i class="fas fa-plus mr-2"></i>
                                     {{ __('messages.new_employee') }}
                                 </button>
@@ -54,7 +64,7 @@
                             <!-- Advanced Filters -->
                             <div class="space-y-6">
                                 <!-- Primary Filters Row -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <!-- Department Filter -->
                                     <div class="space-y-2">
                                         <label class="flex items-center text-sm font-medium text-gray-700">
@@ -64,7 +74,7 @@
                                             {{ __('messages.department') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model.live="filters.department_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.department_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200 appearance-none">
                                                 <option value="">{{ __('messages.all_departments') }}</option>
                                                 @foreach($departments as $department)
                                                     <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -82,32 +92,6 @@
                                         @endif
                                     </div>
 
-                                    <!-- Position Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
-                                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-briefcase text-green-600 text-xs"></i>
-                                            </div>
-                                            {{ __('messages.position') }}
-                                        </label>
-                                        <div class="relative">
-                                            <select wire:model.live="filters.position_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
-                                                <option value="">{{ __('messages.all_positions') }}</option>
-                                                @foreach($positions as $position)
-                                                    <option value="{{ $position->id }}">{{ $position->title }}</option>
-                                                @endforeach
-                                            </select>
-                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                            </div>
-                                        </div>
-                                        @if($filters['position_id'])
-                                            <div class="flex items-center text-xs text-green-600">
-                                                <i class="fas fa-filter mr-1"></i>
-                                                {{ __('messages.filtered') }}
-                                            </div>
-                                        @endif
-                                    </div>
 
                                     <!-- Employment Status Filter -->
                                     <div class="space-y-2">
@@ -118,7 +102,7 @@
                                             {{ __('messages.employment_status') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model.live="filters.employment_status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.employment_status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200 appearance-none">
                                                 <option value="">{{ __('messages.all_statuses') }}</option>
                                                 <option value="active">{{ __('messages.active') }}</option>
                                                 <option value="on_leave">{{ __('messages.on_leave') }}</option>
@@ -147,7 +131,7 @@
                                             {{ __('messages.gender') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model.live="filters.gender" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring focus:ring-pink-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.gender" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring focus:ring-pink-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200 appearance-none">
                                                 <option value="">{{ __('messages.all_genders') }}</option>
                                                 <option value="male">{{ __('messages.male') }}</option>
                                                 <option value="female">{{ __('messages.female') }}</option>
@@ -194,7 +178,7 @@
                                             {{ __('messages.salary_range') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model.live="filters.salary_range" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.salary_range" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200 appearance-none">
                                                 <option value="">{{ __('messages.all_salaries') }}</option>
                                                 <option value="0-50000">0 - 50.000 AOA</option>
                                                 <option value="50000-100000">50.000 - 100.000 AOA</option>
@@ -339,21 +323,6 @@
                                             </div>
                                         </th>
                                         <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('position_id')">
-                                                <i class="fas fa-briefcase text-gray-400 mr-1"></i>
-                                                <span>{{ __('messages.position') }}</span>
-                                                @if($sortField === 'position_id')
-                                                    @if($sortDirection === 'asc')
-                                                        <i class="fas fa-sort-up text-blue-500"></i>
-                                                    @else
-                                                        <i class="fas fa-sort-down text-blue-500"></i>
-                                                    @endif
-                                                @else
-                                                    <i class="fas fa-sort text-gray-400 hover:text-gray-600"></i>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('hire_date')">
                                                 <i class="fas fa-calendar text-gray-400 mr-1"></i>
                                                 <span>{{ __('messages.hire_date') }}</span>
@@ -476,16 +445,6 @@
                                                     <div class="flex items-center">
                                                         <i class="fas fa-building text-blue-500 mr-2"></i>
                                                         <span class="text-sm text-gray-900">{{ Str::limit($employee->department->name, 15) }}</span>
-                                                    </div>
-                                                @else
-                                                    <span class="text-sm text-gray-400 italic">{{ __('messages.not_assigned') }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-3 py-4 whitespace-nowrap">
-                                                @if($employee->position)
-                                                    <div class="flex items-center">
-                                                        <i class="fas fa-briefcase text-green-500 mr-2"></i>
-                                                        <span class="text-sm text-gray-900">{{ Str::limit($employee->position->title, 15) }}</span>
                                                     </div>
                                                 @else
                                                     <span class="text-sm text-gray-400 italic">{{ __('messages.not_assigned') }}</span>
@@ -648,13 +607,37 @@
                                                         </div>
                                                     @else
                                                         <p class="text-gray-500 mb-6">{{ __('messages.no_employees_description') }}</p>
-                                                        <button
-                                                            wire:click="create"
-                                                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105"
-                                                        >
-                                                            <i class="fas fa-plus mr-2"></i>
-                                                            {{ __('messages.add_first_employee') }}
-                                                        </button>
+                                                        <div class="flex items-center space-x-3">
+                                                            <!-- Export Button -->
+                                                            <button type="button" 
+                                                                    wire:click="exportToExcel" 
+                                                                    class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                                                </svg>
+                                                                {{ __('messages.export') }}
+                                                            </button>
+
+                                                            <!-- Import Button -->
+                                                            <button type="button" 
+                                                                    wire:click="showImportModal" 
+                                                                    class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                                                                </svg>
+                                                                {{ __('messages.import') }}
+                                                            </button>
+
+                                                            <!-- Create Employee Button -->
+                                                            <button type="button" 
+                                                                    wire:click="create" 
+                                                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                                                </svg>
+                                                                {{ __('messages.create_employee') }}
+                                                            </button>
+                                                        </div>
                                                     @endif
                                                 </div>
                                             </td>
@@ -2985,6 +2968,79 @@
             </div>
         </div>
     </div>
+    @endif
+
+    <!-- Import Modal -->
+    @if($showImportModal)
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden m-4 transform transition-all duration-300">
+            <!-- Modern Header with Gradient -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="bg-white/20 rounded-full p-2 mr-3">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">{{ __('messages.import_employees') }}</h2>
+                </div>
+                <button wire:click="closeImportModal" class="text-white/80 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <!-- File Upload -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('messages.select_file') }}</label>
+                        <input wire:model="importFile" 
+                               type="file" 
+                               accept=".xlsx,.xls,.csv"
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        @error('importFile') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Download Template Button -->
+                    <div class="mb-4">
+                        <button wire:click="downloadTemplate" 
+                                class="inline-flex items-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                            </svg>
+                            {{ __('messages.download_template') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-end p-6 pt-4 border-t border-gray-200 space-x-3">
+                    <button wire:click="closeImportModal" 
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                        {{ __('common.cancel') }}
+                    </button>
+                    <button wire:click="importFromExcel" 
+                        wire:loading.attr="disabled"
+                        wire:target="importFromExcel"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                    <span wire:loading.remove wire:target="importFromExcel">
+                        {{ __('messages.import') }}
+                    </span>
+                    <span wire:loading wire:target="importFromExcel" class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Importando...
+                    </span>
+                </button>
+                </div>
+            </div>
+        </div>
     @endif
 
     <!-- Flash Message -->

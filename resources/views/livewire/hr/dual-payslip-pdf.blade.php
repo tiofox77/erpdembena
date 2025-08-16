@@ -13,8 +13,8 @@
         
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 8px;
-            line-height: 1.1;
+            font-size: 9px;
+            line-height: 1.2;
             color: #000;
             background: #ffffff;
             margin: 0;
@@ -25,14 +25,14 @@
             width: 210mm;
             height: 297mm;
             margin: 0;
-            padding: 3mm;
+            padding: 2mm;
         }
         
         .payslip {
-            height: 144mm;
-            border: 2px solid #000;
-            margin-bottom: 2mm;
-            padding: 1.5mm;
+            height: 135mm;
+            border: 1px solid #000;
+            margin-bottom: 1mm;
+            padding: 1mm;
             position: relative;
             page-break-inside: avoid;
         }
@@ -40,52 +40,54 @@
         .header {
             text-align: center;
             border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 2mm;
+            padding-bottom: 0.5mm;
+            margin-bottom: 0.8mm;
         }
         
         .company-name {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             margin-bottom: 0.5mm;
         }
         
         .company-info {
-            font-size: 6px;
+            font-size: 7px;
             margin-bottom: 0.5mm;
         }
         
         .document-title {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
             text-transform: uppercase;
         }
         
         .via-label {
             position: absolute;
-            top: 1mm;
+            top: 1.5mm;
             right: 3mm;
-            font-size: 7px;
+            font-size: 8px;
             font-weight: bold;
             border: 1px solid #000;
-            padding: 0.5mm 1mm;
+            padding: 1mm 1.5mm;
+            background-color: #f0f0f0;
         }
         
         .info-section {
-            margin-bottom: 1mm;
+            margin-bottom: 0.4mm;
         }
         
         .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 1mm;
+            margin-bottom: 0.4mm;
         }
         
         .info-table td {
-            padding: 0.5mm;
+            padding: 0.25mm;
             border: 1px solid #000;
             vertical-align: middle;
-            font-size: 6px;
+            font-size: 7px;
+            height: 3.8mm;
         }
         
         .info-label {
@@ -99,35 +101,37 @@
         }
         
         .section-title {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
             background-color: #e0e0e0;
             padding: 0.5mm;
             border: 1px solid #000;
             text-align: center;
-            margin-bottom: 0.5mm;
+            margin-bottom: 0.4mm;
         }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 1mm;
+            margin-bottom: 0.4mm;
         }
         
         .items-table th {
             background-color: #f0f0f0;
             border: 1px solid #000;
-            padding: 0.5mm;
+            padding: 0.15mm;
             text-align: left;
-            font-size: 6px;
+            font-size: 5.5px;
             font-weight: bold;
+            height: 3mm;
         }
         
         .items-table td {
             border: 1px solid #000;
-            padding: 0.5mm;
-            font-size: 6px;
+            padding: 0.15mm;
+            font-size: 5.5px;
             vertical-align: middle;
+            height: 3mm;
         }
         
         .amount {
@@ -141,9 +145,10 @@
         }
         
         .summary-section {
-            border: 2px solid #000;
-            padding: 1mm;
-            margin-top: 1mm;
+            border: 1px solid #000;
+            padding: 0.4mm;
+            margin-top: 0.2mm;
+            margin-bottom: 0.4mm;
         }
         
         .summary-table {
@@ -152,9 +157,10 @@
         }
         
         .summary-table td {
-            padding: 0.5mm;
+            padding: 0.2mm;
             border-bottom: 1px solid #000;
-            font-size: 7px;
+            font-size: 6px;
+            height: 2.6mm;
         }
         
         .summary-label {
@@ -171,15 +177,15 @@
         .net-salary-row {
             background-color: #e0e0e0;
             font-weight: bold;
-            font-size: 8px;
+            font-size: 7px;
         }
         
         .signatures {
-            position: absolute;
-            bottom: 2mm;
-            left: 1.5mm;
-            right: 1.5mm;
-            width: calc(100% - 3mm);
+            position: static;
+            margin-top: 0.4mm;
+            left: auto;
+            right: auto;
+            width: 100%;
         }
         
         .signatures table {
@@ -192,15 +198,17 @@
             text-align: center;
             font-size: 6px;
             border-top: 1px solid #000;
-            padding-top: 1mm;
+            padding-top: 0.3mm;
+            height: 5mm;
         }
         
         .cut-line {
             text-align: center;
-            font-size: 7px;
-            margin: 0.5mm 0;
+            font-size: 6px;
+            margin: 0.4mm 0;
             border-top: 1px dashed #000;
-            padding-top: 0.5mm;
+            padding-top: 0.4mm;
+            font-weight: bold;
         }
         
         @media print {
@@ -257,21 +265,27 @@
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 45%;">Descrição</th>
-                            <th style="width: 30%;">Tipo</th>
-                            <th style="width: 25%;">Valor (AOA)</th>
+                            <th style="width: 25%;">Descrição</th>
+                            <th style="width: 15%;">Tipo</th>
+                            <th style="width: 12%;">Horas</th>
+                            <th style="width: 15%;">Taxa/Hr</th>
+                            <th style="width: 10%;">%</th>
+                            <th style="width: 23%;">Valor (AOA)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($earnings as $earning)
                         <tr>
                             <td>{{ $earning['name'] }}</td>
-                            <td>{{ $earning['type'] === 'earning' ? 'Salário' : ($earning['type'] === 'allowance' ? 'Subsídio' : 'Bónus') }}</td>
+                            <td>{{ $earning['type'] === 'earning' ? 'Salário' : ($earning['type'] === 'allowance' ? 'Subsídio' : ($earning['type'] === 'overtime' ? 'H. Extra' : 'Bónus')) }}</td>
+                            <td class="amount">{{ isset($earning['hours']) ? number_format($earning['hours'], 1, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($earning['rate']) ? number_format($earning['rate'], 2, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($earning['percentage']) ? number_format($earning['percentage'], 1, ',', '.') : '-' }}</td>
                             <td class="amount">{{ number_format($earning['amount'], 2, ',', '.') }}</td>
                         </tr>
                         @endforeach
                         <tr class="total-row">
-                            <td colspan="2"><strong>TOTAL RENDIMENTOS</strong></td>
+                            <td colspan="5"><strong>TOTAL RENDIMENTOS</strong></td>
                             <td class="amount"><strong>{{ number_format($totals['earnings'], 2, ',', '.') }}</strong></td>
                         </tr>
                     </tbody>
@@ -286,21 +300,27 @@
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 45%;">Descrição</th>
-                            <th style="width: 30%;">Tipo</th>
-                            <th style="width: 25%;">Valor (AOA)</th>
+                            <th style="width: 25%;">Descrição</th>
+                            <th style="width: 15%;">Tipo</th>
+                            <th style="width: 12%;">Taxa %</th>
+                            <th style="width: 15%;">Base Cálc.</th>
+                            <th style="width: 10%;">Ref.</th>
+                            <th style="width: 23%;">Valor (AOA)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($deductions as $deduction)
                         <tr>
                             <td>{{ $deduction['name'] }}</td>
-                            <td>{{ $deduction['type'] === 'tax' ? 'Imposto' : 'Dedução' }}</td>
+                            <td>{{ $deduction['type'] === 'tax' ? 'Imposto' : ($deduction['type'] === 'advance' ? 'Adiantam.' : ($deduction['type'] === 'loan' ? 'Empréstimo' : 'Dedução')) }}</td>
+                            <td class="amount">{{ isset($deduction['rate']) ? number_format($deduction['rate'], 2, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($deduction['base']) ? number_format($deduction['base'], 0, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($deduction['reference']) ? $deduction['reference'] : '-' }}</td>
                             <td class="amount">{{ number_format($deduction['amount'], 2, ',', '.') }}</td>
                         </tr>
                         @endforeach
                         <tr class="total-row">
-                            <td colspan="2"><strong>TOTAL DEDUÇÕES</strong></td>
+                            <td colspan="5"><strong>TOTAL DEDUÇÕES</strong></td>
                             <td class="amount"><strong>{{ number_format($totals['deductions'], 2, ',', '.') }}</strong></td>
                         </tr>
                     </tbody>
@@ -312,16 +332,26 @@
             <div class="summary-section">
                 <table class="summary-table">
                     <tr>
-                        <td class="summary-label">Total Bruto:</td>
-                        <td class="summary-value">{{ number_format($totals['earnings'], 2, ',', '.') }} AOA</td>
+                        <td class="summary-label" style="width: 25%;">Salário Base:</td>
+                        <td class="summary-value" style="width: 25%;">{{ number_format($totals['base_salary'] ?? 0, 2, ',', '.') }} AOA</td>
+                        <td class="summary-label" style="width: 25%;">Horas Extras:</td>
+                        <td class="summary-value" style="width: 25%;">{{ number_format($totals['overtime'] ?? 0, 2, ',', '.') }} AOA</td>
                     </tr>
                     <tr>
+                        <td class="summary-label">Subsídios:</td>
+                        <td class="summary-value">{{ number_format($totals['allowances'] ?? 0, 2, ',', '.') }} AOA</td>
+                        <td class="summary-label">Adiantamentos:</td>
+                        <td class="summary-value">{{ number_format($totals['advances'] ?? 0, 2, ',', '.') }} AOA</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">Total Bruto:</td>
+                        <td class="summary-value">{{ number_format($totals['earnings'], 2, ',', '.') }} AOA</td>
                         <td class="summary-label">Total Deduções:</td>
                         <td class="summary-value">{{ number_format($totals['deductions'], 2, ',', '.') }} AOA</td>
                     </tr>
                     <tr class="net-salary-row">
-                        <td class="summary-label">SALÁRIO LÍQUIDO:</td>
-                        <td class="summary-value">{{ number_format($totals['net_salary'], 2, ',', '.') }} AOA</td>
+                        <td class="summary-label" colspan="2">SALÁRIO LÍQUIDO:</td>
+                        <td class="summary-value" colspan="2">{{ number_format($totals['net_salary'], 2, ',', '.') }} AOA</td>
                     </tr>
                 </table>
             </div>
@@ -386,21 +416,27 @@
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 45%;">Descrição</th>
-                            <th style="width: 30%;">Tipo</th>
-                            <th style="width: 25%;">Valor (AOA)</th>
+                            <th style="width: 25%;">Descrição</th>
+                            <th style="width: 15%;">Tipo</th>
+                            <th style="width: 12%;">Horas</th>
+                            <th style="width: 15%;">Taxa/Hr</th>
+                            <th style="width: 10%;">%</th>
+                            <th style="width: 23%;">Valor (AOA)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($earnings as $earning)
                         <tr>
                             <td>{{ $earning['name'] }}</td>
-                            <td>{{ $earning['type'] === 'earning' ? 'Salário' : ($earning['type'] === 'allowance' ? 'Subsídio' : 'Bónus') }}</td>
+                            <td>{{ $earning['type'] === 'earning' ? 'Salário' : ($earning['type'] === 'allowance' ? 'Subsídio' : ($earning['type'] === 'overtime' ? 'H. Extra' : 'Bónus')) }}</td>
+                            <td class="amount">{{ isset($earning['hours']) ? number_format($earning['hours'], 1, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($earning['rate']) ? number_format($earning['rate'], 2, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($earning['percentage']) ? number_format($earning['percentage'], 1, ',', '.') : '-' }}</td>
                             <td class="amount">{{ number_format($earning['amount'], 2, ',', '.') }}</td>
                         </tr>
                         @endforeach
                         <tr class="total-row">
-                            <td colspan="2"><strong>TOTAL RENDIMENTOS</strong></td>
+                            <td colspan="5"><strong>TOTAL RENDIMENTOS</strong></td>
                             <td class="amount"><strong>{{ number_format($totals['earnings'], 2, ',', '.') }}</strong></td>
                         </tr>
                     </tbody>
@@ -415,21 +451,27 @@
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 45%;">Descrição</th>
-                            <th style="width: 30%;">Tipo</th>
-                            <th style="width: 25%;">Valor (AOA)</th>
+                            <th style="width: 25%;">Descrição</th>
+                            <th style="width: 15%;">Tipo</th>
+                            <th style="width: 12%;">Taxa %</th>
+                            <th style="width: 15%;">Base Cálc.</th>
+                            <th style="width: 10%;">Ref.</th>
+                            <th style="width: 23%;">Valor (AOA)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($deductions as $deduction)
                         <tr>
                             <td>{{ $deduction['name'] }}</td>
-                            <td>{{ $deduction['type'] === 'tax' ? 'Imposto' : 'Dedução' }}</td>
+                            <td>{{ $deduction['type'] === 'tax' ? 'Imposto' : ($deduction['type'] === 'advance' ? 'Adiantam.' : ($deduction['type'] === 'loan' ? 'Empréstimo' : 'Dedução')) }}</td>
+                            <td class="amount">{{ isset($deduction['rate']) ? number_format($deduction['rate'], 2, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($deduction['base']) ? number_format($deduction['base'], 0, ',', '.') : '-' }}</td>
+                            <td class="amount">{{ isset($deduction['reference']) ? $deduction['reference'] : '-' }}</td>
                             <td class="amount">{{ number_format($deduction['amount'], 2, ',', '.') }}</td>
                         </tr>
                         @endforeach
                         <tr class="total-row">
-                            <td colspan="2"><strong>TOTAL DEDUÇÕES</strong></td>
+                            <td colspan="5"><strong>TOTAL DEDUÇÕES</strong></td>
                             <td class="amount"><strong>{{ number_format($totals['deductions'], 2, ',', '.') }}</strong></td>
                         </tr>
                     </tbody>
@@ -441,16 +483,26 @@
             <div class="summary-section">
                 <table class="summary-table">
                     <tr>
-                        <td class="summary-label">Total Bruto:</td>
-                        <td class="summary-value">{{ number_format($totals['earnings'], 2, ',', '.') }} AOA</td>
+                        <td class="summary-label" style="width: 25%;">Salário Base:</td>
+                        <td class="summary-value" style="width: 25%;">{{ number_format($totals['base_salary'] ?? 0, 2, ',', '.') }} AOA</td>
+                        <td class="summary-label" style="width: 25%;">Horas Extras:</td>
+                        <td class="summary-value" style="width: 25%;">{{ number_format($totals['overtime'] ?? 0, 2, ',', '.') }} AOA</td>
                     </tr>
                     <tr>
+                        <td class="summary-label">Subsídios:</td>
+                        <td class="summary-value">{{ number_format($totals['allowances'] ?? 0, 2, ',', '.') }} AOA</td>
+                        <td class="summary-label">Adiantamentos:</td>
+                        <td class="summary-value">{{ number_format($totals['advances'] ?? 0, 2, ',', '.') }} AOA</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">Total Bruto:</td>
+                        <td class="summary-value">{{ number_format($totals['earnings'], 2, ',', '.') }} AOA</td>
                         <td class="summary-label">Total Deduções:</td>
                         <td class="summary-value">{{ number_format($totals['deductions'], 2, ',', '.') }} AOA</td>
                     </tr>
                     <tr class="net-salary-row">
-                        <td class="summary-label">SALÁRIO LÍQUIDO:</td>
-                        <td class="summary-value">{{ number_format($totals['net_salary'], 2, ',', '.') }} AOA</td>
+                        <td class="summary-label" colspan="2">SALÁRIO LÍQUIDO:</td>
+                        <td class="summary-value" colspan="2">{{ number_format($totals['net_salary'], 2, ',', '.') }} AOA</td>
                     </tr>
                 </table>
             </div>

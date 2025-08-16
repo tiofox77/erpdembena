@@ -9,6 +9,7 @@ use App\Models\HR\Attendance;
 use App\Models\HR\Leave;
 use App\Models\HR\Department;
 use App\Models\HR\Payroll;
+use App\Models\HR\PayrollPeriod;
 use App\Models\HR\SalaryAdvance;
 use App\Models\HR\SalaryDiscount;
 use App\Models\HR\OvertimeRecord;
@@ -18,10 +19,12 @@ use Illuminate\Support\Facades\DB;
 
 class Reports extends Component
 {
-    public $selectedPeriod = 'current_month';
+    public $selectedPeriod = 'current_period';
+    public $selectedPayrollPeriodId;
     public $startDate;
     public $endDate;
     public $selectedDepartment = '';
+    public $availablePeriods = [];
     
     // Dashboard Metrics
     public $totalEmployees = 0;
@@ -59,6 +62,7 @@ class Reports extends Component
     
     public function mount(): void
     {
+        $this->loadAvailablePeriods();
         $this->initializeDateRange();
         $this->calculateMetrics();
         $this->generateChartData();
@@ -69,6 +73,41 @@ class Reports extends Component
         $this->initializeDateRange();
         $this->calculateMetrics();
         $this->generateChartData();
+        
+        // Force refresh of charts
+        $this->dispatch('refresh-charts', [
+            'leavesChartData' => $this->leavesChartData,
+            'attendanceChartData' => $this->attendanceChartData,
+            'overtimeChartData' => $this->overtimeChartData,
+            'departmentData' => $this->departmentData,
+            'salaryTrendsData' => $this->salaryTrendsData,
+            'delayTrendsData' => $this->delayTrendsData,
+            'overtimeByDepartmentData' => $this->overtimeByDepartmentData,
+            'monthlyPayrollData' => $this->monthlyPayrollData,
+            'advancesVsDiscountsData' => $this->advancesVsDiscountsData,
+            'payrollTimelineData' => $this->payrollTimelineData
+        ]);
+    }
+    
+    public function updatedSelectedPayrollPeriodId(): void
+    {
+        $this->initializeDateRange();
+        $this->calculateMetrics();
+        $this->generateChartData();
+        
+        // Force refresh of charts
+        $this->dispatch('refresh-charts', [
+            'leavesChartData' => $this->leavesChartData,
+            'attendanceChartData' => $this->attendanceChartData,
+            'overtimeChartData' => $this->overtimeChartData,
+            'departmentData' => $this->departmentData,
+            'salaryTrendsData' => $this->salaryTrendsData,
+            'delayTrendsData' => $this->delayTrendsData,
+            'overtimeByDepartmentData' => $this->overtimeByDepartmentData,
+            'monthlyPayrollData' => $this->monthlyPayrollData,
+            'advancesVsDiscountsData' => $this->advancesVsDiscountsData,
+            'payrollTimelineData' => $this->payrollTimelineData
+        ]);
     }
     
     public function updatedSelectedDepartment(): void
@@ -77,30 +116,78 @@ class Reports extends Component
         $this->generateChartData();
     }
     
+    private function loadAvailablePeriods(): void
+    {
+        $this->availablePeriods = PayrollPeriod::orderBy('start_date', 'desc')->get();
+        
+        // Set default to current period if available
+        if (!$this->selectedPayrollPeriodId && $this->availablePeriods->isNotEmpty()) {
+            $currentPeriod = $this->availablePeriods->where('status', 'open')->first() 
+                ?? $this->availablePeriods->first();
+            $this->selectedPayrollPeriodId = $currentPeriod->id;
+        }
+    }
+    
     private function initializeDateRange(): void
     {
-        match ($this->selectedPeriod) {
-            'current_month' => [
-                $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d'),
-                $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d')
-            ],
-            'last_month' => [
-                $this->startDate = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                $this->endDate = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
-            ],
-            'current_quarter' => [
-                $this->startDate = Carbon::now()->startOfQuarter()->format('Y-m-d'),
-                $this->endDate = Carbon::now()->endOfQuarter()->format('Y-m-d')
-            ],
-            'current_year' => [
-                $this->startDate = Carbon::now()->startOfYear()->format('Y-m-d'),
-                $this->endDate = Carbon::now()->endOfYear()->format('Y-m-d')
-            ],
-            default => [
-                $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d'),
-                $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d')
-            ]
-        };
+        if ($this->selectedPeriod === 'payroll_period' && $this->selectedPayrollPeriodId) {
+            $period = PayrollPeriod::find($this->selectedPayrollPeriodId);
+            if ($period) {
+                $this->startDate = $period->start_date->format('Y-m-d');
+                $this->endDate = $period->end_date->format('Y-m-d');
+                logger("Payroll Period Set: {$this->startDate} to {$this->endDate}");
+                return;
+            }
+        }
+        
+        switch ($this->selectedPeriod) {
+            case 'current_period':
+                $currentPeriod = PayrollPeriod::where('status', 'open')->first() 
+                    ?? PayrollPeriod::orderBy('start_date', 'desc')->first();
+                
+                if ($currentPeriod) {
+                    $this->startDate = $currentPeriod->start_date->format('Y-m-d');
+                    $this->endDate = $currentPeriod->end_date->format('Y-m-d');
+                    $this->selectedPayrollPeriodId = $currentPeriod->id;
+                } else {
+                    $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
+                    $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d');
+                }
+                logger("Current Period Set: {$this->startDate} to {$this->endDate}");
+                break;
+                
+            case 'current_month':
+                $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d');
+                logger("Current Month Set: {$this->startDate} to {$this->endDate}");
+                break;
+                
+            case 'last_month':
+                $this->startDate = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
+                $this->endDate = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+                logger("Last Month Set: {$this->startDate} to {$this->endDate}");
+                break;
+                
+            case 'current_quarter':
+                $this->startDate = Carbon::now()->startOfQuarter()->format('Y-m-d');
+                $this->endDate = Carbon::now()->endOfQuarter()->format('Y-m-d');
+                logger("Current Quarter Set: {$this->startDate} to {$this->endDate}");
+                break;
+                
+            case 'current_year':
+                $this->startDate = Carbon::now()->startOfYear()->format('Y-m-d');
+                $this->endDate = Carbon::now()->endOfYear()->format('Y-m-d');
+                logger("Current Year Set: {$this->startDate} to {$this->endDate}");
+                break;
+                
+            default:
+                $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $this->endDate = Carbon::now()->endOfMonth()->format('Y-m-d');
+                logger("Default Period Set: {$this->startDate} to {$this->endDate}");
+                break;
+        }
+        
+        logger("Selected Period: {$this->selectedPeriod}, Date Range: {$this->startDate} to {$this->endDate}");
     }
     
     private function calculateMetrics(): void
@@ -277,7 +364,12 @@ class Reports extends Component
     
     private function calculatePayrollMetrics(Carbon $startDate, Carbon $endDate): void
     {
-        $query = Payroll::whereBetween('payment_date', [$startDate, $endDate]);
+        // If using payroll periods, filter by the specific period
+        if ($this->selectedPayrollPeriodId) {
+            $query = Payroll::where('payroll_period_id', $this->selectedPayrollPeriodId);
+        } else {
+            $query = Payroll::whereBetween('payment_date', [$startDate, $endDate]);
+        }
         
         if ($this->selectedDepartment) {
             $query->whereHas('employee', function($q) {
@@ -287,11 +379,21 @@ class Reports extends Component
         
         $this->totalPayroll = $query->sum('net_salary');
         
-        // Calculate payroll growth
-        $previousStart = $startDate->copy()->subMonth();
-        $previousEnd = $endDate->copy()->subMonth();
-        $previousPayroll = (float)(Payroll::whereBetween('payment_date', [$previousStart, $previousEnd])
-            ->sum('net_salary'));
+        // Calculate payroll growth based on previous period
+        if ($this->selectedPayrollPeriodId) {
+            $currentPeriod = PayrollPeriod::find($this->selectedPayrollPeriodId);
+            $previousPeriod = PayrollPeriod::where('end_date', '<', $currentPeriod->start_date)
+                ->orderBy('end_date', 'desc')
+                ->first();
+            
+            $previousPayroll = $previousPeriod ? 
+                (float)(Payroll::where('payroll_period_id', $previousPeriod->id)->sum('net_salary')) : 0;
+        } else {
+            $previousStart = $startDate->copy()->subMonth();
+            $previousEnd = $endDate->copy()->subMonth();
+            $previousPayroll = (float)(Payroll::whereBetween('payment_date', [$previousStart, $previousEnd])
+                ->sum('net_salary'));
+        }
         
         $this->payrollGrowth = $previousPayroll > 0 ? 
             round((((float)$this->totalPayroll - $previousPayroll) / $previousPayroll) * 100, 1) : 0;
@@ -589,25 +691,36 @@ class Reports extends Component
     
     private function generateMonthlyPayrollChart(): void
     {
-        $startDate = Carbon::parse($this->startDate);
-        $endDate = Carbon::parse($this->endDate);
-        
-        $data = Payroll::selectRaw('DATE_FORMAT(payment_date, "%Y-%m") as month, SUM(net_salary) as total')
-            ->whereBetween('payment_date', [$startDate, $endDate])
-            ->when($this->selectedDepartment, function($query) {
-                $query->whereHas('employee', function($q) {
-                    $q->where('department_id', $this->selectedDepartment);
+        // Get payroll data by periods instead of months
+        $query = PayrollPeriod::with(['payrolls' => function($q) {
+            if ($this->selectedDepartment) {
+                $q->whereHas('employee', function($employeeQuery) {
+                    $employeeQuery->where('department_id', $this->selectedDepartment);
                 });
-            })
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+            }
+        }])
+        ->orderBy('start_date', 'asc')
+        ->limit(6);
+        
+        if ($this->selectedPayrollPeriodId) {
+            // Show current and previous periods
+            $currentPeriod = PayrollPeriod::find($this->selectedPayrollPeriodId);
+            $query->where('end_date', '<=', $currentPeriod->end_date);
+        }
+        
+        $periods = $query->get();
+        
+        $labels = [];
+        $data = [];
+        
+        foreach ($periods as $period) {
+            $labels[] = $period->name;
+            $data[] = $period->payrolls->sum('net_salary');
+        }
         
         $this->monthlyPayrollData = [
-            'labels' => $data->pluck('month')->map(function($month) {
-                return Carbon::parse($month . '-01')->format('M Y');
-            })->toArray(),
-            'data' => $data->pluck('total')->toArray(),
+            'labels' => $labels,
+            'data' => $data,
             'backgroundColor' => '#10B981',
             'borderColor' => '#10B981'
         ];
@@ -680,7 +793,7 @@ class Reports extends Component
     
     public function updated($propertyName): void
     {
-        if (in_array($propertyName, ['selectedPeriod', 'selectedDepartment'])) {
+        if (in_array($propertyName, ['selectedPeriod', 'selectedPayrollPeriodId', 'selectedDepartment'])) {
             // Recalculate all data when period or department changes
             $this->initializeDateRange();
             $this->calculateMetrics();
@@ -697,6 +810,7 @@ class Reports extends Component
                 'salaryTrendsData' => $this->salaryTrendsData,
                 'delayTrendsData' => $this->delayTrendsData,
                 'overtimeByDepartmentData' => $this->overtimeByDepartmentData,
+                'monthlyPayrollData' => $this->monthlyPayrollData,
                 'advancesVsDiscountsData' => $this->advancesVsDiscountsData,
                 'payrollTimelineData' => $this->payrollTimelineData
             ]);
@@ -708,7 +822,8 @@ class Reports extends Component
         $departments = Department::all();
         
         return view('livewire.hr.reports', [
-            'departments' => $departments
+            'departments' => $departments,
+            'availablePeriods' => $this->availablePeriods
         ])->layout('layouts.livewire', ['title' => 'HR Dashboard']);
     }
 }
