@@ -457,13 +457,34 @@ class Payroll extends Component
      */
     public function getTotalDeductionsProperty(): float
     {
-        return ($this->income_tax ?? 0) +
-               ($this->social_security ?? 0) +
-               ($this->other_deductions ?? 0) +
-               ($this->advance_deduction ?? 0) +
-               ($this->total_salary_discounts ?? 0) +
-               ($this->late_deduction ?? 0) +
-               ($this->absence_deduction ?? 0);
+        $absenceDeduction = $this->getAbsenceDeductionAmountProperty();
+        
+        $totalDeductions = ($this->income_tax ?? 0) +
+                          ($this->social_security ?? 0) +
+                          ($this->other_deductions ?? 0) +
+                          ($this->advance_deduction ?? 0) +
+                          ($this->total_salary_discounts ?? 0) +
+                          ($this->late_deduction ?? 0) +
+                          ($this->absence_deduction ?? 0) +
+                          $absenceDeduction;
+        
+        // Debug log
+        \Log::info('Total Deductions Calculation', [
+            'income_tax' => $this->income_tax ?? 0,
+            'social_security' => $this->social_security ?? 0,
+            'other_deductions' => $this->other_deductions ?? 0,
+            'advance_deduction' => $this->advance_deduction ?? 0,
+            'total_salary_discounts' => $this->total_salary_discounts ?? 0,
+            'late_deduction' => $this->late_deduction ?? 0,
+            'absence_deduction_old' => $this->absence_deduction ?? 0,
+            'absence_deduction_new' => $absenceDeduction,
+            'absent_days' => $this->absent_days,
+            'total_working_days' => $this->total_working_days,
+            'basic_salary' => $this->basic_salary,
+            'total_calculated' => $totalDeductions
+        ]);
+        
+        return $totalDeductions;
     }
 
     /**
@@ -471,7 +492,41 @@ class Payroll extends Component
      */
     public function getNetSalaryProperty(): float
     {
-        return ($this->gross_salary ?? 0) - $this->getTotalDeductionsProperty();
+        $grossSalary = $this->gross_salary ?? 0;
+        $totalDeductions = $this->getTotalDeductionsProperty();
+        $netSalary = $grossSalary - $totalDeductions;
+        
+        // Debug log
+        \Log::info('Net Salary Calculation', [
+            'gross_salary' => $grossSalary,
+            'total_deductions' => $totalDeductions,
+            'net_salary_calculated' => $netSalary,
+            'net_salary_property' => $this->net_salary ?? 0
+        ]);
+        
+        // Return actual calculated value (can be negative)
+        return $netSalary;
+    }
+
+    /**
+     * Get deduction for absent days
+     */
+    public function getAbsenceDeductionAmountProperty(): float
+    {
+        if ($this->absent_days > 0 && $this->total_working_days > 0 && $this->basic_salary > 0) {
+            // Calcular dedução baseada nos dias ausentes
+            $dailyRate = $this->basic_salary / $this->total_working_days;
+            return $dailyRate * $this->absent_days;
+        }
+        return 0;
+    }
+
+    /**
+     * Get attendance hours (alias for total_attendance_hours)
+     */
+    public function getAttendanceHoursProperty(): float
+    {
+        return $this->total_attendance_hours ?? 0;
     }
 
 
@@ -871,7 +926,7 @@ class Payroll extends Component
         $this->total_deductions = 0.0;
         $this->net_salary = 0.0;
 
-        // Base salary
+        // Base salary original (sem proporcionalidade)
         $grossAmount = $this->basic_salary;
 
         // Add Christmas subsidy (50% of base salary)
@@ -1561,9 +1616,19 @@ class Payroll extends Component
     
     public function calculatePayroll()
     {
-        // Calcular o total de ganhos
-        // Se tiver horas de presença registradas, usar o total_hours_pay em vez do salário base
-        $baseEarnings = $this->attendance_hours > 0 ? $this->total_hours_pay : $this->basic_salary;
+        // Calcular o salário base proporcional aos dias trabalhados
+        $baseEarnings = 0;
+        
+        if ($this->attendance_hours > 0) {
+            // Se há horas registradas, usar pagamento por horas
+            $baseEarnings = $this->total_hours_pay;
+        } elseif ($this->present_days > 0 && $this->total_working_days > 0) {
+            // Se há dias presentes, calcular salário proporcional aos dias trabalhados
+            $baseEarnings = ($this->basic_salary / $this->total_working_days) * $this->present_days;
+        } else {
+            // Se não trabalhou nenhum dia, não recebe salário base
+            $baseEarnings = 0;
+        }
         
         // Subtrair deduções por licenças não-especiais
         $baseEarnings = $baseEarnings - $this->leave_deduction;

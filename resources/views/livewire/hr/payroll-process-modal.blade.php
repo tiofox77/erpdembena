@@ -1062,7 +1062,7 @@
                                             @if($advance_deduction > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('messages.salary_advances') }}</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($advance_deduction, 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($advance_deduction ?? 0, 2) }} AOA</span>
                                             </div>
                                             @endif
 
@@ -1070,10 +1070,18 @@
                                             @if($total_salary_discounts > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('messages.salary_discounts') }}</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($total_salary_discounts, 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($total_salary_discounts ?? 0, 2) }} AOA</span>
                                             </div>
                                             @endif
-                                            
+
+                                            {{-- Absence Deduction --}}
+                                            @if($this->absenceDeductionAmount > 0)
+                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
+                                                <span class="font-medium text-red-700 text-xs lg:text-sm">Deduções por Faltas ({{ $absent_days ?? 0 }} dias)</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($this->absenceDeductionAmount, 2) }} AOA</span>
+                                            </div>
+                                            @endif
+
                                             {{-- Late Arrival Deductions --}}
                                             @if($late_deduction > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-yellow-50 rounded-lg">
@@ -1100,7 +1108,7 @@
                                         {{-- Total Deductions --}}
                                         <div class="flex justify-between items-center p-3 lg:p-4 bg-red-50 rounded-xl border border-red-200">
                                             <span class="font-semibold text-red-700 text-sm lg:text-base">{{ __('messages.total_deductions') }}</span>
-                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($total_deductions ?? 0, 2) }} AOA</span>
+                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($this->totalDeductions, 2) }} AOA</span>
                                         </div>
 
                                         {{-- Net Salary --}}
@@ -1109,7 +1117,7 @@
                                                 <i class="fas fa-wallet text-blue-600 mr-2"></i>
                                                 {{ __('messages.net_salary') }}
                                             </span>
-                                            <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($net_salary ?? 0, 2) }} AOA</span>
+                                            <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($this->netSalary, 2) }} AOA</span>
                                         </div>
                                     </div>
                                 </div>

@@ -186,7 +186,10 @@
                                                 <i class="fas fa-edit mr-1"></i>
                                                 {{ __('shifts.edit') }}
                                             </button>
-                                            <button wire:click="confirmDeleteShift({{ $shift->id }})" class="inline-flex items-center px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-md transition-all duration-200 transform hover:scale-105">
+                                            <button wire:click="deleteShift({{ $shift->id }})" 
+                                                    wire:confirm="Tem certeza que deseja excluir este turno?"
+                                                    onclick="console.log('Delete shift button clicked for ID: {{ $shift->id }}');"
+                                                    class="inline-flex items-center px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-md transition-all duration-200 transform hover:scale-105">
                                                 <i class="fas fa-trash mr-1"></i>
                                                 {{ __('shifts.delete') }}
                                             </button>
@@ -397,10 +400,15 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button wire:click="editAssignment({{ $assignment->id }})" class="text-indigo-600 hover:text-indigo-900 hover:scale-110 transform transition-all duration-200 mr-3" title="{{ __('shifts.edit') }}">
+                                        <button wire:click="editAssignment({{ $assignment->id }})" 
+                                                class="text-blue-600 hover:text-blue-900 hover:scale-110 transform transition-all duration-200 mr-2" 
+                                                title="{{ __('shifts.edit') }}">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button wire:click="confirmDeleteAssignment({{ $assignment->id }})" class="text-red-600 hover:text-red-900 hover:scale-110 transform transition-all duration-200" title="{{ __('shifts.delete') }}">
+                                        <button wire:click="deleteAssignment({{ $assignment->id }})" 
+                                                wire:confirm="Tem certeza que deseja excluir esta atribuição?"
+                                                class="text-red-600 hover:text-red-900 hover:scale-110 transform transition-all duration-200" 
+                                                title="{{ __('shifts.delete') }}">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
@@ -802,42 +810,6 @@
                 </div>
             </div>
 
-            <!-- Delete Confirmation Modal -->
-            @if($showDeleteModal)
-            <div class="fixed inset-0 overflow-y-auto z-50" role="dialog">
-                <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity ease-out duration-300"></div>
-                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
-                    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95
-                        ease-out duration-300 transform transition-opacity transition-transform
-                        @if($showDeleteModal) opacity-100 translate-y-0 sm:scale-100 @endif">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                <i class="fas fa-exclamation-triangle text-red-600"></i>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                    Confirm Deletion
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500">
-                                        Are you sure you want to delete this item? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                            <button type="button" wire:click="delete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
-                                <i class="fas fa-trash mr-2"></i> Delete
-                            </button>
-                            <button type="button" wire:click="closeDeleteModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
-                                <i class="fas fa-times mr-2"></i> Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 

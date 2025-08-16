@@ -41,6 +41,9 @@ class ShiftManagement extends Component
     public $rotation_pattern;
     public $notes;
     public $has_rotation = false; // Para controlar se permite rotação
+    public $rotation_type;
+    public $rotation_frequency;
+    public $rotation_start_date;
 
     // Filters
     public $searchShift = '';
@@ -59,7 +62,6 @@ class ShiftManagement extends Component
     // Modal flags
     public $showShiftModal = false;
     public $showAssignmentModal = false;
-    public $showDeleteModal = false;
     public $isEditing = false;
 
     // Listeners
@@ -216,6 +218,10 @@ class ShiftManagement extends Component
 
     public function editAssignment(ShiftAssignment $assignment)
     {
+        // Fechar outros modais primeiro
+        $this->showDeleteModal = false;
+        $this->showShiftModal = false;
+        
         $this->assignment_id = $assignment->id;
         $this->employee_id = $assignment->employee_id;
         $this->shift_id_assignment = $assignment->shift_id;
@@ -334,41 +340,54 @@ class ShiftManagement extends Component
         ]);
     }
 
-    public function confirmDeleteShift($id)
+    public function deleteShift($id)
     {
-        $this->confirmDelete($id, 'shift');
-    }
-
-    public function confirmDeleteAssignment($id)
-    {
-        $this->confirmDelete($id, 'assignment');
-    }
-
-    public function confirmDelete($id, $type)
-    {
-        $this->showDeleteModal = true;
-        if ($type === 'shift') {
-            $this->shift_id = $id;
-            $this->assignment_id = null;
-        } else {
-            $this->assignment_id = $id;
-            $this->shift_id = null;
-        }
-    }
-
-    public function delete()
-    {
-        if ($this->shift_id) {
-            $shift = Shift::find($this->shift_id);
-            $shift->delete();
-            session()->flash('message', 'Shift deleted successfully.');
-        } elseif ($this->assignment_id) {
-            $assignment = ShiftAssignment::find($this->assignment_id);
-            $assignment->delete();
-            session()->flash('message', 'Shift assignment deleted successfully.');
-        }
+        \Log::info('deleteShift called with ID: ' . $id);
         
-        $this->showDeleteModal = false;
+        try {
+            $shift = Shift::find($id);
+            \Log::info('Shift found: ' . ($shift ? 'yes' : 'no'));
+            
+            if ($shift) {
+                $shift->delete();
+                \Log::info('Shift deleted successfully');
+                session()->flash('message', 'Turno excluído com sucesso!');
+                
+                // Reset pagination if needed
+                $this->resetPage();
+            } else {
+                \Log::warning('Shift not found with ID: ' . $id);
+                session()->flash('error', 'Turno não encontrado.');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error deleting shift: ' . $e->getMessage());
+            session()->flash('error', 'Erro ao excluir turno: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteAssignment($id)
+    {
+        \Log::info('deleteAssignment called with ID: ' . $id);
+        
+        try {
+            $assignment = ShiftAssignment::find($id);
+            \Log::info('Assignment found: ' . ($assignment ? 'yes' : 'no'));
+            
+            if ($assignment) {
+                $assignment->delete();
+                \Log::info('Assignment deleted successfully');
+                session()->flash('message', 'Atribuição excluída com sucesso!');
+                
+                // Reset pagination if needed
+                $this->resetPage();
+            } else {
+                \Log::warning('Assignment not found with ID: ' . $id);
+                session()->flash('error', 'Atribuição não encontrada.');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error deleting assignment: ' . $e->getMessage());
+            session()->flash('error', 'Erro ao excluir atribuição: ' . $e->getMessage());
+        }
     }
 
     public function closeModal()
@@ -388,11 +407,6 @@ class ShiftManagement extends Component
     {
         $this->showAssignmentModal = false;
         $this->resetErrorBag();
-    }
-
-    public function closeDeleteModal()
-    {
-        $this->showDeleteModal = false;
     }
     
     public function resetFilters()
