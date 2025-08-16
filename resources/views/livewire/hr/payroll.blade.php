@@ -426,14 +426,23 @@
                                                 </div>
                                             </div>
                                             
-                                            @if(in_array($payroll->status, ['draft', 'rejected']))
+                                            @php
+                                                $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin');
+                                                $canDelete = $isAdmin || in_array($payroll->status, ['draft', 'rejected']);
+                                            @endphp
+                                            
+                                            @if($canDelete)
                                                 <div class="relative group">
                                                     <button wire:click="delete({{ $payroll->id }})" 
                                                             class="flex items-center justify-center w-8 h-8 text-red-700 bg-red-100 hover:bg-red-200 rounded-full transition-all duration-200 hover:scale-110">
                                                         <i class="fas fa-trash text-sm"></i>
                                                     </button>
                                                     <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                                        {{ __('messages.delete') }}
+                                                        @if($isAdmin && !in_array($payroll->status, ['draft', 'rejected']))
+                                                            {{ __('messages.admin_delete') }}
+                                                        @else
+                                                            {{ __('messages.delete') }}
+                                                        @endif
                                                     </div>
                                                 </div>
                                             @endif

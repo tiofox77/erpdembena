@@ -923,8 +923,10 @@ class Payroll extends Component
     {
         $this->payrollToDelete = PayrollModel::with(['employee', 'payrollPeriod'])->findOrFail($payrollId);
         
-        // Check if payroll can be deleted (only draft or rejected)
-        if (!in_array($this->payrollToDelete->status, ['draft', 'rejected'])) {
+        // Check if payroll can be deleted (only draft/rejected for regular users, admin can delete any)
+        $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin');
+        
+        if (!$isAdmin && !in_array($this->payrollToDelete->status, ['draft', 'rejected'])) {
             session()->flash('error', __('messages.cannot_delete_payroll_status'));
             return;
         }
