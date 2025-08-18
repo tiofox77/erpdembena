@@ -8,6 +8,7 @@ use App\Models\HR\Employee;
 use App\Models\HR\Department;
 use App\Models\HR\Leave;
 use App\Models\HR\LeaveType;
+use App\Models\HR\Attendance;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -80,27 +81,30 @@ class Leaves extends Component
         'sortDirection' => ['except' => 'desc'],
     ];
 
-    protected $rules = [
-        'leave_employee_id' => 'required',
-        'leave_type_id' => 'required',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-        'reason' => 'required|string|max:500',
-        'status' => 'nullable|string|in:pending,approved,rejected,cancelled',
-        'rejection_reason' => 'nullable|string|max:500',
-        'temp_attachment' => 'nullable|file|max:10240', // 10MB max
-        
-        // Campos específicos para género
-        'is_gender_specific' => 'boolean',
-        'gender_leave_type' => 'nullable|string|required_if:is_gender_specific,true',
-        'medical_certificate_details' => 'nullable|string|max:1000',
-        
-        // Campos de pagamento
-        'is_paid_leave' => 'boolean',
-        'payment_percentage' => 'required|numeric|min:0|max:100',
-        'payment_notes' => 'nullable|string|max:500',
-        'affects_payroll' => 'boolean',
-    ];
+    protected function rules(): array
+    {
+        return [
+            'leave_employee_id' => 'required|exists:employees,id',
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string|min:3|max:500',
+            'status' => 'nullable|string|in:pending,approved,rejected,cancelled',
+            'rejection_reason' => 'nullable|string|max:500',
+            'temp_attachment' => 'nullable|file|max:10240', // 10MB max
+            
+            // Campos específicos para género
+            'is_gender_specific' => 'boolean',
+            'gender_leave_type' => 'nullable|string|required_if:is_gender_specific,true',
+            'medical_certificate_details' => 'nullable|string|max:1000',
+            
+            // Campos de pagamento
+            'is_paid_leave' => 'boolean',
+            'payment_percentage' => 'numeric|min:0|max:100',
+            'payment_notes' => 'nullable|string|max:500',
+            'affects_payroll' => 'boolean',
+        ];
+    }
 
     protected $validationAttributes = [
         'leave_employee_id' => 'employee',
@@ -292,11 +296,16 @@ class Leaves extends Component
         $leave->rejection_reason = $this->rejection_reason;
         
         if(in_array($this->status, [Leave::STATUS_APPROVED, Leave::STATUS_REJECTED])) {
-            $leave->approved_by = Auth::id();
+            // Como não há relação direta entre User e Employee, usar null
+            // Em sistemas mais complexos, seria necessário criar esta relação
+            $leave->approved_by = null;
             $leave->approved_date = now();
         }
         
         $leave->save();
+        
+        // Sincronizar com attendance quando leave é aprovado/rejeitado
+        $this->syncLeaveWithAttendance($leave);
         
         session()->flash('message', 'Leave request status updated successfully.');
         $this->closeModal();
@@ -307,12 +316,24 @@ class Leaves extends Component
         $this->saving = true;
         
         try {
+            \Log::info('Leave save method called', [
+                'employee_id' => $this->leave_employee_id,
+                'leave_type_id' => $this->leave_type_id,
+                'start_date' => $this->start_date,
+                'end_date' => $this->end_date,
+                'reason' => $this->reason
+            ]);
+            
             $this->validate();
+            
+            \Log::info('Validation passed successfully');
             
             // Calculate total days
             $startDate = Carbon::parse($this->start_date);
             $endDate = Carbon::parse($this->end_date);
             $this->total_days = $endDate->diffInDays($startDate) + 1;
+            
+            \Log::info('Total days calculated', ['total_days' => $this->total_days]);
         
         $data = [
             'employee_id' => $this->leave_employee_id,
@@ -343,14 +364,9 @@ class Leaves extends Component
         
         // Handle approval/rejection
         if (in_array($this->status, [Leave::STATUS_APPROVED, Leave::STATUS_REJECTED])) {
-            // Verificar se o usuário autenticado existe como funcionário
-            $currentUserEmployee = Employee::where('user_id', Auth::id())->first();
-            if ($currentUserEmployee) {
-                $data['approved_by'] = $currentUserEmployee->id;
-            } else {
-                // Se não existe funcionário para o usuário, usar null (será permitido pelo SET NULL)
-                $data['approved_by'] = null;
-            }
+            // Como não há relação direta entre User e Employee, usar null
+            // Em sistemas mais complexos, seria necessário criar esta relação
+            $data['approved_by'] = null;
             $data['approved_date'] = now();
             
             if ($this->status === Leave::STATUS_REJECTED) {
@@ -372,9 +388,21 @@ class Leaves extends Component
             if ($this->isEditing) {
                 $leave = Leave::findOrFail($this->leave_id);
                 $leave->update($data);
+                
+                // Sincronizar com attendance se o status foi alterado para aprovado/rejeitado
+                if (in_array($this->status, [Leave::STATUS_APPROVED, Leave::STATUS_REJECTED])) {
+                    $this->syncLeaveWithAttendance($leave);
+                }
+                
                 session()->flash('message', 'Pedido de licença atualizado com sucesso.');
             } else {
-                Leave::create($data);
+                $leave = Leave::create($data);
+                
+                // Sincronizar com attendance se criado com status aprovado/rejeitado
+                if (in_array($this->status, [Leave::STATUS_APPROVED, Leave::STATUS_REJECTED])) {
+                    $this->syncLeaveWithAttendance($leave);
+                }
+                
                 session()->flash('message', 'Pedido de licença criado com sucesso.');
             }
             
@@ -382,9 +410,71 @@ class Leaves extends Component
             $this->resetData();
             
         } catch (\Exception $e) {
+            \Log::error('Error saving leave', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $data ?? 'Data not available'
+            ]);
+            
             session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
         } finally {
             $this->saving = false;
+        }
+    }
+
+    /**
+     * Sincroniza o leave com attendance
+     * Se aprovado: marca como 'leave' 
+     * Se rejeitado: marca como 'absent' (falta não justificada)
+     */
+    private function syncLeaveWithAttendance(Leave $leave): void
+    {
+        // Só sincronizar se tiver status definido
+        if (!in_array($leave->status, [Leave::STATUS_APPROVED, Leave::STATUS_REJECTED])) {
+            return;
+        }
+
+        $startDate = Carbon::parse($leave->start_date);
+        $endDate = Carbon::parse($leave->end_date);
+        
+        // Determinar o status de attendance baseado no status do leave
+        $attendanceStatus = $leave->status === Leave::STATUS_APPROVED 
+            ? Attendance::STATUS_LEAVE 
+            : Attendance::STATUS_ABSENT;
+            
+        $remarks = $leave->status === Leave::STATUS_APPROVED 
+            ? "Licença aprovada: {$leave->reason}"
+            : "Licença rejeitada: {$leave->rejection_reason}";
+
+        // Iterar por cada dia do período de leave
+        $currentDate = $startDate->copy();
+        while ($currentDate->lte($endDate)) {
+            // Verificar se já existe attendance para este dia
+            $existingAttendance = Attendance::where('employee_id', $leave->employee_id)
+                ->whereDate('date', $currentDate)
+                ->first();
+
+            if ($existingAttendance) {
+                // Atualizar attendance existente
+                $existingAttendance->update([
+                    'status' => $attendanceStatus,
+                    'remarks' => $remarks,
+                    'time_in' => null,
+                    'time_out' => null,
+                ]);
+            } else {
+                // Criar novo registro de attendance
+                Attendance::create([
+                    'employee_id' => $leave->employee_id,
+                    'date' => $currentDate->format('Y-m-d'),
+                    'status' => $attendanceStatus,
+                    'remarks' => $remarks,
+                    'time_in' => null,
+                    'time_out' => null,
+                ]);
+            }
+
+            $currentDate->addDay();
         }
     }
 

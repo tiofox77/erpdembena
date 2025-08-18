@@ -595,8 +595,8 @@
                                     <i class="fas fa-user text-emerald-500 mr-2"></i>
                                     {{ __('livewire/hr/leaves.employee') }}
                                 </label>
-                                <select wire:model="leave_employee_id" id="leave_employee_id" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                                <select wire:model.live="leave_employee_id" id="leave_employee_id" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors @error('leave_employee_id') border-red-500 @enderror" required>
                                     <option value="">{{ __('livewire/hr/leaves.select_employee') }}</option>
                                     @foreach($employees as $employee)
                                         <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
@@ -616,8 +616,8 @@
                                     <i class="fas fa-tag text-emerald-500 mr-2"></i>
                                     {{ __('livewire/hr/leaves.leave_type') }}
                                 </label>
-                                <select wire:model="leave_type_id" id="leave_type_id" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                                <select wire:model.live="leave_type_id" id="leave_type_id" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors @error('leave_type_id') border-red-500 @enderror" required>
                                     <option value="">{{ __('livewire/hr/leaves.select_leave_type') }}</option>
                                     @foreach($leaveTypes as $type)
                                         <option value="{{ $type->id }}">{{ $type->name }}</option>
@@ -638,8 +638,8 @@
                                         <i class="fas fa-calendar-alt text-emerald-500 mr-2"></i>
                                         {{ __('livewire/hr/leaves.start_date') }}
                                     </label>
-                                    <input type="date" wire:model="start_date" id="start_date" 
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                                    <input type="date" wire:model.live="start_date" id="start_date" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors @error('start_date') border-red-500 @enderror" required>
                                     @error('start_date') 
                                         <p class="mt-1 text-sm text-red-600 flex items-center">
                                             <i class="fas fa-exclamation-circle mr-1"></i>
@@ -653,8 +653,8 @@
                                         <i class="fas fa-calendar-check text-emerald-500 mr-2"></i>
                                         {{ __('livewire/hr/leaves.end_date') }}
                                     </label>
-                                    <input type="date" wire:model="end_date" id="end_date" 
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                                    <input type="date" wire:model.live="end_date" id="end_date" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors @error('end_date') border-red-500 @enderror" required>
                                     @error('end_date') 
                                         <p class="mt-1 text-sm text-red-600 flex items-center">
                                             <i class="fas fa-exclamation-circle mr-1"></i>
@@ -668,11 +668,11 @@
                             <div class="space-y-2">
                                 <label for="reason" class="flex items-center text-sm font-medium text-gray-700">
                                     <i class="fas fa-comment-alt text-emerald-500 mr-2"></i>
-                                    {{ __('livewire/hr/leaves.reason') }}
+                                    {{ __('livewire/hr/leaves.reason') }} <span class="text-red-500">*</span>
                                 </label>
-                                <textarea wire:model="reason" id="reason" rows="3" 
-                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
-                                          placeholder="{{ __('livewire/hr/leaves.reason_placeholder') }}"></textarea>
+                                <textarea wire:model.live="reason" id="reason" rows="3" 
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none @error('reason') border-red-500 @enderror"
+                                          placeholder="{{ __('livewire/hr/leaves.reason_placeholder') }}" required></textarea>
                                 @error('reason') 
                                     <p class="mt-1 text-sm text-red-600 flex items-center">
                                         <i class="fas fa-exclamation-circle mr-1"></i>
@@ -767,6 +767,7 @@
                             {{ __('livewire/hr/leaves.cancel') }}
                         </button>
                         <button wire:click="saveLeave" type="button" 
+                                onclick="console.log('Save button clicked');"
                                 class="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 wire:loading.attr="disabled"
                                 wire:target="saveLeave">
