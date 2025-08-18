@@ -433,7 +433,9 @@ class SystemSettings extends Component
                     $this->update_available = true;
                     $this->update_notes = [
                         'title' => $latest['name'] ?? 'Nova Versão',
-                        'body' => $latest['body'] ?? 'Actualização disponível.'
+                        'body' => $latest['body'] ?? 'Actualização disponível.',
+                        'download_url' => $latest['zipball_url'] ?? null,
+                        'published_at' => $latest['published_at'] ?? now()->toISOString()
                     ];
 
                     $this->update_status = "Actualização disponível: v{$this->latest_version}";
@@ -514,6 +516,12 @@ class SystemSettings extends Component
             // Download the update
             $this->update_status = 'Downloading update...';
             $this->update_progress = 30;
+            
+            // Verificar se download_url existe
+            if (empty($this->update_notes['download_url'])) {
+                throw new \Exception('URL de download da actualização não disponível');
+            }
+            
             $update_file = $this->downloadUpdate($this->update_notes['download_url']);
             $this->logToFile($logFile, "Update package downloaded to: $update_file");
 
@@ -894,18 +902,16 @@ class SystemSettings extends Component
                 $this->restoreDatabase($backup['database_file']);
             }
 
-            $this->restore_status = 'Limpando arquivos temporários...';
+            $this->restore_progress = 80;
+
+            // Clear settings cache
+            $this->clearSettingsCache();
+
             $this->restore_progress = 90;
 
             // Clean up temporary directory
             $this->deleteDirectory($tempDir);
 
-            // Clear cache
-            Artisan::call('config:clear');
-            Artisan::call('cache:clear');
-            Artisan::call('view:clear');
-
-            $this->restore_status = 'Restauro concluído com sucesso!';
             $this->restore_progress = 100;
 
             // Bring application back up
@@ -2277,5 +2283,39 @@ class SystemSettings extends Component
         }
 
         return $className;
+    }
+
+    /**
+     * Recursively delete a directory and all its contents
+     */
+    private function deleteDirectory(string $dir): bool
+    {
+        if (!file_exists($dir)) {
+            return true;
+        }
+
+        if (!is_dir($dir)) {
+            return unlink($dir);
+        }
+
+        foreach (scandir($dir) as $item) {
+            if ($item == '.' || $item == '..') {
+                continue;
+            }
+
+            $itemPath = $dir . DIRECTORY_SEPARATOR . $item;
+            
+            if (is_dir($itemPath)) {
+                if (!$this->deleteDirectory($itemPath)) {
+                    return false;
+                }
+            } else {
+                if (!unlink($itemPath)) {
+                    return false;
+                }
+            }
+        }
+
+        return rmdir($dir);
     }
 }
