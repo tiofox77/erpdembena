@@ -692,11 +692,49 @@ class Employees extends Component
     public function exportToExcel()
     {
         try {
+            // Log início do processo
+            \Log::info('Iniciando exportação Excel de funcionários');
+            
+            // Verificar se classe Excel existe
+            if (!class_exists('Maatwebsite\Excel\Facades\Excel')) {
+                throw new \Exception('Pacote maatwebsite/excel não está carregado');
+            }
+            
+            // Verificar se EmployeesExport existe
+            if (!class_exists('App\Exports\EmployeesExport')) {
+                throw new \Exception('Classe EmployeesExport não encontrada');
+            }
+            
+            // Verificar permissões do diretório temporário
+            $tempPath = storage_path('framework/cache/laravel-excel');
+            if (!is_dir($tempPath)) {
+                \Log::info('Criando diretório temporário: ' . $tempPath);
+                mkdir($tempPath, 0755, true);
+            }
+            
+            if (!is_writable($tempPath)) {
+                throw new \Exception('Diretório temporário não tem permissões de escrita: ' . $tempPath);
+            }
+            
             $fileName = 'funcionarios_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
             
-            return Excel::download(new EmployeesExport, $fileName);
+            \Log::info('Exportando arquivo: ' . $fileName);
+            
+            $export = new EmployeesExport();
+            $result = Excel::download($export, $fileName);
+            
+            \Log::info('Exportação Excel concluída com sucesso');
+            
+            return $result;
             
         } catch (\Exception $e) {
+            \Log::error('Erro na exportação Excel: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', type: 'error', message: 'Erro ao exportar: ' . $e->getMessage());
             session()->flash('error', __('messages.export_failed') . ': ' . $e->getMessage());
         }
     }

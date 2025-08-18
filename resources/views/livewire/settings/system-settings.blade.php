@@ -1078,37 +1078,130 @@
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
+    <!-- Modern Confirmation Modal with Animations -->
     @if($showConfirmModal)
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
-                    Confirmation Required
-                </h3>
-                <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeConfirmModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+    <div 
+        class="fixed inset-0 z-50 overflow-y-auto"
+        x-data="{ open: @entangle('showConfirmModal') }"
+        x-show="open"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+        
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm"></div>
+        
+        <!-- Modal container -->
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div 
+                class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
+                x-show="open"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                
+                <!-- Header with gradient -->
+                <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                                <i class="fas fa-download text-white text-xl animate-pulse"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-bold text-white">Confirmação de Actualização</h3>
+                                <p class="text-amber-100 text-sm">Sistema v{{ $latest_version ?? '1.3.8.5' }}</p>
+                            </div>
+                        </div>
+                        <button 
+                            type="button" 
+                            class="rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-all duration-200 hover:scale-110" 
+                            wire:click="closeConfirmModal">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                </div>
 
-            <div class="bg-yellow-50 p-4 rounded-md mb-4">
-                <p class="text-sm text-yellow-700">{{ $confirmMessage }}</p>
-            </div>
+                <!-- Content -->
+                <div class="px-6 py-6">
+                    <!-- Warning message with modern styling -->
+                    <div class="mb-6">
+                        <div class="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                                        <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-sm font-semibold text-amber-800 mb-2">Atenção - Actualização do Sistema</h4>
+                                    <p class="text-sm text-amber-700 leading-relaxed">{{ $confirmMessage }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="flex justify-end space-x-3">
-                <button
-                    type="button"
-                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    wire:click="closeConfirmModal">
-                    <i class="fas fa-times mr-1"></i> Cancel
-                </button>
-                <button
-                    type="button"
-                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                    wire:click="processConfirmedAction">
-                    <i class="fas fa-check mr-1"></i> Confirm
-                </button>
+                    <!-- Progress preview (when updating) -->
+                    @if($confirmAction === 'startUpdate')
+                    <div class="mb-6 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                        <h5 class="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                            <i class="fas fa-tasks text-blue-500 mr-2"></i>
+                            Etapas da Actualização
+                        </h5>
+                        <div class="space-y-2">
+                            <div class="flex items-center text-xs text-slate-600">
+                                <div class="w-2 h-2 rounded-full bg-blue-500 mr-3 animate-pulse"></div>
+                                1. Fazer backup antes da actualização
+                            </div>
+                            <div class="flex items-center text-xs text-slate-600">
+                                <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                                2. Descarregar nova versão
+                            </div>
+                            <div class="flex items-center text-xs text-slate-600">
+                                <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                                3. Aplicar actualização
+                            </div>
+                            <div class="flex items-center text-xs text-slate-600">
+                                <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                                4. Verificar sistema
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Estimated time -->
+                    <div class="mb-6 flex items-center justify-center">
+                        <div class="bg-blue-50 rounded-xl px-4 py-2 border border-blue-200">
+                            <div class="flex items-center text-sm text-blue-700">
+                                <i class="fas fa-clock mr-2 text-blue-500"></i>
+                                <span class="font-medium">Tempo estimado: 2-5 minutos</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="bg-slate-50 px-6 py-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                        type="button"
+                        class="inline-flex w-full justify-center items-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all duration-200 sm:w-auto"
+                        wire:click="closeConfirmModal">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex w-full justify-center items-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 sm:w-auto"
+                        wire:click="processConfirmedAction">
+                        <i class="fas fa-rocket mr-2 animate-bounce"></i>
+                        Confirmar Actualização
+                    </button>
+                </div>
             </div>
         </div>
     </div>
