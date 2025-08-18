@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibo de Pagamento - {{ $employee['name'] }}</title>
+    <title>Recibo de Salário - {{ $employee['name'] }}</title>
     <style>
         * {
             margin: 0;
@@ -13,8 +13,8 @@
         
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 9px;
-            line-height: 1.2;
+            font-size: 8px;
+            line-height: 1.1;
             color: #000;
             background: #ffffff;
             margin: 0;
@@ -25,189 +25,209 @@
             width: 210mm;
             height: 297mm;
             margin: 0;
-            padding: 2mm;
+            padding: 5mm;
         }
         
         .payslip {
-            height: 135mm;
-            border: 1px solid #000;
-            margin-bottom: 1mm;
-            padding: 1mm;
+            height: 140mm;
+            border: 2px solid #000;
+            margin-bottom: 3mm;
+            padding: 3mm;
             position: relative;
             page-break-inside: avoid;
         }
         
         .header {
             text-align: center;
-            border-bottom: 1px solid #000;
-            padding-bottom: 0.5mm;
-            margin-bottom: 0.8mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2mm;
+            margin-bottom: 2mm;
+        }
+        
+        .document-title {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 1mm;
         }
         
         .company-name {
             font-size: 10px;
             font-weight: bold;
-            margin-bottom: 0.5mm;
+            margin-bottom: 1mm;
         }
         
-        .company-info {
-            font-size: 7px;
-            margin-bottom: 0.5mm;
-        }
-        
-        .document-title {
-            font-size: 8px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .via-label {
+        .sr-number {
             position: absolute;
-            top: 1.5mm;
-            right: 3mm;
+            top: 2mm;
+            right: 5mm;
             font-size: 8px;
             font-weight: bold;
+        }
+        
+        .employee-info {
             border: 1px solid #000;
-            padding: 1mm 1.5mm;
-            background-color: #f0f0f0;
+            margin-bottom: 2mm;
         }
         
-        .info-section {
-            margin-bottom: 0.4mm;
-        }
-        
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0.4mm;
-        }
-        
-        .info-table td {
-            padding: 0.25mm;
-            border: 1px solid #000;
-            vertical-align: middle;
-            font-size: 7px;
-            height: 3.8mm;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            background-color: #f0f0f0;
-            width: 18%;
-        }
-        
-        .info-value {
-            width: 32%;
-        }
-        
-        .section-title {
-            font-size: 7px;
-            font-weight: bold;
-            background-color: #e0e0e0;
-            padding: 0.5mm;
-            border: 1px solid #000;
-            text-align: center;
-            margin-bottom: 0.4mm;
-        }
-        
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0.4mm;
-        }
-        
-        .items-table th {
-            background-color: #f0f0f0;
-            border: 1px solid #000;
-            padding: 0.15mm;
-            text-align: left;
-            font-size: 5.5px;
-            font-weight: bold;
-            height: 3mm;
-        }
-        
-        .items-table td {
-            border: 1px solid #000;
-            padding: 0.15mm;
-            font-size: 5.5px;
-            vertical-align: middle;
-            height: 3mm;
-        }
-        
-        .amount {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .total-row {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .summary-section {
-            border: 1px solid #000;
-            padding: 0.4mm;
-            margin-top: 0.2mm;
-            margin-bottom: 0.4mm;
-        }
-        
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .summary-table td {
-            padding: 0.2mm;
+        .employee-row {
+            display: flex;
             border-bottom: 1px solid #000;
-            font-size: 6px;
-            height: 2.6mm;
+            font-size: 8px;
         }
         
-        .summary-label {
+        .employee-row:last-child {
+            border-bottom: none;
+        }
+        
+        .employee-label {
             font-weight: bold;
+            padding: 1mm;
+            border-right: 1px solid #000;
+            width: 15%;
+            background-color: #f0f0f0;
+        }
+        
+        .employee-value {
+            padding: 1mm;
+            width: 35%;
+            border-right: 1px solid #000;
+        }
+        
+        .attendance-section {
+            border: 1px solid #000;
+            margin-bottom: 2mm;
+            padding: 1mm;
+        }
+        
+        .attendance-row {
+            display: flex;
+            font-size: 8px;
+            margin-bottom: 1mm;
+        }
+        
+        .attendance-label {
+            font-weight: bold;
+            width: 40%;
+        }
+        
+        .attendance-input {
+            border: 1px solid #000;
+            width: 15%;
+            text-align: center;
+            padding: 0.5mm;
+            margin-right: 5mm;
+        }
+        
+        .main-content {
+            border: 1px solid #000;
+            margin-bottom: 2mm;
+        }
+        
+        .content-header {
+            display: flex;
+            border-bottom: 1px solid #000;
+            font-size: 8px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        
+        .remuneration-header {
+            width: 50%;
+            text-align: center;
+            padding: 1mm;
+            border-right: 1px solid #000;
+        }
+        
+        .deductions-header {
+            width: 50%;
+            text-align: center;
+            padding: 1mm;
+        }
+        
+        .content-body {
+            display: flex;
+            min-height: 50mm;
+        }
+        
+        .remuneration-section {
+            width: 50%;
+            border-right: 1px solid #000;
+            padding: 2mm;
+        }
+        
+        .deductions-section {
+            width: 50%;
+            padding: 2mm;
+        }
+        
+        .line-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 7px;
+            margin-bottom: 1mm;
+            padding: 0.5mm 0;
+        }
+        
+        .item-description {
             width: 70%;
         }
         
-        .summary-value {
+        .item-amount {
+            width: 30%;
             text-align: right;
             font-family: 'Courier New', monospace;
-            width: 30%;
         }
         
-        .net-salary-row {
-            background-color: #e0e0e0;
-            font-weight: bold;
-            font-size: 7px;
-        }
-        
-        .signatures {
-            position: static;
-            margin-top: 0.4mm;
-            left: auto;
-            right: auto;
-            width: 100%;
-        }
-        
-        .signatures table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .signatures td {
-            width: 50%;
-            text-align: center;
-            font-size: 6px;
+        .total-line {
             border-top: 1px solid #000;
-            padding-top: 0.3mm;
-            height: 5mm;
+            font-weight: bold;
+            padding-top: 1mm;
+            margin-top: 2mm;
+        }
+        
+        .net-salary {
+            border: 2px solid #000;
+            text-align: center;
+            padding: 2mm;
+            margin: 2mm 0;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .payment-method {
+            border: 1px solid #000;
+            padding: 1mm;
+            margin-bottom: 2mm;
+            font-size: 8px;
+        }
+        
+        .bank-details {
+            border: 1px solid #000;
+            padding: 1mm;
+            margin-bottom: 2mm;
+            font-size: 8px;
+        }
+        
+        .signature-section {
+            text-align: center;
+            margin-top: 5mm;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 60%;
+            margin: 0 auto;
+            padding-top: 1mm;
+            font-size: 8px;
         }
         
         .cut-line {
             text-align: center;
-            font-size: 6px;
-            margin: 0.4mm 0;
+            font-size: 8px;
+            margin: 2mm 0;
             border-top: 1px dashed #000;
-            padding-top: 0.4mm;
+            padding-top: 1mm;
             font-weight: bold;
         }
         

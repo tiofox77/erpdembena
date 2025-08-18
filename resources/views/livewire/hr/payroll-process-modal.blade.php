@@ -486,6 +486,86 @@
                                     </div>
                                 </div>
 
+                                {{-- Subsidies and Additional Payments --}}
+                                <div class="bg-gradient-to-br from-teal-50 to-emerald-50 p-6 rounded-xl border border-teal-200 shadow-sm">
+                                    <h3 class="text-lg font-bold text-teal-800 mb-6 flex items-center">
+                                        <i class="fas fa-gift mr-3 text-teal-600"></i>
+                                        Subsidies and Additional Payments
+                                    </h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                        {{-- Christmas Subsidy --}}
+                                        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                            <div class="flex items-start space-x-3 mb-3">
+                                                <div class="flex-shrink-0 mt-1">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        wire:model.live="christmas_subsidy"
+                                                        id="christmas_subsidy"
+                                                        class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                                    >
+                                                </div>
+                                                <div class="flex-1">
+                                                    <label for="christmas_subsidy" class="text-base font-semibold text-gray-800 block mb-1">
+                                                        Christmas Subsidy
+                                                    </label>
+                                                    <p class="text-sm text-teal-600 mb-3">Additional Christmas payment: 50% do salário base</p>
+                                                    <div class="text-2xl font-bold text-teal-700">
+                                                        {{ $christmas_subsidy ? number_format(($basic_salary ?? 0) * 0.5, 2) : '0.00' }} AOA
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Vacation Subsidy --}}
+                                        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                            <div class="flex items-start space-x-3 mb-3">
+                                                <div class="flex-shrink-0 mt-1">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        wire:model.live="vacation_subsidy"
+                                                        id="vacation_subsidy"
+                                                        class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                                    >
+                                                </div>
+                                                <div class="flex-1">
+                                                    <label for="vacation_subsidy" class="text-base font-semibold text-gray-800 block mb-1">
+                                                        Vacation Subsidy
+                                                    </label>
+                                                    <p class="text-sm text-teal-600 mb-3">Additional vacation payment: 50% do salário base</p>
+                                                    <div class="text-2xl font-bold text-teal-700">
+                                                        {{ $vacation_subsidy ? number_format(($basic_salary ?? 0) * 0.5, 2) : '0.00' }} AOA
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Additional Bonus --}}
+                                    <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                        <div class="flex items-center space-x-3 mb-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-plus-circle text-teal-600 text-sm"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <label class="text-base font-semibold text-gray-800 block">Additional Bonus</label>
+                                            </div>
+                                        </div>
+                                        <div class="relative">
+                                            <input 
+                                                type="number" 
+                                                step="0.01" 
+                                                wire:model.live="additional_bonus_amount"
+                                                class="w-full px-4 py-3 text-lg border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                                                placeholder="AOA 0"
+                                                value="{{ $additional_bonus_amount ?? 0 }}"
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {{-- Attendance Summary Card --}}
                                 <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-2xl border border-green-200">
                                     <h3 class="text-lg font-bold text-green-800 mb-4 flex items-center">
@@ -726,47 +806,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Additional Input for Bonus --}}
-                                <div class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200">
-                                    <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">
-                                        <i class="fas fa-plus-circle mr-2"></i>
-                                        {{ __('messages.additional_payments') }}
-                                    </h3>
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-indigo-700 mb-2">{{ __('messages.bonus_amount') }}</label>
-                                            <input 
-                                                type="number" 
-                                                step="0.01" 
-                                                wire:model.live="bonus_amount"
-                                                class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="0.00"
-                                            >
-                                        </div>
-                                        <div class="flex items-center space-x-3">
-                                            <input 
-                                                type="checkbox" 
-                                                wire:model.live="holiday_allowance"
-                                                id="holiday_allowance"
-                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                            >
-                                            <label for="holiday_allowance" class="text-sm font-medium text-indigo-700">
-                                                {{ __('messages.holiday_allowance') }}
-                                            </label>
-                                        </div>
-                                        <div class="flex items-center space-x-3">
-                                            <input 
-                                                type="checkbox" 
-                                                wire:model.live="christmas_bonus"
-                                                id="christmas_bonus"
-                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                            >
-                                            <label for="christmas_bonus" class="text-sm font-medium text-indigo-700">
-                                                {{ __('messages.christmas_bonus') }}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -848,14 +887,25 @@
                                             </div>
                                         @endif
 
-                                        {{-- Additional Bonus --}}
+                                        {{-- Employee Profile Bonus --}}
                                         @if($bonus_amount > 0)
+                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-blue-50 rounded-xl">
+                                            <span class="font-medium text-blue-700 text-sm lg:text-base">
+                                                <i class="fas fa-user-tag text-blue-600 mr-1"></i>
+                                                Employee Profile Bonus
+                                            </span>
+                                            <span class="font-bold text-blue-800 text-sm lg:text-lg">+{{ number_format($bonus_amount, 2) }} AOA</span>
+                                        </div>
+                                        @endif
+
+                                        {{-- Additional Payroll Bonus --}}
+                                        @if($additional_bonus_amount > 0)
                                         <div class="flex justify-between items-center p-3 lg:p-4 bg-purple-50 rounded-xl">
                                             <span class="font-medium text-purple-700 text-sm lg:text-base">
                                                 <i class="fas fa-plus-circle text-purple-600 mr-1"></i>
-                                                {{ __('messages.additional_bonus') }}
+                                                Additional Payroll Bonus
                                             </span>
-                                            <span class="font-bold text-purple-800 text-sm lg:text-lg">+{{ number_format($bonus_amount, 2) }} AOA</span>
+                                            <span class="font-bold text-purple-800 text-sm lg:text-lg">+{{ number_format($additional_bonus_amount, 2) }} AOA</span>
                                         </div>
                                         @endif
 

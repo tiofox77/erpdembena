@@ -41,8 +41,16 @@ class SystemSettings extends Component
     public $backup_before_update = true;
     public $update_progress = 0;
     public $update_status = '';
+    public $update_logs = '';
     public $isCheckingForUpdates = false;
     public $isUpdating = false;
+    
+    // Backup & Restore Settings
+    public $available_backups = [];
+    public $selected_backup = '';
+    public $isRestoringBackup = false;
+    public $restore_progress = 0;
+    public $restore_status = '';
 
     // Maintenance & Debug Settings
     public $maintenance_mode = false;
@@ -116,12 +124,28 @@ class SystemSettings extends Component
      */
     public function mount()
     {
-        $this->loadSettings();
-        $this->current_version = config('app.version', '1.0.0');
-
-        // Auto check system requirements if that tab is active
-        if ($this->activeTab === 'requirements') {
+        try {
+            $this->loadSettings();
+            $this->loadAvailableBackups();
             $this->checkSystemRequirements();
+        } catch (\Exception $e) {
+            Log::error('Erro crítico ao inicializar configurações do sistema: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Em caso de erro crítico, usar valores padrão para manter a página funcional
+            $this->setDefaultValues();
+            $this->available_backups = [];
+            $this->systemRequirements = [];
+            $this->requirementsStatus = [
+                'passed' => 0,
+                'warnings' => 0,
+                'failed' => 1
+            ];
+            
+            $this->dispatch('notify', type: 'warning', message: 'Sistema carregado em modo seguro devido a erros. Algumas funcionalidades podem estar limitadas.');
         }
     }
 
@@ -140,22 +164,87 @@ class SystemSettings extends Component
      */
     protected function loadSettings()
     {
-        $this->company_name = Setting::get('company_name', config('app.name'));
-        $this->app_timezone = Setting::get('app_timezone', config('app.timezone'));
-        $this->date_format = Setting::get('date_format', 'm/d/Y');
-        $this->currency = Setting::get('currency', 'USD');
-        $this->language = Setting::get('language', 'en');
-        
-        // Carregar detalhes da empresa
-        $this->company_address = Setting::get('company_address', '');
-        $this->company_phone = Setting::get('company_phone', '');
-        $this->company_email = Setting::get('company_email', '');
-        $this->company_website = Setting::get('company_website', '');
-        $this->company_tax_id = Setting::get('company_tax_id', '');
-        
-        $this->github_repository = Setting::get('github_repository', $this->github_repository);
-        $this->maintenance_mode = (bool) Setting::get('maintenance_mode', false);
-        $this->debug_mode = (bool) Setting::get('debug_mode', false);
+        try {
+            $this->company_name = Setting::get('company_name', config('app.name'));
+            $this->app_timezone = Setting::get('app_timezone', config('app.timezone'));
+            $this->date_format = Setting::get('date_format', 'm/d/Y');
+            $this->currency = Setting::get('currency', 'USD');
+            $this->language = Setting::get('language', 'en');
+            
+            // Carregar detalhes da empresa
+            $this->company_address = Setting::get('company_address', '');
+            $this->company_phone = Setting::get('company_phone', '');
+            $this->company_email = Setting::get('company_email', '');
+            $this->company_website = Setting::get('company_website', '');
+            $this->company_tax_id = Setting::get('company_tax_id', '');
+            
+            // Carregar configurações de actualização
+            $this->github_repository = Setting::get('github_repository', $this->github_repository);
+            $this->maintenance_mode = (bool) Setting::get('maintenance_mode', false);
+            $this->debug_mode = (bool) Setting::get('debug_mode', false);
+            
+            // Carregar versão atual do sistema
+            $this->loadCurrentVersion();
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao carregar configurações: ' . $e->getMessage());
+            // Usar valores padrão em caso de erro
+            $this->setDefaultValues();
+        }
+    }
+
+    /**
+     * Load current system version
+     */
+    protected function loadCurrentVersion()
+    {
+        try {
+            // Tentar carregar da configuração primeiro
+            $this->current_version = config('app.version', '1.0.0');
+            
+            // Se não existir, tentar carregar da base de dados
+            if ($this->current_version === '1.0.0') {
+                $this->current_version = Setting::get('app_version', '1.0.0');
+            }
+            
+            // Se ainda for 1.0.0, tentar ler do composer.json
+            if ($this->current_version === '1.0.0') {
+                $composerPath = base_path('composer.json');
+                if (file_exists($composerPath)) {
+                    $composer = json_decode(file_get_contents($composerPath), true);
+                    $this->current_version = $composer['version'] ?? '1.0.0';
+                }
+            }
+            
+            $this->update_status = "Sistema atualizado - Versão v{$this->current_version}";
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao carregar versão atual: ' . $e->getMessage());
+            $this->current_version = '1.0.0';
+            $this->update_status = 'Erro ao verificar versão do sistema';
+        }
+    }
+
+    /**
+     * Set default values in case of error
+     */
+    protected function setDefaultValues()
+    {
+        $this->company_name = config('app.name', 'ERP Sistema');
+        $this->app_timezone = config('app.timezone', 'UTC');
+        $this->date_format = 'd/m/Y';
+        $this->currency = 'AOA';
+        $this->language = 'pt';
+        $this->company_address = '';
+        $this->company_phone = '';
+        $this->company_email = '';
+        $this->company_website = '';
+        $this->company_tax_id = '';
+        $this->github_repository = 'tiofox77/erpdembena';
+        $this->maintenance_mode = false;
+        $this->debug_mode = false;
+        $this->current_version = '1.0.0';
+        $this->update_status = 'Sistema funcionando em modo seguro';
     }
 
     /**
@@ -316,70 +405,58 @@ class SystemSettings extends Component
     }
 
     /**
-     * Check for updates
+     * Check for updates from GitHub releases
      */
     public function checkForUpdates()
     {
         $this->isCheckingForUpdates = true;
-        $this->update_status = 'Checking for updates...';
+        $this->update_status = 'Verificando actualizações...';
 
         try {
-            // Fetch repository information first - this checks if the repo exists and is accessible
-            $infoResponse = Http::get("https://api.github.com/repos/{$this->github_repository}");
-
-            if (!$infoResponse->successful()) {
-                $this->update_status = "Repository not found or not accessible. Status code: {$infoResponse->status()}";
-                Log::error("GitHub Repository Error: {$infoResponse->body()}");
-                $this->dispatch('notify', type: 'error', message: "Repository not found or not accessible. Make sure the repository exists and is public or has proper access tokens configured.");
-                $this->isCheckingForUpdates = false;
-                return;
+            // Recarregar versão atual antes de verificar
+            $this->loadCurrentVersion();
+            
+            if (empty($this->github_repository) || $this->github_repository === 'your-username/your-repository') {
+                throw new \Exception('Repositório GitHub não configurado');
             }
 
-            // If repository exists, fetch releases
-            $response = Http::get("https://api.github.com/repos/{$this->github_repository}/releases");
+            $apiUrl = "https://api.github.com/repos/{$this->github_repository}/releases/latest";
+
+            $response = Http::timeout(30)->get($apiUrl);
 
             if ($response->successful()) {
-                $releases = $response->json();
-
-                if (empty($releases)) {
-                    $this->update_status = "No releases found in the repository.";
-                    $this->dispatch('notify', type: 'warning', message: "No releases found in the repository. Please create releases with version tags.");
-                    $this->isCheckingForUpdates = false;
-                    return;
-                }
-
-                // Get the latest release
-                $latest = $releases[0];
+                $latest = $response->json();
                 $this->latest_version = ltrim($latest['tag_name'] ?? '0.0.0', 'v');
 
                 // Compare versions
                 if (version_compare($this->latest_version, $this->current_version, '>')) {
                     $this->update_available = true;
                     $this->update_notes = [
-                        'title' => $latest['name'] ?? 'New Release',
-                        'body' => $latest['body'] ?? 'No release notes available.',
-                        'published_at' => $latest['published_at'] ?? now(),
-                        'download_url' => $latest['zipball_url'] ?? null
+                        'title' => $latest['name'] ?? 'Nova Versão',
+                        'body' => $latest['body'] ?? 'Actualização disponível.'
                     ];
-                    $this->update_status = "Update available: v{$this->latest_version}";
-                    $this->dispatch('notify', type: 'info', message: "Update v{$this->latest_version} is available for installation.");
+
+                    $this->update_status = "Actualização disponível: v{$this->latest_version}";
+                    $this->dispatch('notify', type: 'info', message: "Actualização v{$this->latest_version} disponível para instalação.");
                 } else {
                     $this->update_available = false;
-                    $this->update_status = "You are running the latest version: v{$this->current_version}";
-                    $this->dispatch('notify', type: 'success', message: "Your system is up to date (v{$this->current_version}).");
+                    $this->update_status = "Sistema actualizado - Versão atual: v{$this->current_version}";
+                    $this->dispatch('notify', type: 'success', message: "Sistema atualizado (v{$this->current_version}).");
                 }
             } else {
-                $this->update_status = "Could not fetch releases. Status code: {$response->status()}";
-                Log::error("GitHub API Error: {$response->body()}");
-                $this->dispatch('notify', type: 'error', message: "Could not fetch releases from GitHub. Please check repository settings.");
+                $this->update_status = "Não foi possível verificar actualizações. Código: {$response->status()}";
+                $this->dispatch('notify', type: 'error', message: 'Falha ao verificar actualizações. Tente novamente mais tarde.');
             }
         } catch (\Exception $e) {
-            $this->update_status = "Error checking for updates: " . $e->getMessage();
-            Log::error("Update check error: {$e->getMessage()}");
-            $this->dispatch('notify', type: 'error', message: "Error checking for updates: {$e->getMessage()}");
+            $this->update_status = 'Erro ao verificar actualizações: ' . $e->getMessage();
+            Log::error('Verificação de actualização falhou: ' . $e->getMessage(), [
+                'repository' => $this->github_repository,
+                'current_version' => $this->current_version
+            ]);
+            $this->dispatch('notify', type: 'error', message: 'Erro ao verificar actualizações: ' . $e->getMessage());
+        } finally {
+            $this->isCheckingForUpdates = false;
         }
-
-        $this->isCheckingForUpdates = false;
     }
 
     /**
@@ -388,12 +465,12 @@ class SystemSettings extends Component
     public function confirmStartUpdate()
     {
         if (!$this->update_available) {
-            $this->dispatch('notify', type: 'error', message: 'No updates available to install.');
+            $this->dispatch('notify', type: 'error', message: 'Nenhuma actualização disponível para instalar.');
             return;
         }
 
         $this->confirmAction = 'startUpdate';
-        $this->confirmMessage = "Are you sure you want to update to version {$this->latest_version}? This action will temporarily make your site unavailable during the update process.";
+        $this->confirmMessage = "Tem a certeza que deseja actualizar para a versão {$this->latest_version}? Esta ação tornará o site temporariamente indisponível durante o processo de actualização.";
         $this->showConfirmModal = true;
     }
 
@@ -686,6 +763,320 @@ class SystemSettings extends Component
             }
         }
         closedir($dirHandle);
+    }
+
+    /**
+     * Load available backups from storage
+     */
+    public function loadAvailableBackups()
+    {
+        try {
+            $backupDir = storage_path('app/backups');
+            $this->available_backups = [];
+            
+            if (!is_dir($backupDir)) {
+                return;
+            }
+
+            $backupFiles = glob($backupDir . '/backup_*.zip');
+            
+            if ($backupFiles === false) {
+                Log::warning('Erro ao listar backups disponíveis');
+                return;
+            }
+            
+            foreach ($backupFiles as $backupFile) {
+                try {
+                    if (!file_exists($backupFile)) {
+                        continue;
+                    }
+                    
+                    $filename = basename($backupFile);
+                    $timestamp = str_replace(['backup_', '.zip'], '', $filename);
+                    
+                    // Parse timestamp to readable format
+                    $date = \DateTime::createFromFormat('Y-m-d_H-i-s', $timestamp);
+                    
+                    $this->available_backups[] = [
+                        'filename' => $filename,
+                        'filepath' => $backupFile,
+                        'timestamp' => $timestamp,
+                        'date' => $date ? $date->format('d/m/Y H:i:s') : $timestamp,
+                        'size' => $this->formatFileSize(filesize($backupFile)),
+                        'database_file' => str_replace('backup_', 'database_', $backupFile) 
+                            ? str_replace('.zip', '.sql', str_replace('backup_', 'database_', $backupFile)) 
+                            : null
+                    ];
+                } catch (\Exception $e) {
+                    Log::warning('Erro ao processar backup: ' . $backupFile . ' - ' . $e->getMessage());
+                    continue;
+                }
+            }
+            
+            // Sort by date (newest first)
+            usort($this->available_backups, function($a, $b) {
+                return strcmp($b['timestamp'], $a['timestamp']);
+            });
+            
+        } catch (\Exception $e) {
+            Log::error('Erro crítico ao carregar backups: ' . $e->getMessage());
+            $this->available_backups = [];
+        }
+    }
+
+    /**
+     * Confirm backup restore
+     */
+    public function confirmRestoreBackup($backupFilename)
+    {
+        $this->selected_backup = $backupFilename;
+        $this->dispatch('show-restore-confirmation', $backupFilename);
+    }
+
+    /**
+     * Restore from backup
+     */
+    public function restoreFromBackup()
+    {
+        if (empty($this->selected_backup)) {
+            $this->dispatch('notify', type: 'error', message: 'Nenhum backup selecionado para restauro.');
+            return;
+        }
+
+        $this->isRestoringBackup = true;
+        $this->restore_progress = 0;
+        $this->restore_status = 'Preparando restauro...';
+
+        try {
+            // Find the backup details
+            $backup = collect($this->available_backups)->firstWhere('filename', $this->selected_backup);
+            
+            if (!$backup) {
+                throw new \Exception('Backup não encontrado.');
+            }
+
+            if (!file_exists($backup['filepath'])) {
+                throw new \Exception('Arquivo de backup não existe.');
+            }
+
+            // Put application in maintenance mode
+            $this->restore_status = 'Ativando modo de manutenção...';
+            $this->restore_progress = 10;
+            Artisan::call('down', ['--message' => 'Sistema em restauro', '--retry' => 60]);
+
+            // Create temporary extraction directory
+            $tempDir = storage_path('app/temp_restore_' . time());
+            mkdir($tempDir, 0755, true);
+
+            $this->restore_status = 'Extraindo backup...';
+            $this->restore_progress = 20;
+
+            // Extract backup
+            $zip = new \ZipArchive();
+            if ($zip->open($backup['filepath']) !== true) {
+                throw new \Exception('Não foi possível abrir o arquivo de backup.');
+            }
+
+            $zip->extractTo($tempDir);
+            $zip->close();
+
+            $this->restore_status = 'Restaurando arquivos...';
+            $this->restore_progress = 40;
+
+            // Restore files (except .env to prevent database connection issues)
+            $this->restoreFiles($tempDir);
+
+            $this->restore_status = 'Restaurando base de dados...';
+            $this->restore_progress = 70;
+
+            // Restore database if backup exists
+            if ($backup['database_file'] && file_exists($backup['database_file'])) {
+                $this->restoreDatabase($backup['database_file']);
+            }
+
+            $this->restore_status = 'Limpando arquivos temporários...';
+            $this->restore_progress = 90;
+
+            // Clean up temporary directory
+            $this->deleteDirectory($tempDir);
+
+            // Clear cache
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+            Artisan::call('view:clear');
+
+            $this->restore_status = 'Restauro concluído com sucesso!';
+            $this->restore_progress = 100;
+
+            // Bring application back up
+            Artisan::call('up');
+
+            $this->dispatch('notify', type: 'success', message: 'Sistema restaurado com sucesso!');
+            
+            // Refresh page after a delay
+            $this->dispatch('refresh-page', delay: 3000);
+
+        } catch (\Exception $e) {
+            Log::error('Backup restore failed: ' . $e->getMessage(), [
+                'backup' => $this->selected_backup,
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            // Bring application back up if it's down
+            try {
+                Artisan::call('up');
+            } catch (\Exception $upException) {
+                Log::error('Failed to bring application up: ' . $upException->getMessage());
+            }
+
+            $this->restore_status = 'Erro no restauro: ' . $e->getMessage();
+            $this->dispatch('notify', type: 'error', message: 'Erro no restauro: ' . $e->getMessage());
+        } finally {
+            $this->isRestoringBackup = false;
+            $this->selected_backup = '';
+        }
+    }
+
+    /**
+     * Restore files from backup
+     */
+    protected function restoreFiles($tempDir)
+    {
+        $directoriesToRestore = ['app', 'config', 'database', 'resources', 'routes'];
+        
+        foreach ($directoriesToRestore as $dir) {
+            $sourceDir = $tempDir . '/' . $dir;
+            $targetDir = base_path($dir);
+            
+            if (is_dir($sourceDir)) {
+                // Backup current directory before replacing
+                $backupCurrentDir = $targetDir . '_backup_' . time();
+                if (is_dir($targetDir)) {
+                    rename($targetDir, $backupCurrentDir);
+                }
+                
+                // Copy restored directory
+                $this->copyDirectory($sourceDir, $targetDir);
+            }
+        }
+
+        // Restore important files
+        $filesToRestore = ['composer.json', 'artisan', 'package.json'];
+        
+        foreach ($filesToRestore as $file) {
+            $sourceFile = $tempDir . '/' . $file;
+            $targetFile = base_path($file);
+            
+            if (file_exists($sourceFile)) {
+                copy($sourceFile, $targetFile);
+            }
+        }
+    }
+
+    /**
+     * Restore database from SQL file
+     */
+    protected function restoreDatabase($sqlFile)
+    {
+        try {
+            $sql = file_get_contents($sqlFile);
+            
+            if (empty($sql)) {
+                throw new \Exception('Arquivo de backup da base de dados está vazio.');
+            }
+
+            // Split SQL into individual statements
+            $statements = explode(';', $sql);
+            
+            DB::beginTransaction();
+            
+            foreach ($statements as $statement) {
+                $statement = trim($statement);
+                if (!empty($statement)) {
+                    DB::unprepared($statement);
+                }
+            }
+            
+            DB::commit();
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            throw new \Exception('Erro no restauro da base de dados: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Copy directory recursively
+     */
+    protected function copyDirectory($source, $destination)
+    {
+        if (!is_dir($destination)) {
+            mkdir($destination, 0755, true);
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $target = $destination . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+            
+            if ($item->isDir()) {
+                if (!is_dir($target)) {
+                    mkdir($target, 0755, true);
+                }
+            } else {
+                copy($item->getPathname(), $target);
+            }
+        }
+    }
+
+    /**
+     * Delete a backup file
+     */
+    public function deleteBackup($backupFilename)
+    {
+        $backup = collect($this->available_backups)->firstWhere('filename', $backupFilename);
+        
+        if (!$backup) {
+            $this->dispatch('notify', type: 'error', message: 'Backup não encontrado.');
+            return;
+        }
+
+        try {
+            // Delete backup zip file
+            if (file_exists($backup['filepath'])) {
+                unlink($backup['filepath']);
+            }
+
+            // Delete database backup if exists
+            if ($backup['database_file'] && file_exists($backup['database_file'])) {
+                unlink($backup['database_file']);
+            }
+
+            $this->dispatch('notify', type: 'success', message: 'Backup eliminado com sucesso.');
+            $this->loadAvailableBackups(); // Refresh list
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to delete backup: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Erro ao eliminar backup: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Format file size in human readable format
+     */
+    protected function formatFileSize($size)
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        
+        for ($i = 0; $size > 1024 && $i < count($units) - 1; $i++) {
+            $size /= 1024;
+        }
+        
+        return round($size, 2) . ' ' . $units[$i];
     }
 
     /**
@@ -1498,31 +1889,6 @@ class SystemSettings extends Component
         $this->closeConfirmModal();
     }
 
-    /**
-     * Delete directory recursively
-     */
-    protected function deleteDirectory($dir)
-    {
-        if (!file_exists($dir)) {
-            return true;
-        }
-
-        if (!is_dir($dir)) {
-            return unlink($dir);
-        }
-
-        foreach (scandir($dir) as $item) {
-            if ($item == '.' || $item == '..') {
-                continue;
-            }
-
-            if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
-                return false;
-            }
-        }
-
-        return rmdir($dir);
-    }
 
     /**
      * Clear settings cache

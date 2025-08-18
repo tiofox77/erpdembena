@@ -18,7 +18,7 @@
 /public/hot
 /public/storage
 /storage/*.key
-/vendor
+# /vendor  # Comentado para incluir dependências no Git
 .env
 .env.backup
 .env.production

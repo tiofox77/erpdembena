@@ -1,4 +1,4 @@
-<div>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
     <!-- JavaScript for Notifications -->
     <script>
         function showNotification(message, type = 'success') {
@@ -7,7 +7,8 @@
                     closeButton: true,
                     progressBar: true,
                     positionClass: 'toast-top-right',
-                    timeOut: 5000
+                    timeOut: 5000,
+                    extendedTimeOut: 2000
                 };
 
                 toastr[type](message);
@@ -24,281 +25,411 @@
         });
     </script>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                        <i class="fas fa-cog mr-2 text-gray-600"></i> {{ __('messages.system_settings') }}
-                    </h2>
-
-                    <div class="mb-4">
-                        <h2 class="text-lg font-medium text-gray-900">{{ __('messages.system_settings') }}</h2>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('messages.manage_system_settings') }}</p>
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header Section -->
+            <div class="mb-8">
+                <div class="bg-white shadow-lg rounded-2xl border border-slate-200/60">
+                    <div class="px-8 py-6 border-b border-slate-200/60">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                                    <i class="fas fa-cog text-white text-xl"></i>
+                                </div>
+                                <div>
+                                    <h1 class="text-2xl font-bold text-slate-800">{{ __('messages.system_settings') }}</h1>
+                                    <p class="text-slate-600 mt-1">{{ __('messages.manage_system_settings') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                    <i class="fas fa-circle text-green-500 text-xs mr-1"></i>
+                                    Sistema Activo
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Tabs -->
-                    <div class="mb-4 border-b border-gray-200">
-                        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" role="tablist">
-                            <li class="mr-2" role="presentation">
-                                <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'general' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
-                                    wire:click="setActiveTab('general')" type="button" role="tab">
+                    <!-- Modern Tabs -->
+                    <div class="px-8">
+                        <div class="border-b border-slate-200">
+                            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                                <button wire:click="setActiveTab('general')" type="button" 
+                                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 {{ $activeTab === 'general' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                                    <div class="w-8 h-8 mr-3 rounded-lg flex items-center justify-center {{ $activeTab === 'general' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200' }}">
+                                        <i class="fas fa-building text-sm"></i>
+                                    </div>
                                     {{ __('messages.general') }}
                                 </button>
-                            </li>
-                            <li class="mr-2" role="presentation">
-                                <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'updates' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
-                                    wire:click="setActiveTab('updates')" type="button" role="tab">
+                                
+                                <button wire:click="setActiveTab('updates')" type="button" 
+                                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 {{ $activeTab === 'updates' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                                    <div class="w-8 h-8 mr-3 rounded-lg flex items-center justify-center {{ $activeTab === 'updates' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200' }}">
+                                        <i class="fas fa-download text-sm"></i>
+                                    </div>
                                     {{ __('messages.updates') }}
                                 </button>
-                            </li>
-                            <li class="mr-2" role="presentation">
-                                <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'maintenance' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
-                                    wire:click="setActiveTab('maintenance')" type="button" role="tab">
+                                
+                                <button wire:click="setActiveTab('maintenance')" type="button" 
+                                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 {{ $activeTab === 'maintenance' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                                    <div class="w-8 h-8 mr-3 rounded-lg flex items-center justify-center {{ $activeTab === 'maintenance' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200' }}">
+                                        <i class="fas fa-tools text-sm"></i>
+                                    </div>
                                     {{ __('messages.maintenance') }}
                                 </button>
-                            </li>
-                            <li class="mr-2" role="presentation">
-                                <button class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'requirements' ? 'border-indigo-500 text-indigo-600 active' : 'border-transparent hover:text-gray-600 hover:border-gray-300' }}"
-                                    wire:click="setActiveTab('requirements')" type="button" role="tab">
+                                
+                                <button wire:click="setActiveTab('requirements')" type="button" 
+                                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 {{ $activeTab === 'requirements' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                                    <div class="w-8 h-8 mr-3 rounded-lg flex items-center justify-center {{ $activeTab === 'requirements' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200' }}">
+                                        <i class="fas fa-shield-alt text-sm"></i>
+                                    </div>
                                     {{ __('messages.system_requirements') }}
                                 </button>
-                            </li>
-                        </ul>
+                            </nav>
+                        </div>
                     </div>
 
                     <!-- Tab contents -->
-                    <div class="p-4 bg-white rounded-lg">
+                    <div class="p-8">
                         <!-- General Settings Tab -->
                         <div class="{{ $activeTab === 'general' ? 'block' : 'hidden' }}" role="tabpanel">
-                            <form wire:submit.prevent="saveGeneralSettings">
+                            <form wire:submit.prevent="saveGeneralSettings" class="space-y-8">
                                 @if($errors->any())
-                                    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-                                        <p class="font-bold flex items-center">
-                                            <i class="fas fa-exclamation-circle mr-2"></i>
-                                            Please correct the following errors:
-                                        </p>
-                                        <ul class="mt-2 list-disc list-inside text-sm">
-                                            @foreach($errors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
+                                    <div class="rounded-xl bg-red-50 border border-red-200 p-6 shadow-sm">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h3 class="text-sm font-semibold text-red-800">Corrigir os seguintes erros:</h3>
+                                                <ul class="mt-2 space-y-1">
+                                                    @foreach($errors->all() as $error)
+                                                        <li class="text-sm text-red-700 flex items-center">
+                                                            <i class="fas fa-dot-circle text-red-400 text-xs mr-2"></i>
+                                                            {{ $error }}
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                 @endif
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label for="company_name" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.company_name') }}</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="text"
-                                                wire:model.live="company_name"
-                                                id="company_name"
-                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('company_name') border-red-300 text-red-900 placeholder-red-300 @enderror"
-                                                placeholder="Company Name">
-                                            @error('company_name')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                                <!-- Company Information Card -->
+                                <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                                        <h3 class="text-lg font-semibold text-white flex items-center">
+                                            <i class="fas fa-building mr-3"></i>
+                                            Informações da Empresa
+                                        </h3>
+                                    </div>
+                                    <div class="p-6 space-y-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div class="space-y-2">
+                                                <label for="company_name" class="block text-sm font-semibold text-slate-700">{{ __('messages.company_name') }}</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-building text-slate-400"></i>
+                                                    </div>
+                                                    <input type="text"
+                                                        wire:model.live="company_name"
+                                                        id="company_name"
+                                                        class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200
+                                                        @error('company_name') border-red-300 bg-red-50 @enderror"
+                                                        placeholder="Nome da Empresa">
+                                                    @error('company_name')
+                                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
                                                 </div>
-                                            @enderror
-                                        </div>
-                                        @error('company_name')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
+                                                @error('company_name')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
 
-                                    <div>
-                                        <label for="company_logo" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.company_logo') }}</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="file"
-                                                wire:model.live="company_logo"
-                                                id="company_logo"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('company_logo') border-red-300 text-red-900 @enderror">
-                                            @error('company_logo')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            <div class="space-y-2">
+                                                <label for="company_logo" class="block text-sm font-semibold text-slate-700">{{ __('messages.company_logo') }}</label>
+                                                <div class="relative">
+                                                    <input type="file"
+                                                        wire:model.live="company_logo"
+                                                        id="company_logo"
+                                                        accept="image/*"
+                                                        class="block w-full text-sm text-slate-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200
+                                                        @error('company_logo') border-red-300 bg-red-50 @enderror">
+                                                    @error('company_logo')
+                                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
                                                 </div>
-                                            @enderror
-                                        </div>
-                                        @error('company_logo')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
+                                                @error('company_logo')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
 
-                                        <div class="mt-2">
-                                            @if ($company_logo)
-                                                <img src="{{ $company_logo->temporaryUrl() }}" alt="Preview" class="h-20 w-auto">
-                                            @endif
+                                                @if ($company_logo)
+                                                    <div class="mt-4 flex items-center space-x-4">
+                                                        <div class="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+                                                            <img src="{{ $company_logo->temporaryUrl() }}" alt="Preview" class="w-full h-full object-cover">
+                                                        </div>
+                                                        <div class="text-sm text-slate-600">
+                                                            <p class="font-medium">Pré-visualização do logo</p>
+                                                            <p class="text-xs text-slate-500">Máximo: 1MB</p>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-span-1 md:col-span-2 mt-6">
-                                        <h3 class="text-lg font-medium text-gray-900">{{ __('messages.company_details') }}</h3>
-                                        <p class="mt-1 text-sm text-gray-600">Informações que aparecerão nos relatórios e documentos.</p>
-                                    </div>
-
-                                    <div>
-                                        <label for="company_address" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="text"
-                                                wire:model.live="company_address"
-                                                id="company_address"
-                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                placeholder="Ex: Rua Principal, 123 - Centro">
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label for="company_phone" class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="text"
-                                                wire:model.live="company_phone"
-                                                id="company_phone"
-                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                placeholder="Ex: +55 11 1234-5678">
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label for="company_email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="email"
-                                                wire:model.live="company_email"
-                                                id="company_email"
-                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('company_email') border-red-300 text-red-900 @enderror"
-                                                placeholder="Ex: contato@empresa.com">
-                                            @error('company_email')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
-                                                </div>
-                                            @enderror
-                                        </div>
-                                        @error('company_email')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="company_website" class="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="text"
-                                                wire:model.live="company_website"
-                                                id="company_website"
-                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                placeholder="Ex: www.empresa.com">
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label for="company_tax_id" class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <input type="text"
-                                                wire:model.live="company_tax_id"
-                                                id="company_tax_id"
-                                                class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                placeholder="Ex: 12.345.678/0001-90">
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label for="app_timezone" class="block text-sm font-medium text-gray-700 mb-1">Time Zone</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <select
-                                                wire:model.live="app_timezone"
-                                                id="app_timezone"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('app_timezone') border-red-300 text-red-900 @enderror">
-                                                @foreach ($timezones as $key => $name)
-                                                    <option value="{{ $key }}">{{ $name }}</option>
-                                                @endforeach
-                                            </select>
-                                            @error('app_timezone')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
-                                                </div>
-                                            @enderror
-                                        </div>
-                                        @error('app_timezone')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="date_format" class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <select
-                                                wire:model.live="date_format"
-                                                id="date_format"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('date_format') border-red-300 text-red-900 @enderror">
-                                                @foreach ($date_formats as $format => $example)
-                                                    <option value="{{ $format }}">{{ $example }} ({{ $format }})</option>
-                                                @endforeach
-                                            </select>
-                                            @error('date_format')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
-                                                </div>
-                                            @enderror
-                                        </div>
-                                        @error('date_format')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <select
-                                                wire:model.live="currency"
-                                                id="currency"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('currency') border-red-300 text-red-900 @enderror">
-                                                @foreach ($currencies as $code => $name)
-                                                    <option value="{{ $code }}">{{ $name }}</option>
-                                                @endforeach
-                                            </select>
-                                            @error('currency')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
-                                                </div>
-                                            @enderror
-                                        </div>
-                                        @error('currency')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="language" class="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                                        <div class="mt-1 relative rounded-md shadow-sm">
-                                            <select
-                                                wire:model.live="language"
-                                                id="language"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                @error('language') border-red-300 text-red-900 @enderror">
-                                                @foreach ($languages as $code => $name)
-                                                    <option value="{{ $code }}">{{ $name }}</option>
-                                                @endforeach
-                                            </select>
-                                            @error('language')
-                                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-exclamation-circle text-red-500"></i>
-                                                </div>
-                                            @enderror
-                                        </div>
-                                        @error('language')
-                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                        @enderror
                                     </div>
                                 </div>
 
-                                <div class="mt-6">
+                                <!-- Company Details Card -->
+                                <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-slate-500 to-slate-600 px-6 py-4">
+                                        <h3 class="text-lg font-semibold text-white flex items-center">
+                                            <i class="fas fa-address-card mr-3"></i>
+                                            {{ __('messages.company_details') }}
+                                        </h3>
+                                        <p class="text-slate-200 text-sm mt-1">Informações que aparecerão nos relatórios e documentos</p>
+                                    </div>
+                                    <div class="p-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                            <div class="space-y-2">
+                                                <label for="company_address" class="block text-sm font-semibold text-slate-700">Endereço</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-map-marker-alt text-slate-400"></i>
+                                                    </div>
+                                                    <input type="text"
+                                                        wire:model.live="company_address"
+                                                        id="company_address"
+                                                        class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                                        placeholder="Ex: Rua Principal, 123 - Luanda">
+                                                </div>
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="company_phone" class="block text-sm font-semibold text-slate-700">Telefone</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-phone text-slate-400"></i>
+                                                    </div>
+                                                    <input type="text"
+                                                        wire:model.live="company_phone"
+                                                        id="company_phone"
+                                                        class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                                        placeholder="Ex: +244 923 456 789">
+                                                </div>
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="company_email" class="block text-sm font-semibold text-slate-700">Email</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-envelope text-slate-400"></i>
+                                                    </div>
+                                                    <input type="email"
+                                                        wire:model.live="company_email"
+                                                        id="company_email"
+                                                        class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200
+                                                        @error('company_email') border-red-300 bg-red-50 @enderror"
+                                                        placeholder="Ex: contato@empresa.com">
+                                                    @error('company_email')
+                                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
+                                                </div>
+                                                @error('company_email')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="company_website" class="block text-sm font-semibold text-slate-700">Website</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-globe text-slate-400"></i>
+                                                    </div>
+                                                    <input type="text"
+                                                        wire:model.live="company_website"
+                                                        id="company_website"
+                                                        class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                                        placeholder="Ex: www.empresa.com">
+                                                </div>
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="company_tax_id" class="block text-sm font-semibold text-slate-700">NIF</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-id-card text-slate-400"></i>
+                                                    </div>
+                                                    <input type="text"
+                                                        wire:model.live="company_tax_id"
+                                                        id="company_tax_id"
+                                                        class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                                        placeholder="Ex: 5417654321">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- System Configuration Card -->
+                                <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                                        <h3 class="text-lg font-semibold text-white flex items-center">
+                                            <i class="fas fa-cogs mr-3"></i>
+                                            Configurações do Sistema
+                                        </h3>
+                                    </div>
+                                    <div class="p-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div class="space-y-2">
+                                                <label for="app_timezone" class="block text-sm font-semibold text-slate-700">Fuso Horário</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                        <i class="fas fa-clock text-slate-400"></i>
+                                                    </div>
+                                                    <select
+                                                        wire:model.live="app_timezone"
+                                                        id="app_timezone"
+                                                        class="block w-full pl-10 pr-8 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white
+                                                        @error('app_timezone') border-red-300 bg-red-50 @enderror">
+                                                        @foreach ($timezones as $key => $name)
+                                                            <option value="{{ $key }}">{{ $name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-chevron-down text-slate-400"></i>
+                                                    </div>
+                                                    @error('app_timezone')
+                                                        <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
+                                                </div>
+                                                @error('app_timezone')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="date_format" class="block text-sm font-semibold text-slate-700">Formato de Data</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                        <i class="fas fa-calendar text-slate-400"></i>
+                                                    </div>
+                                                    <select
+                                                        wire:model.live="date_format"
+                                                        id="date_format"
+                                                        class="block w-full pl-10 pr-8 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white
+                                                        @error('date_format') border-red-300 bg-red-50 @enderror">
+                                                        @foreach ($date_formats as $format => $example)
+                                                            <option value="{{ $format }}">{{ $example }} ({{ $format }})</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-chevron-down text-slate-400"></i>
+                                                    </div>
+                                                    @error('date_format')
+                                                        <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
+                                                </div>
+                                                @error('date_format')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="currency" class="block text-sm font-semibold text-slate-700">Moeda</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                        <i class="fas fa-dollar-sign text-slate-400"></i>
+                                                    </div>
+                                                    <select
+                                                        wire:model.live="currency"
+                                                        id="currency"
+                                                        class="block w-full pl-10 pr-8 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white
+                                                        @error('currency') border-red-300 bg-red-50 @enderror">
+                                                        @foreach ($currencies as $code => $name)
+                                                            <option value="{{ $code }}">{{ $name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-chevron-down text-slate-400"></i>
+                                                    </div>
+                                                    @error('currency')
+                                                        <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
+                                                </div>
+                                                @error('currency')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label for="language" class="block text-sm font-semibold text-slate-700">Idioma</label>
+                                                <div class="relative">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                        <i class="fas fa-language text-slate-400"></i>
+                                                    </div>
+                                                    <select
+                                                        wire:model.live="language"
+                                                        id="language"
+                                                        class="block w-full pl-10 pr-8 py-3 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white
+                                                        @error('language') border-red-300 bg-red-50 @enderror">
+                                                        @foreach ($languages as $code => $name)
+                                                            <option value="{{ $code }}">{{ $name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <i class="fas fa-chevron-down text-slate-400"></i>
+                                                    </div>
+                                                    @error('language')
+                                                        <div class="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
+                                                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                                                        </div>
+                                                    @enderror
+                                                </div>
+                                                @error('language')
+                                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-info-circle mr-1"></i>{{ $message }}
+                                                    </p>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Save Button -->
+                                <div class="flex justify-end pt-6">
                                     <button
                                         type="submit"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <i class="fas fa-save mr-2"></i> Save General Settings
+                                        class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200">
+                                        <i class="fas fa-save mr-2"></i> 
+                                        Guardar Configurações Gerais
                                     </button>
                                 </div>
                             </form>
@@ -306,109 +437,176 @@
 
                         <!-- Updates Tab -->
                         <div class="{{ $activeTab === 'updates' ? 'block' : 'hidden' }}" role="tabpanel">
-                            <div class="mb-6">
-                                <div class="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
+                            <!-- System Version Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-code-branch mr-3"></i>
+                                        Versão do Sistema
+                                    </h3>
+                                </div>
+                                <div class="p-6">
                                     <div class="flex items-center justify-between">
-                                        <div>
-                                            <h3 class="text-lg font-medium text-gray-900">System Version</h3>
-                                            <p class="mt-1 text-sm text-gray-600">Current version: v{{ $current_version }}</p>
-                                            <p class="mt-1 text-sm text-gray-600">{{ $update_status }}</p>
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center">
+                                                <i class="fas fa-download text-purple-600 text-2xl"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-lg font-semibold text-slate-800">Versão Actual: v{{ $current_version }}</h4>
+                                                <p class="text-sm text-slate-600 mt-1">{{ $update_status }}</p>
+                                            </div>
                                         </div>
                                         <div>
                                             <button
                                                 wire:click="checkForUpdates"
                                                 wire:loading.attr="disabled"
                                                 wire:target="checkForUpdates"
-                                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                                 <i class="fas fa-sync-alt mr-2" wire:loading.class="animate-spin" wire:target="checkForUpdates"></i>
-                                                <span wire:loading.remove wire:target="checkForUpdates">Check for Updates</span>
-                                                <span wire:loading wire:target="checkForUpdates">Checking...</span>
+                                                <span wire:loading.remove wire:target="checkForUpdates">Verificar Actualizações</span>
+                                                <span wire:loading wire:target="checkForUpdates">Verificando...</span>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                @if($update_available)
-                                <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">
-                                            <i class="fas fa-check-circle text-green-400 h-5 w-5"></i>
+                            @if($update_available)
+                            <!-- Update Available Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-green-200 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-arrow-circle-up mr-3"></i>
+                                        Actualização Disponível: v{{ $latest_version }}
+                                    </h3>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-gift text-green-600 text-xl"></i>
                                         </div>
-                                        <div class="ml-3">
-                                            <h3 class="text-sm font-medium text-green-800">Update Available: v{{ $latest_version }}</h3>
-                                            <div class="mt-2 text-sm text-green-700">
-                                                <p>{{ $update_notes['title'] ?? 'New Version Available' }}</p>
-                                                <div class="mt-1 whitespace-pre-line">{{ $update_notes['body'] ?? '' }}</div>
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-slate-800 text-lg">{{ $update_notes['title'] ?? 'Nova Versão Disponível' }}</h4>
+                                            <div class="mt-2 text-sm text-slate-600 whitespace-pre-line bg-slate-50 p-4 rounded-lg">
+                                                {{ $update_notes['body'] ?? 'Actualização disponível para instalação.' }}
                                             </div>
-                                            <div class="mt-4">
-                                                <div class="flex items-center mb-2">
-                                                    <input
-                                                        id="backup_before_update"
-                                                        wire:model.live="backup_before_update"
-                                                        type="checkbox"
-                                                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                                    <label for="backup_before_update" class="ml-2 block text-sm text-gray-700">Create backup before updating</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-slate-200 pt-6">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-3">
+                                                <input
+                                                    id="backup_before_update"
+                                                    wire:model.live="backup_before_update"
+                                                    type="checkbox"
+                                                    class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 transition-all duration-200">
+                                                <label for="backup_before_update" class="text-sm font-medium text-slate-700">
+                                                    Criar backup antes da actualização
+                                                </label>
+                                            </div>
+                                            <button
+                                                wire:click="confirmStartUpdate"
+                                                wire:loading.attr="disabled"
+                                                wire:target="startUpdate"
+                                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:from-green-700 hover:to-emerald-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200 disabled:opacity-50">
+                                                <i class="fas fa-rocket mr-2"></i>
+                                                <span wire:loading.remove wire:target="startUpdate">Instalar Actualização</span>
+                                                <span wire:loading wire:target="startUpdate">Instalando...</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
+                            @if($isUpdating)
+                            <!-- Update Progress Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-blue-200 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-cog fa-spin mr-3"></i>
+                                        Progresso da Actualização
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <p class="mb-4 text-sm text-slate-600">{{ $update_status }}</p>
+                                    <div class="bg-slate-200 rounded-full h-3 overflow-hidden">
+                                        <div 
+                                            style="width: {{ $update_progress }}%" 
+                                            class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500 ease-out">
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <span class="text-xs text-slate-500">Progresso</span>
+                                        <span class="text-sm font-semibold text-blue-600">{{ $update_progress }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
+                            @if($update_logs)
+                            <!-- Update Logs Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-terminal mr-3"></i>
+                                        Logs da Actualização
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <div class="bg-slate-900 rounded-lg p-4 max-h-64 overflow-y-auto">
+                                        <pre class="text-xs text-green-400 font-mono whitespace-pre-wrap">{{ $update_logs }}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
+                            <!-- Update Settings Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-cogs mr-3"></i>
+                                        Configurações de Actualização
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <form wire:submit.prevent="saveUpdateSettings" class="space-y-6">
+                                        @if($errors->any())
+                                            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                                                <div class="flex items-start">
+                                                    <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                        <i class="fas fa-exclamation text-red-600 text-sm"></i>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <h4 class="font-medium text-red-800">Corrija os seguintes erros:</h4>
+                                                        <ul class="mt-2 text-sm text-red-700 space-y-1">
+                                                            @foreach($errors->all() as $error)
+                                                                <li class="flex items-center">
+                                                                    <i class="fas fa-circle text-xs mr-2"></i>
+                                                                    {{ $error }}
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
                                                 </div>
-                                                <button
-                                                    wire:click="confirmStartUpdate"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="startUpdate"
-                                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                    <i class="fas fa-download mr-2"></i>
-                                                    <span wire:loading.remove wire:target="startUpdate">Install Update</span>
-                                                    <span wire:loading wire:target="startUpdate">Installing...</span>
-                                                </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
+                                        @endif
 
-                                @if($isUpdating)
-                                <div class="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Update Progress</h3>
-                                    <p class="mb-2 text-sm text-gray-600">{{ $update_status }}</p>
-                                    <div class="relative pt-1">
-                                        <div class="overflow-hidden h-2 text-xs flex rounded bg-indigo-200">
-                                            <div style="width: {{ $update_progress }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"></div>
-                                        </div>
-                                        <div class="text-right mt-1">
-                                            <span class="text-xs font-semibold inline-block text-indigo-600">
-                                                {{ $update_progress }}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
-
-                                <form wire:submit.prevent="saveUpdateSettings" class="bg-white rounded-md">
-                                    @if($errors->any())
-                                        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-                                            <p class="font-bold flex items-center">
-                                                <i class="fas fa-exclamation-circle mr-2"></i>
-                                                Please correct the following errors:
-                                            </p>
-                                            <ul class="mt-2 list-disc list-inside text-sm">
-                                                @foreach($errors->all() as $error)
-                                                    <li>{{ $error }}</li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    @endif
-
-                                    <div class="mb-6">
-                                        <h3 class="text-lg font-medium text-gray-900 mb-4">Update Settings</h3>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <label for="github_repository" class="block text-sm font-medium text-gray-700 mb-1">GitHub Repository</label>
-                                                <div class="mt-1 relative rounded-md shadow-sm">
+                                                <label for="github_repository" class="block text-sm font-semibold text-slate-700 mb-2">
+                                                    <i class="fab fa-github mr-2"></i>
+                                                    Repositório GitHub
+                                                </label>
+                                                <div class="relative">
                                                     <input
                                                         type="text"
                                                         wire:model.live="github_repository"
                                                         id="github_repository"
-                                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
-                                                        @error('github_repository') border-red-300 text-red-900 placeholder-red-300 @enderror"
-                                                        placeholder="username/repository">
+                                                        class="w-full pl-4 pr-10 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-slate-50 hover:bg-white
+                                                        @error('github_repository') border-red-300 bg-red-50 text-red-900 placeholder-red-400 focus:ring-red-500 focus:border-red-500 @enderror"
+                                                        placeholder="utilizador/repositorio">
                                                     @error('github_repository')
                                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                             <i class="fas fa-exclamation-circle text-red-500"></i>
@@ -416,147 +614,325 @@
                                                     @enderror
                                                 </div>
                                                 @error('github_repository')
-                                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                                    <p class="mt-2 text-sm text-red-600 flex items-center">
+                                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                        {{ $message }}
+                                                    </p>
                                                 @else
-                                                    <p class="mt-1 text-xs text-gray-500">Example: laravel/framework</p>
+                                                    <p class="mt-1 text-xs text-slate-500">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        Exemplo: laravel/framework
+                                                    </p>
                                                 @enderror
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div class="mt-6">
-                                        <button
-                                            type="submit"
-                                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                            <i class="fas fa-save mr-2"></i> Save Update Settings
-                                        </button>
-                                    </div>
-                                </form>
+                                        <div class="flex justify-end pt-4 border-t border-slate-200">
+                                            <button
+                                                type="submit"
+                                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200">
+                                                <i class="fas fa-save mr-2"></i> 
+                                                Guardar Configurações
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Backup Management Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-shield-alt mr-3"></i>
+                                        Gestão de Backups
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    @if(count($available_backups) > 0)
+                                        <div class="space-y-4">
+                                            @foreach($available_backups as $backup)
+                                                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:border-emerald-300 transition-colors duration-200">
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex items-center space-x-4">
+                                                            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                                                                <i class="fas fa-archive text-emerald-600 text-xl"></i>
+                                                            </div>
+                                                            <div>
+                                                                <h4 class="font-semibold text-slate-800">{{ $backup['date'] }}</h4>
+                                                                <div class="flex items-center space-x-4 text-sm text-slate-600">
+                                                                    <span class="flex items-center">
+                                                                        <i class="fas fa-file-archive mr-1"></i>
+                                                                        {{ $backup['size'] }}
+                                                                    </span>
+                                                                    @if($backup['database_file'] && file_exists($backup['database_file']))
+                                                                        <span class="flex items-center text-green-600">
+                                                                            <i class="fas fa-database mr-1"></i>
+                                                                            BD incluída
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex items-center space-x-2">
+                                                            <button
+                                                                wire:click="confirmRestoreBackup('{{ $backup['filename'] }}')"
+                                                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-sm font-medium rounded-lg shadow hover:from-emerald-700 hover:to-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+                                                                <i class="fas fa-undo mr-2"></i>
+                                                                Restaurar
+                                                            </button>
+                                                            <button
+                                                                wire:click="deleteBackup('{{ $backup['filename'] }}')"
+                                                                wire:confirm="Tem a certeza que deseja eliminar este backup? Esta ação não pode ser desfeita."
+                                                                class="inline-flex items-center px-3 py-2 text-red-600 hover:text-white hover:bg-red-600 border border-red-300 hover:border-red-600 text-sm font-medium rounded-lg transition-all duration-200">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="text-center py-8">
+                                            <div class="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                                <i class="fas fa-archive text-slate-400 text-2xl"></i>
+                                            </div>
+                                            <h4 class="text-lg font-medium text-slate-600 mb-2">Nenhum backup disponível</h4>
+                                            <p class="text-sm text-slate-500">Os backups serão criados automaticamente antes das actualizações.</p>
+                                        </div>
+                                    @endif
+
+                                    @if($isRestoringBackup)
+                                        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                            <div class="flex items-center mb-3">
+                                                <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="fas fa-cog fa-spin text-blue-600 text-sm"></i>
+                                                </div>
+                                                <h4 class="font-medium text-blue-800">Restaurando sistema...</h4>
+                                            </div>
+                                            <p class="text-sm text-blue-700 mb-3">{{ $restore_status }}</p>
+                                            <div class="bg-blue-200 rounded-full h-2 overflow-hidden">
+                                                <div 
+                                                    style="width: {{ $restore_progress }}%" 
+                                                    class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500">
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span class="text-xs text-blue-600">Progresso</span>
+                                                <span class="text-sm font-semibold text-blue-700">{{ $restore_progress }}%</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
 
                         <!-- Maintenance Tab -->
                         <div class="{{ $activeTab === 'maintenance' ? 'block' : 'hidden' }}" role="tabpanel">
-                            <form wire:submit.prevent="saveMaintenanceSettings">
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Maintenance & Diagnostics</h3>
-
-                                    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
-                                        <div class="flex">
-                                            <div class="flex-shrink-0">
-                                                <i class="fas fa-exclamation-triangle text-yellow-400 h-5 w-5"></i>
-                                            </div>
-                                            <div class="ml-3">
-                                                <h3 class="text-sm font-medium text-yellow-800">Warning</h3>
-                                                <div class="mt-2 text-sm text-yellow-700">
-                                                    <p>Enabling maintenance mode will make the application inaccessible to users. Only administrators will be able to access the site.</p>
-                                                </div>
-                                            </div>
+                            <!-- Warning Alert Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-amber-200 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-3"></i>
+                                        Aviso Importante
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-shield-alt text-amber-600 text-xl"></i>
                                         </div>
-                                    </div>
-
-                                    <div class="space-y-4">
-                                        <div class="flex items-center">
-                                            <input
-                                                id="maintenance_mode"
-                                                wire:model.live="maintenance_mode"
-                                                type="checkbox"
-                                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                            <label for="maintenance_mode" class="ml-2 block text-sm text-gray-700">Enable Maintenance Mode</label>
-                                        </div>
-
-                                        <div class="flex items-center">
-                                            <input
-                                                id="debug_mode"
-                                                wire:model.live="debug_mode"
-                                                type="checkbox"
-                                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                            <label for="debug_mode" class="ml-2 block text-sm text-gray-700">Enable Debug Mode</label>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800 text-lg">Modo de Manutenção</h4>
+                                            <p class="text-sm text-slate-600 mt-2">
+                                                Activar o modo de manutenção tornará a aplicação inacessível aos utilizadores. 
+                                                Apenas os administradores poderão aceder ao site durante este período.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-4">System Tools</h3>
+                            <!-- Maintenance Settings Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-tools mr-3"></i>
+                                        Configurações de Manutenção
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <form wire:submit.prevent="saveMaintenanceSettings" class="space-y-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                                            <i class="fas fa-pause text-red-600"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h4 class="font-semibold text-slate-800">Modo de Manutenção</h4>
+                                                            <p class="text-xs text-slate-600">Activar para manutenção do sistema</p>
+                                                        </div>
+                                                    </div>
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            id="maintenance_mode"
+                                                            wire:model.live="maintenance_mode"
+                                                            type="checkbox"
+                                                            class="sr-only peer">
+                                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                            <i class="fas fa-bug text-blue-600"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h4 class="font-semibold text-slate-800">Modo Debug</h4>
+                                                            <p class="text-xs text-slate-600">Activar para depuração</p>
+                                                        </div>
+                                                    </div>
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            id="debug_mode"
+                                                            wire:model.live="debug_mode"
+                                                            type="checkbox"
+                                                            class="sr-only peer">
+                                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex justify-end pt-4 border-t border-slate-200">
+                                            <button
+                                                type="submit"
+                                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-xl shadow-lg hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200">
+                                                <i class="fas fa-save mr-2"></i> 
+                                                Guardar Configurações
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- System Tools Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-cogs mr-3"></i>
+                                        Ferramentas do Sistema
+                                    </h3>
+                                </div>
+                                <div class="p-6">
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <button
                                             type="button"
                                             wire:click="confirmRunArtisanCommand('optimize:clear')"
-                                            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                            <i class="fas fa-broom mr-2"></i> Clear Cache
+                                            class="group bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl p-4 transition-all duration-200 hover:shadow-md">
+                                            <div class="flex flex-col items-center text-center space-y-2">
+                                                <div class="w-12 h-12 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors duration-200">
+                                                    <i class="fas fa-broom text-blue-600 text-xl"></i>
+                                                </div>
+                                                <span class="font-semibold text-slate-700 group-hover:text-blue-700">Limpar Cache</span>
+                                                <span class="text-xs text-slate-500">Optimizar desempenho</span>
+                                            </div>
                                         </button>
 
                                         <button
                                             type="button"
                                             wire:click="confirmRunArtisanCommand('migrate')"
-                                            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                            <i class="fas fa-database mr-2"></i> Run Migrations
+                                            class="group bg-slate-50 hover:bg-green-50 border border-slate-200 hover:border-green-200 rounded-xl p-4 transition-all duration-200 hover:shadow-md">
+                                            <div class="flex flex-col items-center text-center space-y-2">
+                                                <div class="w-12 h-12 bg-green-100 group-hover:bg-green-200 rounded-xl flex items-center justify-center transition-colors duration-200">
+                                                    <i class="fas fa-database text-green-600 text-xl"></i>
+                                                </div>
+                                                <span class="font-semibold text-slate-700 group-hover:text-green-700">Executar Migrações</span>
+                                                <span class="text-xs text-slate-500">Actualizar base de dados</span>
+                                            </div>
                                         </button>
 
                                         <button
                                             type="button"
                                             wire:click="confirmRunArtisanCommand('storage:link')"
-                                            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                            <i class="fas fa-link mr-2"></i> Create Storage Link
+                                            class="group bg-slate-50 hover:bg-purple-50 border border-slate-200 hover:border-purple-200 rounded-xl p-4 transition-all duration-200 hover:shadow-md">
+                                            <div class="flex flex-col items-center text-center space-y-2">
+                                                <div class="w-12 h-12 bg-purple-100 group-hover:bg-purple-200 rounded-xl flex items-center justify-center transition-colors duration-200">
+                                                    <i class="fas fa-link text-purple-600 text-xl"></i>
+                                                </div>
+                                                <span class="font-semibold text-slate-700 group-hover:text-purple-700">Criar Link Storage</span>
+                                                <span class="text-xs text-slate-500">Configurar armazenamento</span>
+                                            </div>
                                         </button>
                                     </div>
                                 </div>
-
-                                <div class="mt-6">
-                                    <button
-                                        type="submit"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <i class="fas fa-save mr-2"></i> Save Maintenance Settings
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
 
                         <!-- System Requirements Tab -->
                         <div class="{{ $activeTab === 'requirements' ? 'block' : 'hidden' }}" role="tabpanel">
-                            <div class="mb-4">
-                                <h3 class="text-lg font-medium text-gray-900">System Requirements Check</h3>
-                                <p class="mt-1 text-sm text-gray-600">Verify if your system meets all the requirements for optimal operation.</p>
+                            <!-- Requirements Header Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-clipboard-check mr-3"></i>
+                                        Verificação de Requisitos do Sistema
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <p class="text-sm text-slate-600">
+                                        Verificar se o seu sistema atende todos os requisitos para funcionamento optimal.
+                                    </p>
+                                </div>
                             </div>
 
-                            <!-- Status summary -->
-                            <div class="grid grid-cols-3 gap-4 mb-6">
-                                <div class="p-4 bg-green-50 rounded-lg">
-                                    <div class="flex items-center">
-                                        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 text-green-500 bg-green-100 rounded-lg">
-                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-green-700">Passed</p>
-                                            <p class="text-2xl font-bold text-green-700">{{ $requirementsStatus['passed'] }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="p-4 bg-yellow-50 rounded-lg">
-                                    <div class="flex items-center">
-                                        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 text-yellow-500 bg-yellow-100 rounded-lg">
-                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-yellow-700">Warnings</p>
-                                            <p class="text-2xl font-bold text-yellow-700">{{ $requirementsStatus['warnings'] }}</p>
+                            <!-- Status Summary Cards -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <div class="bg-white rounded-2xl shadow-lg border border-green-200 overflow-hidden">
+                                    <div class="p-6">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center">
+                                                <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-lg font-semibold text-slate-800">Aprovados</h4>
+                                                <p class="text-3xl font-bold text-green-600">{{ $requirementsStatus['passed'] }}</p>
+                                                <p class="text-sm text-slate-500">Requisitos cumpridos</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="p-4 bg-red-50 rounded-lg">
-                                    <div class="flex items-center">
-                                        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 text-red-500 bg-red-100 rounded-lg">
-                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                            </svg>
+
+                                <div class="bg-white rounded-2xl shadow-lg border border-amber-200 overflow-hidden">
+                                    <div class="p-6">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-16 h-16 bg-amber-100 rounded-xl flex items-center justify-center">
+                                                <i class="fas fa-exclamation-triangle text-amber-600 text-2xl"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-lg font-semibold text-slate-800">Avisos</h4>
+                                                <p class="text-3xl font-bold text-amber-600">{{ $requirementsStatus['warnings'] }}</p>
+                                                <p class="text-sm text-slate-500">Requer atenção</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-red-700">Failed</p>
-                                            <p class="text-2xl font-bold text-red-700">{{ $requirementsStatus['failed'] }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-2xl shadow-lg border border-red-200 overflow-hidden">
+                                    <div class="p-6">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center">
+                                                <i class="fas fa-times-circle text-red-600 text-2xl"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-lg font-semibold text-slate-800">Falharam</h4>
+                                                <p class="text-3xl font-bold text-red-600">{{ $requirementsStatus['failed'] }}</p>
+                                                <p class="text-sm text-slate-500">Requer correção</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

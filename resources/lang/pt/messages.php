@@ -655,6 +655,17 @@ return [
     'select_custom_form' => 'Selecionar Formulário',
     'select_form_to_fill' => 'Selecione um formulário para preencher para esta nota de envio',
     'available_forms' => 'Formulários Disponíveis',
+    
+    // System Settings
+    'system_settings' => 'Configurações do Sistema',
+    'manage_system_settings' => 'Gerir e configurar as definições do sistema',
+    'general' => 'Geral',
+    'updates' => 'Actualizações',
+    'maintenance' => 'Manutenção',
+    'system_requirements' => 'Requisitos do Sistema',
+    'company_name' => 'Nome da Empresa',
+    'company_logo' => 'Logo da Empresa',
+    'company_details' => 'Detalhes da Empresa',
     'select_form' => 'Selecionar Formulário',
     'continue' => 'Continuar',
     'no_custom_forms_available' => 'Não há formulários personalizados disponíveis para este tipo de entidade',

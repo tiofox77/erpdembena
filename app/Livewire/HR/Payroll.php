@@ -141,6 +141,7 @@ class Payroll extends Component
     public float $custom_bonus = 0.0;
     public string $custom_bonus_description = '';
     public float $bonus_amount = 0.0;
+    public float $additional_bonus_amount = 0.0; // Separate from employee record bonus
     
     // Holiday Subsidies (Checkboxes)
     public bool $christmas_subsidy = false;
@@ -996,7 +997,12 @@ class Payroll extends Component
             $grossAmount += ($this->basic_salary * 0.5);
         }
 
-        // Add additional bonus
+        // Add additional bonus (from payroll form, separate from employee record)
+        if ($this->additional_bonus_amount > 0) {
+            $grossAmount += $this->additional_bonus_amount;
+        }
+        
+        // Add employee record bonus (from employee profile)
         if ($this->bonus_amount > 0) {
             $grossAmount += $this->bonus_amount;
         }
@@ -1870,7 +1876,7 @@ class Payroll extends Component
         $this->reset([
             'payroll_id', 'employee_id', 'payroll_period_id', 'basic_salary',
             'transport_allowance', 'meal_allowance', 'housing_allowance',
-            'total_overtime_amount', 'performance_bonus', 'custom_bonus', 'bonus_amount',
+            'total_overtime_amount', 'performance_bonus', 'custom_bonus', 'bonus_amount', 'additional_bonus_amount',
             'income_tax', 'social_security', 'total_deductions', 'net_salary', 'gross_salary',
             'payment_method', 'bank_account', 'payment_date', 'status', 'remarks', 'payrollItems',
             'total_attendance_hours', 'regular_hours_pay', 'hourly_rate',
@@ -2099,6 +2105,7 @@ class Payroll extends Component
                 // Overtime and bonuses
                 'overtime' => $this->total_overtime_amount,
                 'bonuses' => $this->performance_bonus + $this->custom_bonus + $this->bonus_amount + 
+                           $this->additional_bonus_amount +
                            ($this->christmas_subsidy ? ($this->basic_salary * 0.5) : 0) +
                            ($this->vacation_subsidy ? ($this->basic_salary * 0.5) : 0),
                 
@@ -2588,15 +2595,28 @@ class Payroll extends Component
                 'net_salary' => (float)$payroll->net_salary
             ];
             
-            // Generate PDF with dual payslip format
-            $pdf = PDF::loadView('livewire.hr.dual-payslip-pdf', [
+            // Generate PDF with new payslip format matching the provided template
+            $pdf = PDF::loadView('livewire.hr.payslip-template', [
                 'employee' => $employeeData,
                 'period' => $periodData,
                 'company' => $companyData,
                 'earnings' => $earnings,
                 'deductions' => $deductions,
                 'totals' => $totals,
-                'generated_at' => now()->format('d/m/Y H:i')
+                'generated_at' => now()->format('d/m/Y H:i'),
+                // Additional fields for the new template
+                'attendance_days' => $payroll->attendance_days ?? 31,
+                'absence_days' => $payroll->absence_days ?? 0,
+                'overtime_hours' => $payroll->overtime_hours ?? 0,
+                'tax_irt' => $payroll->income_tax ?? 0,
+                'social_security' => $payroll->social_security ?? 0,
+                'absence_deduction' => $payroll->absence_deduction ?? 0,
+                'advance_deduction' => $payroll->advance_deduction ?? 0,
+                'food_deduction' => $payroll->food_deduction ?? 0,
+                'other_deductions' => $payroll->other_deductions ?? 0,
+                'union_fee' => $payroll->union_fee ?? 0,
+                'bank_name' => $payroll->employee->bank->name ?? '',
+                'bank_account' => $payroll->employee->bank_account ?? ''
             ]);
             
             // Configurações do PDF
