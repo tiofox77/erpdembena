@@ -934,6 +934,24 @@
                 <i class="fas fa-clock text-gray-500"></i>
                 <span>{{ trans('messages.overtime_records') }}</span>
             </a>
+            
+            {{-- Disciplinary Measures --}}
+            <a href="{{ route('hr.disciplinary-measures') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.disciplinary-measures') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-gavel text-gray-500"></i>
+                <span>{{ __('messages.disciplinary_measures') }}</span>
+            </a>
+
+            {{-- Performance Evaluations --}}
+            <a href="{{ route('hr.performance-evaluations') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.performance-evaluations') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-chart-line text-gray-500"></i>
+                <span>{{ __('messages.performance_evaluations') }}</span>
+            </a>
+
+            {{-- Trainings --}}
+            <a href="{{ route('hr.trainings') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.trainings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-graduation-cap text-gray-500"></i>
+                <span>{{ __('messages.trainings') }}</span>
+            </a>
             @endcan
             
             @can('hr.departments.view')

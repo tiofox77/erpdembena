@@ -126,8 +126,11 @@ class SalaryDiscount extends Model
             'notes' => $notes,
         ]);
         
-        // Atualiza o número de parcelas restantes
-        if ($installment_number > 0) {
+        // Se for pagamento completo (installment_number = 0), zera as parcelas restantes
+        if ($installment_number === 0) {
+            $this->remaining_installments = 0;
+        } else {
+            // Atualiza o número de parcelas restantes
             $this->remaining_installments = max(0, $this->remaining_installments - 1);
         }
         

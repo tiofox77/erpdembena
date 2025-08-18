@@ -81,7 +81,7 @@ class SalaryDiscounts extends Component
             'installments' => ['required', 'integer', 'min:1'],
             'first_deduction_date' => ['required', 'date', 'after_or_equal:request_date'],
             'reason' => ['required', 'string', 'min:3'],
-            'discount_type' => ['required', 'in:union,others'],
+            'discount_type' => ['required', 'in:union,others,quixiquila'],
             'notes' => ['nullable', 'string'],
         ];
     }
@@ -297,16 +297,42 @@ class SalaryDiscounts extends Component
      */
     public function registerPaymentModal(int $id): void
     {
+        \Log::info('SalaryDiscounts - registerPaymentModal started', ['discount_id' => $id]);
+        
         $this->discount_id = $id;
         $discount = SalaryDiscount::with('employee')->findOrFail($id);
-        $this->paymentDiscount = $discount; // Carregar o desconto para uso na modal
+        $this->paymentDiscount = $discount;
         
-        $this->payment_amount = (float) $discount->installment_amount;
+        \Log::info('SalaryDiscounts - discount loaded', [
+            'discount_id' => $discount->id,
+            'employee_name' => $discount->employee->full_name ?? 'null',
+            'installment_amount' => $discount->installment_amount,
+            'remaining_amount' => $discount->remaining_amount
+        ]);
+        
+        // Reset campos
+        $this->payment_amount = null;
         $this->payment_date = date('Y-m-d');
         $this->installment_number = $discount->installments - $discount->remaining_installments + 1;
-        $this->payment_type = 'installment'; // Definir valor padrão
+        $this->payment_type = 'installment';
+        $this->payment_notes = null;
+        
+        \Log::info('SalaryDiscounts - fields reset', [
+            'payment_type' => $this->payment_type,
+            'payment_amount' => $this->payment_amount,
+            'installment_number' => $this->installment_number
+        ]);
+        
+        // Definir valor inicial para parcela
+        $this->payment_amount = (float) $discount->installment_amount;
         
         $this->showPaymentModal = true;
+        
+        \Log::info('SalaryDiscounts - registerPaymentModal completed', [
+            'showPaymentModal' => $this->showPaymentModal,
+            'final_payment_type' => $this->payment_type,
+            'final_payment_amount' => $this->payment_amount
+        ]);
     }
     
     /**
@@ -314,10 +340,7 @@ class SalaryDiscounts extends Component
      */
     public function updatedPaymentType(): void
     {
-        \Log::info('updatedPaymentType chamado', [
-            'payment_type' => $this->payment_type,
-            'current_amount' => $this->payment_amount
-        ]);
+        $this->resetErrorBag('payment_amount');
         
         if (!$this->paymentDiscount) {
             return;
@@ -326,19 +349,13 @@ class SalaryDiscounts extends Component
         switch ($this->payment_type) {
             case 'installment':
                 $this->payment_amount = (float) $this->paymentDiscount->installment_amount;
-                \Log::info('Definido para installment', ['amount' => $this->payment_amount]);
                 break;
             case 'full':
                 $this->payment_amount = (float) $this->paymentDiscount->remaining_amount;
-                \Log::info('Definido para full', ['amount' => $this->payment_amount]);
-                break;
-            case 'custom':
-                // Para tipo personalizado, define um valor inicial de 0 para não interferir
-                $this->payment_amount = 0.00;
-                \Log::info('Custom: definido para 0 (campo para preenchimento)');
                 break;
         }
     }
+    
     
     
     /**
@@ -350,13 +367,8 @@ class SalaryDiscounts extends Component
         
         $discount = SalaryDiscount::findOrFail($this->discount_id);
         
-        // Define o valor do pagamento baseado no tipo
-        if ($this->payment_type === 'installment') {
-            $this->payment_amount = (float) $discount->installment_amount;
-        } elseif ($this->payment_type === 'full') {
-            $this->payment_amount = (float) $discount->remaining_amount;
-        }
-        // Para 'custom', mantém o valor que o usuário digitou
+        // O valor do pagamento já foi definido corretamente no updatedPaymentType()
+        // Para custom, o usuário pode ter alterado manualmente
         
         // Se for um pagamento completo, ajusta o número de parcelas
         $installmentNumber = $this->payment_type === 'full' 
@@ -369,7 +381,7 @@ class SalaryDiscounts extends Component
                 $this->payment_date,
                 $installmentNumber,
                 Auth::id(),
-                $this->payment_notes // Passar as notas de pagamento
+                $this->payment_notes
             );
             
             $this->showPaymentModal = false;
@@ -407,20 +419,11 @@ class SalaryDiscounts extends Component
      */
     protected function paymentRules(): array
     {
-        $rules = [
+        return [
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
-            'payment_type' => ['required', 'in:installment,custom,full'],
+            'payment_type' => ['required', 'in:installment,full'],
+            'payment_amount' => ['required', 'numeric', 'min:0.01'],
         ];
-        
-        if ($this->payment_type === 'custom') {
-            $rules['payment_amount'] = ['required', 'numeric', 'min:1'];
-            
-            if ($this->paymentDiscount) {
-                $rules['payment_amount'][] = 'max:' . $this->paymentDiscount->remaining_amount;
-            }
-        }
-        
-        return $rules;
     }
     
     /**

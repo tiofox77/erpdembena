@@ -1014,9 +1014,9 @@ class Payroll extends Component
         }
 
         // Calculate night shift allowance (20% additional)
-        $nightShiftData = $this->calculateNightShiftAllowance();
-        if ($nightShiftData['amount'] > 0) {
-            $grossAmount += $nightShiftData['amount'];
+        $nightShiftAmount = $this->calculateNightShiftAmount();
+        if ($nightShiftAmount > 0) {
+            $grossAmount += $nightShiftAmount;
         }
 
         $this->gross_salary = $grossAmount;
@@ -1168,17 +1168,25 @@ class Payroll extends Component
      */
     public function getTaxableHousingAllowance(): float
     {
-        $exemptPercentage = 0.5; // 50% exempt
-        return $this->housing_allowance * (1 - $exemptPercentage);
+        $exempt_limit = 30000; // AOA tax-exempt limit for housing
+        return max(0, $this->housing_allowance - $exempt_limit);
     }
-    
+
     /**
-     * Get exempt housing allowance amount
+     * Calculate night shift allowance amount
      */
-    public function getExemptHousingAllowance(): float
+    private function calculateNightShiftAmount(): float
     {
-        $exemptPercentage = 0.5; // 50% exempt
-        return $this->housing_allowance * $exemptPercentage;
+        // Calculate 20% additional allowance for night shift days
+        if ($this->night_shift_days > 0 && $this->basic_salary > 0) {
+            $daily_salary = $this->basic_salary / 30; // Assuming 30 days per month
+            $night_shift_allowance = ($daily_salary * $this->night_shift_days) * 0.20; // 20% additional
+            $this->night_shift_allowance = $night_shift_allowance;
+            return $night_shift_allowance;
+        }
+        
+        $this->night_shift_allowance = 0.0;
+        return 0.0;
     }
     
     /**

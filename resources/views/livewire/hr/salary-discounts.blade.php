@@ -59,6 +59,7 @@
                         <option value="">{{ __('messages.all_types') }}</option>
                         <option value="union">{{ __('messages.union_discount') }}</option>
                         <option value="others">{{ __('messages.other_discount') }}</option>
+                        <option value="quixiquila">Quixiquila</option>
                     </select>
                 </div>
                 

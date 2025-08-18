@@ -61,6 +61,21 @@ Route::middleware(['auth'])->group(function () {
     // HR Guide Pages
     Route::get('/hr/payroll-guide', App\Livewire\HR\PayrollGuide::class)->name('hr.payroll-guide');
     
+    // Disciplinary Measures
+    Route::get('/hr/disciplinary-measures', \App\Livewire\HR\DisciplinaryMeasures\DisciplinaryMeasures::class)
+        ->middleware(['auth', 'verified'])
+        ->name('hr.disciplinary-measures');
+
+    // Performance Evaluations
+    Route::get('/hr/performance-evaluations', \App\Livewire\HR\PerformanceEvaluations\PerformanceEvaluations::class)
+        ->middleware(['auth', 'verified'])
+        ->name('hr.performance-evaluations');
+    
+    // Trainings
+    Route::get('/hr/trainings', \App\Livewire\HR\Trainings\Trainings::class)
+        ->middleware(['auth', 'verified'])
+        ->name('hr.trainings');
+
     // Maintenance Management Routes
     Route::prefix('maintenance')->name('maintenance.')->group(function() {
         // Rotas para componentes Livewire

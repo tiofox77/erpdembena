@@ -338,12 +338,16 @@ class SalaryAdvances extends Component
     {
         $this->advance_id = $id;
         $advance = SalaryAdvance::with('employee')->findOrFail($id);
-        $this->paymentAdvance = $advance; // Carregar o adiantamento para uso na modal
+        $this->paymentAdvance = $advance;
         
-        $this->payment_amount = (float) $advance->installment_amount;
+        // Reset campos
         $this->payment_date = date('Y-m-d');
         $this->installment_number = $advance->installments - $advance->remaining_installments + 1;
-        $this->payment_type = 'installment'; // Definir valor padrão
+        $this->payment_type = 'installment';
+        $this->payment_notes = null;
+        
+        // Definir valor inicial para parcela
+        $this->payment_amount = (float) $advance->installment_amount;
         
         $this->showPaymentModal = true;
     }
@@ -353,10 +357,7 @@ class SalaryAdvances extends Component
      */
     public function updatedPaymentType(): void
     {
-        \Log::info('updatedPaymentType chamado', [
-            'payment_type' => $this->payment_type,
-            'current_amount' => $this->payment_amount
-        ]);
+        $this->resetErrorBag('payment_amount');
         
         if (!$this->paymentAdvance) {
             return;
@@ -365,23 +366,13 @@ class SalaryAdvances extends Component
         switch ($this->payment_type) {
             case 'installment':
                 $this->payment_amount = (float) $this->paymentAdvance->installment_amount;
-                \Log::info('Definido para installment', ['amount' => $this->payment_amount]);
                 break;
             case 'full':
                 $this->payment_amount = (float) $this->paymentAdvance->remaining_amount;
-                \Log::info('Definido para full', ['amount' => $this->payment_amount]);
-                break;
-            case 'custom':
-                // Para tipo personalizado, NÃO altera o valor se já houver um
-                if ($this->payment_amount === null || $this->payment_amount === 0) {
-                    $this->payment_amount = null;
-                    \Log::info('Custom: definido para null (campo vazio)');
-                } else {
-                    \Log::info('Custom: mantendo valor existente', ['amount' => $this->payment_amount]);
-                }
                 break;
         }
     }
+    
     
 
     
@@ -394,14 +385,6 @@ class SalaryAdvances extends Component
         
         $advance = SalaryAdvance::findOrFail($this->advance_id);
         
-        // Define o valor do pagamento baseado no tipo
-        if ($this->payment_type === 'installment') {
-            $this->payment_amount = (float) $advance->installment_amount;
-        } elseif ($this->payment_type === 'full') {
-            $this->payment_amount = (float) $advance->remaining_amount;
-        }
-        // Para 'custom', mantém o valor que o usuário digitou
-        
         // Se for um pagamento completo, ajusta o número de parcelas
         $installmentNumber = $this->payment_type === 'full' 
             ? 0  // 0 significa pagamento completo
@@ -413,7 +396,7 @@ class SalaryAdvances extends Component
                 $this->payment_date,
                 $installmentNumber,
                 Auth::id(),
-                $this->payment_notes // Passar as notas de pagamento
+                $this->payment_notes
             );
             
             $this->showPaymentModal = false;
@@ -451,20 +434,11 @@ class SalaryAdvances extends Component
      */
     protected function paymentRules(): array
     {
-        $rules = [
+        return [
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
-            'payment_type' => ['required', 'in:installment,custom,full'],
+            'payment_type' => ['required', 'in:installment,full'],
+            'payment_amount' => ['required', 'numeric', 'min:0.01'],
         ];
-        
-        if ($this->payment_type === 'custom') {
-            $rules['payment_amount'] = ['required', 'numeric', 'min:1'];
-            
-            if ($this->paymentAdvance) {
-                $rules['payment_amount'][] = 'max:' . $this->paymentAdvance->remaining_amount;
-            }
-        }
-        
-        return $rules;
     }
     
     /**

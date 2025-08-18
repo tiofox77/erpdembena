@@ -852,9 +852,6 @@
     @endif
 
 
-    {{-- Include Employee Search Modal --}}
-    @include('livewire.hr.payroll-employee-search-modal')
-    
     {{-- Include Delete Confirmation Modal --}}
     @include('livewire.hr.payroll-delete-modal')
 </div>

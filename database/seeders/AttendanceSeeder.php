@@ -17,10 +17,36 @@ class AttendanceSeeder extends Seeder
      */
     public function run(): void
     {
-        // First ensure we have the test employee
-        $employee = Employee::firstOrCreate(
-            ['full_name' => 'Dinis Paulo Loao Cahama'],
-            [
+        // Ana Costa - Main test employee for July 2025
+        $anaCosta = Employee::where('full_name', 'Ana Costa')->first();
+        
+        if ($anaCosta) {
+            $this->command->info('🔍 Found Ana Costa, creating attendance records...');
+            
+            // Create comprehensive attendance records for Ana Costa - July 2025
+            $anaAttendanceData = $this->generateAnaCostaJulyAttendance($anaCosta->id);
+            
+            foreach ($anaAttendanceData as $attendance) {
+                Attendance::updateOrCreate(
+                    [
+                        'employee_id' => $attendance['employee_id'],
+                        'date' => $attendance['date'],
+                    ],
+                    $attendance
+                );
+            }
+            
+            $this->command->info('✅ Ana Costa attendance created: ' . count($anaAttendanceData) . ' records');
+        }
+
+        // Dinis Paulo - Secondary test employee (check if already exists to avoid duplicate)
+        $employee = Employee::where('full_name', 'Dinis Paulo Loao Cahama')
+                          ->orWhere('id_card', '123456789LA042')
+                          ->first();
+                          
+        if (!$employee) {
+            $employee = Employee::create([
+                'full_name' => 'Dinis Paulo Loao Cahama',
                 'date_of_birth' => '1990-05-15',
                 'gender' => 'male',
                 'id_card' => '123456789LA042',
@@ -38,8 +64,11 @@ class AttendanceSeeder extends Seeder
                 'food_benefit' => 25000.00,
                 'transport_benefit' => 40000.00,
                 'bonus_amount' => 15000.00,
-            ]
-        );
+            ]);
+            $this->command->info('✅ Dinis Paulo employee created');
+        } else {
+            $this->command->info('ℹ️ Dinis Paulo already exists, using existing record');
+        }
 
         // Create attendance records for July 2025
         $attendanceData = $this->generateJulyAttendance($employee->id);
@@ -112,6 +141,118 @@ class AttendanceSeeder extends Seeder
 
         $this->command->info('✅ Attendance records created successfully!');
         $this->command->info('📊 Created attendance for ' . ($additionalEmployees ? count($additionalEmployees) + 1 : 1) . ' employees');
+    }
+
+    /**
+     * Generate comprehensive attendance records for Ana Costa - July 2025
+     */
+    private function generateAnaCostaJulyAttendance(int $employeeId): array
+    {
+        $attendanceRecords = [];
+        $startDate = Carbon::create(2025, 7, 1);
+        $endDate = Carbon::create(2025, 7, 31);
+        
+        $current = $startDate->copy();
+        
+        while ($current <= $endDate) {
+            // Skip weekends for regular work
+            if ($current->isWeekday()) {
+                // Ana Costa has excellent attendance - mostly present with some realistic variations
+                $status = $this->generateAnaCostaStatus($current);
+                $timeData = $this->generateAnaCostaTimeData($status, $current);
+                
+                $attendanceRecords[] = [
+                    'employee_id' => $employeeId,
+                    'date' => $current->format('Y-m-d'),
+                    'status' => $status,
+                    'time_in' => $timeData['time_in'],
+                    'time_out' => $timeData['time_out'],
+                    'remarks' => $timeData['remarks'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            
+            $current->addDay();
+        }
+        
+        return $attendanceRecords;
+    }
+
+    /**
+     * Generate realistic status for Ana Costa (high performer)
+     */
+    private function generateAnaCostaStatus(Carbon $date): string
+    {
+        $random = rand(1, 100);
+        
+        // Ana Costa: 92% present, 5% late, 2% half_day, 1% absent
+        if ($random <= 92) {
+            return Attendance::STATUS_PRESENT;
+        } elseif ($random <= 97) {
+            return Attendance::STATUS_LATE;
+        } elseif ($random <= 99) {
+            return Attendance::STATUS_HALFDAY;
+        } else {
+            return Attendance::STATUS_ABSENT;
+        }
+    }
+
+    /**
+     * Generate time data for Ana Costa with some overtime patterns
+     */
+    private function generateAnaCostaTimeData(string $status, Carbon $date): array
+    {
+        $baseData = [
+            'time_in' => null,
+            'time_out' => null,
+            'remarks' => null,
+        ];
+        
+        switch ($status) {
+            case Attendance::STATUS_PRESENT:
+                $timeIn = Carbon::today()->setTime(7, rand(45, 59)); // Early arrival 7:45-7:59
+                $timeOut = Carbon::today()->setTime(17, rand(15, 45)); // 17:15-17:45
+                $baseData['time_in'] = $timeIn;
+                $baseData['time_out'] = $timeOut;
+                $baseData['remarks'] = 'Regular working day - Production Operation';
+                
+                // Ana Costa occasionally works overtime (30% chance)
+                if (rand(1, 100) <= 30) {
+                    $extraHours = rand(1, 3); // 1-3 extra hours
+                    $baseData['time_out'] = $timeOut->copy()->addHours($extraHours);
+                    $baseData['remarks'] = 'Extended shift - Production targets';
+                }
+                
+                // Some days include night shift work (15% chance)
+                if (rand(1, 100) <= 15) {
+                    $baseData['time_out'] = Carbon::today()->setTime(23, rand(0, 30)); // Until 23:00-23:30
+                    $baseData['remarks'] = 'Night shift - Production Operation';
+                }
+                break;
+                
+            case Attendance::STATUS_LATE:
+                $timeIn = Carbon::today()->setTime(8, rand(15, 30)); // 8:15-8:30 (minimal delay)
+                $timeOut = Carbon::today()->setTime(17, rand(30, 45)); // Compensate with later finish
+                $baseData['time_in'] = $timeIn;
+                $baseData['time_out'] = $timeOut;
+                $baseData['remarks'] = 'Late arrival - Traffic delay';
+                break;
+                
+            case Attendance::STATUS_HALFDAY:
+                $timeIn = Carbon::today()->setTime(7, rand(45, 59));
+                $timeOut = Carbon::today()->setTime(13, rand(0, 15)); // Half day until 13:00-13:15
+                $baseData['time_in'] = $timeIn;
+                $baseData['time_out'] = $timeOut;
+                $baseData['remarks'] = 'Half day - Personal appointment';
+                break;
+                
+            case Attendance::STATUS_ABSENT:
+                $baseData['remarks'] = 'Planned absence - Personal matter';
+                break;
+        }
+        
+        return $baseData;
     }
 
     /**

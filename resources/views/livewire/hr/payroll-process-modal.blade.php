@@ -203,7 +203,7 @@
                         </div>
                         
                         {{-- Employee Grid with Enhanced Cards --}}
-                        <div class="grid gap-4">
+                        <div class="grid gap-4 max-h-96 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #3B82F6 #E5E7EB;">
                             @foreach($searchResults as $employee)
                                 <div 
                                     wire:click="selectEmployee({{ $employee['id'] }})"
@@ -486,113 +486,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Subsidies & Additional Payments Card --}}
-                                <div class="bg-gradient-to-br from-emerald-50 to-green-100 p-4 lg:p-6 rounded-2xl border border-emerald-200">
-                                    <h3 class="text-base lg:text-lg font-bold text-emerald-800 mb-4 flex items-center">
-                                        <i class="fas fa-gift mr-2"></i>
-                                        {{ __('messages.subsidies_and_payments') }}
-                                    </h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-                                        {{-- Christmas Subsidy --}}
-                                        <div class="bg-white/60 p-4 rounded-xl border border-emerald-200">
-                                            <div class="flex items-center space-x-3 mb-3">
-                                                <div class="relative">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="christmas_subsidy" 
-                                                        wire:model="christmas_subsidy" 
-                                                        class="sr-only"
-                                                    >
-                                                    <div class="w-6 h-6 bg-gray-300 rounded-md shadow-inner transition-all duration-200 cursor-pointer" 
-                                                         :class="{'bg-emerald-500': $wire.christmas_subsidy}"
-                                                         @click="$wire.christmas_subsidy = !$wire.christmas_subsidy">
-                                                        <i class="fas fa-check text-white text-xs absolute inset-0 flex items-center justify-center" 
-                                                           x-show="$wire.christmas_subsidy" 
-                                                           x-transition></i>
-                                                    </div>
-                                                </div>
-                                                <label for="christmas_subsidy" class="text-sm lg:text-base font-medium text-emerald-800 cursor-pointer">
-                                                    {{ __('messages.christmas_subsidy') }}
-                                                </label>
-                                            </div>
-                                            <div class="text-xs lg:text-sm text-emerald-600 mb-2">
-                                                {{ __('messages.christmas_subsidy_desc') }}: 50% do salário base
-                                            </div>
-                                            <div class="bg-emerald-100 p-2 rounded-lg transition-all duration-200" 
-                                                 :class="{'opacity-100': $wire.christmas_subsidy, 'opacity-50': !$wire.christmas_subsidy}">
-                                                <p class="text-sm font-semibold text-emerald-800">
-                                                    <span x-show="$wire.christmas_subsidy" x-transition>
-                                                        {{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA
-                                                    </span>
-                                                    <span x-show="!$wire.christmas_subsidy" class="text-gray-500" x-transition>
-                                                        0.00 {{ __('messages.currency_aoa') }}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {{-- Vacation Subsidy --}}
-                                        <div class="bg-white/60 p-4 rounded-xl border border-emerald-200">
-                                            <div class="flex items-center space-x-3 mb-3">
-                                                <div class="relative">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="vacation_subsidy" 
-                                                        wire:model="vacation_subsidy" 
-                                                        class="sr-only"
-                                                    >
-                                                    <div class="w-6 h-6 bg-gray-300 rounded-md shadow-inner transition-all duration-200 cursor-pointer" 
-                                                         :class="{'bg-emerald-500': $wire.vacation_subsidy}"
-                                                         @click="$wire.vacation_subsidy = !$wire.vacation_subsidy">
-                                                        <i class="fas fa-check text-white text-xs absolute inset-0 flex items-center justify-center" 
-                                                           x-show="$wire.vacation_subsidy" 
-                                                           x-transition></i>
-                                                    </div>
-                                                </div>
-                                                <label for="vacation_subsidy" class="text-sm lg:text-base font-medium text-emerald-800 cursor-pointer">
-                                                    {{ __('messages.vacation_subsidy') }}
-                                                </label>
-                                            </div>
-                                            <div class="text-xs lg:text-sm text-emerald-600 mb-2">
-                                                {{ __('messages.vacation_subsidy_desc') }}: 50% do salário base
-                                            </div>
-                                            <div class="bg-emerald-100 p-2 rounded-lg transition-all duration-200" 
-                                                 :class="{'opacity-100': $wire.vacation_subsidy, 'opacity-50': !$wire.vacation_subsidy}">
-                                                <p class="text-sm font-semibold text-emerald-800">
-                                                    <span x-show="$wire.vacation_subsidy" x-transition>
-                                                        {{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA
-                                                    </span>
-                                                    <span x-show="!$wire.vacation_subsidy" class="text-gray-500" x-transition>
-                                                        0.00 {{ __('messages.currency_aoa') }}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {{-- Additional Bonus Input --}}
-                                        <div class="md:col-span-2 bg-white/60 p-4 rounded-xl border border-emerald-200">
-                                            <label for="bonus_amount" class="block text-sm lg:text-base font-medium text-emerald-800 mb-2">
-                                                <i class="fas fa-plus-circle mr-2"></i>
-                                                {{ __('messages.additional_bonus') }}
-                                            </label>
-                                            <div class="relative">
-                                                <input 
-                                                    type="number" 
-                                                    id="bonus_amount" 
-                                                    wire:model.defer="bonus_amount" 
-                                                    step="0.01" 
-                                                    min="0"
-                                                    placeholder="0.00"
-                                                    class="w-full pl-12 pr-4 py-3 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm lg:text-base"
-                                                >
-                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span class="text-emerald-600 font-medium">{{ __('messages.currency_aoa') }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {{-- Attendance Summary Card --}}
                                 <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-2xl border border-green-200">
                                     <h3 class="text-lg font-bold text-green-800 mb-4 flex items-center">
@@ -619,7 +512,7 @@
                                     </div>
                                     
                                     {{-- Total Hours Summary --}}
-                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                                         <div class="bg-white/60 p-3 rounded-lg text-center">
                                             <p class="text-xs text-green-600 font-medium mb-1">{{ __('messages.total_hours_worked') }}</p>
                                             <p class="text-lg text-green-800 font-bold">{{ number_format($total_attendance_hours ?? 0, 1) }}h</p>
@@ -627,6 +520,14 @@
                                         <div class="bg-white/60 p-3 rounded-lg text-center">
                                             <p class="text-xs text-green-600 font-medium mb-1">{{ __('messages.regular_hours_pay') }}</p>
                                             <p class="text-lg text-green-800 font-bold">{{ number_format($regular_hours_pay ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
+                                        </div>
+                                        <div class="bg-white/60 p-3 rounded-lg text-center">
+                                            <p class="text-xs text-blue-600 font-medium mb-1">{{ __('messages.hourly_rate') }}</p>
+                                            <p class="text-lg text-blue-800 font-bold">{{ number_format($hourly_rate ?? 0, 2) }} {{ __('messages.currency_aoa') }}/h</p>
+                                        </div>
+                                        <div class="bg-white/60 p-3 rounded-lg text-center">
+                                            <p class="text-xs text-purple-600 font-medium mb-1">{{ __('messages.daily_rate') }}</p>
+                                            <p class="text-lg text-purple-800 font-bold">{{ number_format(($hourly_rate ?? 0) * 8, 2) }} {{ __('messages.currency_aoa') }}/dia</p>
                                         </div>
                                     </div>
                                     

@@ -104,21 +104,28 @@ class SalaryAdvance extends Model
      * 
      * @param float $amount Valor do pagamento
      * @param \DateTime|string $paymentDate Data do pagamento
-     * @param int $installmentNumber Número da parcela
+     * @param int $installmentNumber Número da parcela (0 = pagamento completo)
      * @param int|null $processedBy ID do utilizador que processou o pagamento
+     * @param string|null $notes Notas do pagamento
      * @return SalaryAdvancePayment
      */
-    public function registerPayment(float $amount, $paymentDate, int $installmentNumber, ?int $processedBy = null): SalaryAdvancePayment
+    public function registerPayment(float $amount, $paymentDate, int $installmentNumber, ?int $processedBy = null, ?string $notes = null): SalaryAdvancePayment
     {
         $payment = $this->payments()->create([
             'payment_date' => $paymentDate,
             'amount' => $amount,
             'installment_number' => $installmentNumber,
             'processed_by' => $processedBy,
+            'notes' => $notes,
         ]);
         
-        // Atualiza o número de parcelas restantes
-        $this->remaining_installments = max(0, $this->remaining_installments - 1);
+        // Se for pagamento completo (installment_number = 0), zera as parcelas restantes
+        if ($installmentNumber === 0) {
+            $this->remaining_installments = 0;
+        } else {
+            // Atualiza o número de parcelas restantes
+            $this->remaining_installments = max(0, $this->remaining_installments - 1);
+        }
         
         // Se não há mais parcelas, marca como completo
         if ($this->remaining_installments === 0) {
