@@ -1129,59 +1129,165 @@
 
                 <!-- Content -->
                 <div class="px-6 py-6">
-                    <!-- Warning message with modern styling -->
-                    <div class="mb-6">
-                        <div class="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5">
-                            <div class="flex items-start">
-                                <div class="flex-shrink-0">
-                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
-                                        <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                    <!-- Confirmation State -->
+                    <div x-show="!$wire.isUpdating" x-transition:enter="ease-out duration-300" x-transition:leave="ease-in duration-200">
+                        <!-- Warning message with modern styling -->
+                        <div class="mb-6">
+                            <div class="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                                            <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h4 class="text-sm font-semibold text-amber-800 mb-2">Atenção - Actualização do Sistema</h4>
+                                        <p class="text-sm text-amber-700 leading-relaxed">{{ $confirmMessage }}</p>
                                     </div>
                                 </div>
-                                <div class="ml-4">
-                                    <h4 class="text-sm font-semibold text-amber-800 mb-2">Atenção - Actualização do Sistema</h4>
-                                    <p class="text-sm text-amber-700 leading-relaxed">{{ $confirmMessage }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Progress preview (when confirming) -->
+                        @if($confirmAction === 'startUpdate')
+                        <div class="mb-6 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                            <h5 class="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                                <i class="fas fa-tasks text-blue-500 mr-2"></i>
+                                Etapas da Actualização
+                            </h5>
+                            <div class="space-y-2">
+                                <div class="flex items-center text-xs text-slate-600">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500 mr-3 animate-pulse"></div>
+                                    1. Fazer backup antes da actualização
+                                </div>
+                                <div class="flex items-center text-xs text-slate-600">
+                                    <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                                    2. Descarregar nova versão
+                                </div>
+                                <div class="flex items-center text-xs text-slate-600">
+                                    <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                                    3. Aplicar actualização
+                                </div>
+                                <div class="flex items-center text-xs text-slate-600">
+                                    <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                                    4. Verificar sistema
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Estimated time -->
+                        <div class="mb-6 flex items-center justify-center">
+                            <div class="bg-blue-50 rounded-xl px-4 py-2 border border-blue-200">
+                                <div class="flex items-center text-sm text-blue-700">
+                                    <i class="fas fa-clock mr-2 text-blue-500"></i>
+                                    <span class="font-medium">Tempo estimado: 2-5 minutos</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Progress preview (when updating) -->
-                    @if($confirmAction === 'startUpdate')
-                    <div class="mb-6 rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                        <h5 class="text-sm font-semibold text-slate-700 mb-3 flex items-center">
-                            <i class="fas fa-tasks text-blue-500 mr-2"></i>
-                            Etapas da Actualização
-                        </h5>
-                        <div class="space-y-2">
-                            <div class="flex items-center text-xs text-slate-600">
-                                <div class="w-2 h-2 rounded-full bg-blue-500 mr-3 animate-pulse"></div>
-                                1. Fazer backup antes da actualização
+                    <!-- Update Progress State -->
+                    <div x-show="$wire.isUpdating" x-transition:enter="ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+                        <!-- Animated header -->
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full shadow-lg mb-4">
+                                <i class="fas fa-download text-white text-2xl animate-pulse"></i>
                             </div>
-                            <div class="flex items-center text-xs text-slate-600">
-                                <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
-                                2. Descarregar nova versão
-                            </div>
-                            <div class="flex items-center text-xs text-slate-600">
-                                <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
-                                3. Aplicar actualização
-                            </div>
-                            <div class="flex items-center text-xs text-slate-600">
-                                <div class="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
-                                4. Verificar sistema
-                            </div>
+                            <h4 class="text-lg font-bold text-slate-800 mb-2">Actualização em Progresso</h4>
+                            <p class="text-sm text-slate-600">Por favor aguarde, não feche esta janela...</p>
                         </div>
-                    </div>
-                    @endif
 
-                    <!-- Estimated time -->
-                    <div class="mb-6 flex items-center justify-center">
-                        <div class="bg-blue-50 rounded-xl px-4 py-2 border border-blue-200">
-                            <div class="flex items-center text-sm text-blue-700">
-                                <i class="fas fa-clock mr-2 text-blue-500"></i>
-                                <span class="font-medium">Tempo estimado: 2-5 minutos</span>
+                        <!-- Progress bar -->
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-slate-700">{{ $update_status ?? 'Preparando...' }}</span>
+                                <span class="text-sm text-slate-500">{{ $update_progress ?? 0 }}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                                <div class="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-700 ease-out relative"
+                                     style="width: {{ $update_progress ?? 0 }}%">
+                                    <div class="absolute inset-0 bg-white/30 animate-pulse"></div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Active steps visualization -->
+                        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                            <h5 class="text-sm font-semibold text-slate-700 mb-4 flex items-center">
+                                <i class="fas fa-cogs text-blue-500 mr-2 animate-spin"></i>
+                                Estado da Actualização
+                            </h5>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 rounded-xl {{ ($update_progress ?? 0) >= 10 ? 'bg-green-50 border border-green-200' : 'bg-white border border-slate-200' }}">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full mr-3 flex items-center justify-center {{ ($update_progress ?? 0) >= 10 ? 'bg-green-100' : 'bg-slate-100' }}">
+                                            @if(($update_progress ?? 0) >= 10)
+                                                <i class="fas fa-check text-green-600 text-sm"></i>
+                                            @else
+                                                <i class="fas fa-circle text-slate-400 text-xs animate-pulse"></i>
+                                            @endif
+                                        </div>
+                                        <span class="text-sm font-medium {{ ($update_progress ?? 0) >= 10 ? 'text-green-700' : 'text-slate-600' }}">Backup do Sistema</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3 rounded-xl {{ ($update_progress ?? 0) >= 30 ? 'bg-green-50 border border-green-200' : (($update_progress ?? 0) >= 20 ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-slate-200') }}">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full mr-3 flex items-center justify-center {{ ($update_progress ?? 0) >= 30 ? 'bg-green-100' : (($update_progress ?? 0) >= 20 ? 'bg-blue-100' : 'bg-slate-100') }}">
+                                            @if(($update_progress ?? 0) >= 30)
+                                                <i class="fas fa-check text-green-600 text-sm"></i>
+                                            @elseif(($update_progress ?? 0) >= 20)
+                                                <i class="fas fa-download text-blue-600 text-sm animate-bounce"></i>
+                                            @else
+                                                <i class="fas fa-circle text-slate-400 text-xs"></i>
+                                            @endif
+                                        </div>
+                                        <span class="text-sm font-medium {{ ($update_progress ?? 0) >= 30 ? 'text-green-700' : (($update_progress ?? 0) >= 20 ? 'text-blue-700' : 'text-slate-600') }}">Descarregar Actualização</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3 rounded-xl {{ ($update_progress ?? 0) >= 70 ? 'bg-green-50 border border-green-200' : (($update_progress ?? 0) >= 50 ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-slate-200') }}">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full mr-3 flex items-center justify-center {{ ($update_progress ?? 0) >= 70 ? 'bg-green-100' : (($update_progress ?? 0) >= 50 ? 'bg-blue-100' : 'bg-slate-100') }}">
+                                            @if(($update_progress ?? 0) >= 70)
+                                                <i class="fas fa-check text-green-600 text-sm"></i>
+                                            @elseif(($update_progress ?? 0) >= 50)
+                                                <i class="fas fa-cogs text-blue-600 text-sm animate-spin"></i>
+                                            @else
+                                                <i class="fas fa-circle text-slate-400 text-xs"></i>
+                                            @endif
+                                        </div>
+                                        <span class="text-sm font-medium {{ ($update_progress ?? 0) >= 70 ? 'text-green-700' : (($update_progress ?? 0) >= 50 ? 'text-blue-700' : 'text-slate-600') }}">Aplicar Ficheiros</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3 rounded-xl {{ ($update_progress ?? 0) >= 100 ? 'bg-green-50 border border-green-200' : (($update_progress ?? 0) >= 90 ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-slate-200') }}">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full mr-3 flex items-center justify-center {{ ($update_progress ?? 0) >= 100 ? 'bg-green-100' : (($update_progress ?? 0) >= 90 ? 'bg-blue-100' : 'bg-slate-100') }}">
+                                            @if(($update_progress ?? 0) >= 100)
+                                                <i class="fas fa-check text-green-600 text-sm"></i>
+                                            @elseif(($update_progress ?? 0) >= 90)
+                                                <i class="fas fa-shield-check text-blue-600 text-sm animate-pulse"></i>
+                                            @else
+                                                <i class="fas fa-circle text-slate-400 text-xs"></i>
+                                            @endif
+                                        </div>
+                                        <span class="text-sm font-medium {{ ($update_progress ?? 0) >= 100 ? 'text-green-700' : (($update_progress ?? 0) >= 90 ? 'text-blue-700' : 'text-slate-600') }}">Verificar Sistema</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Success animation when complete -->
+                        @if(($update_progress ?? 0) >= 100)
+                        <div class="mt-6 text-center" x-data="{ show: false }" x-init="setTimeout(() => show = true, 500)" x-show="show" x-transition:enter="ease-out duration-500" x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100">
+                            <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl shadow-lg">
+                                <i class="fas fa-check-circle mr-3 text-xl animate-bounce"></i>
+                                <span class="font-bold">Actualização Concluída!</span>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -1190,16 +1296,31 @@
                     <button
                         type="button"
                         class="inline-flex w-full justify-center items-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all duration-200 sm:w-auto"
-                        wire:click="closeConfirmModal">
+                        wire:click="closeConfirmModal"
+                        :disabled="$wire.isUpdating">
                         <i class="fas fa-times mr-2"></i>
                         Cancelar
                     </button>
                     <button
                         type="button"
-                        class="inline-flex w-full justify-center items-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 sm:w-auto"
-                        wire:click="processConfirmedAction">
-                        <i class="fas fa-rocket mr-2 animate-bounce"></i>
-                        Confirmar Actualização
+                        class="inline-flex w-full justify-center items-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        wire:click="processConfirmedAction"
+                        :disabled="$wire.isUpdating">
+                        
+                        <!-- Loading state -->
+                        <div x-show="$wire.isUpdating" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Actualizando...</span>
+                        </div>
+
+                        <!-- Normal state -->
+                        <div x-show="!$wire.isUpdating" class="flex items-center">
+                            <i class="fas fa-rocket mr-2 animate-bounce"></i>
+                            Confirmar Actualização
+                        </div>
                     </button>
                 </div>
             </div>

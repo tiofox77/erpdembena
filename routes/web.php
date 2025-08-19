@@ -27,6 +27,12 @@ Auth::routes();
 // Rota para alterar o idioma
 Route::get('/language/{locale}', [\App\Http\Controllers\LanguageController::class, 'changeLocale'])->name('change.locale');
 
+// Visualizar recibo de salário em HTML
+Route::get('/payroll/receipt', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('payroll.receipt.view');
+
+// Debug: Visualizar recibo com dados específicos
+Route::get('/debug/payroll-receipt/{employee_id?}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('debug.payroll.receipt');
+
 // Rota principal - redireciona para o dashboard se estiver logado ou para login se não estiver
 Route::get('/', function () {
     return auth()->check()

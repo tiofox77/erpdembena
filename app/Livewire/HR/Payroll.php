@@ -1912,22 +1912,188 @@ class Payroll extends Component
         $this->showDeleteModal = true;
     }
 
-    public function approve()
+    public function approve($payrollId = null)
     {
+        // Se foi passado ID como parâmetro, usar ele
+        if ($payrollId) {
+            $this->payroll_id = $payrollId;
+        }
+        
+        \Log::info('=== INÍCIO approve() ===', [
+            'payroll_id' => $this->payroll_id,
+            'payroll_id_parameter' => $payrollId,
+            'user_id' => auth()->id()
+        ]);
+        
         $payroll = PayrollModel::find($this->payroll_id);
         
         if (!$payroll) {
+            \Log::error('Payroll not found', ['payroll_id' => $this->payroll_id]);
             session()->flash('error', 'Payroll not found.');
             $this->showApproveModal = false;
             return;
         }
         
-        $payroll->status = 'approved';
-        $payroll->approved_by = auth()->id();
-        $payroll->save();
+        \Log::info('Payroll encontrada', [
+            'id' => $payroll->id,
+            'status_atual' => $payroll->status,
+            'employee_id' => $payroll->employee_id
+        ]);
+        
+        DB::beginTransaction();
+        
+        try {
+            // Aprovar folha de pagamento
+            $payroll->status = 'approved';
+            $payroll->approved_by = auth()->id();
+            $payroll->save();
+            
+            // Processar automaticamente salary advances e discounts
+            \Log::info('Chamando processInstallmentPayments', ['payroll_id' => $payroll->id]);
+            $this->processInstallmentPayments($payroll);
+            \Log::info('processInstallmentPayments executado');
+            
+            DB::commit();
+            
+            $this->showApproveModal = false;
+            \Log::info('Payroll aprovada com sucesso', [
+                'payroll_id' => $payroll->id,
+                'novo_status' => $payroll->status
+            ]);
+            
+            session()->flash('success', 'Payroll approved successfully.');
+            $this->showApproveModal = false;
+            
+            \Log::info('=== FIM approve() - SUCESSO ===');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('ERRO ao aprovar payroll', [
+                'payroll_id' => $this->payroll_id,
+                'erro' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            session()->flash('error', 'Error approving payroll: ' . $e->getMessage());
+        }
+    }
 
-        $this->showApproveModal = false;
-        session()->flash('message', 'Payroll approved successfully.');
+    /**
+     * Processa automaticamente prestações de salary advances e discounts
+     */
+    private function processInstallmentPayments(PayrollModel $payroll): void
+    {
+        \Log::info('=== INÍCIO processInstallmentPayments() ===', [
+            'payroll_id' => $payroll->id,
+            'employee_id' => $payroll->employee_id,
+            'payroll_period_id' => $payroll->payroll_period_id
+        ]);
+        
+        $employee = $payroll->employee;
+        $payrollPeriod = $payroll->payrollPeriod;
+        $periodStart = $payrollPeriod?->start_date ?? now()->startOfMonth();
+        $periodEnd = $payrollPeriod?->end_date ?? now()->endOfMonth();
+        $paymentDate = now(); // Usar data atual para pagamento
+        $currentDate = now()->format('Y-m-d'); // Data atual para filtro
+        
+        \Log::info('Datas para processamento', [
+            'period_start' => $periodStart->format('Y-m-d'),
+            'period_end' => $periodEnd->format('Y-m-d'),
+            'current_date' => $currentDate,
+            'payment_date' => $paymentDate->format('Y-m-d')
+        ]);
+        
+        // Processar Salary Advances - usar data atual em vez do período da folha
+        $advancesToProcess = SalaryAdvance::where('employee_id', $employee->id)
+            ->where('status', 'approved')
+            ->where('remaining_installments', '>', 0)
+            ->where('first_deduction_date', '<=', $currentDate)
+            ->get();
+        
+        \Log::info('Salary Advances encontrados', [
+            'employee_id' => $employee->id,
+            'total_advances' => $advancesToProcess->count(),
+            'periodo_start' => $periodStart->format('Y-m-d'),
+            'periodo_end' => $periodEnd->format('Y-m-d')
+        ]);
+        
+        foreach ($advancesToProcess as $advance) {
+            // Verificar se já foi processado neste período
+            $existingPayment = $advance->payments()
+                ->whereBetween('payment_date', [$periodStart, $periodEnd])
+                ->first();
+            
+            if (!$existingPayment && $advance->remaining_installments > 0) {
+                // Registrar pagamento da prestação
+                $advance->registerPayment(
+                    (float) $advance->installment_amount,
+                    $paymentDate->format('Y-m-d'),
+                    ($advance->installments - $advance->remaining_installments + 1), // Número da prestação
+                    auth()->id() ?? 1,  // Fallback para usuário ID 1 se não autenticado
+                    "Pagamento automático via aprovação da folha de pagamento ID: {$payroll->id}"
+                );
+                
+                \Log::info('Advance payment processado', [
+                    'advance_id' => $advance->id,
+                    'installment_amount' => $advance->installment_amount,
+                    'remaining_before' => $advance->remaining_installments
+                ]);
+            } else {
+                \Log::info('Advance não processado', [
+                    'advance_id' => $advance->id,
+                    'existing_payment' => $existingPayment ? 'exists' : 'not_exists',
+                    'remaining_installments' => $advance->remaining_installments
+                ]);
+            }
+        }
+        
+        // Processar Salary Discounts - usar data atual em vez do período da folha
+        $discountsToProcess = SalaryDiscount::where('employee_id', $employee->id)
+            ->where('status', 'approved')
+            ->where('remaining_installments', '>', 0)
+            ->where('first_deduction_date', '<=', $currentDate)
+            ->get();
+        
+        \Log::info('Salary Discounts encontrados', [
+            'employee_id' => $employee->id,
+            'total_discounts' => $discountsToProcess->count(),
+            'periodo_start' => $periodStart->format('Y-m-d'),
+            'periodo_end' => $periodEnd->format('Y-m-d')
+        ]);
+        
+        foreach ($discountsToProcess as $discount) {
+            // Verificar se já foi processado neste período
+            $existingPayment = $discount->payments()
+                ->whereBetween('payment_date', [$periodStart, $periodEnd])
+                ->first();
+            
+            if (!$existingPayment && $discount->remaining_installments > 0) {
+                // Registrar pagamento da prestação  
+                $discount->registerPayment(
+                    (float) $discount->installment_amount,
+                    $paymentDate->format('Y-m-d'),
+                    ($discount->installments - $discount->remaining_installments + 1), // Número da prestação
+                    auth()->id() ?? 1,  // Fallback para usuário ID 1 se não autenticado
+                    "Pagamento automático via aprovação da folha de pagamento ID: {$payroll->id}"
+                );
+                
+                \Log::info('Discount payment processado', [
+                    'discount_id' => $discount->id,
+                    'installment_amount' => $discount->installment_amount,
+                    'remaining_before' => $discount->remaining_installments
+                ]);
+            } else {
+                \Log::info('Discount não processado', [
+                    'discount_id' => $discount->id,
+                    'existing_payment' => $existingPayment ? 'exists' : 'not_exists',
+                    'remaining_installments' => $discount->remaining_installments
+                ]);
+            }
+        }
+        
+        \Log::info('=== FIM processInstallmentPayments() ===', [
+            'payroll_id' => $payroll->id
+        ]);
     }
 
     public function pay()

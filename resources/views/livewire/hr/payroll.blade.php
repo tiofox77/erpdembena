@@ -417,12 +417,13 @@
                                             @endif
                                             
                                             <div class="relative group">
-                                                <button wire:click="downloadPayslip({{ $payroll->id }})" 
-                                                        class="flex items-center justify-center w-8 h-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-all duration-200 hover:scale-110">
+                                                <a href="{{ route('payroll.receipt.view') }}?employee_id={{ $payroll->employee_id }}" 
+                                                   target="_blank"
+                                                   class="flex items-center justify-center w-8 h-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-all duration-200 hover:scale-110">
                                                     <i class="fas fa-file-pdf text-sm"></i>
-                                                </button>
+                                                </a>
                                                 <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                                    {{ __('payroll.download_payslip') }}
+                                                    {{ __('messages.view_receipt') }}
                                                 </div>
                                             </div>
                                             
