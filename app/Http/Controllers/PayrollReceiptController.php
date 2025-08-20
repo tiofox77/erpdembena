@@ -27,6 +27,104 @@ class PayrollReceiptController extends Controller
         
         return view('livewire.hr.payroll-receipt-isolated', $receiptData);
     }
+
+    /**
+     * Gera recibos de salário em lote para múltiplos funcionários
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function generateBulkReceipts(Request $request)
+    {
+        try {
+            $filters = json_decode(base64_decode($request->get('filters', '')), true) ?: [];
+            $month = (int) $request->get('month', date('n'));
+            $year = (int) $request->get('year', date('Y'));
+
+            \Log::info('Gerando recibos em lote - Controller', [
+                'filters' => $filters,
+                'month' => $month,
+                'year' => $year
+            ]);
+
+            // Buscar folhas de pagamento com base nos filtros
+            $payrolls = $this->getFilteredPayrollsForBulk($filters, $month, $year);
+
+            if ($payrolls->count() === 0) {
+                return response()->json(['error' => 'Nenhuma folha de pagamento encontrada com os filtros aplicados.'], 404);
+            }
+
+            // Gerar PDF com múltiplos recibos
+            $pdf = \PDF::loadView('livewire.hr.bulk-receipts', [
+                'payrolls' => $payrolls,
+                'receiptData' => $this->prepareBulkReceiptData($payrolls),
+                'filters' => $filters,
+                'month' => $month,
+                'year' => $year,
+                'generatedAt' => now()->format('d/m/Y H:i'),
+                'totalReceipts' => $payrolls->count()
+            ]);
+
+            $filename = "recibos_salario_" . str_pad($month, 2, '0', STR_PAD_LEFT) . "_" . $year . "_" . now()->format('Ymd_His') . ".pdf";
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao gerar recibos em lote', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json(['error' => 'Erro interno ao gerar recibos: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Busca folhas de pagamento filtradas para geração em lote
+     */
+    private function getFilteredPayrollsForBulk(array $filters, int $month, int $year)
+    {
+        $query = \App\Models\HR\Payroll::with(['employee.department', 'payrollPeriod'])
+            ->when($filters['department_id'] ?? null, function ($q, $deptId) {
+                $q->whereHas('employee', function ($subQuery) use ($deptId) {
+                    $subQuery->where('department_id', $deptId);
+                });
+            })
+            ->when($filters['period_id'] ?? null, function ($q, $periodId) {
+                $q->where('payroll_period_id', $periodId);
+            })
+            ->when($filters['status'] ?? null, function ($q, $status) {
+                $q->where('status', $status);
+            })
+            ->when($month, function ($q) use ($month) {
+                $q->whereHas('payrollPeriod', function ($subQuery) use ($month) {
+                    $subQuery->whereMonth('start_date', $month);
+                });
+            })
+            ->when($year, function ($q) use ($year) {
+                $q->whereHas('payrollPeriod', function ($subQuery) use ($year) {
+                    $subQuery->whereYear('start_date', $year);
+                });
+            })
+            ->orderBy('employee_id');
+
+        return $query->get();
+    }
+
+    /**
+     * Prepara dados de recibo para múltiplos funcionários
+     */
+    private function prepareBulkReceiptData($payrolls)
+    {
+        $receiptData = [];
+        
+        foreach ($payrolls as $payroll) {
+            $receiptData[] = $this->getEmployeeReceiptData($payroll->employee_id);
+        }
+        
+        return $receiptData;
+    }
     
     /**
      * Dados padrão para o recibo (para debug)

@@ -13,10 +13,15 @@ class SupplyChainHrRolesPermissionsSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * SEEDER DESATIVADO - Evita recriação automática de roles
      */
     public function run(): void
     {
-        // Supply Chain permissions
+        $this->command->info('Seeder desativado para evitar recriação automática de roles.');
+        $this->command->info('Use o Gerenciador de Permissões em /admin/permissions-manager');
+        return;
+        
+        // CÓDIGO DESATIVADO - Supply Chain permissions
         $supplyChainPermissions = [
             // Dashboard
             'supplychain.dashboard',
@@ -111,7 +116,8 @@ class SupplyChainHrRolesPermissionsSeeder extends Seeder
         $adminRole->givePermissionTo(array_merge($supplyChainPermissions, $hrPermissions));
         $superAdminRole->givePermissionTo(array_merge($supplyChainPermissions, $hrPermissions));
         
-        // Create Supply Chain Manager role
+        // CÓDIGO DESATIVADO - Create Supply Chain Manager role
+        /*
         $supplyChainRole = Role::findOrCreate('supply-chain-manager', 'web');
         $supplyChainRole->givePermissionTo($supplyChainPermissions);
         $supplyChainRole->givePermissionTo([
@@ -151,5 +157,6 @@ class SupplyChainHrRolesPermissionsSeeder extends Seeder
         
         // Output success message
         $this->command->info('Supply Chain and HR roles, permissions, and users created successfully!');
+        */
     }
 }

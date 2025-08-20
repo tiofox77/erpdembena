@@ -286,28 +286,24 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php
-                                                $parts = explode('.', $permission->name);
-                                                $module = $parts[0] ?? 'other';
-                                                
-                                                // Map old permissions to new structure
-                                                if (in_array($module, ['inventory', 'stock', 'parts'])) {
-                                                    $module = 'supply-chain';
-                                                }
+                                                $module = $this->getPermissionModule($permission->name);
+                                                $moduleLabel = $this->getModuleLabel($module);
                                                 
                                                 $moduleConfig = [
-                                                    'maintenance' => ['label' => 'Maintenance', 'icon' => 'fas fa-tools', 'color' => 'bg-blue-100 text-blue-800'],
-                                                    'mrp' => ['label' => 'MRP (Production)', 'icon' => 'fas fa-industry', 'color' => 'bg-purple-100 text-purple-800'],
-                                                    'supply-chain' => ['label' => 'Supply Chain', 'icon' => 'fas fa-truck', 'color' => 'bg-green-100 text-green-800'],
-                                                    'hr' => ['label' => 'Human Resources', 'icon' => 'fas fa-users', 'color' => 'bg-yellow-100 text-yellow-800'],
-                                                    'system' => ['label' => 'System', 'icon' => 'fas fa-cogs', 'color' => 'bg-gray-100 text-gray-800'],
-                                                    'other' => ['label' => 'Others', 'icon' => 'fas fa-question-circle', 'color' => 'bg-gray-100 text-gray-600']
+                                                    'maintenance' => ['icon' => 'fas fa-wrench', 'color' => 'bg-blue-100 text-blue-800'],
+                                                    'mrp' => ['icon' => 'fas fa-industry', 'color' => 'bg-purple-100 text-purple-800'],
+                                                    'supplychain' => ['icon' => 'fas fa-truck', 'color' => 'bg-green-100 text-green-800'],
+                                                    'hr' => ['icon' => 'fas fa-users', 'color' => 'bg-yellow-100 text-yellow-800'],
+                                                    'system' => ['icon' => 'fas fa-cogs', 'color' => 'bg-gray-100 text-gray-800'],
+                                                    'reports' => ['icon' => 'fas fa-chart-bar', 'color' => 'bg-indigo-100 text-indigo-800'],
+                                                    'other' => ['icon' => 'fas fa-question-circle', 'color' => 'bg-gray-100 text-gray-600']
                                                 ];
                                                 
                                                 $config = $moduleConfig[$module] ?? $moduleConfig['other'];
                                             @endphp
                                             <span class="px-3 py-1 text-xs rounded-full {{ $config['color'] }} flex items-center inline-block font-medium">
                                                 <i class="{{ $config['icon'] }} mr-2 text-sm"></i>
-                                                {{ $config['label'] }}
+                                                {{ $moduleLabel }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -493,7 +489,19 @@
                                                     <!-- Cabeçalho do grupo com botão de seleção -->
                                                     <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
                                                         <h5 class="font-semibold text-sm text-gray-700 flex items-center">
-                                                            <i class="{{ $group['icon'] }} mr-2 text-lg" style="color: {{ str_contains($group['label'], 'Maintenance') ? '#3B82F6' : (str_contains($group['label'], 'MRP') ? '#8B5CF6' : (str_contains($group['label'], 'Supply') ? '#10B981' : (str_contains($group['label'], 'HR') ? '#F59E0B' : '#6B7280'))) }}"></i>
+                                                            @php
+                                                                $moduleColors = [
+                                                                    'maintenance' => '#3B82F6',
+                                                                    'mrp' => '#8B5CF6', 
+                                                                    'supplychain' => '#10B981',
+                                                                    'hr' => '#F59E0B',
+                                                                    'system' => '#6B7280',
+                                                                    'reports' => '#6366F1',
+                                                                    'other' => '#9CA3AF'
+                                                                ];
+                                                                $color = $moduleColors[$groupKey] ?? '#6B7280';
+                                                            @endphp
+                                                            <i class="fas fa-{{ $groupKey === 'maintenance' ? 'wrench' : ($groupKey === 'mrp' ? 'industry' : ($groupKey === 'supplychain' ? 'truck' : ($groupKey === 'hr' ? 'users' : ($groupKey === 'system' ? 'cogs' : ($groupKey === 'reports' ? 'chart-bar' : 'question-circle'))))) }} mr-2 text-lg" style="color: {{ $color }}"></i>
                                                             {{ $group['label'] }}
                                                         </h5>
                                                         <div class="flex items-center space-x-2">
@@ -501,7 +509,7 @@
                                                             <button type="button" 
                                                                     wire:click="toggleModulePermissions('{{ $groupKey }}')"
                                                                     class="text-xs px-2 py-1 rounded-md border transition-colors duration-150 hover:shadow-sm"
-                                                                    style="color: {{ str_contains($group['label'], 'Maintenance') ? '#3B82F6' : (str_contains($group['label'], 'MRP') ? '#8B5CF6' : (str_contains($group['label'], 'Supply') ? '#10B981' : (str_contains($group['label'], 'HR') ? '#F59E0B' : '#6B7280'))) }}; border-color: {{ str_contains($group['label'], 'Maintenance') ? '#3B82F6' : (str_contains($group['label'], 'MRP') ? '#8B5CF6' : (str_contains($group['label'], 'Supply') ? '#10B981' : (str_contains($group['label'], 'HR') ? '#F59E0B' : '#6B7280'))) }}">
+                                                                    style="color: {{ $color }}; border-color: {{ $color }}">
                                                                 <i class="fas fa-toggle-on"></i>
                                                                 Alternar
                                                             </button>

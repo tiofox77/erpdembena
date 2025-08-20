@@ -24,9 +24,16 @@ class CreateMaintenanceRole extends Command
 
     /**
      * Execute the console command.
+     * COMANDO DESATIVADO - Evita recriação automática de roles
      */
     public function handle()
     {
+        $this->info('❌ Comando desativado para evitar recriação automática de roles.');
+        $this->info('✅ Use o Gerenciador de Permissões em /admin/permissions-manager');
+        return Command::SUCCESS;
+        
+        // CÓDIGO DESATIVADO
+        /*
         $this->info(trans('console.creating_maintenance_role'));
 
         try {
@@ -99,5 +106,7 @@ class CreateMaintenanceRole extends Command
             $this->error(trans('console.error', ['message' => $e->getMessage()]));
             return Command::FAILURE;
         }
+        */
+        return Command::SUCCESS;
     }
 }

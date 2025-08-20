@@ -13,11 +13,15 @@ class EnsureModuleUsersSeeder extends Seeder
 {
     /**
      * Run the database seeds to ensure that Supply Chain and HR roles, permissions and users exist.
-     * This is designed to be safe to run on database updates.
+     * SEEDER DESATIVADO - Evita recriação automática de roles
      */
     public function run(): void
     {
-        // Supply Chain permissions
+        $this->command->info('Seeder desativado para evitar recriação automática de roles.');
+        $this->command->info('Use o Gerenciador de Permissões em /admin/permissions-manager');
+        return;
+        
+        // CÓDIGO DESATIVADO - Supply Chain permissions
         $supplyChainPermissions = [
             // Dashboard
             'supplychain.dashboard',
@@ -105,7 +109,8 @@ class EnsureModuleUsersSeeder extends Seeder
             Permission::findOrCreate($permission, 'web');
         }
         
-        // Find or create admin and super-admin roles and give them all permissions
+        // CÓDIGO DESATIVADO - Find or create admin and super-admin roles
+        /*
         $adminRole = Role::findOrCreate('admin', 'web');
         $superAdminRole = Role::findOrCreate('super-admin', 'web');
         
@@ -149,5 +154,6 @@ class EnsureModuleUsersSeeder extends Seeder
         $hrUser->syncRoles(['hr-manager']);
         
         $this->command->info('Module roles, permissions, and users updated successfully!');
+        */
     }
 }

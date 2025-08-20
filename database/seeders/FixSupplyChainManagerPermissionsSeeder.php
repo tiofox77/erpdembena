@@ -10,11 +10,16 @@ class FixSupplyChainManagerPermissionsSeeder extends Seeder
 {
     /**
      * Run the database seeds to fix the Supply Chain Manager role permissions.
-     * This will ensure Supply Chain Manager can only see Supply Chain module and not maintenance/HR.
+     * SEEDER DESATIVADO - Evita recriação automática de roles
      */
     public function run(): void
     {
-        // Get Supply Chain Manager role
+        $this->command->info('Seeder desativado para evitar recriação automática de roles.');
+        $this->command->info('Use o Gerenciador de Permissões em /admin/permissions-manager');
+        return;
+        
+        // CÓDIGO DESATIVADO - Get Supply Chain Manager role
+        /*
         $supplyChainRole = Role::findByName('supply-chain-manager', 'web');
         
         // Remove any non-Supply Chain related permissions
@@ -37,5 +42,6 @@ class FixSupplyChainManagerPermissionsSeeder extends Seeder
         } else {
             $this->command->error('Supply Chain Manager user not found!');
         }
+        */
     }
 }

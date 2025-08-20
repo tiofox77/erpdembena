@@ -30,6 +30,13 @@
                             <i class="fas fa-file-export text-lg"></i>
                             <span>{{ __('messages.export') }}</span>
                         </button>
+                        <button
+                            wire:click="generateBulkReceipts"
+                            class="bg-blue-500/90 hover:bg-blue-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                        >
+                            <i class="fas fa-receipt text-lg"></i>
+                            <span>Gerar Recibos</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -103,7 +110,7 @@
                             <span class="text-sm font-medium">{{ __('messages.reset') }}</span>
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div>
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="fas fa-search text-gray-400 mr-1"></i>
@@ -133,7 +140,7 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                             >
                                 <option value="">{{ __('messages.all_departments') }}</option>
-                                @foreach(\App\Models\HR\Department::all() as $department)
+                                @foreach($departments as $department)
                                     <option value="{{ $department->id }}">{{ $department->name }}</option>
                                 @endforeach
                             </select>
@@ -150,9 +157,25 @@
                             >
                                 <option value="">{{ __('messages.all_months') }}</option>
                                 @for($i = 1; $i <= 12; $i++)
-                                    <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
-                                        {{ \Carbon\Carbon::createFromDate(null, $i, 1)->format('F') }}
+                                    <option value="{{ $i }}">
+                                        {{ \Carbon\Carbon::createFromDate(null, $i, 1)->locale('pt')->monthName }}
                                     </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <label for="year_filter" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
+                                Ano
+                            </label>
+                            <select
+                                id="year_filter"
+                                wire:model.live="filters.year"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            >
+                                <option value="">Todos os Anos</option>
+                                @for($year = date('Y'); $year >= (date('Y') - 5); $year--)
+                                    <option value="{{ $year }}">{{ $year }}</option>
                                 @endfor
                             </select>
                         </div>

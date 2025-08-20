@@ -33,6 +33,9 @@ Route::get('/payroll/receipt', [\App\Http\Controllers\PayrollReceiptController::
 // Debug: Visualizar recibo com dados específicos
 Route::get('/debug/payroll-receipt/{employee_id?}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('debug.payroll.receipt');
 
+// Gerar recibos em lote
+Route::get('/payroll/bulk-receipts', [\App\Http\Controllers\PayrollReceiptController::class, 'generateBulkReceipts'])->name('payroll.bulk-receipts');
+
 // Rota principal - redireciona para o dashboard se estiver logado ou para login se não estiver
 Route::get('/', function () {
     return auth()->check()
@@ -220,6 +223,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:roles.manage'])->get('/permissions', function() {
         return redirect()->route('maintenance.roles');
     })->name('permissions.management');
+
+    // Gerenciador Avançado de Permissões (Super Admin apenas)
+    Route::middleware(['role:super-admin'])->get('/admin/permissions-manager', App\Livewire\Admin\PermissionsManager::class)->name('admin.permissions-manager');
 
     // Rota de Gerenciamento de Feriados
     Route::middleware(['permission:settings.manage'])->get('/holidays', function() {

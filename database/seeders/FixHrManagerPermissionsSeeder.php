@@ -10,11 +10,16 @@ class FixHrManagerPermissionsSeeder extends Seeder
 {
     /**
      * Run the database seeds to fix the HR Manager role permissions.
-     * This will ensure HR Manager can only see HR module and not maintenance/supply chain.
+     * SEEDER DESATIVADO - Evita recriação automática de roles
      */
     public function run(): void
     {
-        // Get HR Manager role
+        $this->command->info('Seeder desativado para evitar recriação automática de roles.');
+        $this->command->info('Use o Gerenciador de Permissões em /admin/permissions-manager');
+        return;
+        
+        // CÓDIGO DESATIVADO - Get HR Manager role
+        /*
         $hrRole = Role::findByName('hr-manager', 'web');
         
         // Remove any non-HR related permissions
@@ -37,5 +42,6 @@ class FixHrManagerPermissionsSeeder extends Seeder
         } else {
             $this->command->error('HR Manager user not found!');
         }
+        */
     }
 }

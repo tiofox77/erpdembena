@@ -2623,15 +2623,91 @@ class Payroll extends Component
         session()->flash('message', 'Folha de pagamento eliminada com sucesso.');
     }
 
-    public function closeModal()
+    public function exportPayroll()
     {
-        $this->showModal = false;
-        $this->resetValidation();
+        // TODO: Implementar lógica de export
+        session()->flash('message', 'Export functionality coming soon!');
+    }
+
+    /**
+     * Gera recibos de salário em lote para os funcionários filtrados
+     */
+    public function generateBulkReceipts()
+    {
+        try {
+            $payrolls = $this->getFilteredPayrolls();
+            
+            if ($payrolls->count() === 0) {
+                session()->flash('error', 'Nenhuma folha de pagamento encontrada com os filtros aplicados.');
+                return;
+            }
+
+            \Log::info('Gerando recibos em lote', [
+                'total_payrolls' => $payrolls->count(),
+                'filters' => $this->filters,
+                'user_id' => auth()->id()
+            ]);
+
+            // Redirecionar para rota de geração de PDF
+            return redirect()->route('payroll.bulk-receipts', [
+                'filters' => base64_encode(json_encode($this->filters)),
+                'month' => $this->selectedMonth ?? date('n'),
+                'year' => $this->selectedYear ?? date('Y')
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao gerar recibos em lote', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            session()->flash('error', 'Erro ao gerar recibos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retorna folhas de pagamento filtradas para geração de recibos
+     */
+    private function getFilteredPayrolls()
+    {
+        $query = PayrollModel::with(['employee.department', 'payrollPeriod'])
+            ->when($this->search, function ($q) {
+                $q->whereHas('employee', function ($subQuery) {
+                    $subQuery->where('first_name', 'like', '%' . $this->search . '%')
+                             ->orWhere('last_name', 'like', '%' . $this->search . '%')
+                             ->orWhere('employee_number', 'like', '%' . $this->search . '%');
+                });
+            })
+            ->when($this->filters['department_id'], function ($q) {
+                $q->whereHas('employee', function ($subQuery) {
+                    $subQuery->where('department_id', $this->filters['department_id']);
+                });
+            })
+            ->when($this->filters['period_id'], function ($q) {
+                $q->where('payroll_period_id', $this->filters['period_id']);
+            })
+            ->when($this->filters['status'], function ($q) {
+                $q->where('status', $this->filters['status']);
+            })
+            ->when($this->filters['month'], function ($q) {
+                $q->whereHas('payrollPeriod', function ($subQuery) {
+                    $subQuery->whereMonth('start_date', $this->filters['month']);
+                });
+            })
+            ->when($this->filters['year'], function ($q) {
+                $q->whereHas('payrollPeriod', function ($subQuery) {
+                    $subQuery->whereYear('start_date', $this->filters['year']);
+                });
+            });
+
+        return $query->get();
     }
     
     public function closeViewModal()
     {
         $this->showViewModal = false;
+        $this->resetValidation();
         $this->currentPayroll = null;
     }
     
@@ -2857,7 +2933,9 @@ class Payroll extends Component
             ->with(['employee', 'payrollPeriod'])
             ->when($this->search, function ($query) {
                 return $query->whereHas('employee', function ($query) {
-                    $query->where('full_name', 'like', "%{$this->search}%");
+                    $query->where('full_name', 'like', "%{$this->search}%")
+                          ->orWhere('employee_id', 'like', "%{$this->search}%")
+                          ->orWhere('email', 'like', "%{$this->search}%");
                 });
             })
             ->when($this->filters['department_id'], function ($query) {
@@ -2870,6 +2948,16 @@ class Payroll extends Component
             })
             ->when($this->filters['status'], function ($query) {
                 return $query->where('status', $this->filters['status']);
+            })
+            ->when($this->filters['month'], function ($query) {
+                return $query->whereHas('payrollPeriod', function ($subQuery) {
+                    $subQuery->whereMonth('start_date', $this->filters['month']);
+                });
+            })
+            ->when($this->filters['year'], function ($query) {
+                return $query->whereHas('payrollPeriod', function ($subQuery) {
+                    $subQuery->whereYear('start_date', $this->filters['year']);
+                });
             });
 
         $payrolls = $query->orderBy($this->sortField, $this->sortDirection)

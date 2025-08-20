@@ -13,6 +13,12 @@ class UpdateMaintenancePermissions extends Command
 
     public function handle()
     {
+        $this->info('❌ Comando desativado para evitar recriação automática de roles.');
+        $this->info('✅ Use o Gerenciador de Permissões em /admin/permissions-manager');
+        return Command::SUCCESS;
+        
+        // CÓDIGO DESATIVADO
+        /*
         $this->info('Atualizando permissões do módulo de manutenção...');
 
         try {
@@ -253,5 +259,7 @@ class UpdateMaintenancePermissions extends Command
             $this->error("Erro: " . $e->getMessage());
             return Command::FAILURE;
         }
+        */
+        return Command::SUCCESS;
     }
 }
