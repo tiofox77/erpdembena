@@ -30,9 +30,12 @@ class RolePermissions extends Component
     public bool $showRoleModal = false;
     public bool $showPermissionModal = false;
     public bool $showDeleteModal = false;
+    public bool $showDuplicateModal = false;
     public bool $isEditing = false;
     public string $deleteType = '';
     public ?int $deleteId = null;
+    public ?int $duplicateRoleId = null;
+    public string $duplicateRoleName = '';
 
     public array $roleData = [
         'id' => null,
@@ -82,7 +85,7 @@ class RolePermissions extends Component
     #[Computed]
     public function permissionGroups(): array
     {
-        $permissions = Permission::all(['name']);
+        $permissions = Permission::all(['id', 'name']);
         $groups = [
             'maintenance' => ['label' => '🔧 Manutenção', 'permissions' => []],
             'mrp' => ['label' => '🏭 MRP (Produção)', 'permissions' => []],
@@ -237,9 +240,13 @@ class RolePermissions extends Component
         }
     }
 
-    public function delete(int $id, string $type = 'role'): void
+    public function delete(int $id = null, string $type = 'role'): void
     {
-        $this->confirmDelete($id, $type);
+        if ($id) {
+            $this->confirmDelete($id, $type);
+        } else {
+            $this->deleteConfirmed();
+        }
     }
 
     public function confirmDelete(int $id, string $type): void
@@ -292,7 +299,15 @@ class RolePermissions extends Component
 
     public function toggleModulePermissions(string $module): void
     {
-        $modulePermissions = Permission::where('name', 'like', $module . '.%')->pluck('id')->toArray();
+        // Usar a mesma lógica de agrupamento do método permissionGroups
+        $allPermissions = Permission::all(['id', 'name']);
+        $modulePermissions = [];
+        
+        foreach ($allPermissions as $permission) {
+            if ($this->getPermissionModule($permission->name) === $module) {
+                $modulePermissions[] = $permission->id;
+            }
+        }
         
         $allSelected = !array_diff($modulePermissions, $this->selectedPermissions);
         
@@ -307,16 +322,71 @@ class RolePermissions extends Component
         $this->dispatch('notify', type: 'info', message: $message);
     }
 
+    public function openDuplicateModal(int $roleId): void
+    {
+        $role = Role::findOrFail($roleId);
+        $this->duplicateRoleId = $roleId;
+        $this->duplicateRoleName = $role->name . ' - Cópia';
+        $this->showDuplicateModal = true;
+    }
+
+    public function duplicateRole(): void
+    {
+        $this->validate([
+            'duplicateRoleName' => 'required|string|max:255|unique:roles,name'
+        ], [
+            'duplicateRoleName.required' => 'O nome da função é obrigatório.',
+            'duplicateRoleName.unique' => 'Já existe uma função com este nome.',
+            'duplicateRoleName.max' => 'O nome da função não pode ter mais de 255 caracteres.'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $originalRole = Role::with('permissions')->findOrFail($this->duplicateRoleId);
+            
+            $newRole = Role::create([
+                'name' => $this->duplicateRoleName,
+                'guard_name' => $originalRole->guard_name ?? 'web'
+            ]);
+
+            // Copiar todas as permissões da função original
+            $newRole->syncPermissions($originalRole->permissions);
+
+            DB::commit();
+
+            $this->dispatch('notify', type: 'success', message: 'Função duplicada com sucesso!');
+            $this->closeDuplicateModal();
+            $this->resetPage();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('notify', type: 'error', message: 'Erro ao duplicar função: ' . $e->getMessage());
+            Log::error('Erro ao duplicar função: ' . $e->getMessage());
+        }
+    }
+
+    public function closeDuplicateModal(): void
+    {
+        $this->showDuplicateModal = false;
+        $this->duplicateRoleId = null;
+        $this->duplicateRoleName = '';
+        $this->resetErrorBag(['duplicateRoleName']);
+    }
+
     public function closeModal(): void
     {
         $this->showRoleModal = false;
         $this->showPermissionModal = false;
         $this->showDeleteModal = false;
+        $this->showDuplicateModal = false;
         $this->resetRoleData();
         $this->resetPermissionData();
         $this->selectedPermissions = [];
         $this->deleteId = null;
         $this->deleteType = '';
+        $this->duplicateRoleId = null;
+        $this->duplicateRoleName = '';
         $this->isEditing = false;
     }
 
@@ -413,6 +483,10 @@ class RolePermissions extends Component
     {
         if (str_starts_with($propertyName, 'roleData.') || str_starts_with($propertyName, 'permissionData.')) {
             $this->validateOnly($propertyName);
+        }
+        
+        if ($propertyName === 'duplicateRoleName') {
+            $this->validateOnly('duplicateRoleName');
         }
     }
 

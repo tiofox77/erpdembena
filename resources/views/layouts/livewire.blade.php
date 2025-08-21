@@ -588,51 +588,6 @@
         </div>
         @endcanany
 
-        <!-- System Menu -->
-        @canany(['system.view', 'users.manage', 'roles.manage', 'settings.manage', 'admin.view'])
-        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="systemMenu">
-            <i class="fas fa-cogs text-indigo-500"></i>
-            <span>{{ trans('messages.system') }}</span>
-            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
-        </div>
-
-        <div class="sidebar-submenu" id="systemSubmenu">
-            @can('users.manage')
-                <a href="{{ route('maintenance.users') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.users') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                    <i class="fas fa-users text-gray-500"></i>
-                    <span>{{ trans('messages.user_management') }}</span>
-                </a>
-            @endcan
-
-            @can('roles.manage')
-                <a href="{{ route('maintenance.roles') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.roles') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                    <i class="fas fa-shield-alt text-gray-500"></i>
-                    <span>{{ trans('messages.role_permissions') }}</span>
-                </a>
-            @endcan
-
-            @can('settings.manage')
-                <!-- Settings Submenu -->
-                <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="settingsMenu">
-                    <i class="fas fa-cog text-gray-500"></i>
-                    <span class="font-semibold">{{ trans('messages.settings') }}</span>
-                    <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('settings.*') || request()->routeIs('maintenance.settings') ? 'active' : '' }}"></i>
-                </div>
-                
-                <div class="sidebar-nested-submenu {{ request()->routeIs('settings.*') || request()->routeIs('maintenance.settings') ? 'active' : '' }}" id="settingsSubmenu">
-                    <a href="{{ route('maintenance.settings') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                        <i class="fas fa-sliders-h text-gray-500"></i>
-                        <span class="font-semibold">{{ trans('messages.system_settings') }}</span>
-                    </a>
-                    <a href="{{ route('settings.unit-types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('settings.unit-types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                        <i class="fas fa-ruler-combined text-gray-500"></i>
-                        <span class="font-semibold">{{ trans('messages.unit_types') }}</span>
-                    </a>
-                </div>
-            @endcan
-        </div>
-        @endcanany
-
         <!-- MRP Menu -->
         @canany(['mrp.dashboard', 'mrp.demand_forecasting.view', 'mrp.bom_management.view', 'mrp.inventory_levels.view',
                 'mrp.production_scheduling.view', 'mrp.production_orders.view', 'mrp.purchase_planning.view',
@@ -1079,6 +1034,51 @@
                 <i class="fas fa-chart-bar text-gray-500"></i>
                 <span>{{ trans('messages.reports_and_dashboard') }}</span>
             </a>
+            @endcan
+        </div>
+        @endcanany
+
+        <!-- System Menu -->
+        @canany(['system.view', 'users.manage', 'roles.manage', 'settings.manage', 'admin.view'])
+        <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="systemMenu">
+            <i class="fas fa-cogs text-indigo-500"></i>
+            <span>{{ trans('messages.system') }}</span>
+            <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+        </div>
+
+        <div class="sidebar-submenu" id="systemSubmenu">
+            @can('users.manage')
+                <a href="{{ route('maintenance.users') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.users') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-users text-gray-500"></i>
+                    <span>{{ trans('messages.user_management') }}</span>
+                </a>
+            @endcan
+
+            @can('roles.manage')
+                <a href="{{ route('maintenance.roles') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.roles') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-shield-alt text-gray-500"></i>
+                    <span>{{ trans('messages.role_permissions') }}</span>
+                </a>
+            @endcan
+
+            @can('settings.manage')
+                <!-- Settings Submenu -->
+                <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="settingsMenu">
+                    <i class="fas fa-cog text-gray-500"></i>
+                    <span class="font-semibold">{{ trans('messages.settings') }}</span>
+                    <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400 {{ request()->routeIs('settings.*') || request()->routeIs('maintenance.settings') ? 'active' : '' }}"></i>
+                </div>
+                
+                <div class="sidebar-nested-submenu {{ request()->routeIs('settings.*') || request()->routeIs('maintenance.settings') ? 'active' : '' }}" id="settingsSubmenu">
+                    <a href="{{ route('maintenance.settings') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('maintenance.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-sliders-h text-gray-500"></i>
+                        <span class="font-semibold">{{ trans('messages.system_settings') }}</span>
+                    </a>
+                    <a href="{{ route('settings.unit-types') }}" class="sidebar-nested-submenu-item {{ request()->routeIs('settings.unit-types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-ruler-combined text-gray-500"></i>
+                        <span class="font-semibold">{{ trans('messages.unit_types') }}</span>
+                    </a>
+                </div>
             @endcan
         </div>
         @endcanany

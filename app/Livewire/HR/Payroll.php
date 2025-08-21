@@ -2632,7 +2632,7 @@ class Payroll extends Component
     /**
      * Gera recibos de salário em lote para os funcionários filtrados
      */
-    public function generateBulkReceipts()
+    public function generateBulkReceipts(): void
     {
         try {
             $payrolls = $this->getFilteredPayrolls();
@@ -2645,21 +2645,31 @@ class Payroll extends Component
             \Log::info('Gerando recibos em lote', [
                 'total_payrolls' => $payrolls->count(),
                 'filters' => $this->filters,
+                'search' => $this->search,
                 'user_id' => auth()->id()
             ]);
 
+            // Adicionar parâmetro de busca aos filtros para o controller
+            $filtersWithSearch = array_merge($this->filters, ['search' => $this->search]);
+
+            // Usar month/year dos filtros se disponíveis, senão usar selectedMonth/selectedYear
+            $urlMonth = !empty($this->filters['month']) ? (int)$this->filters['month'] : ($this->selectedMonth ?? date('n'));
+            $urlYear = !empty($this->filters['year']) ? (int)$this->filters['year'] : ($this->selectedYear ?? date('Y'));
+
             // Redirecionar para rota de geração de PDF
-            return redirect()->route('payroll.bulk-receipts', [
-                'filters' => base64_encode(json_encode($this->filters)),
-                'month' => $this->selectedMonth ?? date('n'),
-                'year' => $this->selectedYear ?? date('Y')
+            $this->redirectRoute('payroll.bulk-receipts', [
+                'filters' => base64_encode(json_encode($filtersWithSearch)),
+                'month' => $urlMonth,
+                'year' => $urlYear
             ]);
 
         } catch (\Exception $e) {
             \Log::error('Erro ao gerar recibos em lote', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'filters' => $this->filters,
+                'search' => $this->search
             ]);
             
             session()->flash('error', 'Erro ao gerar recibos: ' . $e->getMessage());
@@ -2672,36 +2682,51 @@ class Payroll extends Component
     private function getFilteredPayrolls()
     {
         $query = PayrollModel::with(['employee.department', 'payrollPeriod'])
-            ->when($this->search, function ($q) {
+            ->when(!empty($this->search), function ($q) {
                 $q->whereHas('employee', function ($subQuery) {
-                    $subQuery->where('first_name', 'like', '%' . $this->search . '%')
-                             ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                             ->orWhere('employee_number', 'like', '%' . $this->search . '%');
+                    $subQuery->where('full_name', 'like', '%' . $this->search . '%')
+                             ->orWhere('employee_id', 'like', '%' . $this->search . '%')
+                             ->orWhere('email', 'like', '%' . $this->search . '%');
                 });
             })
-            ->when($this->filters['department_id'], function ($q) {
+            ->when(!empty($this->filters['department_id']), function ($q) {
                 $q->whereHas('employee', function ($subQuery) {
                     $subQuery->where('department_id', $this->filters['department_id']);
                 });
             })
-            ->when($this->filters['period_id'], function ($q) {
+            ->when(!empty($this->filters['period_id']), function ($q) {
                 $q->where('payroll_period_id', $this->filters['period_id']);
             })
-            ->when($this->filters['status'], function ($q) {
+            ->when(!empty($this->filters['status']), function ($q) {
                 $q->where('status', $this->filters['status']);
             })
-            ->when($this->filters['month'], function ($q) {
+            ->when(!empty($this->filters['month']), function ($q) {
                 $q->whereHas('payrollPeriod', function ($subQuery) {
                     $subQuery->whereMonth('start_date', $this->filters['month']);
                 });
             })
-            ->when($this->filters['year'], function ($q) {
+            ->when(!empty($this->filters['year']), function ($q) {
                 $q->whereHas('payrollPeriod', function ($subQuery) {
                     $subQuery->whereYear('start_date', $this->filters['year']);
                 });
             });
 
-        return $query->get();
+        // Log da query para debugging
+        \Log::info('getFilteredPayrolls query', [
+            'search' => $this->search,
+            'filters' => $this->filters,
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
+
+        $results = $query->get();
+        
+        \Log::info('getFilteredPayrolls results', [
+            'count' => $results->count(),
+            'payroll_ids' => $results->pluck('id')->toArray()
+        ]);
+
+        return $results;
     }
     
     public function closeViewModal()
@@ -2920,11 +2945,19 @@ class Payroll extends Component
         $this->showPayModal = true;
     }
     
-    public function resetFilters()
+    /**
+     * Reset all filters to their default values
+     */
+    public function resetFilters(): void
     {
-        $this->reset('filters');
-        $this->search = '';
+        $this->reset(['filters', 'search']);
         $this->resetPage();
+        
+        // Log filter reset for debugging
+        \Log::info('Payroll filters reset', [
+            'user_id' => auth()->id(),
+            'timestamp' => now()->toDateTimeString()
+        ]);
     }
 
     public function render()

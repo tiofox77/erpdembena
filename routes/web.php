@@ -33,8 +33,11 @@ Route::get('/payroll/receipt', [\App\Http\Controllers\PayrollReceiptController::
 // Debug: Visualizar recibo com dados específicos
 Route::get('/debug/payroll-receipt/{employee_id?}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('debug.payroll.receipt');
 
-// Gerar recibos em lote
-Route::get('/payroll/bulk-receipts', [\App\Http\Controllers\PayrollReceiptController::class, 'generateBulkReceipts'])->name('payroll.bulk-receipts');
+// Gerar recibos em lote (HTML)
+Route::get('/payroll/bulk-receipts', [\App\Http\Controllers\PayrollReceiptController::class, 'generateBulkReceiptsHTML'])->name('payroll.bulk-receipts');
+
+// Gerar recibos em lote (PDF)
+Route::get('/payroll/bulk-receipts-pdf', [\App\Http\Controllers\PayrollReceiptController::class, 'generateBulkReceiptsPDF'])->name('payroll.bulk-receipts-pdf');
 
 // Rota principal - redireciona para o dashboard se estiver logado ou para login se não estiver
 Route::get('/', function () {

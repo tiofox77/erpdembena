@@ -40,19 +40,6 @@
                                 <span wire:loading wire:target="openCreatePermissionModal">Carregando...</span>
                             </button>
                             
-                            <!-- Botão temporário para criar todas as permissões -->
-                            <button
-                                wire:click="createAllPermissions"
-                                type="button"
-                                class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-md flex items-center"
-                                wire:loading.attr="disabled"
-                                wire:loading.class="opacity-75 cursor-wait"
-                            >
-                                <i class="fas fa-database mr-2" wire:loading.class="hidden" wire:target="createAllPermissions"></i>
-                                <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="createAllPermissions"></i>
-                                <span wire:loading.remove wire:target="createAllPermissions">Criar Todas as Permissões</span>
-                                <span wire:loading wire:target="createAllPermissions">Criando...</span>
-                            </button>
                         </div>
                     </div>
 
@@ -208,6 +195,15 @@
                                                 >
                                                     <i class="fas fa-edit w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="editRole({{ $role->id }})"></i>
                                                     <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="editRole({{ $role->id }})"></i>
+                                                </button>
+                                                <button
+                                                    wire:click="openDuplicateModal({{ $role->id }})"
+                                                    class="text-green-600 hover:text-green-900 mr-3"
+                                                    title="Duplicar"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                    <i class="fas fa-copy w-4 h-4 sm:w-5 sm:h-5" wire:loading.class="hidden" wire:target="openDuplicateModal({{ $role->id }})"></i>
+                                                    <i class="fas fa-spinner fa-spin w-4 h-4 sm:w-5 sm:h-5 hidden" wire:loading.class.remove="hidden" wire:target="openDuplicateModal({{ $role->id }})"></i>
                                                 </button>
                                                 @if(!in_array($role->name, ['super-admin', 'admin']))
                                                     <button
@@ -521,8 +517,7 @@
                                                         @foreach($group['permissions'] as $permission)
                                                             @if(
                                                                 empty($permissionSearch) || 
-                                                                str_contains(strtolower($permission->name), strtolower($permissionSearch)) || 
-                                                                str_contains(strtolower($permission->description ?? ''), strtolower($permissionSearch))
+                                                                str_contains(strtolower($permission->name), strtolower($permissionSearch))
                                                             )
                                                                 <label class="flex items-center space-x-3 py-2 px-2 hover:bg-gray-50 rounded-md cursor-pointer transition-colors duration-150 group">
                                                                     <input
@@ -533,9 +528,6 @@
                                                                     >
                                                                     <div class="flex-1 min-w-0">
                                                                         <span class="text-sm font-medium text-gray-800 group-hover:text-gray-900">{{ $permission->name }}</span>
-                                                                        @if($permission->description)
-                                                                            <p class="text-xs text-gray-500 mt-1">{{ $permission->description }}</p>
-                                                                        @endif
                                                                     </div>
                                                                 </label>
                                                             @endif
@@ -833,6 +825,120 @@
         </div>
     @endif
 
+    <!-- Modal de Duplicação de Função -->
+    @if($showDuplicateModal)
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-4"
+             x-data="{ showModal: true }"
+             x-show="showModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-md max-h-[90vh] overflow-y-auto"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                
+                <!-- Cabeçalho do modal -->
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                    <h3 class="text-lg sm:text-xl font-semibold text-white flex items-center">
+                        <span class="bg-white bg-opacity-20 text-white p-2 rounded-full mr-3">
+                            <i class="fas fa-copy text-lg"></i>
+                        </span>
+                        Duplicar Função
+                    </h3>
+                    <button wire:click="closeDuplicateModal" 
+                            class="text-white hover:text-gray-200 transition-colors duration-150 p-1 rounded-full hover:bg-white hover:bg-opacity-20">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Corpo do modal -->
+                <div class="px-4 sm:px-6 py-4">
+                    @if($errors->has('duplicateRoleName'))
+                        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
+                            <p class="font-bold flex items-center">
+                                <i class="fas fa-exclamation-circle mr-2 text-red-500"></i>
+                                Erro de validação:
+                            </p>
+                            <p class="mt-1 text-sm">{{ $errors->first('duplicateRoleName') }}</p>
+                        </div>
+                    @endif
+
+                    <div class="space-y-4">
+                        <!-- Informação sobre a função original -->
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-sm text-blue-700 flex items-center">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Duplicando função: <strong class="ml-1">{{ $duplicateRoleId ? App\Models\Role::find($duplicateRoleId)?->name : '' }}</strong>
+                            </p>
+                            <p class="text-xs text-blue-600 mt-1">
+                                A nova função terá todas as permissões da função original.
+                            </p>
+                        </div>
+
+                        <!-- Nome da nova função -->
+                        <div>
+                            <label for="duplicateRoleName" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-tag mr-2 text-green-500"></i> Nome da Nova Função
+                            </label>
+                            <div class="rounded-lg border border-gray-300 p-4 bg-gradient-to-r from-green-50 to-emerald-50">
+                                <input
+                                    id="duplicateRoleName"
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm @error('duplicateRoleName') border-red-300 text-red-900 @enderror"
+                                    wire:model.live="duplicateRoleName"
+                                    placeholder="Digite o nome da nova função"
+                                    maxlength="255"
+                                >
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Máximo 255 caracteres. O nome deve ser único.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rodapé -->
+                <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 flex justify-between items-center border-t border-gray-200">
+                    <div class="text-xs text-gray-500">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        A duplicação copiará todas as permissões
+                    </div>
+                    <div class="flex space-x-3">
+                        <button
+                            type="button"
+                            wire:click="closeDuplicateModal"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-150 flex items-center"
+                        >
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="button"
+                            wire:click="duplicateRole"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-75 cursor-wait"
+                            class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 border border-transparent rounded-lg shadow-sm hover:from-green-700 hover:to-emerald-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-150 flex items-center transform hover:scale-105"
+                        >
+                            <i class="fas fa-copy mr-2" wire:loading.class="hidden" wire:target="duplicateRole"></i>
+                            <i class="fas fa-spinner fa-spin mr-2 hidden" wire:loading.class.remove="hidden" wire:target="duplicateRole"></i>
+                            <span wire:loading.remove wire:target="duplicateRole">Duplicar Função</span>
+                            <span wire:loading wire:target="duplicateRole">Duplicando...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Modal de Confirmação de Exclusão -->
     @if($showDeleteModal)
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-4">
@@ -878,15 +984,15 @@
 
                     <button
                         type="button"
-                        wire:click="delete"
+                        wire:click="deleteConfirmed"
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-75 cursor-wait"
                         class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150 flex items-center"
                     >
-                        <i class="fas fa-trash mr-1" wire:loading.class="hidden" wire:target="delete"></i>
-                        <i class="fas fa-spinner fa-spin mr-1 hidden" wire:loading.class.remove="hidden" wire:target="delete"></i>
-                        <span wire:loading.remove wire:target="delete">Excluir</span>
-                        <span wire:loading wire:target="delete">Excluindo...</span>
+                        <i class="fas fa-trash mr-1" wire:loading.class="hidden" wire:target="deleteConfirmed"></i>
+                        <i class="fas fa-spinner fa-spin mr-1 hidden" wire:loading.class.remove="hidden" wire:target="deleteConfirmed"></i>
+                        <span wire:loading.remove wire:target="deleteConfirmed">Excluir</span>
+                        <span wire:loading wire:target="deleteConfirmed">Excluindo...</span>
                     </button>
                 </div>
             </div>
