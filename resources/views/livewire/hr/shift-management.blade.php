@@ -29,6 +29,10 @@
                             {{ __('shifts.manage_shifts') }}
                         </h3>
                         <div class="flex items-center space-x-2">
+                            <button wire:click="toggleDebugPanel" class="inline-flex items-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-bug mr-2"></i>
+                                Debug
+                            </button>
                             <button wire:click="exportShiftsPDF" class="inline-flex items-center px-3 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm font-medium rounded-md transition-all duration-200 transform hover:scale-105">
                                 <i class="fas fa-file-pdf mr-2"></i>
                                 {{ __('shifts.export_pdf') }}
@@ -74,6 +78,78 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Debug Panel -->
+                @if($showDebugPanel)
+                <div class="mt-4 bg-red-50 border border-red-200 rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-red-600 px-4 py-3 flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-white flex items-center">
+                            <i class="fas fa-bug mr-2"></i>
+                            Debug Panel - cPanel Compatibility Check
+                        </h3>
+                        <div class="flex space-x-2">
+                            <button wire:click="testDatabaseOperation" class="inline-flex items-center px-3 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm font-medium rounded-md">
+                                <i class="fas fa-flask mr-2"></i>
+                                Test DB
+                            </button>
+                            <button wire:click="gatherDebugInfo" class="inline-flex items-center px-3 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm font-medium rounded-md">
+                                <i class="fas fa-refresh mr-2"></i>
+                                Refresh
+                            </button>
+                            <button wire:click="toggleDebugPanel" class="text-white hover:text-red-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        @if($lastError)
+                            <div class="mb-4 p-3 bg-red-100 border border-red-300 rounded text-red-700">
+                                <strong>Último Erro:</strong> {{ $lastError }}
+                            </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            @foreach($debugInfo as $key => $value)
+                                <div class="bg-white p-3 rounded border">
+                                    <dt class="text-sm font-medium text-gray-600 capitalize">{{ str_replace('_', ' ', $key) }}</dt>
+                                    <dd class="text-sm text-gray-900 font-mono break-all">
+                                        @if(is_bool($value))
+                                            <span class="px-2 py-1 rounded text-xs {{ $value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ $value ? 'true' : 'false' }}
+                                            </span>
+                                        @elseif($key === 'database_status' && $value === 'Connected')
+                                            <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">{{ $value }}</span>
+                                        @elseif(str_contains($value, 'Error:'))
+                                            <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">{{ $value }}</span>
+                                        @elseif($key === 'shifts_table' && $value === 'exists')
+                                            <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">{{ $value }}</span>
+                                        @elseif($key === 'shifts_table' && $value === 'missing')
+                                            <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">{{ $value }}</span>
+                                        @elseif($key === 'recent_logs')
+                                            <pre class="text-xs max-h-32 overflow-y-auto bg-gray-100 p-2 rounded">{{ $value }}</pre>
+                                        @else
+                                            {{ $value }}
+                                        @endif
+                                    </dd>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                            <h4 class="font-medium text-yellow-800 mb-2">Instruções para Debug:</h4>
+                            <ul class="text-sm text-yellow-700 space-y-1">
+                                <li>1. Clique "Test DB" para testar operações de BD directamente</li>
+                                <li>2. Verifique se "database_status" = Connected e "shifts_table" = exists</li>
+                                <li>3. Confirme que "storage_path_writable" e "logs_path_writable" = true</li>
+                                <li>4. Se "debug_mode" = false, ative debug no .env: APP_DEBUG=true</li>
+                                <li>5. Verifique os logs recentes para erros durante o salvamento</li>
+                                <li>6. Tente criar um turno e observe os logs em tempo real</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 
                 <!-- Tabela de Turnos -->
                 <div class="overflow-hidden bg-white rounded-lg shadow-sm mt-4">

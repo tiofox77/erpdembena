@@ -66,6 +66,11 @@ class ShiftManagement extends Component
     public $showDeleteModal = false;
     public $isEditing = false;
 
+    // Debug properties
+    public $showDebugPanel = false;
+    public $debugInfo = [];
+    public $lastError = null;
+
     // Listeners
     protected $listeners = ['refreshShifts' => '$refresh'];
 
@@ -179,23 +184,78 @@ class ShiftManagement extends Component
 
     public function saveShift()
     {
-        $validatedData = $this->validate($this->shiftRules());
+        try {
+            \Log::info('ShiftManagement::saveShift() - Início', [
+                'isEditing' => $this->isEditing,
+                'shift_id' => $this->shift_id,
+                'name' => $this->name,
+                'start_time' => $this->start_time,
+                'end_time' => $this->end_time,
+                'user_id' => auth()->id(),
+                'environment' => app()->environment(),
+                'php_version' => phpversion(),
+                'database_connection' => config('database.default')
+            ]);
 
-        if ($this->isEditing) {
-            $shift = Shift::find($this->shift_id);
-            $shift->update($validatedData);
-            session()->flash('message', 'Shift updated successfully.');
-        } else {
-            Shift::create($validatedData);
-            session()->flash('message', 'Shift created successfully.');
+            // Testar conexão BD
+            try {
+                \DB::connection()->getPdo();
+                \Log::info('Database connection: OK');
+            } catch (\Exception $dbException) {
+                \Log::error('Database connection failed: ' . $dbException->getMessage());
+                session()->flash('error', 'Erro de conexão à base de dados: ' . $dbException->getMessage());
+                return;
+            }
+
+            // Validação com debug
+            try {
+                $validatedData = $this->validate($this->shiftRules());
+                \Log::info('Validation successful', ['validated_data' => $validatedData]);
+            } catch (\Exception $validationException) {
+                \Log::error('Validation failed: ' . $validationException->getMessage());
+                session()->flash('error', 'Erro de validação: ' . $validationException->getMessage());
+                return;
+            }
+
+            if ($this->isEditing) {
+                $shift = Shift::find($this->shift_id);
+                if (!$shift) {
+                    \Log::error('Shift not found for editing', ['shift_id' => $this->shift_id]);
+                    session()->flash('error', 'Turno não encontrado para edição.');
+                    return;
+                }
+                
+                \Log::info('Updating existing shift', ['shift_id' => $this->shift_id, 'data' => $validatedData]);
+                $result = $shift->update($validatedData);
+                \Log::info('Update result', ['success' => $result]);
+                
+                session()->flash('message', 'Turno atualizado com sucesso.');
+            } else {
+                \Log::info('Creating new shift', ['data' => $validatedData]);
+                $newShift = Shift::create($validatedData);
+                \Log::info('Create result', ['shift_id' => $newShift->id ?? 'failed']);
+                
+                session()->flash('message', 'Turno criado com sucesso.');
+            }
+
+            $this->showShiftModal = false;
+            $this->reset([
+                'shift_id', 'name', 'start_time', 'end_time', 'break_duration',
+                'description', 'is_night_shift'
+            ]);
+            $this->is_active = true;
+            
+            \Log::info('ShiftManagement::saveShift() - Fim com sucesso');
+
+        } catch (\Exception $e) {
+            \Log::error('ShiftManagement::saveShift() - Erro geral: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            session()->flash('error', 'Erro ao salvar turno: ' . $e->getMessage());
         }
-
-        $this->showShiftModal = false;
-        $this->reset([
-            'shift_id', 'name', 'start_time', 'end_time', 'break_duration',
-            'description', 'is_night_shift'
-        ]);
-        $this->is_active = true;
     }
 
     // Shift Assignment methods
@@ -241,23 +301,55 @@ class ShiftManagement extends Component
 
     public function saveAssignment()
     {
-        $this->validate($this->assignmentRules());
+        try {
+            \Log::info('ShiftManagement::saveAssignment() - Início', [
+                'isEditing' => $this->isEditing,
+                'assignment_id' => $this->assignment_id,
+                'employee_id' => $this->employee_id,
+                'shift_id_assignment' => $this->shift_id_assignment,
+                'selected_shifts' => $this->selected_shifts,
+                'has_rotation' => $this->has_rotation,
+                'user_id' => auth()->id(),
+                'environment' => app()->environment()
+            ]);
+
+            // Testar conexão BD
+            try {
+                \DB::connection()->getPdo();
+                \Log::info('Assignment - Database connection: OK');
+            } catch (\Exception $dbException) {
+                \Log::error('Assignment - Database connection failed: ' . $dbException->getMessage());
+                session()->flash('error', 'Erro de conexão à base de dados: ' . $dbException->getMessage());
+                return;
+            }
+
+            try {
+                $this->validate($this->assignmentRules());
+                \Log::info('Assignment validation successful');
+            } catch (\Exception $validationException) {
+                \Log::error('Assignment validation failed: ' . $validationException->getMessage());
+                session()->flash('error', 'Erro de validação: ' . $validationException->getMessage());
+                return;
+            }
         
-        // Determinar quais shifts usar
-        $shiftsToAssign = $this->has_rotation && !empty($this->selected_shifts) 
-            ? $this->selected_shifts 
-            : [$this->shift_id_assignment];
+            // Determinar quais shifts usar
+            $shiftsToAssign = $this->has_rotation && !empty($this->selected_shifts) 
+                ? $this->selected_shifts 
+                : [$this->shift_id_assignment];
+            
+            \Log::info('Shifts to assign determined', ['shifts_to_assign' => $shiftsToAssign]);
         
-        // Validar que pelo menos um shift foi selecionado
-        if (empty($shiftsToAssign) || (count($shiftsToAssign) === 1 && !$shiftsToAssign[0])) {
-            $this->addError('shifts', __('shifts.shifts_required'));
-            return;
-        }
+            // Validar que pelo menos um shift foi selecionado
+            if (empty($shiftsToAssign) || (count($shiftsToAssign) === 1 && !$shiftsToAssign[0])) {
+                \Log::error('No shifts selected for assignment');
+                $this->addError('shifts', __('shifts.shifts_required'));
+                return;
+            }
         
-        $successCount = 0;
-        $errors = [];
+            $successCount = 0;
+            $errors = [];
         
-        if ($this->isEditing) {
+            if ($this->isEditing) {
             // Para edição, atualizar o assignment existente
             $assignment = ShiftAssignment::find($this->assignment_id);
             $validatedData = [
@@ -333,6 +425,20 @@ class ShiftManagement extends Component
             if (!empty($errors)) {
                 session()->flash('errors', $errors);
             }
+            
+            \Log::info('ShiftManagement::saveAssignment() - Fim com sucesso', [
+                'success_count' => $successCount,
+                'errors_count' => count($errors)
+            ]);
+        
+        } catch (\Exception $e) {
+            \Log::error('ShiftManagement::saveAssignment() - Erro geral: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            session()->flash('error', 'Erro ao salvar atribuição: ' . $e->getMessage());
         }
 
         $this->showAssignmentModal = false;
@@ -513,6 +619,136 @@ class ShiftManagement extends Component
             fn () => print($pdf->output()),
             'shift_assignments_report_' . Carbon::now()->format('Y-m-d') . '.pdf'
         );
+    }
+
+    public function toggleDebugPanel()
+    {
+        $this->showDebugPanel = !$this->showDebugPanel;
+        if ($this->showDebugPanel) {
+            $this->gatherDebugInfo();
+        }
+    }
+
+    public function gatherDebugInfo()
+    {
+        try {
+            $this->debugInfo = [
+                'environment' => app()->environment(),
+                'php_version' => phpversion(),
+                'laravel_version' => app()->version(),
+                'database_connection' => config('database.default'),
+                'database_driver' => config('database.connections.' . config('database.default') . '.driver'),
+                'database_host' => config('database.connections.' . config('database.default') . '.host'),
+                'database_name' => config('database.connections.' . config('database.default') . '.database'),
+                'storage_path_writable' => is_writable(storage_path()),
+                'logs_path_writable' => is_writable(storage_path('logs')),
+                'auth_user_id' => auth()->id(),
+                'auth_user_name' => auth()->user()->full_name ?? 'N/A',
+                'session_driver' => config('session.driver'),
+                'cache_driver' => config('cache.default'),
+                'debug_mode' => config('app.debug'),
+                'timezone' => config('app.timezone'),
+                'locale' => app()->getLocale(),
+                'livewire_version' => class_exists('\Livewire\Livewire') ? 'installed' : 'not found',
+                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
+                'request_method' => request()->method(),
+                'user_agent' => request()->userAgent(),
+                'ip_address' => request()->ip()
+            ];
+
+            // Test database connection
+            try {
+                \DB::connection()->getPdo();
+                $this->debugInfo['database_status'] = 'Connected';
+                
+                // Test table existence and structure
+                if (\Schema::hasTable('shifts')) {
+                    $this->debugInfo['shifts_table'] = 'exists';
+                    $columns = \Schema::getColumnListing('shifts');
+                    $this->debugInfo['shifts_columns'] = implode(', ', $columns);
+                } else {
+                    $this->debugInfo['shifts_table'] = 'missing';
+                }
+
+                if (\Schema::hasTable('shift_assignments')) {
+                    $this->debugInfo['shift_assignments_table'] = 'exists';
+                    $assignmentColumns = \Schema::getColumnListing('shift_assignments');
+                    $this->debugInfo['shift_assignments_columns'] = implode(', ', $assignmentColumns);
+                } else {
+                    $this->debugInfo['shift_assignments_table'] = 'missing';
+                }
+
+                // Test insert permission
+                try {
+                    \DB::statement('SELECT 1 as test');
+                    $this->debugInfo['db_select_permission'] = 'OK';
+                } catch (\Exception $e) {
+                    $this->debugInfo['db_select_permission'] = 'Error: ' . $e->getMessage();
+                }
+
+            } catch (\Exception $e) {
+                $this->debugInfo['database_status'] = 'Error: ' . $e->getMessage();
+            }
+
+            // Get recent log entries
+            $logFile = storage_path('logs/laravel.log');
+            if (file_exists($logFile)) {
+                $this->debugInfo['log_file_exists'] = 'yes';
+                $this->debugInfo['log_file_size'] = filesize($logFile) . ' bytes';
+                $this->debugInfo['log_file_writable'] = is_writable($logFile) ? 'yes' : 'no';
+                
+                // Get last few lines
+                $logs = file($logFile);
+                if ($logs) {
+                    $recentLogs = array_slice($logs, -10);
+                    $this->debugInfo['recent_logs'] = implode('', $recentLogs);
+                }
+            } else {
+                $this->debugInfo['log_file_exists'] = 'no';
+            }
+
+        } catch (\Exception $e) {
+            $this->debugInfo['debug_error'] = $e->getMessage();
+        }
+    }
+
+    public function testDatabaseOperation()
+    {
+        try {
+            \Log::info('Manual database test initiated');
+            
+            // Test create operation
+            $testShift = Shift::create([
+                'name' => 'TEST_SHIFT_' . time(),
+                'start_time' => '08:00:00',
+                'end_time' => '17:00:00',
+                'break_duration' => 60,
+                'description' => 'Test shift for debugging',
+                'is_night_shift' => false,
+                'is_active' => true,
+            ]);
+
+            if ($testShift && $testShift->id) {
+                session()->flash('message', 'Teste de criação: SUCESSO (ID: ' . $testShift->id . ')');
+                
+                // Test update
+                $testShift->update(['description' => 'Updated test shift']);
+                
+                // Test delete
+                $testShift->delete();
+                
+                session()->flash('message', 'Teste completo: SUCESSO - Criar/Atualizar/Apagar funcionou');
+            } else {
+                session()->flash('error', 'Teste de criação: FALHOU - Objeto criado mas sem ID');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Manual database test failed: ' . $e->getMessage());
+            session()->flash('error', 'Teste de BD: FALHOU - ' . $e->getMessage());
+            $this->lastError = $e->getMessage();
+        }
+        
+        $this->gatherDebugInfo();
     }
 
     public function render()
