@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Livewire\HR;
 
@@ -62,6 +63,7 @@ class ShiftManagement extends Component
     // Modal flags
     public $showShiftModal = false;
     public $showAssignmentModal = false;
+    public $showDeleteModal = false;
     public $isEditing = false;
 
     // Listeners
@@ -447,7 +449,13 @@ class ShiftManagement extends Component
             'title' => 'Shifts Report'
         ];
 
-        $pdf = PDF::loadView('pdf.shifts-report', $data);
+        // Verificar se a view existe em produção/cPanel
+        if (!view()->exists('pdf.shifts-report')) {
+            session()->flash('error', __('shifts.pdf_view_missing'));
+            return null;
+        }
+
+        $pdf = Pdf::loadView('pdf.shifts-report', $data);
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
@@ -493,7 +501,13 @@ class ShiftManagement extends Component
             'title' => 'Shift Assignments Report'
         ];
 
-        $pdf = PDF::loadView('pdf.shift-assignments-report', $data);
+        // Verificar se a view existe em produção/cPanel
+        if (!view()->exists('pdf.shift-assignments-report')) {
+            session()->flash('error', __('shifts.pdf_view_missing'));
+            return null;
+        }
+
+        $pdf = Pdf::loadView('pdf.shift-assignments-report', $data);
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
@@ -558,7 +572,7 @@ class ShiftManagement extends Component
         });
         
         // Convert to paginated collection (simplified for demo)
-        $currentPage = request()->get('page', 1);
+        $currentPage = request()->get('assignmentsPage', 1);
         $perPage = $this->perPage;
         $total = $groupedAssignments->count();
         $items = $groupedAssignments->slice(($currentPage - 1) * $perPage, $perPage)->values();
@@ -568,7 +582,7 @@ class ShiftManagement extends Component
             $total,
             $perPage,
             $currentPage,
-            ['path' => request()->url(), 'pageName' => 'page']
+            ['path' => request()->url(), 'pageName' => 'assignmentsPage']
         );
 
         // Obter IDs de funcionários que já têm turnos atribuídos
