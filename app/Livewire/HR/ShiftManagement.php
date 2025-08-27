@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 namespace App\Livewire\HR;
 
@@ -63,13 +62,15 @@ class ShiftManagement extends Component
     // Modal flags
     public $showShiftModal = false;
     public $showAssignmentModal = false;
-    public $showDeleteModal = false;
+    public $showDeleteShiftModal = false;
+    public $showDeleteAssignmentModal = false;
     public $isEditing = false;
-
-    // Debug properties
-    public $showDebugPanel = false;
-    public $debugInfo = [];
-    public $lastError = null;
+    
+    // Delete properties
+    public $shift_to_delete_id;
+    public $shift_to_delete_name;
+    public $assignment_to_delete_id;
+    public $assignment_to_delete_name;
 
     // Listeners
     protected $listeners = ['refreshShifts' => '$refresh'];
@@ -94,8 +95,7 @@ class ShiftManagement extends Component
         $rules = [
             'employee_id' => ['required', 'exists:employees,id'],
             'start_date' => ['required', 'date'],
-            'end_date' => $this->is_permanent ? ['nullable'] : ['required', 'date', 'after_or_equal:start_date'],
-            'rotation_pattern' => ['nullable', 'string', 'max:255'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
         
@@ -103,8 +103,10 @@ class ShiftManagement extends Component
         if ($this->has_rotation) {
             $rules['selected_shifts'] = ['required', 'array', 'min:2'];
             $rules['selected_shifts.*'] = ['exists:shifts,id'];
+            $rules['shift_id_assignment'] = ['nullable']; // Opcional quando há rotação
         } else {
             $rules['shift_id_assignment'] = ['required', 'exists:shifts,id'];
+            $rules['selected_shifts'] = ['nullable']; // Opcional quando não há rotação
         }
         
         return $rules;
@@ -184,78 +186,23 @@ class ShiftManagement extends Component
 
     public function saveShift()
     {
-        try {
-            \Log::info('ShiftManagement::saveShift() - Início', [
-                'isEditing' => $this->isEditing,
-                'shift_id' => $this->shift_id,
-                'name' => $this->name,
-                'start_time' => $this->start_time,
-                'end_time' => $this->end_time,
-                'user_id' => auth()->id(),
-                'environment' => app()->environment(),
-                'php_version' => phpversion(),
-                'database_connection' => config('database.default')
-            ]);
+        $validatedData = $this->validate($this->shiftRules());
 
-            // Testar conexão BD
-            try {
-                \DB::connection()->getPdo();
-                \Log::info('Database connection: OK');
-            } catch (\Exception $dbException) {
-                \Log::error('Database connection failed: ' . $dbException->getMessage());
-                session()->flash('error', 'Erro de conexão à base de dados: ' . $dbException->getMessage());
-                return;
-            }
-
-            // Validação com debug
-            try {
-                $validatedData = $this->validate($this->shiftRules());
-                \Log::info('Validation successful', ['validated_data' => $validatedData]);
-            } catch (\Exception $validationException) {
-                \Log::error('Validation failed: ' . $validationException->getMessage());
-                session()->flash('error', 'Erro de validação: ' . $validationException->getMessage());
-                return;
-            }
-
-            if ($this->isEditing) {
-                $shift = Shift::find($this->shift_id);
-                if (!$shift) {
-                    \Log::error('Shift not found for editing', ['shift_id' => $this->shift_id]);
-                    session()->flash('error', 'Turno não encontrado para edição.');
-                    return;
-                }
-                
-                \Log::info('Updating existing shift', ['shift_id' => $this->shift_id, 'data' => $validatedData]);
-                $result = $shift->update($validatedData);
-                \Log::info('Update result', ['success' => $result]);
-                
-                session()->flash('message', 'Turno atualizado com sucesso.');
-            } else {
-                \Log::info('Creating new shift', ['data' => $validatedData]);
-                $newShift = Shift::create($validatedData);
-                \Log::info('Create result', ['shift_id' => $newShift->id ?? 'failed']);
-                
-                session()->flash('message', 'Turno criado com sucesso.');
-            }
-
-            $this->showShiftModal = false;
-            $this->reset([
-                'shift_id', 'name', 'start_time', 'end_time', 'break_duration',
-                'description', 'is_night_shift'
-            ]);
-            $this->is_active = true;
-            
-            \Log::info('ShiftManagement::saveShift() - Fim com sucesso');
-
-        } catch (\Exception $e) {
-            \Log::error('ShiftManagement::saveShift() - Erro geral: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            session()->flash('error', 'Erro ao salvar turno: ' . $e->getMessage());
+        if ($this->isEditing) {
+            $shift = Shift::find($this->shift_id);
+            $shift->update($validatedData);
+            session()->flash('message', 'Shift updated successfully.');
+        } else {
+            Shift::create($validatedData);
+            session()->flash('message', 'Shift created successfully.');
         }
+
+        $this->showShiftModal = false;
+        $this->reset([
+            'shift_id', 'name', 'start_time', 'end_time', 'break_duration',
+            'description', 'is_night_shift'
+        ]);
+        $this->is_active = true;
     }
 
     // Shift Assignment methods
@@ -280,91 +227,169 @@ class ShiftManagement extends Component
 
     public function editAssignment(ShiftAssignment $assignment)
     {
+        // Limpar dados primeiro
+        $this->assignment_id = null;
+        $this->employee_id = null;
+        $this->shift_id_assignment = null;
+        $this->selected_shifts = [];
+        $this->has_rotation = 0;
+        $this->start_date = null;
+        $this->end_date = null;
+        $this->notes = null;
+        $this->rotation_type = null;
+        $this->rotation_frequency = null;
+        $this->rotation_start_date = null;
+        $this->isEditing = false;
+        
         // Fechar outros modais primeiro
         $this->showDeleteModal = false;
         $this->showShiftModal = false;
         
+        \Log::info('=== EDITANDO ASSIGNMENT ===', [
+            'assignment_id' => $assignment->id,
+            'employee_id' => $assignment->employee_id,
+            'shift_id' => $assignment->shift_id,
+            'rotation_pattern' => $assignment->rotation_pattern
+        ]);
+        
         $this->assignment_id = $assignment->id;
-        $this->employee_id = $assignment->employee_id;
-        $this->shift_id_assignment = $assignment->shift_id;
+        $this->employee_id = (string) $assignment->employee_id; // Forçar como string
+        $this->shift_id_assignment = (string) $assignment->shift_id; // Forçar como string  
         $this->start_date = $assignment->start_date->format('Y-m-d');
         $this->end_date = $assignment->end_date ? $assignment->end_date->format('Y-m-d') : null;
-        $this->is_permanent = $assignment->is_permanent;
-        $this->rotation_pattern = $assignment->rotation_pattern;
         $this->notes = $assignment->notes;
+        
+        \Log::info('Dados setados:', [
+            'employee_id' => $this->employee_id,
+            'employee_id_type' => gettype($this->employee_id),
+            'assignment_employee_id' => $assignment->employee_id,
+            'assignment_employee_id_type' => gettype($assignment->employee_id)
+        ]);
+        
+        // Processar dados de rotação se existirem
+        if ($assignment->rotation_pattern) {
+            $rotationData = json_decode($assignment->rotation_pattern, true);
+            \Log::info('Rotation data decoded:', $rotationData);
+            
+            if ($rotationData && isset($rotationData['shifts']) && count($rotationData['shifts']) > 1) {
+                $this->has_rotation = 1; // Forçar como inteiro
+                $this->selected_shifts = array_map('strval', $rotationData['shifts']); // Converter para strings
+                $this->rotation_type = $rotationData['type'] ?? 'weekly';
+                $this->rotation_frequency = $rotationData['frequency'] ?? 7;
+                $this->rotation_start_date = $this->start_date;
+                
+                \Log::info('Has rotation - dados setados:', [
+                    'has_rotation' => $this->has_rotation,
+                    'selected_shifts' => $this->selected_shifts,
+                    'rotation_type' => $this->rotation_type
+                ]);
+            } else {
+                $this->has_rotation = 0;
+                $this->selected_shifts = [];
+                \Log::info('No rotation detected');
+            }
+        } else {
+            $this->has_rotation = 0;
+            $this->selected_shifts = [];
+            \Log::info('No rotation pattern found');
+        }
 
         $this->isEditing = true;
         $this->showAssignmentModal = true;
+        
+        \Log::info('Modal aberta - dados finais:', [
+            'employee_id' => $this->employee_id,
+            'shift_id_assignment' => $this->shift_id_assignment,
+            'has_rotation' => $this->has_rotation,
+            'selected_shifts' => $this->selected_shifts
+        ]);
+        
+        // Forçar atualização do componente
+        $this->dispatch('$refresh');
     }
 
     // Este método foi removido por ser duplicado
 
     public function saveAssignment()
     {
+        \Log::info('=== INÍCIO saveAssignment ===', [
+            'assignment_id' => $this->assignment_id,
+            'employee_id' => $this->employee_id,
+            'shift_id_assignment' => $this->shift_id_assignment,
+            'selected_shifts' => $this->selected_shifts,
+            'start_date' => $this->start_date,
+            'end_date' => $this->end_date,
+            'is_permanent' => $this->is_permanent,
+            'has_rotation' => $this->has_rotation,
+            'isEditing' => $this->isEditing
+        ]);
+        
         try {
-            \Log::info('ShiftManagement::saveAssignment() - Início', [
-                'isEditing' => $this->isEditing,
-                'assignment_id' => $this->assignment_id,
-                'employee_id' => $this->employee_id,
-                'shift_id_assignment' => $this->shift_id_assignment,
-                'selected_shifts' => $this->selected_shifts,
-                'has_rotation' => $this->has_rotation,
-                'user_id' => auth()->id(),
-                'environment' => app()->environment()
-            ]);
-
-            // Testar conexão BD
-            try {
-                \DB::connection()->getPdo();
-                \Log::info('Assignment - Database connection: OK');
-            } catch (\Exception $dbException) {
-                \Log::error('Assignment - Database connection failed: ' . $dbException->getMessage());
-                session()->flash('error', 'Erro de conexão à base de dados: ' . $dbException->getMessage());
-                return;
-            }
-
-            try {
-                $this->validate($this->assignmentRules());
-                \Log::info('Assignment validation successful');
-            } catch (\Exception $validationException) {
-                \Log::error('Assignment validation failed: ' . $validationException->getMessage());
-                session()->flash('error', 'Erro de validação: ' . $validationException->getMessage());
-                return;
-            }
+            $rules = $this->assignmentRules();
+            \Log::info('Regras de validação:', $rules);
+            
+            $this->validate($rules);
+            \Log::info('Validação passou com sucesso');
         
             // Determinar quais shifts usar
-            $shiftsToAssign = $this->has_rotation && !empty($this->selected_shifts) 
-                ? $this->selected_shifts 
-                : [$this->shift_id_assignment];
+            if ($this->has_rotation && !empty($this->selected_shifts)) {
+                $shiftsToAssign = $this->selected_shifts;
+            } elseif (!$this->has_rotation && $this->shift_id_assignment) {
+                $shiftsToAssign = [$this->shift_id_assignment];
+            } else {
+                \Log::error('Nenhum shift selecionado', [
+                    'has_rotation' => $this->has_rotation,
+                    'selected_shifts' => $this->selected_shifts,
+                    'shift_id_assignment' => $this->shift_id_assignment
+                ]);
+                $this->addError('shift_id_assignment', __('shifts.shifts_required'));
+                return;
+            }
             
-            \Log::info('Shifts to assign determined', ['shifts_to_assign' => $shiftsToAssign]);
-        
-            // Validar que pelo menos um shift foi selecionado
-            if (empty($shiftsToAssign) || (count($shiftsToAssign) === 1 && !$shiftsToAssign[0])) {
-                \Log::error('No shifts selected for assignment');
-                $this->addError('shifts', __('shifts.shifts_required'));
+            \Log::info('Shifts a serem atribuídos:', $shiftsToAssign);
+            
+            // Validar que shifts válidos foram selecionados
+            $shiftsToAssign = array_filter($shiftsToAssign, function($shiftId) {
+                return !empty($shiftId) && is_numeric($shiftId);
+            });
+            
+            if (empty($shiftsToAssign)) {
+                \Log::error('Nenhum shift válido após filtragem');
+                $this->addError('shift_id_assignment', __('shifts.shifts_required'));
                 return;
             }
         
-            $successCount = 0;
-            $errors = [];
+        $successCount = 0;
+        $errors = [];
         
             if ($this->isEditing) {
-            // Para edição, atualizar o assignment existente
-            $assignment = ShiftAssignment::find($this->assignment_id);
-            $validatedData = [
-                'employee_id' => $this->employee_id,
-                'shift_id' => $this->has_rotation ? $shiftsToAssign[0] : $this->shift_id_assignment,
-                'start_date' => $this->start_date,
-                'end_date' => $this->is_permanent ? null : $this->end_date,
-                'is_permanent' => $this->is_permanent,
-                'rotation_pattern' => $this->has_rotation ? json_encode(['shifts' => $shiftsToAssign, 'pattern' => $this->rotation_pattern]) : $this->rotation_pattern,
-                'notes' => $this->notes,
-                'assigned_by' => auth()->id(),
-            ];
-            $assignment->update($validatedData);
-            session()->flash('message', __('shifts.assignment_updated'));
-        } else {
+                // Para edição, atualizar o assignment existente
+                \Log::info('Editando assignment existente', ['assignment_id' => $this->assignment_id]);
+                
+                $assignment = ShiftAssignment::find($this->assignment_id);
+                if (!$assignment) {
+                    \Log::error('Assignment não encontrado para edição', ['assignment_id' => $this->assignment_id]);
+                    session()->flash('error', 'Atribuição não encontrada.');
+                    return;
+                }
+                
+                $validatedData = [
+                    'employee_id' => $this->employee_id,
+                    'shift_id' => $this->has_rotation ? $shiftsToAssign[0] : $this->shift_id_assignment,
+                    'start_date' => $this->start_date,
+                    'end_date' => $this->end_date,
+                    'rotation_pattern' => $this->has_rotation ? json_encode(['shifts' => $shiftsToAssign, 'type' => $this->rotation_type, 'frequency' => $this->rotation_frequency]) : null,
+                    'notes' => $this->notes,
+                    'assigned_by' => auth()->id(),
+                ];
+                
+                \Log::info('Dados para update:', $validatedData);
+                
+                $assignment->update($validatedData);
+                \Log::info('Assignment atualizado com sucesso', ['assignment_id' => $assignment->id]);
+                
+                session()->flash('message', __('shifts.assignment_updated'));
+            } else {
             // Para criação nova, criar um assignment para cada shift se houver rotação
             foreach ($shiftsToAssign as $shiftId) {
                 try {
@@ -396,20 +421,31 @@ class ShiftManagement extends Component
                             'employee_id' => $this->employee_id,
                             'shift_id' => $shiftId,
                             'start_date' => $this->start_date,
-                            'end_date' => $this->is_permanent ? null : $this->end_date,
-                            'is_permanent' => $this->is_permanent,
-                            'rotation_pattern' => $this->has_rotation ? json_encode(['shifts' => $shiftsToAssign, 'pattern' => $this->rotation_pattern]) : $this->rotation_pattern,
+                            'end_date' => $this->end_date,
+                            'rotation_pattern' => $this->has_rotation ? json_encode(['shifts' => $shiftsToAssign, 'type' => $this->rotation_type, 'frequency' => $this->rotation_frequency]) : null,
                             'notes' => $this->notes,
                             'assigned_by' => auth()->id(),
                         ];
                         
-                        ShiftAssignment::create($validatedData);
+                        \Log::info('Criando novo assignment', ['dados' => $validatedData]);
+                        
+                        $newAssignment = ShiftAssignment::create($validatedData);
+                        \Log::info('Assignment criado com sucesso', ['assignment_id' => $newAssignment->id]);
+                        
                         $successCount++;
                     } else {
                         $shift = Shift::find($shiftId);
                         $errors[] = __('shifts.employee_already_assigned') . ' (' . $shift->name . ')';
                     }
                 } catch (\Exception $e) {
+                    \Log::error('Erro ao processar shift', [
+                        'shift_id' => $shiftId,
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    
                     $shift = Shift::find($shiftId);
                     $errors[] = 'Erro ao atribuir turno ' . $shift->name . ': ' . $e->getMessage();
                 }
@@ -425,14 +461,13 @@ class ShiftManagement extends Component
             if (!empty($errors)) {
                 session()->flash('errors', $errors);
             }
+        }
+
+            \Log::info('=== FIM saveAssignment - Sucesso ===');
             
-            \Log::info('ShiftManagement::saveAssignment() - Fim com sucesso', [
-                'success_count' => $successCount,
-                'errors_count' => count($errors)
-            ]);
-        
         } catch (\Exception $e) {
-            \Log::error('ShiftManagement::saveAssignment() - Erro geral: ' . $e->getMessage(), [
+            \Log::error('=== ERRO GERAL saveAssignment ===', [
+                'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
@@ -448,54 +483,110 @@ class ShiftManagement extends Component
         ]);
     }
 
-    public function deleteShift($id)
+    public function deleteShift($shiftId)
     {
-        \Log::info('deleteShift called with ID: ' . $id);
+        $shift = Shift::find($shiftId);
         
-        try {
-            $shift = Shift::find($id);
-            \Log::info('Shift found: ' . ($shift ? 'yes' : 'no'));
-            
-            if ($shift) {
-                $shift->delete();
-                \Log::info('Shift deleted successfully');
-                session()->flash('message', 'Turno excluído com sucesso!');
-                
-                // Reset pagination if needed
-                $this->resetPage();
-            } else {
-                \Log::warning('Shift not found with ID: ' . $id);
-                session()->flash('error', 'Turno não encontrado.');
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error deleting shift: ' . $e->getMessage());
-            session()->flash('error', 'Erro ao excluir turno: ' . $e->getMessage());
+        if (!$shift) {
+            session()->flash('error', 'Turno não encontrado.');
+            return;
         }
+        
+        // Store shift data for modal
+        $this->shift_to_delete_id = $shiftId;
+        $this->shift_to_delete_name = $shift->name;
+        
+        // Show confirmation modal
+        $this->showDeleteShiftModal = true;
+    }
+    
+    public function confirmDeleteShift()
+    {
+        try {
+            $shift = Shift::find($this->shift_to_delete_id);
+            
+            if (!$shift) {
+                session()->flash('error', 'Turno não encontrado.');
+                $this->cancelDeleteShift();
+                return;
+            }
+            
+            // Verificar se há atribuições relacionadas
+            $hasAssignments = ShiftAssignment::whereJsonContains('shifts', function ($query) {
+                $query->where('id', $this->shift_to_delete_id);
+            })->exists();
+            
+            if ($hasAssignments) {
+                session()->flash('error', 'Não é possível excluir este turno pois existem atribuições relacionadas.');
+                $this->cancelDeleteShift();
+                return;
+            }
+            
+            $shift->delete();
+            session()->flash('success', 'Turno "' . $this->shift_to_delete_name . '" excluído com sucesso!');
+            
+            $this->cancelDeleteShift();
+            
+        } catch (\Exception $e) {
+            \Log::error('Erro ao excluir turno: ' . $e->getMessage());
+            session()->flash('error', 'Erro ao excluir turno.');
+            $this->cancelDeleteShift();
+        }
+    }
+    
+    public function cancelDeleteShift()
+    {
+        $this->showDeleteShiftModal = false;
+        $this->shift_to_delete_id = null;
+        $this->shift_to_delete_name = null;
     }
 
     public function deleteAssignment($id)
     {
-        \Log::info('deleteAssignment called with ID: ' . $id);
+        $assignment = ShiftAssignment::find($id);
         
-        try {
-            $assignment = ShiftAssignment::find($id);
-            \Log::info('Assignment found: ' . ($assignment ? 'yes' : 'no'));
-            
-            if ($assignment) {
-                $assignment->delete();
-                \Log::info('Assignment deleted successfully');
-                session()->flash('message', 'Atribuição excluída com sucesso!');
-                
-                // Reset pagination if needed
-                $this->resetPage();
-            } else {
-                \Log::warning('Assignment not found with ID: ' . $id);
-                session()->flash('error', 'Atribuição não encontrada.');
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error deleting assignment: ' . $e->getMessage());
-            session()->flash('error', 'Erro ao excluir atribuição: ' . $e->getMessage());
+        if (!$assignment) {
+            session()->flash('error', 'Atribuição não encontrada.');
+            return;
         }
+        
+        // Store assignment data for modal
+        $this->assignment_to_delete_id = $id;
+        $this->assignment_to_delete_name = $assignment->employee->full_name ?? 'Funcionário';
+        
+        // Show confirmation modal
+        $this->showDeleteAssignmentModal = true;
+    }
+    
+    public function confirmDeleteAssignment()
+    {
+        try {
+            $assignment = ShiftAssignment::find($this->assignment_to_delete_id);
+            
+            if (!$assignment) {
+                session()->flash('error', 'Atribuição não encontrada.');
+                $this->cancelDeleteAssignment();
+                return;
+            }
+            
+            $assignment->delete();
+            session()->flash('success', 'Atribuição de "' . $this->assignment_to_delete_name . '" excluída com sucesso!');
+            
+            $this->cancelDeleteAssignment();
+            $this->resetPage();
+            
+        } catch (\Exception $e) {
+            \Log::error('Erro ao excluir atribuição: ' . $e->getMessage());
+            session()->flash('error', 'Erro ao excluir atribuição.');
+            $this->cancelDeleteAssignment();
+        }
+    }
+    
+    public function cancelDeleteAssignment()
+    {
+        $this->showDeleteAssignmentModal = false;
+        $this->assignment_to_delete_id = null;
+        $this->assignment_to_delete_name = null;
     }
 
     public function closeModal()
@@ -555,13 +646,7 @@ class ShiftManagement extends Component
             'title' => 'Shifts Report'
         ];
 
-        // Verificar se a view existe em produção/cPanel
-        if (!view()->exists('pdf.shifts-report')) {
-            session()->flash('error', __('shifts.pdf_view_missing'));
-            return null;
-        }
-
-        $pdf = Pdf::loadView('pdf.shifts-report', $data);
+        $pdf = PDF::loadView('pdf.shifts-report', $data);
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
@@ -607,148 +692,12 @@ class ShiftManagement extends Component
             'title' => 'Shift Assignments Report'
         ];
 
-        // Verificar se a view existe em produção/cPanel
-        if (!view()->exists('pdf.shift-assignments-report')) {
-            session()->flash('error', __('shifts.pdf_view_missing'));
-            return null;
-        }
-
-        $pdf = Pdf::loadView('pdf.shift-assignments-report', $data);
+        $pdf = PDF::loadView('pdf.shift-assignments-report', $data);
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
             'shift_assignments_report_' . Carbon::now()->format('Y-m-d') . '.pdf'
         );
-    }
-
-    public function toggleDebugPanel()
-    {
-        $this->showDebugPanel = !$this->showDebugPanel;
-        if ($this->showDebugPanel) {
-            $this->gatherDebugInfo();
-        }
-    }
-
-    public function gatherDebugInfo()
-    {
-        try {
-            $this->debugInfo = [
-                'environment' => app()->environment(),
-                'php_version' => phpversion(),
-                'laravel_version' => app()->version(),
-                'database_connection' => config('database.default'),
-                'database_driver' => config('database.connections.' . config('database.default') . '.driver'),
-                'database_host' => config('database.connections.' . config('database.default') . '.host'),
-                'database_name' => config('database.connections.' . config('database.default') . '.database'),
-                'storage_path_writable' => is_writable(storage_path()),
-                'logs_path_writable' => is_writable(storage_path('logs')),
-                'auth_user_id' => auth()->id(),
-                'auth_user_name' => auth()->user()->full_name ?? 'N/A',
-                'session_driver' => config('session.driver'),
-                'cache_driver' => config('cache.default'),
-                'debug_mode' => config('app.debug'),
-                'timezone' => config('app.timezone'),
-                'locale' => app()->getLocale(),
-                'livewire_version' => class_exists('\Livewire\Livewire') ? 'installed' : 'not found',
-                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
-                'request_method' => request()->method(),
-                'user_agent' => request()->userAgent(),
-                'ip_address' => request()->ip()
-            ];
-
-            // Test database connection
-            try {
-                \DB::connection()->getPdo();
-                $this->debugInfo['database_status'] = 'Connected';
-                
-                // Test table existence and structure
-                if (\Schema::hasTable('shifts')) {
-                    $this->debugInfo['shifts_table'] = 'exists';
-                    $columns = \Schema::getColumnListing('shifts');
-                    $this->debugInfo['shifts_columns'] = implode(', ', $columns);
-                } else {
-                    $this->debugInfo['shifts_table'] = 'missing';
-                }
-
-                if (\Schema::hasTable('shift_assignments')) {
-                    $this->debugInfo['shift_assignments_table'] = 'exists';
-                    $assignmentColumns = \Schema::getColumnListing('shift_assignments');
-                    $this->debugInfo['shift_assignments_columns'] = implode(', ', $assignmentColumns);
-                } else {
-                    $this->debugInfo['shift_assignments_table'] = 'missing';
-                }
-
-                // Test insert permission
-                try {
-                    \DB::statement('SELECT 1 as test');
-                    $this->debugInfo['db_select_permission'] = 'OK';
-                } catch (\Exception $e) {
-                    $this->debugInfo['db_select_permission'] = 'Error: ' . $e->getMessage();
-                }
-
-            } catch (\Exception $e) {
-                $this->debugInfo['database_status'] = 'Error: ' . $e->getMessage();
-            }
-
-            // Get recent log entries
-            $logFile = storage_path('logs/laravel.log');
-            if (file_exists($logFile)) {
-                $this->debugInfo['log_file_exists'] = 'yes';
-                $this->debugInfo['log_file_size'] = filesize($logFile) . ' bytes';
-                $this->debugInfo['log_file_writable'] = is_writable($logFile) ? 'yes' : 'no';
-                
-                // Get last few lines
-                $logs = file($logFile);
-                if ($logs) {
-                    $recentLogs = array_slice($logs, -10);
-                    $this->debugInfo['recent_logs'] = implode('', $recentLogs);
-                }
-            } else {
-                $this->debugInfo['log_file_exists'] = 'no';
-            }
-
-        } catch (\Exception $e) {
-            $this->debugInfo['debug_error'] = $e->getMessage();
-        }
-    }
-
-    public function testDatabaseOperation()
-    {
-        try {
-            \Log::info('Manual database test initiated');
-            
-            // Test create operation
-            $testShift = Shift::create([
-                'name' => 'TEST_SHIFT_' . time(),
-                'start_time' => '08:00:00',
-                'end_time' => '17:00:00',
-                'break_duration' => 60,
-                'description' => 'Test shift for debugging',
-                'is_night_shift' => false,
-                'is_active' => true,
-            ]);
-
-            if ($testShift && $testShift->id) {
-                session()->flash('message', 'Teste de criação: SUCESSO (ID: ' . $testShift->id . ')');
-                
-                // Test update
-                $testShift->update(['description' => 'Updated test shift']);
-                
-                // Test delete
-                $testShift->delete();
-                
-                session()->flash('message', 'Teste completo: SUCESSO - Criar/Atualizar/Apagar funcionou');
-            } else {
-                session()->flash('error', 'Teste de criação: FALHOU - Objeto criado mas sem ID');
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Manual database test failed: ' . $e->getMessage());
-            session()->flash('error', 'Teste de BD: FALHOU - ' . $e->getMessage());
-            $this->lastError = $e->getMessage();
-        }
-        
-        $this->gatherDebugInfo();
     }
 
     public function render()
@@ -808,7 +757,7 @@ class ShiftManagement extends Component
         });
         
         // Convert to paginated collection (simplified for demo)
-        $currentPage = request()->get('assignmentsPage', 1);
+        $currentPage = request()->get('page', 1);
         $perPage = $this->perPage;
         $total = $groupedAssignments->count();
         $items = $groupedAssignments->slice(($currentPage - 1) * $perPage, $perPage)->values();
@@ -818,16 +767,24 @@ class ShiftManagement extends Component
             $total,
             $perPage,
             $currentPage,
-            ['path' => request()->url(), 'pageName' => 'assignmentsPage']
+            ['path' => request()->url(), 'pageName' => 'page']
         );
 
         // Obter IDs de funcionários que já têm turnos atribuídos
-    $employeesWithAssignments = ShiftAssignment::pluck('employee_id')->unique();
-    
-    // Carregar apenas funcionários ativos que NÃO têm turnos atribuídos
-    $employees = Employee::where('employment_status', 'active')
-        ->whereNotIn('id', $employeesWithAssignments)
-        ->get();
+        $employeesWithAssignments = ShiftAssignment::pluck('employee_id')->unique();
+        
+        // Se estamos editando, excluir o assignment atual da lista de "já atribuídos"
+        if ($this->isEditing && $this->assignment_id) {
+            $currentAssignment = ShiftAssignment::find($this->assignment_id);
+            if ($currentAssignment) {
+                $employeesWithAssignments = $employeesWithAssignments->reject($currentAssignment->employee_id);
+            }
+        }
+        
+        // Carregar apenas funcionários ativos que NÃO têm turnos atribuídos
+        $employees = Employee::where('employment_status', 'active')
+            ->whereNotIn('id', $employeesWithAssignments)
+            ->get();
         $departments = Department::where('is_active', true)->get();
         $shiftsForSelect = Shift::where('is_active', true)->get();
 
