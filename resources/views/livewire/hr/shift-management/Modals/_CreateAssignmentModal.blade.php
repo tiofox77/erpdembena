@@ -28,10 +28,10 @@
                     </div>
                     <div>
                         <h3 id="modal-create-assignment-title" class="text-lg font-semibold text-white">
-                            {{ $assignment_id ? 'Editar Atribuição' : 'Nova Atribuição de Turno' }}
+                            {{ $assignment_id ? __('shifts.edit_assignment') : __('shifts.new_assignment') }}
                         </h3>
                         <p class="text-blue-100 text-sm opacity-90">
-                            Defina as configurações de turno para o funcionário
+                            {{ __('shifts.assignment_details') }}
                         </p>
                     </div>
                 </div>
@@ -51,8 +51,8 @@
                                     <i class="fas fa-user-clock text-blue-600"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-base font-semibold text-gray-800">Informações do Funcionário</h3>
-                                    <p class="text-sm text-gray-600">Selecione o funcionário e configure o tipo de turno</p>
+                                    <h3 class="text-base font-semibold text-gray-800">{{ __('shifts.employee_shift_selection') }}</h3>
+                                    <p class="text-sm text-gray-600">{{ __('shifts.employee_selection_description') }}</p>
                                 </div>
                             </div>
                             <div class="p-6 space-y-6">
@@ -60,11 +60,11 @@
                                 <div>
                                     <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">
                                         <i class="fas fa-user text-blue-500 mr-2"></i>
-                                        Funcionário *
+                                        {{ __('shifts.employee') }} *
                                     </label>
                                     <select wire:model="employee_id" wire:key="employee-select-{{ $assignment_id ?? 'new' }}" id="employee_id" 
                                         class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm bg-white transition-all duration-200">
-                                        <option value="">Seleccione um funcionário</option>
+                                        <option value="">{{ __('shifts.select_employee') }}</option>
                                         @foreach($employees as $employee)
                                             <option value="{{ $employee->id }}" @if(strval($employee_id) === strval($employee->id)) selected @endif>
                                                 {{ $employee->full_name }}
@@ -83,7 +83,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
                                         <i class="fas fa-sync-alt text-purple-500 mr-2"></i>
-                                        Configurações de Turno
+                                        {{ __('shifts.shift_configuration') }}
                                     </label>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="relative">
@@ -98,8 +98,8 @@
                                                              :class="$wire.has_rotation == 0 ? 'opacity-100' : 'opacity-0'"></div>
                                                     </div>
                                                     <div class="ml-3">
-                                                        <div class="text-sm font-medium text-gray-900">Turno Fixo</div>
-                                                        <div class="text-xs text-gray-500">Funcionário trabalhará sempre no mesmo turno</div>
+                                                        <div class="text-sm font-medium text-gray-900">{{ __('shifts.single_shift') }}</div>
+                                                        <div class="text-xs text-gray-500">{{ __('shifts.single_shift_description') }}</div>
                                                     </div>
                                                 </div>
                                             </label>
@@ -116,8 +116,8 @@
                                                              :class="$wire.has_rotation == 1 ? 'opacity-100' : 'opacity-0'"></div>
                                                     </div>
                                                     <div class="ml-3">
-                                                        <div class="text-sm font-medium text-gray-900">Rotação de Turnos</div>
-                                                        <div class="text-xs text-gray-500">Funcionário alternará entre múltiplos turnos</div>
+                                                        <div class="text-sm font-medium text-gray-900">{{ __('shifts.shift_rotation') }}</div>
+                                                        <div class="text-xs text-gray-500">{{ __('shifts.rotation_description') }}</div>
                                                     </div>
                                                 </div>
                                             </label>
@@ -138,14 +138,14 @@
                                         <div>
                                             <label for="rotation_type" class="block text-sm font-medium text-gray-700 mb-2">
                                                 <i class="fas fa-calendar-alt text-purple-500 mr-2"></i>
-                                                Tipo de Rotação
+                                                {{ __('shifts.rotation_type') }}
                                             </label>
                                             <select wire:model="rotation_type" id="rotation_type" 
                                                 class="mt-1 block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 text-sm bg-white transition-all duration-200">
-                                                <option value="">Seleccione o tipo de rotação</option>
-                                                <option value="weekly">Semanal</option>
-                                                <option value="biweekly">Quinzenal</option>
-                                                <option value="monthly">Mensal</option>
+                                                <option value="">{{ __('shifts.select_rotation_type') }}</option>
+                                                <option value="weekly">{{ __('shifts.weekly') }}</option>
+                                                <option value="biweekly">{{ __('shifts.biweekly') }}</option>
+                                                <option value="monthly">{{ __('shifts.monthly') }}</option>
                                             </select>
                                             @error('rotation_type') 
                                                 <p class="mt-2 text-sm text-red-600 flex items-center">
@@ -157,7 +157,7 @@
                                         <div>
                                             <label for="rotation_frequency" class="block text-sm font-medium text-gray-700 mb-2">
                                                 <i class="fas fa-hashtag text-purple-500 mr-2"></i>
-                                                Frequência (dias)
+                                                {{ __('shifts.frequency_days') }}
                                             </label>
                                             <input type="number" wire:model="rotation_frequency" id="rotation_frequency" min="1" max="30" 
                                                 class="mt-1 block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 text-sm bg-white transition-all duration-200">
@@ -171,7 +171,7 @@
                                         <div>
                                             <label for="rotation_start_date" class="block text-sm font-medium text-gray-700 mb-2">
                                                 <i class="fas fa-play text-purple-500 mr-2"></i>
-                                                Data de Início da Rotação
+                                                {{ __('shifts.rotation_start_date') }}
                                             </label>
                                             <input type="date" wire:model="rotation_start_date" id="rotation_start_date" 
                                                 class="mt-1 block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 text-sm bg-white transition-all duration-200">
@@ -195,11 +195,11 @@
                                      x-transition:leave-end="opacity-0 scale-95">
                                     <label for="shift_id_assignment" class="block text-sm font-medium text-gray-700 mb-2">
                                         <i class="fas fa-clock text-blue-500 mr-2"></i>
-                                        Turno *
+                                        {{ __('shifts.shift') }} *
                                     </label>
                                     <select wire:model="shift_id_assignment" wire:key="shift-select-{{ $assignment_id ?? 'new' }}" id="shift_id_assignment" 
                                         class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm bg-white transition-all duration-200">
-                                        <option value="">Seleccione um turno</option>
+                                        <option value="">{{ __('shifts.select_shift') }}</option>
                                         @foreach($shiftsForSelect as $shift)
                                             <option value="{{ $shift->id }}" @if($shift_id_assignment == $shift->id) selected @endif>
                                                 {{ $shift->name }} ({{ $shift->start_time->format('H:i') }} - {{ $shift->end_time->format('H:i') }})
@@ -224,7 +224,7 @@
                                      x-transition:leave-end="opacity-0 scale-95">
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
                                         <i class="fas fa-layer-group text-purple-500 mr-2"></i>
-                                        Seleccionar Turnos *
+                                        {{ __('shifts.select_shifts') }} *
                                     </label>
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-3 border-2 border-purple-200 rounded-lg bg-purple-50">
                                         @foreach($shiftsForSelect as $shift)
@@ -308,17 +308,17 @@
                         <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                             <div class="flex items-center bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 border-b border-gray-200">
                                 <i class="fas fa-sticky-note text-green-600 mr-2"></i>
-                                <h3 class="text-base font-medium text-gray-700">Observações</h3>
+                                <h3 class="text-base font-medium text-gray-700">{{ __('shifts.notes') }}</h3>
                             </div>
                             <div class="p-4">
                                 <!-- Notas -->
                                 <div>
                                     <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
                                         <i class="fas fa-comment text-green-500 mr-2"></i>
-                                        Notas da Atribuição
+                                        {{ __('shifts.assignment_notes') }}
                                     </label>
                                     <textarea wire:model.defer="notes" id="notes" rows="3" 
-                                        placeholder="Adicione observações sobre esta atribuição de turno..."
+                                        placeholder="{{ __('shifts.enter_notes') }}"
                                         class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-white transition-all duration-200"></textarea>
                                     @error('notes') 
                                         <p class="mt-2 text-sm text-red-600 flex items-center">
@@ -334,19 +334,19 @@
                         <div class="bg-gray-50 px-4 py-3 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200">
                             <button type="button" wire:click="closeAssignmentModal" class="inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                                 <i class="fas fa-times mr-2"></i>
-                                Cancelar
+                                {{ __('shifts.cancel') }}
                             </button>
                             <button type="submit" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed">
                                 <span wire:loading.remove wire:target="saveAssignment">
                                     <i class="fas {{ $assignment_id ? 'fa-save' : 'fa-plus-circle' }} mr-2"></i>
-                                    {{ $assignment_id ? 'Actualizar' : 'Guardar' }}
+                                    {{ $assignment_id ? __('shifts.update') : __('shifts.save') }}
                                 </span>
                                 <span wire:loading wire:target="saveAssignment" class="inline-flex items-center">
                                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    A processar...
+                                    {{ __('shifts.processing') }}
                                 </span>
                             </button>
                         </div>

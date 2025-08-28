@@ -85,4 +85,8 @@ return [
     'days' => 'dias',
     'hours' => 'h',
     'maternity' => 'maternidade',
+    
+    // INSS Illustrative
+    'illustrative_only' => 'Apenas Ilustrativo',
+    'calculated_from_main_salary' => 'Calculado a partir do Salário Principal',
 ];

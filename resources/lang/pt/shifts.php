@@ -156,4 +156,29 @@ return [
     'weekly_rotation' => 'Rotação Semanal',
     'yearly_rotation' => 'Rotação Anual',
     'yes_delete' => 'Sim, Eliminar',
+    
+    // Modal specific translations
+    'employee_selection_description' => 'Selecione o funcionário e configure o tipo de turno',
+    'shift_configuration' => 'Configurações de Turno',
+    'single_shift_description' => 'Funcionário trabalhará sempre no mesmo turno',
+    'rotation_description' => 'Funcionário alternará entre múltiplos turnos',
+    'select_rotation_type' => 'Seleccione o tipo de rotação',
+    'biweekly' => 'Quinzenal',
+    'frequency_days' => 'Frequência (dias)',
+    'rotation_start_date' => 'Data de Início da Rotação',
+    'assignment_notes' => 'Notas da Atribuição',
+    'confirm_delete_shift' => 'Tem certeza que deseja excluir o turno ":name"?',
+    'delete_warning_message' => 'Esta acção não pode ser desfeita. Todos os dados relacionados a este turno serão permanentemente removidos.',
+    'confirm_delete_assignment' => 'Tem certeza que deseja excluir a atribuição de turno para ":name"?',
+    'delete_assignment_warning' => 'Esta acção não pode ser desfeita. A atribuição será permanentemente removida e o funcionário não terá mais este turno atribuído.',
+    
+    // Traduções adicionais em falta
+    'night' => 'Nocturno',
+    
+    // Chaves específicas dos placeholders da imagem
+    'Single Shift' => 'Turno Fixo',
+    'Shift Rotation' => 'Rotação de Turnos',
+    'Select Employee' => 'Seleccionar Funcionário',
+    'Select Shift' => 'Seleccionar Turno',
 ];
+

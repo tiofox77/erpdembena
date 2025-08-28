@@ -3010,7 +3010,7 @@ class Payroll extends Component
         $payrollPeriods = PayrollPeriod::orderBy('start_date', 'desc')->get();
         $departments = Department::where('is_active', true)->get();
 
-        return view('livewire.hr.payroll', [
+        return view('livewire.hr.payroll.payroll', [
             'payrolls' => $payrolls,
             'employees' => $employees,
             'payrollPeriods' => $payrollPeriods,

@@ -116,7 +116,7 @@
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                     <div class="flex items-center bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 border-b border-gray-200">
                         <i class="fas fa-cogs text-purple-600 mr-2"></i>
-                        <h3 class="text-base font-medium text-gray-700">{{ __('shifts.shift_details') }}</h3>
+                        <h3 class="text-base font-medium text-gray-700">{{ __('shifts.additional_settings') }}</h3>
                     </div>
                     <div class="p-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,7 +137,7 @@
                                         <i class="fas fa-moon text-indigo-500 mr-2"></i>
                                         {{ __('shifts.night_shift') }}
                                     </label>
-                                    <p class="text-xs text-gray-500 mt-1">@lang('shifts.night_shift_description')</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ __('shifts.night_shift_info') }}</p>
                                 </div>
                             </div>
                             
@@ -158,7 +158,7 @@
                                         <i class="fas fa-check-circle text-green-500 mr-2"></i>
                                         {{ __('shifts.active') }}
                                     </label>
-                                    <p class="text-xs text-gray-500 mt-1">@lang('shifts.active_description')</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ __('shifts.active_info') }}</p>
                                 </div>
                             </div>
                         </div>

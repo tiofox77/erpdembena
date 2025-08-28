@@ -519,10 +519,10 @@
     </div>
 
     <!-- Modal de Processamento de Payroll -->
-    @include('livewire.hr.payroll-process-modal')
+    @include('livewire.hr.payroll.Modals._ProcessPayrollModal')
     
     <!-- Modal de Seleção de Período de Payroll -->
-    @include('livewire.hr.payroll-period-selection-modal')
+    @include('livewire.hr.payroll.Modals._PeriodSelectionModal')
     
     <!-- Modal de Visualização Moderna do Payroll -->
     @if($showViewModal && $currentPayroll)
@@ -876,6 +876,6 @@
     @endif
 
 
-    {{-- Include Delete Confirmation Modal --}}
-    @include('livewire.hr.payroll-delete-modal')
+    {{-- Payroll Modals --}}
+    @includeIf('livewire.hr.payroll.Modals._DeletePayrollModal')
 </div>
