@@ -1108,7 +1108,7 @@ class Payroll extends Component
     /**
      * Get IRT tax bracket information
      */
-    public function getIrtTaxBracketProperty(): ?\App\Models\HR\IRTTaxBracket
+    public function getIrtTaxBracketProperty(): ?object
     {
         if ($this->gross_salary <= 0) {
             return null;
@@ -1232,7 +1232,7 @@ class Payroll extends Component
             ];
         }
         
-        $excess = max(0, $mc - $bracket->min_income);
+        $excess = max(0, $mc - $bracket->min);
         $taxOnExcess = $excess * ($bracket->tax_rate / 100);
         
         return [

@@ -1009,7 +1009,7 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format($gross_salary ?? 0, 2) }} AOA</span>
+                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format(($gross_salary ?? 0) - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Gross Salary Details Breakdown -->
@@ -1133,7 +1133,7 @@
                                                     <div class="space-y-2">
                                                         <div class="flex justify-between">
                                                             <span class="text-gray-600">Salário Bruto:</span>
-                                                            <span class="font-medium">{{ number_format($gross_salary ?? 0, 2) }} AOA</span>
+                                                            <span class="font-medium">{{ number_format((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))), 2) }} AOA</span>
                                                         </div>
                                                         <div class="flex justify-between">
                                                             <span class="text-gray-600">INSS (3%):</span>
@@ -1148,7 +1148,7 @@
                                                             <div class="border-t pt-2 space-y-1">
                                                                 <div class="flex justify-between">
                                                                     <span class="text-blue-600">Escalão {{ $details['bracket']->bracket_number }}:</span>
-                                                                    <span class="text-sm">{{ number_format($details['bracket']->min_income) }} - {{ $details['bracket']->max_income > 0 ? number_format($details['bracket']->max_income) : '+∞' }} AOA</span>
+                                                                    <span class="text-sm">{{ number_format($details['bracket']->min) }} - {{ $details['bracket']->max > 0 ? number_format($details['bracket']->max) : '+∞' }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between">
                                                                     <span class="text-gray-600">Parcela fixa:</span>
@@ -1171,7 +1171,7 @@
                                             {{-- INSS --}}
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">INSS (3%)</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($inss_deduction ?? 0, 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format(round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
                                             </div>
                                             
                                             {{-- INSS 8% Illustrative --}}
