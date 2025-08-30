@@ -50,71 +50,94 @@
                     </div>
 
                     <!-- Filters and Search -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                            <div class="flex items-center">
-                                <i class="fas fa-filter text-gray-600 mr-2"></i>
-                                <h3 class="text-lg font-medium text-gray-700">{{ __('attendance.search_and_filters') }}</h3>
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-6 overflow-hidden">
+                        <div class="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-3">
+                                        <i class="fas fa-filter text-white text-lg animate-pulse"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white">{{ __('attendance.search_and_filters') }}</h3>
+                                        <p class="text-indigo-100 text-sm">{{ __('attendance.filter_description') }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-white text-sm">
+                                    <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                        <i class="fas fa-database mr-1"></i>
+                                        <span class="font-medium">{{ $attendances->total() ?? 0 }}</span> {{ __('attendance.total_records') }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         
                         <div class="p-6">
                             <!-- Search Bar -->
                             <div class="mb-6">
-                                <div class="relative max-w-md">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-search text-gray-400"></i>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400 text-lg"></i>
                                     </div>
                                     <input
                                         type="text"
                                         wire:model.live.debounce.300ms="search"
-                                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                        class="block w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                                         placeholder="{{ __('attendance.search_employee_placeholder') }}"
                                     >
+                                    @if($search)
+                                        <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                            <i class="fas fa-times text-gray-400 hover:text-gray-600 transition-colors"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
 
                             <!-- Advanced Filters -->
-                            <div class="space-y-6">
+                            <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-sliders-h text-gray-600 mr-2"></i>
+                                    <h4 class="text-md font-semibold text-gray-700">{{ __('attendance.advanced_filters') }}</h4>
+                                </div>
+                                
                                 <!-- Primary Filters Row -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <!-- Department Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
-                                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-building text-blue-600 text-xs"></i>
+                                    <div class="space-y-3">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mr-3 shadow-sm">
+                                                <i class="fas fa-building text-blue-600 text-sm"></i>
                                             </div>
                                             {{ __('attendance.department') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model.live="filters.department_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.department_id" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-25 bg-white py-3 pl-3 pr-10 text-sm transition-all duration-200 hover:border-blue-400 appearance-none">
                                                 <option value="">{{ __('attendance.all_departments') }}</option>
                                                 @foreach($departments as $department)
                                                     <option value="{{ $department->id }}">{{ $department->name }}</option>
                                                 @endforeach
                                             </select>
-                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400"></i>
                                             </div>
                                         </div>
                                         @if($filters['department_id'])
-                                            <div class="flex items-center text-xs text-blue-600">
-                                                <i class="fas fa-filter mr-1"></i>
+                                            <div class="flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                                <i class="fas fa-check-circle mr-1"></i>
                                                 {{ __('attendance.filtered') }}
                                             </div>
                                         @endif
                                     </div>
 
                                     <!-- Status Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
-                                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-user-check text-green-600 text-xs"></i>
+                                    <div class="space-y-3">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                                            <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mr-3 shadow-sm">
+                                                <i class="fas fa-user-check text-green-600 text-sm"></i>
                                             </div>
                                             {{ __('attendance.status') }}
                                         </label>
                                         <div class="relative">
-                                            <select wire:model.live="filters.status" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
+                                            <select wire:model.live="filters.status" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-25 bg-white py-3 pl-3 pr-10 text-sm transition-all duration-200 hover:border-green-400 appearance-none">
                                                 <option value="">{{ __('attendance.all_status') }}</option>
                                                 <option value="present">{{ __('attendance.present') }}</option>
                                                 <option value="absent">{{ __('attendance.absent') }}</option>
@@ -122,51 +145,51 @@
                                                 <option value="half_day">{{ __('attendance.half_day') }}</option>
                                                 <option value="leave">{{ __('attendance.leave') }}</option>
                                             </select>
-                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400"></i>
                                             </div>
                                         </div>
                                         @if($filters['status'])
-                                            <div class="flex items-center text-xs text-green-600">
-                                                <i class="fas fa-filter mr-1"></i>
+                                            <div class="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-md">
+                                                <i class="fas fa-check-circle mr-1"></i>
                                                 {{ __('attendance.filtered') }}
                                             </div>
                                         @endif
                                     </div>
 
                                     <!-- Date From Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
-                                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
+                                    <div class="space-y-3">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                                            <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center mr-3 shadow-sm">
+                                                <i class="fas fa-calendar-plus text-indigo-600 text-sm"></i>
                                             </div>
                                             {{ __('attendance.date_from') }}
                                         </label>
                                         <div class="relative">
-                                            <input type="date" wire:model.live="filters.start_date" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                            <input type="date" wire:model.live="filters.start_date" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-25 py-3 px-3 text-sm transition-all duration-200 hover:border-indigo-400">
                                         </div>
                                         @if($filters['start_date'])
-                                            <div class="flex items-center text-xs text-indigo-600">
-                                                <i class="fas fa-filter mr-1"></i>
+                                            <div class="flex items-center text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
+                                                <i class="fas fa-check-circle mr-1"></i>
                                                 {{ __('attendance.filtered') }}
                                             </div>
                                         @endif
                                     </div>
 
                                     <!-- Date To Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
-                                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-calendar-minus text-purple-600 text-xs"></i>
+                                    <div class="space-y-3">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                                            <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mr-3 shadow-sm">
+                                                <i class="fas fa-calendar-minus text-purple-600 text-sm"></i>
                                             </div>
                                             {{ __('attendance.date_to') }}
                                         </label>
                                         <div class="relative">
-                                            <input type="date" wire:model.live="filters.end_date" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50 transition-all duration-200">
+                                            <input type="date" wire:model.live="filters.end_date" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 py-3 px-3 text-sm transition-all duration-200 hover:border-purple-400">
                                         </div>
                                         @if($filters['end_date'])
-                                            <div class="flex items-center text-xs text-purple-600">
-                                                <i class="fas fa-filter mr-1"></i>
+                                            <div class="flex items-center text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
+                                                <i class="fas fa-check-circle mr-1"></i>
                                                 {{ __('attendance.filtered') }}
                                             </div>
                                         @endif
@@ -175,19 +198,36 @@
                             </div>
 
                             <!-- Filter Actions -->
-                            <div class="mt-6 flex items-center justify-between">
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-medium">{{ $attendances->total() ?? 0 }}</span> {{ __('attendance.total_records') }}
-                                    @if(array_filter($filters))
-                                        <span class="text-blue-600 ml-2">({{ __('attendance.filtered') }})</span>
-                                    @endif
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-sm text-gray-600">
+                                        @if(array_filter($filters))
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <i class="fas fa-filter mr-1"></i>
+                                                {{ count(array_filter($filters)) }} {{ __('attendance.active_filters') }}
+                                            </span>
+                                        @else
+                                            <span class="text-gray-500">{{ __('attendance.no_filters_applied') }}</span>
+                                        @endif
+                                    </div>
                                 </div>
-                                @if(array_filter($filters))
-                                    <button wire:click="resetFilters" class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                        <i class="fas fa-times mr-1"></i>
-                                        {{ __('attendance.clear_filters') }}
-                                    </button>
-                                @endif
+                                
+                                <div class="flex items-center space-x-3">
+                                    @if(array_filter($filters))
+                                        <button wire:click="resetFilters" class="inline-flex items-center px-4 py-2 border-2 border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                            <i class="fas fa-times mr-2"></i>
+                                            {{ __('attendance.clear_filters') }}
+                                        </button>
+                                    @endif
+                                    
+                                    <div class="text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-lg">
+                                        <i class="fas fa-list mr-1"></i>
+                                        {{ __('attendance.showing') }} 
+                                        <span class="font-semibold">{{ $attendances->firstItem() ?? 0 }}-{{ $attendances->lastItem() ?? 0 }}</span> 
+                                        {{ __('attendance.of') }} 
+                                        <span class="font-semibold">{{ $attendances->total() ?? 0 }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -549,11 +589,47 @@
                                 </table>
                             </div>
                             
-                            <!-- Pagination -->
-                            <div class="px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                                @if(method_exists($attendances, 'links'))
-                                    {{ $attendances->links() }}
-                                @endif
+                            <!-- Enhanced Pagination -->
+                            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+                                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <!-- Results Info -->
+                                    <div class="flex items-center space-x-4">
+                                        <div class="text-sm text-gray-600">
+                                            <span class="font-medium">{{ __('attendance.showing') }}</span>
+                                            <span class="font-bold text-indigo-600">{{ $attendances->firstItem() ?? 0 }}</span>
+                                            <span>{{ __('attendance.to') }}</span>
+                                            <span class="font-bold text-indigo-600">{{ $attendances->lastItem() ?? 0 }}</span>
+                                            <span>{{ __('attendance.of') }}</span>
+                                            <span class="font-bold text-indigo-600">{{ $attendances->total() ?? 0 }}</span>
+                                            <span>{{ __('attendance.results') }}</span>
+                                        </div>
+                                        
+                                        <!-- Per Page Selector -->
+                                        <div class="flex items-center space-x-2">
+                                            <label class="text-sm text-gray-600">{{ __('attendance.per_page') }}:</label>
+                                            <div class="relative">
+                                                <select wire:model.live="perPage" class="text-sm border-2 border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-25 bg-white py-2 pl-3 pr-8 appearance-none transition-all duration-200 hover:border-indigo-400">
+                                                    <option value="10">10</option>
+                                                    <option value="25">25</option>
+                                                    <option value="50">50</option>
+                                                    <option value="100">100</option>
+                                                </select>
+                                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Pagination Links -->
+                                    <div class="flex items-center">
+                                        @if(method_exists($attendances, 'links'))
+                                            <div class="pagination-wrapper">
+                                                {{ $attendances->links('pagination::tailwind') }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @endif
