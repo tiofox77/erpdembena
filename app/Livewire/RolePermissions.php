@@ -55,8 +55,9 @@ class RolePermissions extends Component
 
     public function mount(): void
     {
-        if (!auth()->user()->can('roles.manage')) {
-            abort(403, 'Acesso negado. Apenas utilizadores com permissão roles.manage podem aceder a esta página.');
+        // Use the same permission pattern as super-admin - allow multiple ways to access
+        if (!auth()->user()->canAny(['roles.manage', 'maintenance.roles.manage', 'system.roles.view', 'system.roles.edit'])) {
+            abort(403, 'Acesso negado. Apenas utilizadores com permissões de gestão de roles podem aceder a esta página.');
         }
     }
 

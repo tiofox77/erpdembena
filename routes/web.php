@@ -124,8 +124,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/users', App\Livewire\UserManagement::class)->name('users');
         });
 
-        // Rotas de Funções e Permissões - Requer permissão roles.manage
-        Route::middleware(['permission:roles.manage'])->group(function() {
+        // Rotas de Funções e Permissões - Múltiplas permissões aceites (padrão super-admin)
+        Route::middleware(['can:roles.manage|maintenance.roles.manage|system.roles.view|system.roles.edit'])->group(function() {
             Route::get('/roles', App\Livewire\RolePermissions::class)->name('roles');
         });
 
@@ -222,8 +222,8 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('maintenance.users');
     })->name('users.management');
 
-    // Rota de Permissões de Acesso
-    Route::middleware(['permission:roles.manage'])->get('/permissions', function() {
+    // Rota de Permissões de Acesso - Múltiplas permissões aceites (padrão super-admin)
+    Route::middleware(['can:roles.manage|maintenance.roles.manage|system.roles.view|system.roles.edit'])->get('/permissions', function() {
         return redirect()->route('maintenance.roles');
     })->name('permissions.management');
 
@@ -405,3 +405,6 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 });
+
+// Debug routes (temporary)
+require __DIR__.'/debug.php';

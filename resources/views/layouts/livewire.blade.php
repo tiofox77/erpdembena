@@ -389,7 +389,7 @@
         </div>
 
         <!-- Maintenance Menu -->
-        @canany(['maintenance.view', 'maintenance.dashboard', 'equipment.view', 'preventive.view', 'corrective.view', 'parts.view', 'areas.view', 'lines.view', 'technicians.view', 'stocks.manage', 'task.view', 'holidays.view'])
+        @canany(['maintenance.dashboard.view', 'maintenance.equipment.view', 'maintenance.plan.view', 'maintenance.corrective.view', 'areas.view', 'lines.view', 'maintenance.technicians.view', 'holidays.view'])
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="maintenanceMenu">
             <i class="fas fa-wrench text-indigo-500"></i>
             <span>{{ trans('messages.maintenance') }}</span>
@@ -397,21 +397,21 @@
         </div>
 
         <div class="sidebar-submenu" id="maintenanceSubmenu">
-            @canany(['equipment.view', 'preventive.view', 'corrective.view', 'reports.view'])
+            @canany(['maintenance.equipment.view', 'maintenance.plan.view', 'maintenance.corrective.view', 'maintenance.reports'])
             <a href="{{ route('maintenance.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-th text-gray-500"></i>
                 <span>{{ trans('messages.dashboard') }}</span>
             </a>
             @endcanany
 
-            @can('preventive.view')
+            @can('maintenance.plan.view')
                 <a href="{{ route('maintenance.plan') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.plan') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="far fa-calendar-alt text-gray-500"></i>
                     <span>{{ trans('messages.maintenance_plan') }}</span>
                 </a>
             @endcan
 
-            @can('equipment.view')
+            @can('maintenance.equipment.view')
                 <a href="{{ route('maintenance.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-wrench text-gray-500"></i>
                     <span>{{ trans('messages.equipment_management') }}</span>
@@ -459,20 +459,20 @@
                 </a>
             @endcan
 
-            @can('preventive.view')
+            @can('maintenance.plan.view')
                 <a href="{{ route('maintenance.task') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.task') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-tasks text-gray-500"></i>
                     <span>{{ trans('messages.task_management') }}</span>
                 </a>
             @endcan
 
-            @can('corrective.view')
+            @can('maintenance.corrective.view')
                 <a href="{{ route('maintenance.corrective') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.corrective') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-wrench text-gray-500"></i>
                     <span>{{ trans('messages.corrective_maintenance') }}</span>
                 </a>
 
-                @can('corrective.manage')
+                @can('maintenance.corrective.manage')
                     <!-- Maintenance Settings Submenu -->
                     <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200" id="maintenanceSettingsMenu">
                         <i class="fas fa-cogs text-gray-500"></i>
@@ -501,7 +501,7 @@
                 @endcan
             @endcan
 
-            @can('technicians.view')
+            @can('maintenance.technicians.view')
                 <a href="{{ route('maintenance.technicians') }}" class="sidebar-submenu-item {{ request()->routeIs('maintenance.technicians') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                     <i class="fas fa-user-cog text-blue-500"></i>
                     <span class="font-semibold">{{ trans('messages.technicians') }}</span>
@@ -1039,7 +1039,7 @@
         @endcanany
 
         <!-- System Menu -->
-        @canany(['system.view', 'users.manage', 'roles.manage', 'settings.manage', 'admin.view'])
+        @canany(['users.manage', 'roles.manage', 'settings.manage'])
         <div class="sidebar-menu-item hover:bg-gray-50 transition duration-200" id="systemMenu">
             <i class="fas fa-cogs text-indigo-500"></i>
             <span>{{ trans('messages.system') }}</span>
