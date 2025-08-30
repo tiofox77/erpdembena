@@ -932,7 +932,7 @@
                                         <div class="bg-blue-50 rounded-xl border border-blue-200 p-2 lg:p-3" x-data="{ showMainSalaryDetails: false }">
                                             <div class="flex justify-between items-center">
                                                 <div class="flex items-center space-x-2">
-                                                    <span class="font-semibold text-blue-700 text-sm lg:text-base">{{ __('messages.main_salary') }}</span>
+                                                    <span class="font-semibold text-blue-700 text-sm lg:text-base">{{ __('messages.gross_salary') }}</span>
                                                     <!-- Help Icon for Main Salary Details -->
                                                     <button @click="showMainSalaryDetails = !showMainSalaryDetails" 
                                                             class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
@@ -1000,7 +1000,7 @@
                                         <div class="bg-green-50 rounded-xl border border-green-200 p-2 lg:p-3" x-data="{ showGrossSalaryDetails: false }">
                                             <div class="flex justify-between items-center">
                                                 <div class="flex items-center space-x-2">
-                                                    <span class="font-semibold text-green-700 text-sm lg:text-base">{{ __('messages.gross_salary') }}</span>
+                                                    <span class="font-semibold text-green-700 text-sm lg:text-base">{{ __('messages.baseIRT_taxable_amount') }}</span>
                                                     <!-- Help Icon for Gross Salary Details -->
                                                     <button @click="showGrossSalaryDetails = !showGrossSalaryDetails" 
                                                             class="w-4 h-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-green-600 transition-colors"
@@ -1171,14 +1171,14 @@
                                             {{-- INSS --}}
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">INSS (3%)</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.03), 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($inss_deduction ?? 0, 2) }} AOA</span>
                                             </div>
                                             
                                             {{-- INSS 8% Illustrative --}}
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg border border-orange-200">
                                                 <div>
                                                     <span class="font-medium text-orange-700 text-xs lg:text-sm">INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
-                                                    <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_from_main_salary') }}</div>
+                                                    <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_gorss_salary_salary') }}</div>
                                                 </div>
                                                 <span class="font-bold text-orange-800 text-xs lg:text-sm">{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.08), 2) }} AOA</span>
                                             </div>
@@ -1326,7 +1326,7 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($calculated_net_salary, 2) }} AOA</span>
+                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($calculated_net_salary - ($foodCash ?? 0), 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Net Salary Details Breakdown -->
@@ -1348,7 +1348,7 @@
                                                     <div class="flex justify-between text-orange-600 bg-orange-50 p-2 rounded border border-orange-200 mt-1">
                                                         <div>
                                                             <span>INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
-                                                            <div class="text-xs text-orange-500">{{ __('payroll.calculated_from_main_salary') }}</div>
+                                                            <div class="text-xs text-orange-500">{{ __('payroll.calculated_gross_salary') }}</div>
                                                         </div>
                                                         <span class="font-medium">{{ number_format($inss_deduction * 8/3, 2) }} AOA</span>
                                                     </div>
@@ -1396,7 +1396,7 @@
                                                     @endif
                                                     <!-- Breakdown detalhado dos componentes do Main Salary -->
                                                     <div class="bg-green-50 p-2 rounded border border-green-200 mt-2">
-                                                        <h6 class="text-xs font-semibold text-green-800 mb-1">{{ __('messages.main_salary_components') }}:</h6>
+                                                        <h6 class="text-xs font-semibold text-green-800 mb-1">{{ __('messages.gross_salary_components') }}:</h6>
                                                         <div class="space-y-1 text-xs">
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.basic_salary') }}:</span>
@@ -1476,10 +1476,16 @@
                                                         <span>{{ __('messages.total_deductions') }}:</span>
                                                         <span class="font-medium">-{{ number_format($deductions, 2) }} AOA</span>
                                                     </div>
+                                                    @if($foodCash > 0)
+                                                    <div class="flex justify-between text-red-700 text-xs">
+                                                        <span>{{ __('messages.food_allowance_cash') }} ({{ __('messages.deducted_from_net') }}):</span>
+                                                        <span class="font-medium">-{{ number_format($foodCash, 2) }} AOA</span>
+                                                    </div>
+                                                    @endif
                                                     <div class="border-t border-blue-300 pt-1 mt-1">
                                                         <div class="flex justify-between font-semibold">
                                                             <span class="text-blue-800">{{ __('messages.net_salary_final') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format($calculated_net_salary, 2) }} AOA</span>
+                                                            <span class="text-blue-900">{{ number_format($calculated_net_salary - ($foodCash ?? 0), 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>

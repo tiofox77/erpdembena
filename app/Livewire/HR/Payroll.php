@@ -499,12 +499,17 @@ class Payroll extends Component
     {
         $grossSalary = $this->gross_salary ?? 0;
         $totalDeductions = $this->getTotalDeductionsProperty();
-        $netSalary = $grossSalary - $totalDeductions;
+        
+        // Subtrair subsídio de alimentação do net salary
+        $foodBenefit = (float) ($this->selectedEmployee->food_benefit ?? $this->meal_allowance ?? 0);
+        
+        $netSalary = $grossSalary - $totalDeductions - $foodBenefit;
         
         // Debug log
         \Log::info('Net Salary Calculation', [
             'gross_salary' => $grossSalary,
             'total_deductions' => $totalDeductions,
+            'food_benefit_deducted' => $foodBenefit,
             'net_salary_calculated' => $netSalary,
             'net_salary_property' => $this->net_salary ?? 0
         ]);
@@ -1069,7 +1074,11 @@ class Payroll extends Component
         $deductions += $this->other_deductions;
 
         $this->total_deductions = $deductions;
-        $this->net_salary = max(0, $this->gross_salary - $this->total_deductions);
+        
+        // Subtrair subsídio de alimentação do net salary
+        $foodBenefit = (float) ($this->selectedEmployee->food_benefit ?? $this->meal_allowance ?? 0);
+        
+        $this->net_salary = max(0, $this->gross_salary - $this->total_deductions - $foodBenefit);
     }
 
     /**
