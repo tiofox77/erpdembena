@@ -167,4 +167,5 @@ return [
     'salary_discounts_description' => 'Various discounts applied to salary',
     'salary_advances' => 'Salary Advances',
     'salary_advances_description' => 'Deduction for granted salary advances',
+    'included_in_main_salary' => 'included in main salary',
 ];

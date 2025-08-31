@@ -1009,7 +1009,12 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format(($gross_salary ?? 0) - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
+                                                @php
+                                                                $food_taxable_amount = max(0, ($selectedEmployee->food_benefit ?? 0) - 30000);
+                                                                $transport_taxable_amount = max(0, ($transport_allowance ?? 0) - 30000);
+                                                                $calculated_gross = ($basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0));
+                                                            @endphp
+                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format($calculated_gross - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Gross Salary Details Breakdown -->
@@ -1087,7 +1092,7 @@
                                                                 $transport_taxable_amount = max(0, ($transport_allowance ?? 0) - 30000);
                                                                 $calculated_gross = ($basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0));
                                                             @endphp
-                                                            <span class="text-green-900">{{ number_format($calculated_gross, 2) }} AOA</span>
+                                                            <span class="text-green-900">{{ number_format($calculated_gross - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1116,7 +1121,7 @@
                                                             ?
                                                         </button>
                                                     </div>
-                                                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($income_tax ?? 0, 2) }} AOA</span>
+                                                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($this->irtCalculationDetails['total_irt'] ?? 0, 2) }} AOA</span>
                                                 </div>
                                                 
                                                 <!-- IRT Calculation Details Popup -->
@@ -1131,17 +1136,16 @@
                                                     @php $details = $this->irtCalculationDetails; @endphp
                                                     
                                                     <div class="space-y-2">
-                                                        <div class="flex justify-between">
-                                                            <span class="text-gray-600">Salário Bruto:</span>
-                                                            <span class="font-medium">{{ number_format((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))), 2) }} AOA</span>
-                                                        </div>
-                                                        <div class="flex justify-between">
-                                                            <span class="text-gray-600">INSS (3%):</span>
-                                                            <span class="font-medium text-red-600">-{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.03), 2) }} AOA</span>
-                                                        </div>
+                                                     
                                                         <div class="flex justify-between border-t pt-2">
                                                             <span class="text-gray-700 font-medium">MC (Matéria Coletável):</span>
-                                                            <span class="font-bold">{{ number_format($details['mc'] ?? 0, 2) }} AOA</span>
+                                                            @php
+                                                                $food_taxable_amount = max(0, ($selectedEmployee->food_benefit ?? 0) - 30000);
+                                                                $transport_taxable_amount = max(0, ($transport_allowance ?? 0) - 30000);
+                                                                $calculated_gross = ($basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0));
+                                                                $mc_value = $calculated_gross - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2);
+                                                            @endphp
+                                                            <span class="font-bold">{{ number_format($mc_value, 2) }} AOA</span>
                                                         </div>
                                                         
                                                         @if($details['bracket'])
@@ -1171,7 +1175,7 @@
                                             {{-- INSS --}}
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">INSS (3%)</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format(round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format(round((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.03, 2), 2) }} AOA</span>
                                             </div>
                                             
                                             {{-- INSS 8% Illustrative --}}
@@ -1284,14 +1288,14 @@
                                         $exemptTransport = min(30000.0, $transportCash);
                                         $exemptFood      = min(30000.0, $foodCash);
 
-                                        // Se já tens $income_tax vindo de outro sítio, garante que usou ESTA base:
+                                        // ----- 4) IRT calculado corretamente -----
                                         $irt_base   = max(0.0, $grossForTax - $inss_deduction - $exemptTransport - $exemptFood);
-                                        // $income_tax = calcularIRT($irt_base); // ou mantém o teu, mas com esta base
+                                        $calculated_income_tax = \App\Models\HR\IRTTaxBracket::calculateIRT($irt_base);
 
                                         // ----- 5) DEDUÇÕES (não repetir faltas aqui) -----
                                         $deductions =
                                               $inss_deduction
-                                            + (float)($income_tax ?? 0)
+                                            + $calculated_income_tax
                                             + $advance
                                             + $otherDiscounts
                                             + $union
@@ -1326,7 +1330,7 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($calculated_net_salary - ($foodCash ?? 0), 2) }} AOA</span>
+                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($calculated_net_salary, 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Net Salary Details Breakdown -->
@@ -1339,7 +1343,7 @@
                                                     </div>
                                                     <div class="flex justify-between text-red-700">
                                                         <span>IRT ({{ __('messages.income_tax') }}):</span>
-                                                        <span class="font-medium">-{{ number_format($income_tax ?? 0, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($calculated_income_tax, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-red-700">
                                                         <span>INSS (3%):</span>
@@ -1477,15 +1481,15 @@
                                                         <span class="font-medium">-{{ number_format($deductions, 2) }} AOA</span>
                                                     </div>
                                                     @if($foodCash > 0)
-                                                    <div class="flex justify-between text-red-700 text-xs">
-                                                        <span>{{ __('messages.food_allowance_cash') }} ({{ __('messages.deducted_from_net') }}):</span>
-                                                        <span class="font-medium">-{{ number_format($foodCash, 2) }} AOA</span>
+                                                    <div class="flex justify-between text-green-700 text-xs">
+                                                        <span>{{ __('messages.food_allowance_cash') }} ({{ __('messages.included_in_main_salary') }}):</span>
+                                                        <span class="font-medium">+{{ number_format($foodCash, 2) }} AOA</span>
                                                     </div>
                                                     @endif
                                                     <div class="border-t border-blue-300 pt-1 mt-1">
                                                         <div class="flex justify-between font-semibold">
                                                             <span class="text-blue-800">{{ __('messages.net_salary_final') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format($calculated_net_salary - ($foodCash ?? 0), 2) }} AOA</span>
+                                                            <span class="text-blue-900">{{ number_format($calculated_net_salary, 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>

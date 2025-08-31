@@ -89,4 +89,5 @@ return [
     // INSS Illustrative
     'illustrative_only' => 'Apenas Ilustrativo',
     'calculated_from_main_salary' => 'Calculado a partir do Salário Principal',
+    'included_in_main_salary' => 'incluído no salário principal',
 ];

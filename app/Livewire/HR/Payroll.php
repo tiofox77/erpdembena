@@ -1122,15 +1122,15 @@ class Payroll extends Component
      */
     public function getIrtBracketDescriptionProperty(): string
     {
-        $bracket = $this->irtTaxBracket;
-        $mc = max(0, $this->gross_salary - $this->social_security);
+        // Use the same MC calculation as in irtCalculationDetails
+        $details = $this->irtCalculationDetails;
+        $bracket = $details['bracket'];
+        $mc = $details['mc'];
+        $totalIrt = $details['total_irt'];
         
         if (!$bracket || $mc <= 0) {
             return 'Isento - Escalão 1';
         }
-        
-        // Calculate total IRT
-        $totalIrt = IRTTaxBracket::calculateIRT($mc);
         
         // Create detailed breakdown description
         return $this->getIrtBreakdownDescription($bracket, $mc, $totalIrt);
@@ -1218,8 +1218,14 @@ class Payroll extends Component
      */
     public function getIrtCalculationDetailsProperty(): array
     {
-        $bracket = $this->irtTaxBracket;
-        $mc = max(0, $this->gross_salary - $this->social_security); // Calculate MC directly
+        // Calculate MC using the same formula as in the view
+        $food_taxable_amount = max(0, ($this->selectedEmployee->food_benefit ?? 0) - 30000);
+        $transport_taxable_amount = max(0, ($this->transport_allowance ?? 0) - 30000);
+        $calculated_gross = ($this->basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($this->bonus_amount ?? 0) + ($this->additional_bonus_amount ?? 0) + (($this->christmas_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0)) + (($this->vacation_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0));
+        $mc = $calculated_gross - round((($this->basic_salary ?? 0) + ($this->transport_allowance ?? 0) + ($this->meal_allowance ?? 0) + ($this->total_overtime_amount ?? 0)) * 0.03, 2);
+        
+        // Get the appropriate bracket for this MC value
+        $bracket = IRTTaxBracket::getBracketForIncome($mc);
         
         if (!$bracket || $mc <= 0) {
             return [

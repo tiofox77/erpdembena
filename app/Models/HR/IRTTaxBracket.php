@@ -49,24 +49,32 @@ class IRTTaxBracket extends Model
             return 0.0;
         }
         
-        // Escalões IRT Angola (conforme tabela oficial)
+        // Escalões IRT Angola 2024 (conforme tabela oficial AGT)
         $brackets = [
-            // Escalão 1: Isento até 100.000 AOA
+            // 1º Escalão: Isento até 100.000 AOA
             ['min' => 0, 'max' => 100000, 'fixed' => 0, 'rate' => 0],
-            // Escalão 2: 100.001 a 150.000 AOA - 13%
+            // 2º Escalão: 100.001 a 150.000 AOA - 13% (sem parcela fixa)
             ['min' => 100000, 'max' => 150000, 'fixed' => 0, 'rate' => 13],
-            // Escalão 3: 150.001 a 200.000 AOA - 16%
-            ['min' => 150000, 'max' => 200000, 'fixed' => 6500, 'rate' => 16],
-            // Escalão 4: 200.001 a 300.000 AOA - 18%
-            ['min' => 200000, 'max' => 300000, 'fixed' => 14500, 'rate' => 18],
-            // Escalão 5: 300.001 a 500.000 AOA - 19%
-            ['min' => 300000, 'max' => 500000, 'fixed' => 32500, 'rate' => 19],
-            // Escalão 6: 500.001 a 1.000.000 AOA - 20%
-            ['min' => 500000, 'max' => 1000000, 'fixed' => 70500, 'rate' => 20],
-            // Escalão 7: 1.000.001 a 1.500.000 AOA - 21%
-            ['min' => 1000000, 'max' => 1500000, 'fixed' => 170500, 'rate' => 21],
-            // Escalão 8: Acima de 1.500.000 AOA - 21%
-            ['min' => 1500000, 'max' => null, 'fixed' => 275500, 'rate' => 21],
+            // 3º Escalão: 150.001 a 200.000 AOA - 16% + 12.500 AOA
+            ['min' => 150000, 'max' => 200000, 'fixed' => 12500, 'rate' => 16],
+            // 4º Escalão: 200.001 a 300.000 AOA - 18% + 31.250 AOA
+            ['min' => 200000, 'max' => 300000, 'fixed' => 31250, 'rate' => 18],
+            // 5º Escalão: 300.001 a 500.000 AOA - 19% + 49.250 AOA
+            ['min' => 300000, 'max' => 500000, 'fixed' => 49250, 'rate' => 19],
+            // 6º Escalão: 500.001 a 1.000.000 AOA - 20% + 87.250 AOA
+            ['min' => 500000, 'max' => 1000000, 'fixed' => 87250, 'rate' => 20],
+            // 7º Escalão: 1.000.001 a 1.500.000 AOA - 21% + 187.250 AOA
+            ['min' => 1000000, 'max' => 1500000, 'fixed' => 187250, 'rate' => 21],
+            // 8º Escalão: 1.500.001 a 2.000.000 AOA - 22% + 292.250 AOA
+            ['min' => 1500000, 'max' => 2000000, 'fixed' => 292250, 'rate' => 22],
+            // 9º Escalão: 2.000.001 a 2.500.000 AOA - 23% + 402.250 AOA
+            ['min' => 2000000, 'max' => 2500000, 'fixed' => 402250, 'rate' => 23],
+            // 10º Escalão: 2.500.001 a 5.000.000 AOA - 24% + 517.250 AOA
+            ['min' => 2500000, 'max' => 5000000, 'fixed' => 517250, 'rate' => 24],
+            // 11º Escalão: 5.000.001 a 10.000.000 AOA - 24,5% + 1.117.250 AOA
+            ['min' => 5000000, 'max' => 10000000, 'fixed' => 1117250, 'rate' => 24.5],
+            // 12º Escalão: Acima de 10.000.000 AOA - 25% + 2.342.250 AOA
+            ['min' => 10000000, 'max' => null, 'fixed' => 2342250, 'rate' => 25],
         ];
         
         $totalTax = 0.0;
@@ -108,16 +116,20 @@ class IRTTaxBracket extends Model
      */
     public static function getBracketForIncome(float $income): ?object
     {
-        // Escalões IRT Angola (conforme tabela oficial)
+        // Escalões IRT Angola 2024 (conforme tabela oficial AGT)
         $brackets = [
             ['bracket_number' => 1, 'min' => 0, 'max' => 100000, 'fixed_amount' => 0, 'tax_rate' => 0, 'description' => 'Isento'],
             ['bracket_number' => 2, 'min' => 100000, 'max' => 150000, 'fixed_amount' => 0, 'tax_rate' => 13, 'description' => '13%'],
-            ['bracket_number' => 3, 'min' => 150000, 'max' => 200000, 'fixed_amount' => 6500, 'tax_rate' => 16, 'description' => '16%'],
-            ['bracket_number' => 4, 'min' => 200000, 'max' => 300000, 'fixed_amount' => 14500, 'tax_rate' => 18, 'description' => '18%'],
-            ['bracket_number' => 5, 'min' => 300000, 'max' => 500000, 'fixed_amount' => 32500, 'tax_rate' => 19, 'description' => '19%'],
-            ['bracket_number' => 6, 'min' => 500000, 'max' => 1000000, 'fixed_amount' => 70500, 'tax_rate' => 20, 'description' => '20%'],
-            ['bracket_number' => 7, 'min' => 1000000, 'max' => 1500000, 'fixed_amount' => 170500, 'tax_rate' => 21, 'description' => '21%'],
-            ['bracket_number' => 8, 'min' => 1500000, 'max' => null, 'fixed_amount' => 275500, 'tax_rate' => 21, 'description' => '21%'],
+            ['bracket_number' => 3, 'min' => 150000, 'max' => 200000, 'fixed_amount' => 12500, 'tax_rate' => 16, 'description' => '16%'],
+            ['bracket_number' => 4, 'min' => 200000, 'max' => 300000, 'fixed_amount' => 31250, 'tax_rate' => 18, 'description' => '18%'],
+            ['bracket_number' => 5, 'min' => 300000, 'max' => 500000, 'fixed_amount' => 49250, 'tax_rate' => 19, 'description' => '19%'],
+            ['bracket_number' => 6, 'min' => 500000, 'max' => 1000000, 'fixed_amount' => 87250, 'tax_rate' => 20, 'description' => '20%'],
+            ['bracket_number' => 7, 'min' => 1000000, 'max' => 1500000, 'fixed_amount' => 187250, 'tax_rate' => 21, 'description' => '21%'],
+            ['bracket_number' => 8, 'min' => 1500000, 'max' => 2000000, 'fixed_amount' => 292250, 'tax_rate' => 22, 'description' => '22%'],
+            ['bracket_number' => 9, 'min' => 2000000, 'max' => 2500000, 'fixed_amount' => 402250, 'tax_rate' => 23, 'description' => '23%'],
+            ['bracket_number' => 10, 'min' => 2500000, 'max' => 5000000, 'fixed_amount' => 517250, 'tax_rate' => 24, 'description' => '24%'],
+            ['bracket_number' => 11, 'min' => 5000000, 'max' => 10000000, 'fixed_amount' => 1117250, 'tax_rate' => 24.5, 'description' => '24,5%'],
+            ['bracket_number' => 12, 'min' => 10000000, 'max' => null, 'fixed_amount' => 2342250, 'tax_rate' => 25, 'description' => '25%'],
         ];
         
         foreach ($brackets as $bracket) {
