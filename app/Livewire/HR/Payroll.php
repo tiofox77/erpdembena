@@ -1221,7 +1221,7 @@ class Payroll extends Component
         // Calculate MC using the same formula as in the view
         $food_taxable_amount = max(0, ($this->selectedEmployee->food_benefit ?? 0) - 30000);
         $transport_taxable_amount = max(0, ($this->transport_allowance ?? 0) - 30000);
-        $calculated_gross = ($this->basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($this->bonus_amount ?? 0) + ($this->additional_bonus_amount ?? 0) + (($this->christmas_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0)) + (($this->vacation_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0));
+        $calculated_gross = ($this->basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($this->total_overtime_amount ?? 0) + ($this->bonus_amount ?? 0) + ($this->additional_bonus_amount ?? 0) + (($this->christmas_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0)) + (($this->vacation_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0));
         $mc = $calculated_gross - round((($this->basic_salary ?? 0) + ($this->transport_allowance ?? 0) + ($this->meal_allowance ?? 0) + ($this->total_overtime_amount ?? 0)) * 0.03, 2);
         
         // Get the appropriate bracket for this MC value
