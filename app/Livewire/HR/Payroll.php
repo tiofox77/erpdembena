@@ -115,6 +115,7 @@ class Payroll extends Component
     public float $total_overtime_amount = 0.0;
     public array $overtime_details = [];
     public float $night_shift_allowance = 0.0;
+    public float $night_shift_bonus = 0.0;
     public array $night_shift_details = [];
     public int $night_shift_days = 0;
     
@@ -134,8 +135,10 @@ class Payroll extends Component
     public array $salaryDiscounts = [];
     
     // Additional Components
-    public float $transport_allowance = 0.0;
     public float $meal_allowance = 0.0;
+    public float $transport_allowance = 0.0;
+    public float $other_allowances = 0.0;
+    public bool $is_food_in_kind = false;
     public float $housing_allowance = 0.0;
     public float $performance_bonus = 0.0;
     public float $custom_bonus = 0.0;
@@ -158,11 +161,21 @@ class Payroll extends Component
     public float $social_security = 0.0;
     public float $other_deductions = 0.0;
     public string $other_deductions_description = '';
+    public float $union_deduction = 0.0;
+    public float $u_fund_ded = 0.0;
+    public float $loan_installments = 0.0;
     
     // Calculated Totals
     public float $gross_salary = 0.0;
     public float $total_deductions = 0.0;
     public float $net_salary = 0.0;
+    
+    // New calculated properties for consistent payroll calculations
+    public float $main_salary = 0.0;
+    public float $gross_for_tax = 0.0;
+    public float $calculated_inss = 0.0;
+    public float $calculated_irt = 0.0;
+    public float $calculated_net_salary = 0.0;
     
     // Payment Information
     public string $payment_method = 'bank_transfer';
@@ -1197,10 +1210,12 @@ class Payroll extends Component
             $daily_salary = $this->basic_salary / 30; // Assuming 30 days per month
             $night_shift_allowance = ($daily_salary * $this->night_shift_days) * 0.20; // 20% additional
             $this->night_shift_allowance = $night_shift_allowance;
+            $this->night_shift_bonus = $night_shift_allowance; // Sync both properties
             return $night_shift_allowance;
         }
         
         $this->night_shift_allowance = 0.0;
+        $this->night_shift_bonus = 0.0;
         return 0.0;
     }
     
@@ -1214,15 +1229,124 @@ class Payroll extends Component
     }
     
     /**
+     * Calculate Main Salary (base calculation before taxes)
+     */
+    public function getMainSalaryProperty(): float
+    {
+        $basic = (float)($this->basic_salary ?? 0);
+        $transportCash = (float)($this->transport_allowance ?? 0);
+        
+        // Food benefit handling
+        $isFoodInKind = (bool)($this->is_food_in_kind ?? false);
+        $foodBenefit = (float)($this->selectedEmployee->food_benefit ?? 0);
+        $foodCash = $isFoodInKind ? 0.0 : $foodBenefit;
+        
+        $overtime = (float)($this->total_overtime_amount ?? 0);
+        $nightShift = (float)($this->night_shift_allowance ?? 0);
+        $otherAllow = (float)($this->other_allowances ?? 0);
+        
+        // Absence deduction
+        $absence = (float)max(($this->absence_deduction ?? 0), ($this->absenceDeductionAmount ?? 0));
+        
+        return max(0.0, $basic + $transportCash + $foodCash + $overtime + $nightShift + $otherAllow - $absence);
+    }
+    
+    /**
+     * Calculate Gross For Tax (includes additional benefits)
+     */
+    public function getGrossForTaxProperty(): float
+    {
+        $mainSalary = $this->getMainSalaryProperty();
+        
+        // Additional benefits
+        $vacationAllow = !empty($this->vacation_subsidy) ? 0.5 * ($this->basic_salary ?? 0) : 0.0;
+        $christmasOffer = !empty($this->christmas_subsidy) ? 0.5 * ($this->basic_salary ?? 0) : 0.0;
+        $bonusTotal = (float)($this->bonus_amount ?? 0) + (float)($this->additional_bonus_amount ?? 0);
+        
+        return $mainSalary + $vacationAllow + $christmasOffer + $bonusTotal;
+    }
+    
+    /**
+     * Calculate INSS (3% on main salary components)
+     */
+    public function getCalculatedInssProperty(): float
+    {
+        $basic = (float)($this->basic_salary ?? 0);
+        $transport = (float)($this->transport_allowance ?? 0);
+        $meal = (float)($this->meal_allowance ?? 0);
+        $overtime = (float)($this->total_overtime_amount ?? 0);
+        
+        return round(($basic + $transport + $meal + $overtime) * 0.03, 2);
+    }
+    
+    /**
+     * Calculate IRT base with exemptions
+     */
+    public function getIrtBaseProperty(): float
+    {
+        $grossForTax = $this->getGrossForTaxProperty();
+        $inssDeduction = $this->getCalculatedInssProperty();
+        
+        // Transport and food exemptions (30k each)
+        $transportCash = (float)($this->transport_allowance ?? 0);
+        $foodBenefit = (float)($this->selectedEmployee->food_benefit ?? 0);
+        $isFoodInKind = (bool)($this->is_food_in_kind ?? false);
+        $foodCash = $isFoodInKind ? 0.0 : $foodBenefit;
+        
+        $exemptTransport = min(30000.0, $transportCash);
+        $exemptFood = min(30000.0, $foodCash);
+        
+        return max(0.0, $grossForTax - $inssDeduction - $exemptTransport - $exemptFood);
+    }
+    
+    /**
+     * Calculate IRT amount
+     */
+    public function getCalculatedIrtProperty(): float
+    {
+        $irtBase = $this->getIrtBaseProperty();
+        return \App\Models\HR\IRTTaxBracket::calculateIRT($irtBase);
+    }
+    
+    /**
+     * Calculate total deductions
+     */
+    public function getTotalDeductionsCalculatedProperty(): float
+    {
+        $inss = $this->getCalculatedInssProperty();
+        $irt = $this->getCalculatedIrtProperty();
+        $advance = (float)($this->advance_deduction ?? 0);
+        $otherDiscounts = (float)($this->total_salary_discounts ?? 0);
+        $union = (float)($this->union_deduction ?? 0);
+        $uFund = (float)($this->u_fund_ded ?? 0);
+        $loans = (float)($this->loan_installments ?? 0);
+        
+        // Food handling
+        $isFoodInKind = (bool)($this->is_food_in_kind ?? false);
+        $foodBenefit = (float)($this->selectedEmployee->food_benefit ?? 0);
+        $foodInKind = $isFoodInKind ? $foodBenefit : 0.0;
+        $foodCash = $isFoodInKind ? 0.0 : $foodBenefit;
+        
+        return $inss + $irt + $advance + $otherDiscounts + $union + $uFund + $loans + $foodInKind + $foodCash;
+    }
+    
+    /**
+     * Calculate final net salary
+     */
+    public function getCalculatedNetSalaryProperty(): float
+    {
+        $grossForTax = $this->getGrossForTaxProperty();
+        $deductions = $this->getTotalDeductionsCalculatedProperty();
+        
+        return round(max(0.0, $grossForTax - $deductions), 2);
+    }
+
+    /**
      * Get detailed IRT calculation breakdown
      */
     public function getIrtCalculationDetailsProperty(): array
     {
-        // Calculate MC using the same formula as in the view
-        $food_taxable_amount = max(0, ($this->selectedEmployee->food_benefit ?? 0) - 30000);
-        $transport_taxable_amount = max(0, ($this->transport_allowance ?? 0) - 30000);
-        $calculated_gross = ($this->basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($this->total_overtime_amount ?? 0) + ($this->bonus_amount ?? 0) + ($this->additional_bonus_amount ?? 0) + (($this->christmas_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0)) + (($this->vacation_subsidy ? ($this->basic_salary ?? 0) * 0.5 : 0));
-        $mc = $calculated_gross - round((($this->basic_salary ?? 0) + ($this->transport_allowance ?? 0) + ($this->meal_allowance ?? 0) + ($this->total_overtime_amount ?? 0)) * 0.03, 2);
+        $mc = $this->getIrtBaseProperty();
         
         // Get the appropriate bracket for this MC value
         $bracket = IRTTaxBracket::getBracketForIncome($mc);

@@ -1229,7 +1229,6 @@
                                             @endif
                                             
                                             {{-- Absence Deductions --}}
-                                            @if($absence_deduction > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg">
                                                 <span class="font-medium text-orange-700 text-xs lg:text-sm">
                                                     <i class="fas fa-calendar-times mr-1"></i>
@@ -1238,87 +1237,19 @@
                                                 <span class="font-bold text-orange-800 text-xs lg:text-sm">-{{ number_format($absence_deduction, 2) }} AOA</span>
                                             </div>
                                             @endif
+
+                                            {{-- Main Salary --}}
+                                        <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-2 lg:p-3">
+                                            <div class="flex justify-between items-center">
+                                                <span class="font-semibold text-yellow-700 text-sm lg:text-base">{{ __('messages.main_salary') }}</span>
+                                                <span class="text-lg lg:text-xl font-bold text-yellow-800">{{ number_format($this->mainSalary, 2) }} AOA</span>
+                                            </div>
                                         </div>
-
-                                        @php
-                                        // ----- 0) Entradas normalizadas -----
-                                        $basic           = (float)($basic_salary ?? 0);
-                                        $transportCash   = (float)($transport_allowance ?? 0);
-
-                                        // Se tens apenas $selectedEmployee->food_benefit, separa:
-                                        $isFoodInKind    = (bool)($is_food_in_kind ?? false); // <--- define via UI/BD
-                                        $foodBenefit     = (float)($selectedEmployee->food_benefit ?? 0);
-                                        $foodCash        = $isFoodInKind ? 0.0 : $foodBenefit;    // DINHEIRO
-                                        $foodInKind      = $isFoodInKind ? $foodBenefit : 0.0;    // EM ESPÉCIE (vai para deduções)
-
-                                        $overtime        = (float)($total_overtime_amount ?? 0);
-                                        $nightShift      = (float)($night_shift_bonus ?? 0);
-                                        $otherAllow      = (float)($other_allowances ?? 0);
-
-                                        // Férias/13º/bónus
-                                        $vacationAllow   = !empty($vacation_subsidy)  ? 0.5 * $basic : 0.0;
-                                        $christmasOffer  = !empty($christmas_subsidy) ? 0.5 * $basic : 0.0;
-                                        $bonusTotal      = (float)($bonus_amount ?? 0) + (float)($additional_bonus_amount ?? 0);
-
-                                        // Faltas: NA PLANILHA são abatidas no MAIN (não repitas depois)
-                                        $absence         = (float)max(($absence_deduction ?? 0), ($this->absenceDeductionAmount ?? 0));
-
-                                        // Deduções diversas
-                                        $advance         = (float)($advance_deduction ?? 0);
-                                        $otherDiscounts  = (float)($total_salary_discounts ?? 0);
-                                        $union           = (float)($union_deduction ?? 0);
-                                        $uFund           = (float)($u_fund_ded ?? 0);
-                                        $loans           = (float)($loan_installments ?? 0);
-
-                                        // ----- 1) MAIN SALARY (como na planilha) -----
-                                        $mainSalary = max(0.0,
-                                              $basic
-                                            + $transportCash
-                                            + $foodCash
-                                            + $overtime
-                                            + $nightShift
-                                            + $otherAllow
-                                            - $absence
-                                        );
-
-                                        // ----- 2) GROSS FOR TAX (base do mês) -----
-                                        $grossForTax = $mainSalary + $vacationAllow + $christmasOffer + $bonusTotal;
-
-                                        // (Opcional) se exibias $calculated_gross_net como "gross" no UI, atualiza:
-                                        $calculated_gross_net = $grossForTax;
-
-                                        // ----- 3) INSS (empregado) 3% sobre o MAIN (substitui o fixo 4.500) -----
-                                        $inss_deduction = round($mainSalary * 0.03, 2);
-
-                                        // ----- 4) IRT base com isenções de 30k (só DINHEIRO) -----
-                                        $exemptTransport = min(30000.0, $transportCash);
-                                        $exemptFood      = min(30000.0, $foodCash);
-
-                                        // ----- 4) IRT calculado corretamente -----
-                                        $irt_base   = max(0.0, $grossForTax - $inss_deduction - $exemptTransport - $exemptFood);
-                                        $calculated_income_tax = \App\Models\HR\IRTTaxBracket::calculateIRT($irt_base);
-
-                                        // ----- 5) DEDUÇÕES (incluir foodCash como dedução) -----
-                                        $deductions =
-                                              $inss_deduction
-                                            + $calculated_income_tax
-                                            + $advance
-                                            + $otherDiscounts
-                                            + $union
-                                            + $uFund
-                                            + $loans
-                                            + $foodInKind // refeição em espécie abate aqui
-                                            + $foodCash; // subsídio alimentação em dinheiro também é dedução
-
-                                        // -----  NET (igual planilha) -----
-                                        // IMPORTANTE: REMOVE "- $absence_final" do teu Net, porque já abateste no Main!
-                                        $calculated_net_salary = round(max(0.0, $grossForTax - $deductions), 2);
-                                        @endphp
 
                                         {{-- Total Deductions --}}
                                         <div class="flex justify-between items-center p-3 lg:p-4 bg-red-50 rounded-xl border border-red-200">
                                             <span class="font-semibold text-red-700 text-sm lg:text-base">{{ __('messages.total_deductions') }}</span>
-                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($deductions, 2) }} AOA</span>
+                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($this->totalDeductionsCalculated, 2) }} AOA</span>
                                         </div>
 
                                         {{-- Net Salary --}}
@@ -1337,7 +1268,7 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($calculated_net_salary, 2) }} AOA</span>
+                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($this->calculatedNetSalary, 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Net Salary Details Breakdown -->
@@ -1346,62 +1277,62 @@
                                                 <div class="space-y-1 text-xs">
                                                     <div class="flex justify-between">
                                                         <span class="text-blue-700">{{ __('messages.gross_salary') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($calculated_gross_net, 2) }} AOA</span>
+                                                        <span class="font-medium text-blue-800">{{ number_format($this->grossForTax, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-red-700">
                                                         <span>IRT ({{ __('messages.income_tax') }}):</span>
-                                                        <span class="font-medium">-{{ number_format($calculated_income_tax, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->calculatedIrt, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-red-700">
                                                         <span>INSS (3%):</span>
-                                                        <span class="font-medium">-{{ number_format($inss_deduction, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->calculatedInss, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-orange-600 bg-orange-50 p-2 rounded border border-orange-200 mt-1">
                                                         <div>
                                                             <span>INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
                                                             <div class="text-xs text-orange-500">{{ __('payroll.calculated_gross_salary') }}</div>
                                                         </div>
-                                                        <span class="font-medium">{{ number_format($inss_deduction * 8/3, 2) }} AOA</span>
+                                                        <span class="font-medium">{{ number_format($this->calculatedInss * 8/3, 2) }} AOA</span>
                                                     </div>
-                                                    @if($advance > 0)
+                                                    @if($this->advance_deduction > 0)
                                                     <div class="flex justify-between text-red-700">
                                                         <span>{{ __('messages.salary_advances') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($advance, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->advance_deduction, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($otherDiscounts > 0)
+                                                    @if($this->total_salary_discounts > 0)
                                                     <div class="flex justify-between text-red-700">
                                                         <span>{{ __('messages.salary_discounts') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($otherDiscounts, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->total_salary_discounts, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($union > 0)
+                                                    @if($this->union_deduction > 0)
                                                     <div class="flex justify-between text-red-700">
                                                         <span>{{ __('messages.union_deduction') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($union, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->union_deduction, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($uFund > 0)
+                                                    @if($this->u_fund_ded > 0)
                                                     <div class="flex justify-between text-red-700">
                                                         <span>{{ __('messages.u_fund_deduction') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($uFund, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->u_fund_ded, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($loans > 0)
+                                                    @if($this->loan_installments > 0)
                                                     <div class="flex justify-between text-red-700">
                                                         <span>{{ __('messages.loan_installments') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($loans, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->loan_installments, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($foodInKind > 0)
+                                                    @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && $this->is_food_in_kind)
                                                     <div class="flex justify-between text-red-700">
                                                         <span>{{ __('messages.food_in_kind') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($foodInKind, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->selectedEmployee->food_benefit, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($absence > 0)
+                                                    @if($this->absence_deduction > 0)
                                                     <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.absence_deductions') }} ({{ $absent_days ?? 0 }} dias):</span>
+                                                        <span>{{ __('messages.absence_deductions') }} ({{ $this->absent_days ?? 0 }} dias):</span>
                                                         <span class="font-medium">{{ __('messages.already_deducted_from_main') }}</span>
                                                     </div>
                                                     @endif
@@ -1411,72 +1342,72 @@
                                                         <div class="space-y-1 text-xs">
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.basic_salary') }}:</span>
-                                                                <span class="font-medium">{{ number_format($basic, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->basic_salary, 2) }} AOA</span>
                                                             </div>
-                                                            @if($transportCash > 0)
+                                                            @if($this->transport_allowance > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.transport_allowance') }}:</span>
-                                                                <span class="font-medium">{{ number_format($transportCash, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->transport_allowance, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($foodCash > 0)
+                                                            @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && !$this->is_food_in_kind)
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.food_allowance_cash') }}:</span>
-                                                                <span class="font-medium">{{ number_format($foodCash, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->selectedEmployee->food_benefit, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($overtime > 0)
+                                                            @if($this->total_overtime_amount > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.overtime') }}:</span>
-                                                                <span class="font-medium">{{ number_format($overtime, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->total_overtime_amount, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($nightShift > 0)
+                                                            @if($this->night_shift_bonus > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.night_shift') }}:</span>
-                                                                <span class="font-medium">{{ number_format($nightShift, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->night_shift_bonus, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($otherAllow > 0)
+                                                            @if($this->other_allowances > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-green-700">{{ __('messages.other_allowances') }}:</span>
-                                                                <span class="font-medium">{{ number_format($otherAllow, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->other_allowances, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($absence > 0)
+                                                            @if($this->absence_deduction > 0)
                                                             <div class="flex justify-between text-red-600">
                                                                 <span>{{ __('messages.absence_deductions') }}:</span>
-                                                                <span class="font-medium">-{{ number_format($absence, 2) }} AOA</span>
+                                                                <span class="font-medium">-{{ number_format($this->absence_deduction, 2) }} AOA</span>
                                                             </div>
                                                             @endif
                                                             <div class="flex justify-between font-semibold border-t border-green-300 pt-1 mt-1">
                                                                 <span class="text-green-800">{{ __('messages.main_salary_total') }}:</span>
-                                                                <span class="text-green-900">{{ number_format($mainSalary, 2) }} AOA</span>
+                                                                <span class="text-green-900">{{ number_format($this->mainSalary, 2) }} AOA</span>
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <!-- Subsídios adicionais -->
-                                                    @if($vacationAllow > 0 || $christmasOffer > 0 || $bonusTotal > 0)
+                                                    @if($this->vacation_subsidy || $this->christmas_subsidy || ($this->bonus_amount + $this->additional_bonus_amount) > 0)
                                                     <div class="bg-purple-50 p-2 rounded border border-purple-200 mt-2">
                                                         <h6 class="text-xs font-semibold text-purple-800 mb-1">{{ __('messages.additional_benefits') }}:</h6>
                                                         <div class="space-y-1 text-xs">
-                                                            @if($vacationAllow > 0)
+                                                            @if($this->vacation_subsidy)
                                                             <div class="flex justify-between">
                                                                 <span class="text-purple-700">{{ __('messages.vacation_subsidy') }}:</span>
-                                                                <span class="font-medium">{{ number_format($vacationAllow, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->basic_salary * 0.5, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($christmasOffer > 0)
+                                                            @if($this->christmas_subsidy)
                                                             <div class="flex justify-between">
                                                                 <span class="text-purple-700">{{ __('messages.christmas_subsidy') }}:</span>
-                                                                <span class="font-medium">{{ number_format($christmasOffer, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->basic_salary * 0.5, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($bonusTotal > 0)
+                                                            @if(($this->bonus_amount + $this->additional_bonus_amount) > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-purple-700">{{ __('messages.bonus_total') }}:</span>
-                                                                <span class="font-medium">{{ number_format($bonusTotal, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->bonus_amount + $this->additional_bonus_amount, 2) }} AOA</span>
                                                             </div>
                                                             @endif
                                                         </div>
@@ -1485,18 +1416,18 @@
 
                                                     <div class="flex justify-between text-gray-600 text-xs mt-2 pt-1 border-t border-gray-200">
                                                         <span>{{ __('messages.total_deductions') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($deductions, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->totalDeductionsCalculated, 2) }} AOA</span>
                                                     </div>
-                                                    @if($foodCash > 0)
+                                                    @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && !$this->is_food_in_kind)
                                                     <div class="flex justify-between text-red-700 text-xs">
                                                         <span>{{ __('messages.food_allowance_cash') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($foodCash, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($this->selectedEmployee->food_benefit, 2) }} AOA</span>
                                                     </div>
                                                     @endif
                                                     <div class="border-t border-blue-300 pt-1 mt-1">
                                                         <div class="flex justify-between font-semibold">
                                                             <span class="text-blue-800">{{ __('messages.net_salary_final') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format($calculated_net_salary, 2) }} AOA</span>
+                                                            <span class="text-blue-900">{{ number_format($this->calculatedNetSalary, 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1527,10 +1458,8 @@
                         </div>
                     </div>
                 </div>
-                    </div>
-                </div>
             </div>
-        @endif
+        </div>
     </div>
 </div>
 @endif
