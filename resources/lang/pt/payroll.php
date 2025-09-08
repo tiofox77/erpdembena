@@ -120,6 +120,5 @@ return [
     'absence_deductions' => 'Deduções por Faltas',
     'late_arrival_discount' => 'Desconto por Atrasos',
     'absence_discount' => 'Desconto por Faltas',
-    'calculated_gorss_salary_salary' => 'calculado a partir do salário bruto',
     'calculated_gross_salary' => 'calculado a partir do salário bruto',
 ];

@@ -1212,7 +1212,7 @@
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg border border-orange-200">
                                                 <div>
                                                     <span class="font-medium text-orange-700 text-xs lg:text-sm">INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
-                                                    <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_gorss_salary_salary') }}</div>
+                                                    <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_gross_salary') }}</div>
                                                 </div>
                                                 <span class="font-bold text-orange-800 text-xs lg:text-sm">{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.08), 2) }} AOA</span>
                                             </div>
