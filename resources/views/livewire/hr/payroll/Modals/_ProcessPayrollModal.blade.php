@@ -471,7 +471,7 @@
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">IRT ({{ __('messages.income_tax') }})</p>
-                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format(($basic_salary ?? 0) * 0.065, 2) }} {{ __('messages.currency_aoa') }}</p>
+                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($this->irtCalculationDetails['total_irt'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">INSS (3%)</p>
@@ -642,6 +642,7 @@
                                                                         @endif">
                                                                     {{ ucfirst($attendance['status']) }}
                                                                 </span>
+                                                                <span class="text-xs text-gray-500">({{ __('payroll.taxable') }})</span>
                                                             </div>
                                                             <div class="text-gray-600">
                                                                 @if($attendance['time_in'] && $attendance['time_out'])
@@ -719,7 +720,7 @@
                                                 @foreach($salaryAdvances as $advance)
                                                     <div class="bg-orange-100 p-3 rounded-lg">
                                                         <div class="flex justify-between items-start mb-1">
-                                                            <span class="text-xs font-medium text-orange-700">{{ $advance['request_date'] ?? 'N/A' }}</span>
+                                                            <span class="text-xs">({{ __('payroll.up_to_30k_non_taxable') }})</span><span class="text-xs font-medium text-orange-700">{{ $advance['request_date'] ?? 'N/A' }}</span>
                                                             <span class="text-xs font-bold text-orange-800">{{ number_format($advance['amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}</span>
                                                         </div>
                                                         <div class="flex justify-between text-xs text-orange-600">
@@ -727,7 +728,7 @@
                                                             <span class="font-medium">{{ number_format($advance['installment_amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}{{ __('messages.per_month') }}</span>
                                                         </div>
                                                         @if(isset($advance['reason']))
-                                                            <p class="text-xs text-orange-500 mt-1 truncate">{{ $advance['reason'] }}</p>
+                                                            <span class="text-xs text-gray-500">({{ __('payroll.taxable_excess') }})</span><p class="text-xs text-orange-500 mt-1 truncate">{{ $advance['reason'] }}</p>
                                                         @endif
                                                     </div>
                                                 @endforeach
@@ -788,19 +789,19 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.food_benefit') }} 
-                                                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full ml-1">Não Tributável</span>
+                                                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full ml-1">{{ __('payroll.non_taxable') }}</span>
                                             </p>
                                             <p class="text-teal-800 font-semibold">{{ number_format($selectedEmployee->food_benefit ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.transport_benefit') }}
-                                                <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full ml-1">Tributável</span>
+                                                <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full ml-1">{{ __('payroll.taxable') }}</span>
                                             </p>
                                             <p class="text-teal-800 font-semibold">{{ number_format($transport_allowance ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.bonus_amount') }}
-                                                <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full ml-1">Tributável</span>
+                                                <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full ml-1">{{ __('payroll.taxable') }}</span>
                                             </p>
                                             <p class="text-teal-800 font-semibold">{{ number_format($bonus_amount ?? 0, 2) }} AOA</p>
                                         </div>
@@ -870,22 +871,45 @@
                                         </div>
 
                                         {{-- Transport Allowance --}}
-                                        @if($transport_allowance > 0)
+                                        @if($transport_allowance > 0 || ($this->selectedEmployee && $this->selectedEmployee->transport_benefit > 0))
                                             <div class="p-2 lg:p-3 bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg border border-green-200">
                                                 <div class="flex justify-between items-center mb-2">
                                                     <div class="flex items-center space-x-2">
                                                         <span class="font-medium text-gray-700 text-xs lg:text-sm">{{ __('messages.transport_allowance') }}</span>
-                                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">Misto</span>
+                                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{{ __('payroll.proportional') }}</span>
                                                     </div>
                                                     <span class="font-bold text-gray-800 text-xs lg:text-sm">{{ number_format($transport_allowance, 2) }} AOA</span>
                                                 </div>
-                                                <div class="space-y-1 text-xs">
+                                                
+                                                
+                                                <div class="space-y-1 text-xs bg-white/50 p-2 rounded">
                                                     <div class="flex justify-between">
-                                                        <span class="text-gray-600">• Isento (até 30.000):</span>
+                                                        <span class="text-blue-600 font-medium">• {{ __('payroll.total_allowance') }}:</span>
+                                                        <span class="text-blue-700 font-semibold">{{ number_format($this->getFullTransportBenefit(), 2) }} AOA</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span class="text-gray-600">• {{ __('payroll.present_days') }}:</span>
+                                                        <span class="text-gray-700">{{ $this->present_days }}/{{ \App\Models\HR\HRSetting::get('monthly_working_days', 22) }} {{ __('payroll.days') }}</span>
+                                                    </div>
+                                                    @if($this->getTransportDiscountAmount() > 0)
+                                                    <div class="flex justify-between border-t pt-1">
+                                                        <span class="text-red-600">• {{ __('payroll.discount_for_absences') }}:</span>
+                                                        <span class="text-red-700 font-medium">-{{ number_format($this->getTransportDiscountAmount(), 2) }} AOA</span>
+                                                    </div>
+                                                    @endif
+                                                    <div class="flex justify-between border-t pt-1 font-semibold">
+                                                        <span class="text-green-600">• {{ __('payroll.amount_to_pay') }}:</span>
+                                                        <span class="text-green-700">{{ number_format($this->getProportionalTransportOnly(), 2) }} AOA</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="space-y-1 text-xs mt-2">
+                                                    <div class="flex justify-between">
+                                                        <span class="text-gray-600">• {{ __('payroll.exempt_up_to') }}:</span>
                                                         <span class="text-gray-700 font-medium">{{ number_format($this->getExemptTransportAllowance(), 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between">
-                                                        <span class="text-green-600">• Tributável:</span>
+                                                        <span class="text-green-600">• {{ __('payroll.taxable') }}:</span>
                                                         <span class="text-green-700 font-medium">{{ number_format($this->getTaxableTransportAllowance(), 2) }} AOA</span>
                                                     </div>
                                                 </div>
@@ -897,7 +921,7 @@
                                         <div class="flex justify-between items-center p-3 lg:p-4 bg-blue-50 rounded-xl">
                                             <span class="font-medium text-blue-700 text-sm lg:text-base">
                                                 <i class="fas fa-user-tag text-blue-600 mr-1"></i>
-                                                Employee Profile Bonus
+                                                {{ __('payroll.employee_profile_bonus') }}
                                             </span>
                                             <span class="font-bold text-blue-800 text-sm lg:text-lg">+{{ number_format($bonus_amount, 2) }} AOA</span>
                                         </div>
@@ -908,7 +932,7 @@
                                         <div class="flex justify-between items-center p-3 lg:p-4 bg-purple-50 rounded-xl">
                                             <span class="font-medium text-purple-700 text-sm lg:text-base">
                                                 <i class="fas fa-plus-circle text-purple-600 mr-1"></i>
-                                                Additional Payroll Bonus
+                                                {{ __('payroll.additional_payroll_bonus') }}
                                             </span>
                                             <span class="font-bold text-purple-800 text-sm lg:text-lg">+{{ number_format($additional_bonus_amount, 2) }} AOA</span>
                                         </div>
@@ -937,7 +961,7 @@
                                                     <button @click="showMainSalaryDetails = !showMainSalaryDetails" 
                                                             class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
                                                             type="button"
-                                                            title="Ver detalhes do cálculo do Main Salary">
+                                                            title="{{ __('payroll.view_main_salary_details') }}">
                                                         ?
                                                     </button>
                                                 </div>
@@ -1011,7 +1035,7 @@
                                                     <button @click="showGrossSalaryDetails = !showGrossSalaryDetails" 
                                                             class="w-4 h-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-green-600 transition-colors"
                                                             type="button"
-                                                            title="Ver detalhes do cálculo do Gross Salary">
+                                                            title="{{ __('payroll.view_gross_salary_details') }}">
                                                         ?
                                                     </button>
                                                 </div>
@@ -1142,7 +1166,7 @@
                                                         <svg class="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9c2.93 0 5.67-1.33 7.5-3.5C21.67 15.67 23 13.93 23 11c0-4.97-4.03-9-9-9z"></path>
                                                         </svg>
-                                                        Detalhes do Cálculo de IRT
+                                                        {{ __('payroll.irt_calculation_details') }}
                                                     </h5>
                                                     
                                                     @php $details = $this->irtCalculationDetails; @endphp
@@ -1150,26 +1174,26 @@
                                                     <div class="space-y-2">
                                                      
                                                         <div class="flex justify-between border-t pt-2">
-                                                            <span class="text-gray-700 font-medium">MC (Matéria Coletável):</span>
+                                                            <span class="text-gray-700 font-medium">{{ __('payroll.mc_taxable_matter') }}:</span>
                                                             <span class="font-bold">{{ number_format($details['mc'], 2) }} AOA</span>
                                                         </div>
                                                         
                                                         @if($details['bracket'])
                                                             <div class="border-t pt-2 space-y-1">
                                                                 <div class="flex justify-between">
-                                                                    <span class="text-blue-600">Escalão {{ $details['bracket']->bracket_number }}:</span>
+                                                                    <span class="text-blue-600">{{ __('payroll.bracket') }} {{ $details['bracket']->bracket_number }}:</span>
                                                                     <span class="text-sm">{{ number_format($details['bracket']->min) }} - {{ $details['bracket']->max > 0 ? number_format($details['bracket']->max) : '+∞' }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between">
-                                                                    <span class="text-gray-600">Parcela fixa:</span>
+                                                                    <span class="text-gray-600">{{ __('payroll.fixed_amount') }}:</span>
                                                                     <span class="font-medium">{{ number_format($details['fixed_amount'], 2) }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between">
-                                                                    <span class="text-gray-600">Excesso ({{ number_format($details['excess'], 2) }} × {{ $details['bracket']->tax_rate }}%):</span>
+                                                                    <span class="text-gray-600">{{ __('payroll.excess') }} ({{ number_format($details['excess'], 2) }} × {{ $details['bracket']->tax_rate }}%):</span>
                                                                     <span class="font-medium">{{ number_format($details['tax_on_excess'], 2) }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between border-t pt-1 font-bold">
-                                                                    <span class="text-red-700">Total IRT:</span>
+                                                                    <span class="text-red-700">{{ __('payroll.total_irt') }}:</span>
                                                                     <span class="text-red-800">{{ number_format($details['total_irt'], 2) }} AOA</span>
                                                                 </div>
                                                             </div>
@@ -1212,7 +1236,7 @@
                                             {{-- Absence Deduction --}}
                                             @if($this->absenceDeductionAmount > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                                                <span class="font-medium text-red-700 text-xs lg:text-sm">Deduções por Faltas ({{ $absent_days ?? 0 }} dias)</span>
+                                                <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('payroll.absence_deductions') }} ({{ $absent_days ?? 0 }} {{ __('payroll.days') }})</span>
                                                 <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($this->absenceDeductionAmount, 2) }} AOA</span>
                                             </div>
                                             @endif
@@ -1222,7 +1246,7 @@
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-yellow-50 rounded-lg">
                                                 <span class="font-medium text-yellow-700 text-xs lg:text-sm">
                                                     <i class="fas fa-clock mr-1"></i>
-                                                    Desconto por Atrasos ({{ $late_arrivals ?? 0 }} dias)
+                                                    {{ __('payroll.late_arrival_discount') }} ({{ $late_arrivals ?? 0 }} {{ __('payroll.days') }})
                                                 </span>
                                                 <span class="font-bold text-yellow-800 text-xs lg:text-sm">-{{ number_format($late_deduction, 2) }} AOA</span>
                                             </div>
@@ -1232,7 +1256,7 @@
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg">
                                                 <span class="font-medium text-orange-700 text-xs lg:text-sm">
                                                     <i class="fas fa-calendar-times mr-1"></i>
-                                                    Desconto por Faltas ({{ $absent_days ?? 0 }} dias)
+                                                    {{ __('payroll.absence_discount') }} ({{ $absent_days ?? 0 }} {{ __('payroll.days') }})
                                                 </span>
                                                 <span class="font-bold text-orange-800 text-xs lg:text-sm">-{{ number_format($absence_deduction, 2) }} AOA</span>
                                             </div>
@@ -1264,7 +1288,7 @@
                                                     <button @click="showNetSalaryDetails = !showNetSalaryDetails" 
                                                             class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
                                                             type="button"
-                                                            title="Ver detalhes do cálculo do Net Salary">
+                                                            title="{{ __('payroll.view_net_salary_details') }}">
                                                         ?
                                                     </button>
                                                 </div>

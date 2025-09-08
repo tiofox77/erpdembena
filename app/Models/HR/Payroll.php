@@ -36,6 +36,17 @@ class Payroll extends Model
         'leave_days',
         'maternity_days',
         'special_leave_days',
+        // New columns
+        'profile_bonus',
+        'overtime_amount',
+        'gross_salary',
+        'base_irt_taxable_amount',
+        'deductions_irt',
+        'inss_3_percent',
+        'inss_8_percent',
+        'absence_deduction_amount',
+        'main_salary',
+        'total_deductions_calculated',
     ];
 
     protected $casts = [
@@ -52,6 +63,17 @@ class Payroll extends Model
         'leave_days' => 'decimal:2',
         'maternity_days' => 'decimal:2',
         'special_leave_days' => 'decimal:2',
+        // New columns casts
+        'profile_bonus' => 'decimal:2',
+        'overtime_amount' => 'decimal:2',
+        'gross_salary' => 'decimal:2',
+        'base_irt_taxable_amount' => 'decimal:2',
+        'deductions_irt' => 'decimal:2',
+        'inss_3_percent' => 'decimal:2',
+        'inss_8_percent' => 'decimal:2',
+        'absence_deduction_amount' => 'decimal:2',
+        'main_salary' => 'decimal:2',
+        'total_deductions_calculated' => 'decimal:2',
     ];
 
     /**

@@ -141,6 +141,7 @@ class Payroll extends Component
     public bool $is_food_in_kind = false;
     public float $housing_allowance = 0.0;
     public float $performance_bonus = 0.0;
+    public float $profile_bonus = 0.0;
     public float $custom_bonus = 0.0;
     public string $custom_bonus_description = '';
     public float $bonus_amount = 0.0;
@@ -164,6 +165,10 @@ class Payroll extends Component
     public float $union_deduction = 0.0;
     public float $u_fund_ded = 0.0;
     public float $loan_installments = 0.0;
+    public float $deductions_irt = 0.0;
+    public float $inss_3_percent = 0.0;
+    public float $inss_8_percent = 0.0;
+    public float $absence_deduction_amount = 0.0;
     
     // Calculated Totals
     public float $gross_salary = 0.0;
@@ -176,6 +181,8 @@ class Payroll extends Component
     public float $calculated_inss = 0.0;
     public float $calculated_irt = 0.0;
     public float $calculated_net_salary = 0.0;
+    public float $base_irt_taxable_amount = 0.0;
+    public float $total_deductions_calculated = 0.0;
     
     // Payment Information
     public string $payment_method = 'bank_transfer';
@@ -343,7 +350,7 @@ class Payroll extends Component
         }
 
         // Load benefits from employee record (food benefit is excluded from salary calculation)
-        $this->transport_allowance = (float) ($this->selectedEmployee->transport_benefit ?? 0);
+        $this->transport_allowance = $this->calculateProportionalTransportAllowance();
         $this->meal_allowance = (float) ($this->selectedEmployee->food_benefit ?? 0); // Loaded but excluded from gross salary
         
         // Load bonus amount from employee record
@@ -366,14 +373,22 @@ class Payroll extends Component
             ->orderBy('date', 'asc')
             ->get();
 
-        // Calculate working days in the period (excluding weekends)
-        $this->total_working_days = 0;
-        $current = $startDate->copy();
-        while ($current <= $endDate) {
-            if ($current->isWeekday()) {
-                $this->total_working_days++;
+        // Get working days from HR settings or calculate from period
+        $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
+        
+        // Use HR setting if available, otherwise calculate from period
+        if ($monthlyWorkingDays > 0) {
+            $this->total_working_days = $monthlyWorkingDays;
+        } else {
+            // Fallback: Calculate working days in the period (excluding weekends)
+            $this->total_working_days = 0;
+            $current = $startDate->copy();
+            while ($current <= $endDate) {
+                if ($current->isWeekday()) {
+                    $this->total_working_days++;
+                }
+                $current->addDay();
             }
-            $current->addDay();
         }
 
         // Count different attendance types
@@ -447,8 +462,12 @@ class Payroll extends Component
         $this->late_deduction = 0.0;
         $this->absence_deduction = 0.0;
         
+        // Get working days from HR settings for consistent calculation
+        $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
+        $workingDaysForCalculation = $monthlyWorkingDays > 0 ? $monthlyWorkingDays : $this->total_working_days;
+        
         // Calculate daily rate (monthly salary / working days)
-        $dailyRate = $this->total_working_days > 0 ? $this->basic_salary / $this->total_working_days : 0;
+        $dailyRate = $workingDaysForCalculation > 0 ? $this->basic_salary / $workingDaysForCalculation : 0;
         
         foreach ($attendances as $attendance) {
             switch ($attendance->status) {
@@ -536,10 +555,16 @@ class Payroll extends Component
      */
     public function getAbsenceDeductionAmountProperty(): float
     {
-        if ($this->absent_days > 0 && $this->total_working_days > 0 && $this->basic_salary > 0) {
-            // Calcular dedução baseada nos dias ausentes
-            $dailyRate = $this->basic_salary / $this->total_working_days;
-            return $dailyRate * $this->absent_days;
+        if ($this->absent_days > 0 && $this->basic_salary > 0) {
+            // Get working days from HR settings for consistent calculation
+            $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
+            $workingDaysForCalculation = $monthlyWorkingDays > 0 ? $monthlyWorkingDays : $this->total_working_days;
+            
+            if ($workingDaysForCalculation > 0) {
+                // Calcular dedução baseada nos dias ausentes
+                $dailyRate = $this->basic_salary / $workingDaysForCalculation;
+                return $dailyRate * $this->absent_days;
+            }
         }
         return 0;
     }
@@ -1020,13 +1045,13 @@ class Payroll extends Component
             $grossAmount += $this->additional_bonus_amount;
         }
         
-        // Add employee record bonus (from employee profile)
+        // Add employee record bonus (from employee profile) - fully taxable, not affected by absences
         if ($this->bonus_amount > 0) {
             $grossAmount += $this->bonus_amount;
         }
 
         // Add allowances with tax-exempt limits (Angola tax rules)
-        $grossAmount += $this->getTaxableTransportAllowance();
+        $grossAmount += $this->getTaxableTransportAllowance(); // Transport only (proportional by days worked)
         // $grossAmount += $this->meal_allowance; // Food benefit excluded from gross salary (fully exempt)
         $grossAmount += $this->getTaxableHousingAllowance();
         $grossAmount += $this->performance_bonus; // Fully taxable
@@ -1087,6 +1112,21 @@ class Payroll extends Component
         $deductions += $this->other_deductions;
 
         $this->total_deductions = $deductions;
+        
+        // Calcular e atribuir valores às novas propriedades
+        $this->main_salary = $this->getMainSalaryProperty();
+        $this->base_irt_taxable_amount = $materiaColetavel;
+        $this->deductions_irt = $this->income_tax;
+        
+        // Calcular INSS 3% (empregador) e 8% (empregado)
+        $inssEmployeeRate = 8.0; // 8% para empregado
+        $inssEmployerRate = 3.0; // 3% para empregador
+        $this->inss_3_percent = $inssBase * ($inssEmployerRate / 100);
+        $this->inss_8_percent = $inssBase * ($inssEmployeeRate / 100);
+        
+        // Garantir que absence_deduction_amount seja preenchido
+        $this->absence_deduction_amount = (float)($this->absence_deduction ?? 0);
+        $this->total_deductions_calculated = $deductions;
         
         // Subtrair subsídio de alimentação do net salary
         $foodBenefit = (float) ($this->selectedEmployee->food_benefit ?? $this->meal_allowance ?? 0);
@@ -1174,21 +1214,93 @@ class Payroll extends Component
     }
     
     /**
-     * Get taxable transport allowance (exempt up to 30,000 AKZ/month)
+     * Calculate proportional transport allowance based on attendance
+     */
+    private function calculateProportionalTransportAllowance(): float
+    {
+        if (!$this->selectedEmployee || $this->total_working_days <= 0) {
+            return 0.0;
+        }
+
+        $fullTransportAllowance = (float) ($this->selectedEmployee->transport_benefit ?? 0);
+        
+        // Calculate proportional allowance based on days worked
+        $daysWorked = $this->present_days;
+        $proportionalAllowance = ($fullTransportAllowance / $this->total_working_days) * $daysWorked;
+        
+        return $proportionalAllowance;
+    }
+
+    /**
+     * Get full transport benefit amount from employee record
+     */
+    public function getFullTransportBenefit(): float
+    {
+        return (float) ($this->selectedEmployee->transport_benefit ?? 0);
+    }
+
+    /**
+     * Get bonus amount from employee record
+     */
+    public function getBonusAmount(): float
+    {
+        return (float) ($this->selectedEmployee->bonus_amount ?? 0);
+    }
+
+    /**
+     * Get proportional transport allowance only (without bonus)
+     */
+    public function getProportionalTransportOnly(): float
+    {
+        if (!$this->selectedEmployee) {
+            return 0.0;
+        }
+
+        $fullTransportBenefit = $this->getFullTransportBenefit();
+        $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
+        
+        return ($fullTransportBenefit / $monthlyWorkingDays) * $this->present_days;
+    }
+
+    /**
+     * Get transport allowance discount amount
+     */
+    public function getTransportDiscountAmount(): float
+    {
+        return $this->getFullTransportBenefit() - $this->getProportionalTransportOnly();
+    }
+
+    /**
+     * Get total transport display amount (proportional transport + full bonus)
+     */
+    public function getTotalTransportDisplay(): float
+    {
+        return $this->getProportionalTransportOnly() + $this->getBonusAmount();
+    }
+
+    /**
+     * Get taxable transport allowance only (amount above 30k exemption)
+     * Applied proportionally based on days worked - EXCLUDES bonus
      */
     public function getTaxableTransportAllowance(): float
     {
+        // Get proportional transport allowance only (no bonus)
+        $proportionalTransport = $this->getProportionalTransportOnly();
+        
+        // Apply tax exemption limit only to transport
         $exemptLimit = 30000.0; // 30,000 AKZ per month exempt
-        return max(0, $this->transport_allowance - $exemptLimit);
+        return max(0, $proportionalTransport - $exemptLimit);
     }
     
     /**
-     * Get exempt transport allowance amount
+     * Get exempt transport allowance amount (proportional, transport only)
      */
     public function getExemptTransportAllowance(): float
     {
+        // Use only proportional transport for exemption calculation (no bonus)
+        $proportionalTransport = $this->getProportionalTransportOnly();
         $exemptLimit = 30000.0;
-        return min($this->transport_allowance, $exemptLimit);
+        return min($proportionalTransport, $exemptLimit);
     }
     
     /**
@@ -1207,7 +1319,11 @@ class Payroll extends Component
     {
         // Calculate 20% additional allowance for night shift days
         if ($this->night_shift_days > 0 && $this->basic_salary > 0) {
-            $daily_salary = $this->basic_salary / 30; // Assuming 30 days per month
+            // Get working days from HR settings for consistent calculation
+            $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
+            $workingDaysForCalculation = $monthlyWorkingDays > 0 ? $monthlyWorkingDays : 30;
+            
+            $daily_salary = $this->basic_salary / $workingDaysForCalculation;
             $night_shift_allowance = ($daily_salary * $this->night_shift_days) * 0.20; // 20% additional
             $this->night_shift_allowance = $night_shift_allowance;
             $this->night_shift_bonus = $night_shift_allowance; // Sync both properties
@@ -2414,6 +2530,24 @@ class Payroll extends Component
                            ($this->christmas_subsidy ? ($this->basic_salary * 0.5) : 0) +
                            ($this->vacation_subsidy ? ($this->basic_salary * 0.5) : 0),
                 
+                // New columns - Bónus e componentes
+                'profile_bonus' => $this->profile_bonus,
+                'overtime_amount' => $this->total_overtime_amount,
+                'gross_salary' => $this->gross_salary,
+                
+                // New columns - Base tributável e deduções
+                'base_irt_taxable_amount' => $this->base_irt_taxable_amount,
+                'deductions_irt' => $this->deductions_irt,
+                'inss_3_percent' => $this->inss_3_percent,
+                'inss_8_percent' => $this->inss_8_percent,
+                
+                // New columns - Deduções por faltas
+                'absence_deduction_amount' => $this->absence_deduction_amount,
+                
+                // New columns - Totais calculados
+                'main_salary' => $this->main_salary,
+                'total_deductions_calculated' => $this->total_deductions_calculated,
+                
                 // Tax deductions
                 'tax' => $this->income_tax, // IRT
                 'social_security' => $this->social_security, // INSS
@@ -2588,13 +2722,19 @@ class Payroll extends Component
             'is_taxable' => true,
         ];
         
-        // Transport allowance
+        // Transport allowance (proportional to days worked)
         if ($this->transport_allowance > 0) {
+            $fullTransportAllowance = (float) ($this->selectedEmployee->transport_benefit ?? 0);
+            $description = "Subsídio de transporte ({$this->present_days}/{$this->total_working_days} dias)";
+            if ($this->transport_allowance < $fullTransportAllowance) {
+                $description .= " - Descontado por faltas";
+            }
+            
             $items[] = [
                 'payroll_id' => $payroll->id,
                 'type' => 'allowance',
                 'name' => 'Subsídio de Transporte',
-                'description' => 'Subsídio mensal de transporte',
+                'description' => $description,
                 'amount' => $this->transport_allowance,
                 'is_taxable' => true, // Parte tributável
             ];
