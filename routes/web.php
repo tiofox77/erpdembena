@@ -281,19 +281,19 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:hr.settings.view'])->get('/banks', App\Livewire\HR\Banks::class)->name('banks');
         
         // Payroll Management
-        Route::middleware(['permission:hr.leave.view'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
         
         // Payroll Periods Management
-        Route::middleware(['permission:hr.leave.view'])->get('/payroll-periods', App\Livewire\HR\PayrollPeriods::class)->name('payroll-periods');
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-periods', App\Livewire\HR\PayrollPeriods::class)->name('payroll-periods');
         
         // Payroll Items Management
-        Route::middleware(['permission:hr.leave.view'])->get('/payroll-items', App\Livewire\HR\PayrollItems::class)->name('payroll-items');
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-items', App\Livewire\HR\PayrollItems::class)->name('payroll-items');
         
         // Salary Advances Management
-        Route::middleware(['permission:hr.leave.view'])->get('/salary-advances', App\Livewire\HR\SalaryAdvances::class)->name('salary-advances');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-advances', App\Livewire\HR\SalaryAdvances::class)->name('salary-advances');
         
         // Salary Discounts Management
-        Route::middleware(['permission:hr.leave.view'])->get('/salary-discounts', App\Livewire\HR\SalaryDiscounts::class)->name('salary-discounts');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-discounts', App\Livewire\HR\SalaryDiscounts::class)->name('salary-discounts');
         
         // Overtime Records Management
         Route::middleware(['permission:hr.leave.view'])->get('/overtime-records', App\Livewire\HR\OvertimeRecords::class)->name('overtime-records');

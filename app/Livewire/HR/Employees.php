@@ -201,10 +201,15 @@ class Employees extends Component
     {
         $validatedData = $this->validate();
         
+        // Check salary permissions - remove salary fields if user doesn't have permission
+        if (!auth()->user()->can('hr.employees.salary.edit')) {
+            unset($validatedData['base_salary'], $validatedData['food_benefit'], $validatedData['transport_benefit'], $validatedData['bonus_amount']);
+        }
+        
         // Ensure numeric fields have default values instead of null
         $numericFields = ['dependents', 'base_salary', 'food_benefit', 'transport_benefit', 'bonus_amount'];
         foreach ($numericFields as $field) {
-            if (is_null($validatedData[$field]) || $validatedData[$field] === '') {
+            if (isset($validatedData[$field]) && (is_null($validatedData[$field]) || $validatedData[$field] === '')) {
                 $validatedData[$field] = 0;
             }
         }

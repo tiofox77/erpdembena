@@ -253,8 +253,28 @@ class Payroll extends Component
         $this->selectedYear = (int) now()->year;
         $this->selected_month = now()->format('m');
         $this->selected_year = now()->format('Y');
+
+        // Initialize filters
+        $this->filters['month'] = $this->selected_month;
+        $this->filters['year'] = $this->selected_year;
         $this->createDefaultTaxSettings();
         $this->loadHRSettings();
+    }
+
+    /**
+     * Check if user can view salary details
+     */
+    public function canViewSalaryDetails(): bool
+    {
+        return auth()->user()->can('hr.employees.salary.view') || auth()->user()->can('hr.payroll.view');
+    }
+    
+    /**
+     * Check if user can process payroll
+     */
+    public function canProcessPayroll(): bool
+    {
+        return auth()->user()->can('hr.payroll.process') || auth()->user()->can('hr.payroll.view');
     }
 
     /**
@@ -2169,6 +2189,12 @@ class Payroll extends Component
 
     public function approve($payrollId = null)
     {
+        // Verificar permissão para aprovar pagamentos
+        if (!auth()->user()->can('hr.payroll.approve')) {
+            session()->flash('error', 'Não tem permissão para aprovar pagamentos.');
+            return;
+        }
+        
         // Se foi passado ID como parâmetro, usar ele
         if ($payrollId) {
             $this->payroll_id = $payrollId;

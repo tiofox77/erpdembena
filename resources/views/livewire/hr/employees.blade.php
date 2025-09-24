@@ -169,9 +169,9 @@
                                         @endif
                                     </div>
 
-                                    <!-- Salary Range Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                    @can('hr.employees.salary.view')
+                                    <div class="space-y-3">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
                                             <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mr-2">
                                                 <i class="fas fa-dollar-sign text-emerald-600 text-xs"></i>
                                             </div>
@@ -185,7 +185,7 @@
                                                 <option value="100000-200000">100.000 - 200.000 AOA</option>
                                                 <option value="200000+">200.000+ AOA</option>
                                             </select>
-                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                                 <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                                             </div>
                                         </div>
@@ -197,9 +197,8 @@
                                         @endif
                                     </div>
 
-                                    <!-- Salary Advances Filter -->
-                                    <div class="space-y-2">
-                                        <label class="flex items-center text-sm font-medium text-gray-700">
+                                    <div class="space-y-3">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
                                             <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center mr-2">
                                                 <i class="fas fa-hand-holding-usd text-orange-600 text-xs"></i>
                                             </div>
@@ -207,12 +206,11 @@
                                         </label>
                                         <div class="relative">
                                             <select wire:model.live="filters.has_advances" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 bg-white pr-8 transition-all duration-200">
-                                                <option value="">{{ __('messages.all_employees') }}</option>
-                                                <option value="with_advances">{{ __('messages.with_advances') }}</option>
-                                                <option value="without_advances">{{ __('messages.without_advances') }}</option>
-                                                <option value="pending_advances">{{ __('messages.pending_advances') }}</option>
+                                                <option value="">{{ __('messages.all_types') }}</option>
+                                                <option value="yes">{{ __('messages.with_advances') }}</option>
+                                                <option value="no">{{ __('messages.without_advances') }}</option>
                                             </select>
-                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                                 <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                                             </div>
                                         </div>
@@ -223,6 +221,7 @@
                                             </div>
                                         @endif
                                     </div>
+                                    @endcan
 
                                     <!-- Per Page -->
                                     <div class="space-y-2">
@@ -337,6 +336,7 @@
                                                 @endif
                                             </div>
                                         </th>
+                                        @can('hr.employees.salary.view')
                                         <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1">
                                                 <i class="fas fa-money-bill text-gray-400 mr-1"></i>
@@ -349,6 +349,7 @@
                                                 <span>{{ __('messages.advances_info') }}</span>
                                             </div>
                                         </th>
+                                        @endcan
                                         <th scope="col" class="px-3 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('employment_status')">
                                                 <i class="fas fa-user-check text-gray-400 mr-1"></i>
@@ -456,6 +457,7 @@
                                                     <span class="text-sm text-gray-900">{{ $employee->hire_date ? \Carbon\Carbon::parse($employee->hire_date)->format('d/m/Y') : '-' }}</span>
                                                 </div>
                                             </td>
+                                            @can('hr.employees.salary.view')
                                             <td class="px-3 py-4 whitespace-nowrap">
                                                 <div class="space-y-1">
                                                     @if($employee->base_salary)
@@ -508,6 +510,7 @@
                                                     @endif
                                                 </div>
                                             </td>
+                                            @endcan
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @switch($employee->employment_status)
                                                     @case('active')
@@ -1306,6 +1309,7 @@
                                 </div>
 
                                 <!-- Base Salary -->
+                                @can('hr.employees.salary.edit')
                                 <div class="space-y-2">
                                     <label for="base_salary" class="flex items-center text-sm font-medium text-gray-700">
                                         <i class="fas fa-money-bill text-yellow-500 mr-2"></i>
@@ -1329,11 +1333,13 @@
                                         </p>
                                     @enderror
                                 </div>
+                                @endcan
                             </div>
                         </div>
                     </div>
 
                     <!-- Benefits Section -->
+                    @can('hr.employees.salary.edit')
                     <div class="border-t border-gray-200">
                         <div class="px-6 py-5">
                             <div class="flex items-center justify-between mb-4">
@@ -1441,6 +1447,7 @@
                             </div>
                         </div>
                     </div>
+                    @endcan
 
                     @if($isEditing)
                     <div class="px-6 py-4">

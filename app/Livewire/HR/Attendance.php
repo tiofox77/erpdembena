@@ -970,20 +970,12 @@ class Attendance extends Component
     {
         $targetDate = Carbon::parse($date);
         
-        // Por simplicidade, considerar todos os funcionários ativos como programados para trabalhar
-        // em dias úteis (segunda a sexta-feira)
-        $dayOfWeek = $targetDate->dayOfWeek; // 0=domingo, 1=segunda, ..., 6=sábado
-        
-        // Apenas dias úteis (segunda a sexta)
-        if ($dayOfWeek >= 1 && $dayOfWeek <= 5) {
-            return \DB::table('employees')
-                ->where('employment_status', 'active')
-                ->select('id', 'full_name')
-                ->get();
-        }
-        
-        // Fins de semana - nenhum funcionário programado por padrão
-        return collect();
+        // Considerar todos os funcionários ativos como programados para trabalhar
+        // em todos os dias da semana (incluindo fins de semana)
+        return \DB::table('employees')
+            ->where('employment_status', 'active')
+            ->select('id', 'full_name')
+            ->get();
     }
 
     /**

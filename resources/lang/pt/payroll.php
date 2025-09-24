@@ -28,6 +28,23 @@ return [
     // Table content
     'periods_list' => 'Lista de Períodos de Salário',
     'no_periods_found' => 'Nenhum Período de Salário Encontrado',
+    
+    // Salary visibility
+    'salary_hidden' => 'Valores Ocultos',
+    'processing_only' => 'Apenas Processamento',
+    'salary_advances' => 'Adiantamentos Salariais',
+    'salary_discounts' => 'Descontos Salariais',
+    'gross' => 'Bruto',
+    'net' => 'Líquido',
+    'detailed_discounts' => 'Descontos Detalhados',
+    'gross_total' => 'Total Bruto',
+    'net_salary' => 'Salário Líquido',
+    'currency' => 'AOA',
+    'salary_information' => 'Informações Salariais',
+    'salary_rates' => 'Valores Salariais',
+    'processing_summary' => 'Resumo de Processamento',
+    'processing_only_description' => 'Você pode processar pagamentos baseado nas presenças e faltas.',
+    'can_process_based_on_attendance' => 'Valores salariais são ocultos para sua função.',
     'no_periods_description' => 'Ainda não há períodos de salário configurados. Crie o seu primeiro período para começar.',
     'create_first_period' => 'Criar Primeiro Período',
     

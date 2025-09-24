@@ -16,6 +16,7 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-3">
+                        @if($this->canProcessPayroll())
                         <button
                             wire:click="openEmployeeSearch"
                             class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-white/20"
@@ -23,6 +24,7 @@
                             <i class="fas fa-search text-lg"></i>
                             <span>{{ __('messages.process_payroll') }}</span>
                         </button>
+                        @endif
                         <button
                             wire:click="exportPayroll"
                             class="bg-green-500/90 hover:bg-green-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2"
@@ -270,6 +272,7 @@
                                     <div class="lg:col-span-4">
                                         <div class="space-y-3">
                                             <!-- Salary Summary -->
+                                            @if($this->canViewSalaryDetails())
                                             <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
                                                 <div class="grid grid-cols-2 gap-3">
                                                     <div class="text-center">
@@ -282,6 +285,14 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @else
+                                            <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 border border-gray-200">
+                                                <div class="text-center">
+                                                    <p class="text-xs text-gray-500 font-medium">{{ __('payroll.salary_hidden') }}</p>
+                                                    <p class="text-sm text-gray-600">{{ __('payroll.processing_only') }}</p>
+                                                </div>
+                                            </div>
+                                            @endif
                                             
                                             <!-- Advanced Discounts Details -->
                                             <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3 border border-red-200">
@@ -295,7 +306,7 @@
                                                 
                                                 <div class="space-y-1.5">
                                                     <!-- Salary Advances -->
-                                                    @if($payroll->advance_deduction > 0)
+                                                    @if($this->canViewSalaryDetails() && $payroll->advance_deduction > 0)
                                                         <div class="flex justify-between items-center text-xs">
                                                             <div class="flex items-center space-x-1.5">
                                                                 <i class="fas fa-hand-holding-usd text-orange-500"></i>
@@ -306,7 +317,7 @@
                                                     @endif
                                                     
                                                     <!-- Salary Discounts -->
-                                                    @if($payroll->total_salary_discounts > 0)
+                                                    @if($this->canViewSalaryDetails() && $payroll->total_salary_discounts > 0)
                                                         <div class="flex justify-between items-center text-xs">
                                                             <div class="flex items-center space-x-1.5">
                                                                 <i class="fas fa-percentage text-purple-500"></i>

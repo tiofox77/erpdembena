@@ -883,15 +883,16 @@
                 <i class="fas fa-id-card text-gray-500"></i>
                 <span>{{ trans('messages.employee_management') }}</span>
             </a>
+            @endcan
             
-            @can('hr.employees.view')
+            @can('hr.payroll.view')
             <a href="{{ route('hr.salary-advances') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-advances') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-hand-holding-usd text-gray-500"></i>
                 <span>{{ trans('messages.salary_advances') }}</span>
             </a>
             @endcan
             
-            @can('hr.employees.view')
+            @can('hr.payroll.view')
             <a href="{{ route('hr.salary-discounts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-discounts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-minus-circle text-gray-500"></i>
                 <span>{{ trans('messages.salary_discounts') }}</span>
@@ -928,7 +929,6 @@
                 <span>{{ __('messages.trainings') }}</span>
             </a>
             @endcan
-            @endcan
             
             @can('hr.departments.view')
             <a href="{{ route('hr.departments') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.departments') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -942,13 +942,13 @@
                 <i class="fas fa-tags text-gray-500"></i>
                 <span>{{ trans('messages.job_categories') }}</span>
             </a>
+            @endcan
             
             @can('hr.positions.view')
             <a href="{{ route('hr.job-positions') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.job-positions') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-briefcase text-gray-500"></i>
                 <span>{{ trans('messages.job_positions') }}</span>
             </a>
-            @endcan
             @endcan
             
             @can('hr.attendance.view')
@@ -963,6 +963,7 @@
                 <i class="fas fa-calendar-alt text-gray-500"></i>
                 <span>{{ trans('messages.leave_management') }}</span>
             </a>
+            @endcan
             
             @can('hr.leave.view')
             <a href="{{ route('hr.leave-types') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.leave-types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -970,20 +971,20 @@
                 <span>{{ trans('messages.leave_types') }}</span>
             </a>
             @endcan
-            @endcan
             
-            @can('hr.leave.view')
+            @canany(['hr.payroll.view', 'hr.payroll.process'])
             <a href="{{ route('hr.payroll') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-money-check-alt text-gray-500"></i>
                 <span>{{ trans('messages.payroll_processing') }}</span>
             </a>
+            @endcanany
             
-            @can('hr.leave.view')
+            @canany(['hr.payroll.view', 'hr.payroll.process'])
             <a href="{{ route('hr.payroll-periods') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-periods') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-calendar-week text-gray-500"></i>
                 <span>{{ trans('messages.payroll_periods') }}</span>
             </a>
-            @endcan
+            @endcanany
             <!--
             @can('hr.leave.view')
             <a href="{{ route('hr.payroll-items') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-items') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
@@ -992,7 +993,6 @@
             </a>
             @endcan
             -->
-            @endcan
             
             @can('hr.attendance.view')
             <a href="{{ route('hr.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
