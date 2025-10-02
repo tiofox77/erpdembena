@@ -2772,7 +2772,13 @@ class Payroll extends Component
         $startDate = Carbon::create((int)$this->selected_year, (int)$this->selected_month, 1);
         $endDate = $startDate->copy()->endOfMonth();
         
-        $periodName = $startDate->format('F Y');
+        // Create period name in Portuguese
+        $monthNames = [
+            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+        ];
+        $periodName = $monthNames[(int)$this->selected_month] . ' ' . $this->selected_year;
         
         // Try to find existing period
         $period = PayrollPeriod::where('start_date', $startDate->format('Y-m-d'))
