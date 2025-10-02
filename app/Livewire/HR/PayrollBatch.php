@@ -11,6 +11,7 @@ use App\Models\HR\Department;
 use App\Models\HR\Employee;
 use App\Models\HR\Payroll;
 use App\Jobs\ProcessPayrollBatch;
+use App\Services\PayrollCalculationService;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -32,6 +33,7 @@ class PayrollBatch extends Component
     public bool $showCreateModal = false;
     public bool $showViewModal = false;
     public bool $showDeleteModal = false;
+    public bool $showEditItemModal = false;
     
     // Form properties
     public string $batch_name = '';
@@ -46,6 +48,13 @@ class PayrollBatch extends Component
     // Current batch for operations
     public ?PayrollBatchModel $currentBatch = null;
     public ?PayrollBatchModel $batchToDelete = null;
+    public ?PayrollBatchItem $editingItem = null;
+    
+    // Edit item properties
+    public float $edit_gross_salary = 0;
+    public float $edit_net_salary = 0;
+    public float $edit_total_deductions = 0;
+    public string $edit_notes = '';
     
     // Filters
     public array $filters = [
@@ -297,15 +306,76 @@ class PayrollBatch extends Component
                     'created_by' => Auth::id(),
                 ]);
 
-                // Create batch items
-                foreach ($this->selected_employees as $employeeId) {
-                    PayrollBatchItem::create([
-                        'payroll_batch_id' => $batch->id,
-                        'employee_id' => $employeeId,
-                        'status' => PayrollBatchItem::STATUS_PENDING,
-                        'processing_order' => 0,
-                    ]);
+                // Create batch items with pre-calculated values
+                $period = PayrollPeriod::findOrFail($this->payroll_period_id);
+                $totalGross = 0;
+                $totalNet = 0;
+                $totalDeductions = 0;
+                
+                foreach ($this->selected_employees as $index => $employeeId) {
+                    $employee = Employee::findOrFail($employeeId);
+                    
+                    // Calculate payroll using centralized service
+                    try {
+                        $calculator = new PayrollCalculationService($employee, $period);
+                        $result = $calculator->calculate();
+                        
+                        PayrollBatchItem::create([
+                            'payroll_batch_id' => $batch->id,
+                            'employee_id' => $employeeId,
+                            'status' => PayrollBatchItem::STATUS_PENDING,
+                            'processing_order' => $index + 1,
+                            // Pre-populate with calculated values
+                            'gross_salary' => $result['gross_salary'],
+                            'net_salary' => $result['net_salary'],
+                            'total_deductions' => $result['deductions'],
+                        ]);
+                        
+                        // Accumulate totals
+                        $totalGross += $result['gross_salary'];
+                        $totalNet += $result['net_salary'];
+                        $totalDeductions += $result['deductions'];
+                        
+                        Log::info('Batch item created with calculated values', [
+                            'employee_id' => $employeeId,
+                            'employee_name' => $employee->full_name,
+                            'gross_salary' => $result['gross_salary'],
+                            'net_salary' => $result['net_salary'],
+                        ]);
+                        
+                    } catch (\Exception $e) {
+                        // If calculation fails, create with zeros
+                        PayrollBatchItem::create([
+                            'payroll_batch_id' => $batch->id,
+                            'employee_id' => $employeeId,
+                            'status' => PayrollBatchItem::STATUS_PENDING,
+                            'processing_order' => $index + 1,
+                            'gross_salary' => 0,
+                            'net_salary' => 0,
+                            'total_deductions' => 0,
+                            'error_message' => 'Erro ao calcular: ' . $e->getMessage(),
+                        ]);
+                        
+                        Log::error('Error calculating batch item', [
+                            'employee_id' => $employeeId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
+                
+                // Update batch totals
+                $batch->update([
+                    'total_gross_amount' => $totalGross,
+                    'total_net_amount' => $totalNet,
+                    'total_deductions' => $totalDeductions,
+                ]);
+                
+                Log::info('Batch totals calculated', [
+                    'batch_id' => $batch->id,
+                    'total_gross' => $totalGross,
+                    'total_net' => $totalNet,
+                    'total_deductions' => $totalDeductions,
+                ]);
 
                 $this->closeBatchModal();
                 
@@ -486,6 +556,130 @@ class PayrollBatch extends Component
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
+    }
+
+    /**
+     * Open edit modal for batch item
+     */
+    public function editBatchItem(int $itemId): void
+    {
+        $this->editingItem = PayrollBatchItem::with(['employee', 'payroll'])->findOrFail($itemId);
+        
+        Log::info('EDIT ITEM - Loading values from database', [
+            'item_id' => $itemId,
+            'db_gross_salary' => $this->editingItem->gross_salary,
+            'db_net_salary' => $this->editingItem->net_salary,
+            'db_total_deductions' => $this->editingItem->total_deductions,
+            'db_notes' => $this->editingItem->notes,
+        ]);
+        
+        // Load current values - convert to float to ensure proper display
+        $this->edit_gross_salary = (float) ($this->editingItem->gross_salary ?? 0);
+        $this->edit_net_salary = (float) ($this->editingItem->net_salary ?? 0);
+        $this->edit_total_deductions = (float) ($this->editingItem->total_deductions ?? 0);
+        $this->edit_notes = $this->editingItem->notes ?? '';
+        
+        $this->showEditItemModal = true;
+        
+        Log::info('EDIT ITEM - Values loaded into properties', [
+            'item_id' => $itemId,
+            'employee' => $this->editingItem->employee->full_name,
+            'edit_gross_salary' => $this->edit_gross_salary,
+            'edit_net_salary' => $this->edit_net_salary,
+            'edit_total_deductions' => $this->edit_total_deductions,
+        ]);
+    }
+    
+    /**
+     * Save edited batch item
+     */
+    public function saveEditedItem(): void
+    {
+        try {
+            if (!$this->editingItem) {
+                session()->flash('error', 'Item não encontrado.');
+                return;
+            }
+            
+            // Check if batch is editable
+            if ($this->editingItem->status !== PayrollBatchItem::STATUS_PENDING) {
+                session()->flash('error', 'Apenas itens pendentes podem ser editados.');
+                return;
+            }
+            
+            // Update item
+            $this->editingItem->update([
+                'gross_salary' => $this->edit_gross_salary,
+                'net_salary' => $this->edit_net_salary,
+                'total_deductions' => $this->edit_total_deductions,
+                'notes' => $this->edit_notes,
+            ]);
+            
+            // If payroll exists, update it too
+            if ($this->editingItem->payroll_id) {
+                $payroll = Payroll::find($this->editingItem->payroll_id);
+                if ($payroll) {
+                    $payroll->update([
+                        'gross_salary' => $this->edit_gross_salary,
+                        'net_salary' => $this->edit_net_salary,
+                        'deductions' => $this->edit_total_deductions,
+                    ]);
+                }
+            }
+            
+            // Update batch totals
+            $this->updateBatchTotals($this->editingItem->payroll_batch_id);
+            
+            session()->flash('message', 'Item atualizado com sucesso!');
+            $this->closeEditItemModal();
+            
+            // Refresh view
+            if ($this->currentBatch) {
+                $this->viewBatch($this->currentBatch->id);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating batch item', [
+                'error' => $e->getMessage(),
+                'item_id' => $this->editingItem?->id
+            ]);
+            session()->flash('error', 'Erro ao atualizar item: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Close edit item modal
+     */
+    public function closeEditItemModal(): void
+    {
+        $this->showEditItemModal = false;
+        $this->editingItem = null;
+        $this->edit_gross_salary = 0;
+        $this->edit_net_salary = 0;
+        $this->edit_total_deductions = 0;
+        $this->edit_notes = '';
+    }
+    
+    /**
+     * Update batch totals after editing items
+     */
+    private function updateBatchTotals(int $batchId): void
+    {
+        $batch = PayrollBatchModel::findOrFail($batchId);
+        
+        $totals = PayrollBatchItem::where('payroll_batch_id', $batchId)
+            ->selectRaw('
+                SUM(gross_salary) as total_gross,
+                SUM(net_salary) as total_net,
+                SUM(total_deductions) as total_deductions
+            ')
+            ->first();
+        
+        $batch->update([
+            'total_gross_amount' => $totals->total_gross ?? 0,
+            'total_net_amount' => $totals->total_net ?? 0,
+            'total_deductions' => $totals->total_deductions ?? 0,
+        ]);
     }
 
     /**

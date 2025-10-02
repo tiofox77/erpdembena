@@ -147,6 +147,34 @@ class Payroll extends Component
     public float $bonus_amount = 0.0;
     public float $additional_bonus_amount = 0.0; // Separate from employee record bonus
     
+    /**
+     * Updated hook to ensure bonus fields are never null
+     */
+    public function updated($propertyName): void
+    {
+        // Ensure bonus fields are never null
+        $bonusFields = [
+            'bonus_amount',
+            'additional_bonus_amount',
+            'profile_bonus',
+            'custom_bonus',
+            'performance_bonus',
+            'transport_allowance',
+            'meal_allowance',
+            'housing_allowance',
+            'total_overtime_amount',
+        ];
+        
+        if (in_array($propertyName, $bonusFields)) {
+            $this->$propertyName = (float) ($this->$propertyName ?? 0);
+        }
+        
+        // Recalculate when any financial field changes
+        if ($this->selectedEmployee) {
+            $this->calculatePayrollComponents();
+        }
+    }
+    
     // Holiday Subsidies (Checkboxes)
     public bool $christmas_subsidy = false;
     public bool $vacation_subsidy = false;
@@ -2548,6 +2576,9 @@ class Payroll extends Component
 
             // Ensure all calculations are up to date
             $this->calculatePayrollComponents();
+            
+            // Sanitize all numeric fields to prevent null values
+            $this->sanitizeNumericFields();
 
             // Prepare comprehensive payroll data
             $payrollData = [
@@ -2688,6 +2719,48 @@ class Payroll extends Component
             ]);
             
             session()->flash('error', 'Erro ao salvar folha de pagamento: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Sanitize all numeric fields to prevent null values
+     */
+    private function sanitizeNumericFields(): void
+    {
+        $numericFields = [
+            'basic_salary',
+            'bonus_amount',
+            'additional_bonus_amount',
+            'profile_bonus',
+            'custom_bonus',
+            'performance_bonus',
+            'transport_allowance',
+            'meal_allowance',
+            'housing_allowance',
+            'total_overtime_amount',
+            'income_tax',
+            'social_security',
+            'total_deductions',
+            'net_salary',
+            'gross_salary',
+            'advance_deduction',
+            'total_salary_discounts',
+            'late_deduction',
+            'absence_deduction',
+            'other_deductions',
+            'main_salary',
+            'base_irt_taxable_amount',
+            'deductions_irt',
+            'inss_3_percent',
+            'inss_8_percent',
+            'absence_deduction_amount',
+            'total_deductions_calculated',
+        ];
+        
+        foreach ($numericFields as $field) {
+            if (property_exists($this, $field)) {
+                $this->$field = (float) ($this->$field ?? 0.0);
+            }
         }
     }
     

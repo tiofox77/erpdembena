@@ -30,7 +30,11 @@
                             <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
                             <div>
                                 <h4 class="text-sm font-semibold text-blue-800">Lote Pronto para Processar</h4>
-                                <p class="text-sm text-blue-700 mt-1">Este lote contém {{ $currentBatch->total_employees }} funcionários e está pronto para ser processado. Clique em "Processar Lote" abaixo para iniciar.</p>
+                                <p class="text-sm text-blue-700 mt-1">Este lote contém {{ $currentBatch->total_employees }} funcionários e está pronto para ser processado.</p>
+                                <p class="text-sm text-blue-700 mt-1">
+                                    <i class="fas fa-edit text-orange-600 mr-1"></i>
+                                    <strong>Dica:</strong> Você pode editar os salários dos itens <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">Pendentes</span> antes de processar.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -267,8 +271,9 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.employee') }}</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.status') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.gross_salary') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.net_salary') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.gross_salary') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deduções</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.net_salary') }}</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.processed_at') }}</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.actions') }}</th>
                                 </tr>
@@ -305,19 +310,20 @@
                                                 {{ $item->status_label }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            @if($item->gross_salary)
-                                                {{ number_format($item->gross_salary, 0, ',', '.') }} AOA
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                            <span class="font-semibold text-green-700">
+                                                {{ number_format($item->gross_salary ?? 0, 2, ',', '.') }} AOA
+                                            </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            @if($item->net_salary)
-                                                {{ number_format($item->net_salary, 0, ',', '.') }} AOA
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                            <span class="font-semibold text-red-600">
+                                                -{{ number_format($item->total_deductions ?? 0, 2, ',', '.') }} AOA
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                            <span class="font-bold text-blue-700">
+                                                {{ number_format($item->net_salary ?? 0, 2, ',', '.') }} AOA
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             @if($item->processed_at)
@@ -327,24 +333,37 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if($item->status === 'completed' && $item->payroll_id)
-                                                <a 
-                                                    href="{{ route('payroll.receipt.view.by-id', ['payrollId' => $item->payroll_id]) }}" 
-                                                    target="_blank"
-                                                    class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
-                                                    title="Ver recibo de {{ $item->employee->full_name }}"
-                                                >
-                                                    <i class="fas fa-file-invoice mr-2"></i>
-                                                    <span>Recibo</span>
-                                                </a>
-                                            @else
-                                                <span class="text-gray-400 text-xs italic">N/A</span>
-                                            @endif
+                                            <div class="flex items-center justify-center space-x-2">
+                                                @if($item->status === 'pending')
+                                                    {{-- Botão Editar para itens pendentes --}}
+                                                    <button
+                                                        wire:click="editBatchItem({{ $item->id }})"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
+                                                        title="Editar salário de {{ $item->employee->full_name }}"
+                                                    >
+                                                        <i class="fas fa-edit mr-2"></i>
+                                                        <span>Editar</span>
+                                                    </button>
+                                                @elseif($item->status === 'completed' && $item->payroll_id)
+                                                    {{-- Botão Ver Recibo para itens completados --}}
+                                                    <a 
+                                                        href="{{ route('payroll.receipt.view.by-id', ['payrollId' => $item->payroll_id]) }}" 
+                                                        target="_blank"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
+                                                        title="Ver recibo de {{ $item->employee->full_name }}"
+                                                    >
+                                                        <i class="fas fa-file-invoice mr-2"></i>
+                                                        <span>Recibo</span>
+                                                    </a>
+                                                @else
+                                                    <span class="text-gray-400 text-xs italic">N/A</span>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                     @if($item->error_message)
                                         <tr class="bg-red-50">
-                                            <td colspan="6" class="px-6 py-2 text-sm text-red-600">
+                                            <td colspan="7" class="px-6 py-2 text-sm text-red-600">
                                                 <i class="fas fa-exclamation-triangle mr-1"></i>
                                                 {{ $item->error_message }}
                                             </td>
@@ -352,7 +371,7 @@
                                     @endif
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             {{ __('livewire/hr/payroll-batch.no_employees_in_batch') }}
                                         </td>
                                     </tr>

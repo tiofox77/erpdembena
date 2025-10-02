@@ -577,11 +577,13 @@
                                         <div class="relative">
                                             <input 
                                                 type="number" 
-                                                step="0.01" 
+                                                step="0.01"
+                                                min="0"
                                                 wire:model.live="additional_bonus_amount"
                                                 class="w-full px-4 py-3 text-lg border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
                                                 placeholder="AOA 0"
                                                 value="{{ $additional_bonus_amount ?? 0 }}"
+                                                x-on:blur="if($event.target.value === '') { $wire.set('additional_bonus_amount', 0) }"
                                             >
                                         </div>
                                     </div>

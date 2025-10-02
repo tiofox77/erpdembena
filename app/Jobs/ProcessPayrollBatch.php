@@ -14,6 +14,7 @@ use App\Models\HR\SalaryAdvance;
 use App\Models\HR\SalaryDiscount;
 use App\Models\HR\HRSetting;
 use App\Models\HR\IRTTaxBracket;
+use App\Services\PayrollCalculationService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -177,249 +178,123 @@ class ProcessPayrollBatch implements ShouldQueue
     }
 
     /**
-     * Process payroll for individual employee
+     * Process payroll for individual employee using centralized calculation service
      */
     protected function processEmployeePayroll(Employee $employee, PayrollBatch $batch): ?array
     {
         try {
-            $period = $batch->payrollPeriod;
-            $startDate = Carbon::parse($period->start_date);
-            $endDate = Carbon::parse($period->end_date);
+            Log::info('Processing employee payroll', [
+                'batch_id' => $batch->id,
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->full_name,
+            ]);
 
-            // Load HR settings
-            $hrSettings = $this->loadHRSettings();
-
-            // Calculate basic salary components
-            $basicSalary = (float) $employee->base_salary;
-            $workingDaysPerMonth = (int) $hrSettings['working_days_per_month'];
-            $workingHoursPerDay = (float) $hrSettings['working_hours_per_day'];
-            $hourlyRate = $workingDaysPerMonth > 0 ? $basicSalary / ($workingDaysPerMonth * $workingHoursPerDay) : 0;
-
-            // Load attendance data
-            $attendanceData = $this->loadAttendanceData($employee, $startDate, $endDate, $workingDaysPerMonth);
+            // Use centralized PayrollCalculationService
+            $calculator = new PayrollCalculationService($employee, $batch->payrollPeriod);
             
-            // Load overtime data
-            $overtimeData = $this->loadOvertimeData($employee, $startDate, $endDate);
+            // Set subsidies if needed (could be configured per batch or employee)
+            // For now, not applying subsidies automatically in batch processing
+            // $calculator->setSubsidies(christmas: false, vacation: false);
             
-            // Load salary advances and discounts
-            $advancesData = $this->loadSalaryAdvances($employee);
-            $discountsData = $this->loadSalaryDiscounts($employee);
-
-            // Calculate allowances
-            $allowances = $this->calculateAllowances($employee, $attendanceData);
-
-            // Calculate gross salary
-            $grossSalary = $basicSalary + $allowances['total'] + $overtimeData['total_amount'];
-
-            // Calculate taxes and deductions
-            $taxData = $this->calculateTaxes($grossSalary, $hrSettings);
+            // Calculate all payroll components
+            $result = $calculator->calculate();
             
-            // Calculate total deductions
-            $totalDeductions = $taxData['income_tax'] + 
-                              $taxData['social_security'] + 
-                              $advancesData['current_deduction'] + 
-                              $discountsData['current_deduction'] + 
-                              $attendanceData['attendance_deductions'];
-
-            // Calculate net salary
-            $netSalary = $grossSalary - $totalDeductions;
-
-            // Build payroll data array
-            return [
+            // Build payroll data array with ALL fields from calculation service
+            $payrollData = [
                 'employee_id' => $employee->id,
                 'payroll_period_id' => $batch->payroll_period_id,
                 'payroll_batch_id' => $batch->id,
-                'basic_salary' => $basicSalary,
-                'allowances' => $allowances['total'],
-                'overtime' => $overtimeData['total_amount'],
-                'gross_salary' => $grossSalary,
-                'income_tax' => $taxData['income_tax'],
-                'social_security' => $taxData['social_security'],
-                'other_deductions' => 0,
-                'total_deductions' => $totalDeductions,
-                'net_salary' => $netSalary,
-                'payment_method' => $batch->payment_method,
+                
+                // Basic salary
+                'basic_salary' => $result['basic_salary'],
+                
+                // Earnings
+                'allowances' => $result['allowances'],
+                'overtime' => $result['overtime'],
+                'bonuses' => $result['bonuses'],
+                'profile_bonus' => $result['profile_bonus'],
+                'overtime_amount' => $result['overtime_amount'],
+                'gross_salary' => $result['gross_salary'],
+                'main_salary' => $result['main_salary'],
+                
+                // Tax base
+                'base_irt_taxable_amount' => $result['base_irt_taxable_amount'],
+                
+                // Deductions
+                'tax' => $result['tax'],
+                'deductions_irt' => $result['deductions_irt'],
+                'social_security' => $result['social_security'],
+                'inss_3_percent' => $result['inss_3_percent'],
+                'inss_8_percent' => $result['inss_8_percent'],
+                'absence_deduction_amount' => $result['absence_deduction_amount'],
+                'deductions' => $result['deductions'],
+                'total_deductions_calculated' => $result['total_deductions_calculated'],
+                
+                // Net salary
+                'net_salary' => $result['net_salary'],
+                
+                // Attendance
+                'attendance_hours' => $result['attendance_hours'],
+                'leave_days' => 0, // Can be added later
+                'maternity_days' => 0,
+                'special_leave_days' => 0,
+                
+                // Payment info
+                'payment_method' => $batch->payment_method ?? 'bank_transfer',
+                'bank_account' => $employee->bank_account,
                 'payment_date' => $batch->batch_date,
-                'status' => 'approved',
-                'remarks' => "Processado via lote: {$batch->name}",
-                // Additional fields
-                'attendance_hours' => $attendanceData['total_hours'],
-                'overtime_hours' => $overtimeData['total_hours'],
-                'advance_deduction' => $advancesData['current_deduction'],
-                'total_salary_discounts' => $discountsData['current_deduction'],
-                'late_deduction' => $attendanceData['late_deduction'],
-                'absence_deduction' => $attendanceData['absence_deduction'],
-                'transport_allowance' => $allowances['transport'],
-                'meal_allowance' => $allowances['meal'],
-                'housing_allowance' => $allowances['housing'],
-                'performance_bonus' => $allowances['bonus'],
+                
+                // Status
+                'status' => Payroll::STATUS_APPROVED,
+                'remarks' => $this->generateRemarks($employee, $result, $batch),
+                'generated_by' => null, // Batch processing
+                'approved_by' => null,
             ];
+
+            Log::info('Employee payroll calculated successfully', [
+                'employee_id' => $employee->id,
+                'gross_salary' => $result['gross_salary'],
+                'net_salary' => $result['net_salary'],
+                'total_deductions' => $result['deductions'],
+            ]);
+
+            return $payrollData;
             
         } catch (Exception $e) {
             Log::error('Error calculating employee payroll', [
                 'employee_id' => $employee->id,
                 'batch_id' => $batch->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return null;
         }
     }
-
+    
     /**
-     * Load HR settings
+     * Generate payroll remarks
      */
-    protected function loadHRSettings(): array
+    protected function generateRemarks(Employee $employee, array $result, PayrollBatch $batch): string
     {
-        return [
-            'working_hours_per_day' => (float) HRSetting::get('working_hours_per_day', 8),
-            'working_days_per_month' => (int) HRSetting::get('working_days_per_month', 22),
-            'irt_rate' => (float) HRSetting::get('irt_rate', 6.5),
-            'inss_rate' => (float) HRSetting::get('inss_rate', 3.0),
-            'irt_min_salary' => (float) HRSetting::get('irt_min_salary', 70000),
-        ];
-    }
-
-    /**
-     * Load attendance data for employee
-     */
-    protected function loadAttendanceData(Employee $employee, Carbon $startDate, Carbon $endDate, int $workingDays): array
-    {
-        $attendances = Attendance::where('employee_id', $employee->id)
-            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->get();
-
-        $presentDays = $attendances->whereIn('status', ['present', 'late', 'half_day'])->count();
-        $absentDays = max(0, $workingDays - $presentDays);
-        $lateDays = $attendances->where('status', 'late')->count();
-
-        // Calculate total hours
-        $totalHours = 0;
-        $standardWorkDay = 8;
-        foreach ($attendances as $attendance) {
-            if (in_array($attendance->status, ['present', 'late', 'half_day'])) {
-                if ($attendance->time_in && $attendance->time_out) {
-                    $timeIn = Carbon::parse($attendance->time_in);
-                    $timeOut = Carbon::parse($attendance->time_out);
-                    $hours = $timeIn->diffInHours($timeOut);
-                    if ($attendance->status === 'half_day') {
-                        $hours = min($hours / 2, 4);
-                    }
-                } else {
-                    $hours = $attendance->status === 'half_day' ? 4 : $standardWorkDay;
-                }
-                $totalHours += $hours;
-            }
+        $remarks = "Processado via lote: {$batch->name}\n";
+        $remarks .= "Presenças: {$result['present_days']}/{$result['working_days_per_month']} dias\n";
+        $remarks .= "Horas trabalhadas: {$result['attendance_hours']}h\n";
+        
+        if ($result['absent_days'] > 0) {
+            $remarks .= "Faltas: {$result['absent_days']} dias\n";
         }
-
-        // Calculate deductions
-        $hourlyRate = $employee->base_salary / ($workingDays * 8);
-        $lateDeduction = $lateDays * $hourlyRate; // 1 hour deduction per late day
-        $absenceDeduction = $absentDays * ($employee->base_salary / $workingDays);
-
-        return [
-            'total_hours' => $totalHours,
-            'present_days' => $presentDays,
-            'absent_days' => $absentDays,
-            'late_days' => $lateDays,
-            'late_deduction' => $lateDeduction,
-            'absence_deduction' => $absenceDeduction,
-            'attendance_deductions' => $lateDeduction + $absenceDeduction,
-        ];
-    }
-
-    /**
-     * Load overtime data for employee
-     */
-    protected function loadOvertimeData(Employee $employee, Carbon $startDate, Carbon $endDate): array
-    {
-        $overtimeRecords = OvertimeRecord::where('employee_id', $employee->id)
-            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('status', 'approved')
-            ->get();
-
-        return [
-            'total_hours' => $overtimeRecords->sum('hours'),
-            'total_amount' => $overtimeRecords->sum('amount'),
-        ];
-    }
-
-    /**
-     * Load salary advances for employee
-     */
-    protected function loadSalaryAdvances(Employee $employee): array
-    {
-        $advances = SalaryAdvance::where('employee_id', $employee->id)
-            ->where('status', 'approved')
-            ->where('remaining_installments', '>', 0)
-            ->get();
-
-        return [
-            'total_amount' => $advances->sum('amount'),
-            'current_deduction' => $advances->sum('installment_amount'),
-        ];
-    }
-
-    /**
-     * Load salary discounts for employee
-     */
-    protected function loadSalaryDiscounts(Employee $employee): array
-    {
-        $discounts = SalaryDiscount::where('employee_id', $employee->id)
-            ->where('status', 'approved')
-            ->where('remaining_installments', '>', 0)
-            ->get();
-
-        return [
-            'current_deduction' => $discounts->sum('installment_amount'),
-        ];
-    }
-
-    /**
-     * Calculate allowances for employee
-     */
-    protected function calculateAllowances(Employee $employee, array $attendanceData): array
-    {
-        $transportAllowance = (float) ($employee->transport_allowance ?? 0);
-        $mealAllowance = (float) ($employee->food_benefit ?? 0);
-        $housingAllowance = (float) ($employee->housing_allowance ?? 0);
-        $bonusAmount = (float) ($employee->bonus_amount ?? 0);
-
-        // Proportional transport allowance based on attendance
-        $workingDaysPerMonth = 22; // From HR settings
-        if ($attendanceData['present_days'] < $workingDaysPerMonth) {
-            $attendanceRatio = $attendanceData['present_days'] / $workingDaysPerMonth;
-            $transportAllowance = $transportAllowance * $attendanceRatio;
+        
+        if ($result['late_days'] > 0) {
+            $remarks .= "Atrasos: {$result['late_days']} dias\n";
         }
-
-        return [
-            'transport' => $transportAllowance,
-            'meal' => $mealAllowance,
-            'housing' => $housingAllowance,
-            'bonus' => $bonusAmount,
-            'total' => $transportAllowance + $mealAllowance + $housingAllowance + $bonusAmount,
-        ];
-    }
-
-    /**
-     * Calculate taxes and social security
-     */
-    protected function calculateTaxes(float $grossSalary, array $hrSettings): array
-    {
-        // Calculate IRT (Income Tax)
-        $incomeTax = 0;
-        if ($grossSalary > $hrSettings['irt_min_salary']) {
-            $taxableAmount = $grossSalary - $hrSettings['irt_min_salary'];
-            $incomeTax = $taxableAmount * ($hrSettings['irt_rate'] / 100);
+        
+        if ($result['overtime_amount'] > 0) {
+            $remarks .= "Horas extras: " . number_format($result['overtime_amount'], 2) . " AOA\n";
         }
-
-        // Calculate INSS (Social Security)
-        $socialSecurity = $grossSalary * ($hrSettings['inss_rate'] / 100);
-
-        return [
-            'income_tax' => $incomeTax,
-            'social_security' => $socialSecurity,
-        ];
+        
+        return $remarks;
     }
+
 
     /**
      * Handle job failure

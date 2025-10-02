@@ -356,4 +356,5 @@
     @include('livewire.hr.payroll-batch.modals._create-batch-modal')
     @include('livewire.hr.payroll-batch.modals._view-batch-modal')
     @include('livewire.hr.payroll-batch.modals._delete-batch-modal')
+    @include('livewire.hr.payroll-batch.modals._edit-item-modal')
 </div>
