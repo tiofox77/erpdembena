@@ -30,6 +30,9 @@ Route::get('/language/{locale}', [\App\Http\Controllers\LanguageController::clas
 // Visualizar recibo de salário em HTML
 Route::get('/payroll/receipt', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('payroll.receipt.view');
 
+// Visualizar recibo individual por payroll ID
+Route::get('/payroll/receipt/{payrollId}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptByPayrollId'])->name('payroll.receipt.view.by-id');
+
 // Debug: Visualizar recibo com dados específicos
 Route::get('/debug/payroll-receipt/{employee_id?}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('debug.payroll.receipt');
 

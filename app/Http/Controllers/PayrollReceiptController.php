@@ -25,7 +25,48 @@ class PayrollReceiptController extends Controller
             $receiptData = $this->getEmployeeReceiptData((int) $request->input('employee_id'));
         }
         
-        return view('livewire.hr.payroll-receipt-isolated', $receiptData);
+        return view('livewire.hr.payroll.payroll-receipt-isolated', $receiptData);
+    }
+
+    /**
+     * Exibe o recibo individual baseado no ID do payroll
+     *
+     * @param int $payrollId
+     * @return View
+     */
+    public function showReceiptByPayrollId(int $payrollId): View
+    {
+        try {
+            // Buscar payroll com relacionamentos
+            $payroll = \App\Models\HR\Payroll::with([
+                'employee.department',
+                'employee.position',
+                'payrollPeriod'
+            ])->findOrFail($payrollId);
+
+            // Gerar dados do recibo
+            $receiptData = $this->getEmployeeReceiptDataFromPayroll($payroll);
+
+            return view('livewire.hr.payroll.payroll-receipt-isolated', $receiptData);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao exibir recibo individual', [
+                'payroll_id' => $payrollId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Retornar view com erro
+            return view('livewire.hr.payroll.payroll-receipt-isolated', [
+                'companyName' => 'Dembena Indústria e Comércio Lda',
+                'employeeName' => 'ERRO AO CARREGAR RECIBO',
+                'error' => 'Não foi possível carregar o recibo. Por favor, tente novamente.',
+                'netSalary' => 0,
+                'baseSalary' => 0,
+                'totalEarnings' => 0,
+                'totalDeductions' => 0
+            ]);
+        }
     }
 
     /**
@@ -582,5 +623,48 @@ class PayrollReceiptController extends Controller
     {
         // TODO: Implementar para exibir múltiplos recibos
         return $this->showReceiptHTML($request);
+    }
+    
+    /**
+     * Exibe o recibo de pagamento por ID do funcionário (compatibilidade)
+     *
+     * @param int $employeeId
+     * @return View
+     */
+    public function showReceiptByEmployeeId(int $employeeId): View
+    {
+        try {
+            // Buscar último payroll do funcionário
+            $payroll = \App\Models\HR\Payroll::with([
+                'employee.department',
+                'employee.position',
+                'payrollPeriod'
+            ])
+            ->where('employee_id', $employeeId)
+            ->latest('created_at')
+            ->firstOrFail();
+
+            // Gerar dados do recibo
+            $receiptData = $this->getEmployeeReceiptDataFromPayroll($payroll);
+
+            return view('livewire.hr.payroll.payroll-receipt-isolated', $receiptData);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao exibir recibo por employee_id', [
+                'employee_id' => $employeeId,
+                'error' => $e->getMessage()
+            ]);
+
+            // Retornar view com erro
+            return view('livewire.hr.payroll.payroll-receipt-isolated', [
+                'companyName' => 'Dembena Indústria e Comércio Lda',
+                'employeeName' => 'ERRO AO CARREGAR RECIBO',
+                'error' => 'Não foi possível encontrar folha de pagamento para este funcionário.',
+                'netSalary' => 0,
+                'baseSalary' => 0,
+                'totalEarnings' => 0,
+                'totalDeductions' => 0
+            ]);
+        }
     }
 }

@@ -159,7 +159,11 @@ class PayrollBatch extends Model
      */
     public function canBeProcessed(): bool
     {
-        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_READY_TO_PROCESS]) && $this->total_employees > 0;
+        return in_array($this->status, [
+            self::STATUS_DRAFT, 
+            self::STATUS_READY_TO_PROCESS,
+            self::STATUS_FAILED  // Permitir reprocessar batches que falharam
+        ]) && $this->total_employees > 0;
     }
 
     /**

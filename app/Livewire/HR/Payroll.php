@@ -2500,9 +2500,20 @@ class Payroll extends Component
      */
     public function save(): void
     {
+        \Log::info('=== PAYROLL SAVE INICIADO ===', [
+            'employee_id' => $this->employee_id,
+            'selectedEmployee' => $this->selectedEmployee ? $this->selectedEmployee->full_name : null,
+            'isEditing' => $this->isEditing,
+            'payroll_id' => $this->payroll_id,
+        ]);
+        
         try {
             // Validate required data
             if (!$this->selectedEmployee || !$this->employee_id) {
+                \Log::error('PAYROLL SAVE: Funcionário não selecionado', [
+                    'selectedEmployee' => $this->selectedEmployee,
+                    'employee_id' => $this->employee_id
+                ]);
                 session()->flash('error', 'Funcionário não selecionado.');
                 return;
             }
@@ -2600,11 +2611,22 @@ class Payroll extends Component
                 // Status and metadata
                 'status' => PayrollModel::STATUS_DRAFT,
                 'remarks' => $this->generatePayrollRemarks(),
-                'generated_by' => auth()->id(),
+                'generated_by' => null, // Campo aponta para employees, não users
             ];
+
+            \Log::info('PAYROLL SAVE: Dados preparados', [
+                'payroll_period_id' => $payrollPeriod->id,
+                'employee_id' => $this->employee_id,
+                'basic_salary' => $this->basic_salary,
+                'gross_salary' => $this->gross_salary,
+                'net_salary' => $this->net_salary,
+                'isEditing' => $this->isEditing
+            ]);
 
             // Create or update the payroll record
             if ($this->isEditing && $this->payroll_id) {
+                \Log::info('PAYROLL SAVE: Atualizando payroll existente', ['payroll_id' => $this->payroll_id]);
+                
                 // Update existing payroll
                 $payroll = PayrollModel::find($this->payroll_id);
                 $payroll->update($payrollData);
@@ -2615,14 +2637,23 @@ class Payroll extends Component
                 
                 $message = 'Folha de pagamento atualizada com sucesso para ' . $this->selectedEmployee->full_name . '.';
             } else {
+                \Log::info('PAYROLL SAVE: Criando novo payroll', ['employee_name' => $this->selectedEmployee->full_name]);
+                
                 // Create new payroll
                 $payroll = PayrollModel::create($payrollData);
+                
+                \Log::info('PAYROLL SAVE: Payroll criado', ['payroll_id' => $payroll->id]);
                 
                 // Create detailed payroll items for transparency
                 $this->createPayrollItems($payroll);
                 
                 $message = 'Folha de pagamento criada com sucesso para ' . $this->selectedEmployee->full_name . '.';
             }
+
+            \Log::info('PAYROLL SAVE: Sucesso!', [
+                'payroll_id' => $payroll->id,
+                'message' => $message
+            ]);
 
             // Success message and close modal
             session()->flash('message', $message);
@@ -3267,6 +3298,12 @@ class Payroll extends Component
 
     public function render()
     {
+        \Log::info('PAYROLL RENDER', [
+            'filters' => $this->filters,
+            'search' => $this->search,
+            'perPage' => $this->perPage
+        ]);
+        
         $query = PayrollModel::query()
             ->with(['employee', 'payrollPeriod'])
             ->when($this->search, function ($query) {
@@ -3300,6 +3337,12 @@ class Payroll extends Component
 
         $payrolls = $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
+        
+        \Log::info('PAYROLL RENDER RESULT', [
+            'total' => $payrolls->total(),
+            'count' => $payrolls->count(),
+            'sql' => $query->toSql()
+        ]);
 
         // Buscar funcionários ativos que NÃO foram pagos no período selecionado
         $employeesQuery = Employee::where('employment_status', 'active');
