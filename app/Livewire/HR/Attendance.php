@@ -10,13 +10,16 @@ use App\Models\HR\Department;
 use App\Models\HR\Shift;
 use App\Models\HR\ShiftAssignment;
 use App\Models\HR\HRSetting;
+use App\Imports\AttendanceImport;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
+use Maatwebsite\Excel\Facades\Excel;
 
 class Attendance extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $perPage = 10;
@@ -65,17 +68,25 @@ class Attendance extends Component
     public $batchStatus = 'present';
     public $batchTimeIn = '08:00';
     public $batchTimeOut = '17:00';
-    public $batchRemarks = '';
     public $shiftEmployees = [];
     public $shiftFilter = ''; // Para filtrar por shift
     public $selectAllEmployees = false; // Para marcar/desmarcar todos
     public $selectedShift = null; // Shift obrigatório selecionado
     public $availableShifts = []; // Shifts disponíveis
     
+    // Import properties
+    public $importFile = null;
+    public $showImportModal = false;
+    public array $importResults = [];
+    public $showTimeConflictsModal = false;
+    public array $timeConflicts = [];
+    public array $selectedTimes = [];
+    
     // Listeners
     protected $listeners = [
         'refreshAttendance' => '$refresh',
         'attendance-saved' => 'refreshData',
+        'time-conflicts-found' => 'showTimeConflictsModal',
         'attendanceUpdated' => '$refresh'
     ];
 
@@ -1072,6 +1083,171 @@ class Attendance extends Component
         $this->shiftEmployees = [];
         $this->selectedEmployees = [];
         $this->selectAllEmployees = false;
+    }
+
+    /**
+     * Open import modal
+     */
+    public function openImportModal()
+    {
+        $this->reset(['importFile', 'importResults']);
+        $this->showImportModal = true;
+    }
+
+    /**
+     * Close import modal
+     */
+    public function closeImportModal()
+    {
+        $this->showImportModal = false;
+        $this->reset(['importFile', 'importResults']);
+    }
+
+    /**
+     * Close time conflicts modal
+     */
+    public function closeTimeConflictsModal()
+    {
+        $this->showTimeConflictsModal = false;
+        $this->reset(['timeConflicts', 'selectedTimes']);
+    }
+
+    /**
+     * Process attendance after user resolved time conflicts
+     */
+    public function processConflictResolution()
+    {
+        try {
+            $created = 0;
+            
+            foreach ($this->timeConflicts as $index => $conflict) {
+                $selectedCheckIn = $this->selectedTimes[$index]['check_in'] ?? null;
+                $selectedCheckOut = $this->selectedTimes[$index]['check_out'] ?? null;
+                
+                // Calculate hourly rate
+                $employee = \App\Models\HR\Employee::find($conflict['employee_id']);
+                if (!$employee) continue;
+                
+                $baseSalary = $employee->base_salary ?? 0;
+                $weeklyHours = (float) \App\Models\HR\HRSetting::get('working_hours_per_week', 44);
+                $monthlyHours = $weeklyHours * 4.33;
+                $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+                
+                // Determine status
+                $status = 'present';
+                if (!$selectedCheckIn && !$selectedCheckOut) {
+                    $status = 'absent';
+                }
+                
+                // Create attendance
+                $attendanceData = [
+                    'employee_id' => $conflict['employee_id'],
+                    'date' => $conflict['date'],
+                    'time_in' => $selectedCheckIn ? \Carbon\Carbon::parse($conflict['date'] . ' ' . $selectedCheckIn) : null,
+                    'time_out' => $selectedCheckOut ? \Carbon\Carbon::parse($conflict['date'] . ' ' . $selectedCheckOut) : null,
+                    'status' => $status,
+                    'hourly_rate' => $hourlyRate,
+                    'affects_payroll' => true,
+                    'remarks' => 'Importado do sistema biométrico (hora selecionada manualmente)',
+                ];
+                
+                \App\Models\HR\Attendance::create($attendanceData);
+                $created++;
+            }
+            
+            session()->flash('message', "Conflitos resolvidos: {$created} registos criados");
+            $this->closeTimeConflictsModal();
+            $this->dispatch('attendanceUpdated');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Erro ao processar conflitos: ' . $e->getMessage());
+            \Log::error('Conflict resolution error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Import attendance from Excel file
+     */
+    public function importFromExcel()
+    {
+        \Log::info('DEBUG: importFromExcel method called');
+        \Log::info('DEBUG: importFile value:', ['file' => $this->importFile]);
+        
+        try {
+            $this->validate([
+                'importFile' => 'required|mimes:xlsx,xls,csv|max:10240', // Max 10MB
+            ]);
+            \Log::info('DEBUG: Validation passed');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('DEBUG: Validation failed:', $e->errors());
+            session()->flash('error', 'Erro de validação: ' . implode(', ', $e->validator->errors()->all()));
+            return;
+        }
+
+        try {
+            \Log::info('DEBUG: Starting import process');
+            $import = new AttendanceImport();
+            Excel::import($import, $this->importFile->getRealPath());
+            \Log::info('DEBUG: Import completed successfully');
+            
+            $importedCount = $import->getImportedCount();
+            $updatedCount = $import->getUpdatedCount();
+            $skippedCount = $import->getSkippedCount();
+            $errors = $import->getErrors();
+            $timeConflicts = $import->getTimeConflicts();
+            
+            // Check if there are time conflicts that need user confirmation
+            if (!empty($timeConflicts)) {
+                $this->timeConflicts = $timeConflicts;
+                $this->closeImportModal();
+                $this->showTimeConflictsModal = true;
+                
+                session()->flash('warning', 'Foram encontrados ' . count($timeConflicts) . ' registos com horas duplicadas. Por favor, selecione as horas corretas.');
+                return;
+            }
+            
+            $this->importResults = [
+                'success' => true,
+                'message' => __('messages.import_completed_successfully'),
+                'details' => [
+                    'imported' => $importedCount,
+                    'updated' => $updatedCount,
+                    'skipped' => $skippedCount,
+                    'errors' => $errors,
+                ]
+            ];
+
+            $successMessage = "Importação concluída: {$importedCount} novos registos, {$updatedCount} atualizados";
+            if ($skippedCount > 0) {
+                $successMessage .= ", {$skippedCount} ignorados";
+            }
+            
+            session()->flash('message', $successMessage);
+            
+            if (!empty($errors)) {
+                session()->flash('import_errors', $errors);
+            }
+            
+            $this->closeImportModal();
+            $this->dispatch('attendanceUpdated');
+            
+        } catch (\Exception $e) {
+            \Log::error('DEBUG: Import failed with exception:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->importResults = [
+                'success' => false,
+                'message' => __('messages.import_failed') . ': ' . $e->getMessage(),
+                'details' => []
+            ];
+            
+            session()->flash('error', __('messages.import_failed') . ': ' . $e->getMessage());
+        }
     }
 
     public function render()

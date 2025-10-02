@@ -859,6 +859,35 @@
                                     @enderror
                                 </div>
 
+                                <!-- Biometric ID -->
+                                <div class="space-y-2">
+                                    <label for="biometric_id" class="flex items-center text-sm font-medium text-gray-700">
+                                        <i class="fas fa-fingerprint text-blue-500 mr-2"></i>
+                                        {{ __('messages.biometric_id') }}
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="biometric_id"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 @error('biometric_id') border-red-500 bg-red-50 @enderror"
+                                            wire:model.live="biometric_id" 
+                                            placeholder="{{ __('messages.biometric_id_placeholder') }}">
+                                        @error('biometric_id')
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            </div>
+                                        @enderror
+                                    </div>
+                                    @error('biometric_id')
+                                        <p class="flex items-center text-sm text-red-600">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            {{ $message }}
+                                        </p>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 flex items-center">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        {{ __('messages.biometric_id_hint') }}
+                                    </p>
+                                </div>
+
                                 <!-- Marital Status -->
                                 <div class="space-y-2">
                                     <label for="marital_status" class="flex items-center text-sm font-medium text-gray-700">

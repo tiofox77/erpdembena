@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
+use App\Models\HR\PayrollBatch;
 
 class Payroll extends Model
 {
@@ -17,6 +18,7 @@ class Payroll extends Model
     protected $fillable = [
         'employee_id',
         'payroll_period_id',
+        'payroll_batch_id',
         'basic_salary',
         'allowances',
         'overtime',
@@ -98,6 +100,14 @@ class Payroll extends Model
     public function payrollPeriod(): BelongsTo
     {
         return $this->belongsTo(PayrollPeriod::class);
+    }
+
+    /**
+     * Get the payroll batch
+     */
+    public function payrollBatch(): BelongsTo
+    {
+        return $this->belongsTo(PayrollBatch::class);
     }
 
     /**

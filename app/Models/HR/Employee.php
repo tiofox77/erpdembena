@@ -16,6 +16,7 @@ class Employee extends Model
         'date_of_birth',
         'gender',
         'id_card',
+        'biometric_id',
         'tax_number',
         'address',
         'phone',

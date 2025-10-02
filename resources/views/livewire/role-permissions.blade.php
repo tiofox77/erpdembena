@@ -419,11 +419,11 @@
                                 <input
                                     id="roleName"
                                     type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('role.name') border-red-300 text-red-900 @enderror"
-                                    wire:model="role.name"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('roleData.name') border-red-300 text-red-900 @enderror"
+                                    wire:model="roleData.name"
                                     placeholder="Digite o nome da função"
                                 >
-                                @error('role.name')
+                                @error('roleData.name')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>

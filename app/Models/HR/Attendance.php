@@ -19,6 +19,8 @@ class Attendance extends Model
         'time_out',
         'status',
         'remarks',
+        'hourly_rate',
+        'affects_payroll',
     ];
 
     protected $casts = [

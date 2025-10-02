@@ -39,6 +39,7 @@ class Employees extends Component
     public $date_of_birth;
     public $gender;
     public $id_card;
+    public $biometric_id;
     public $tax_number;
     public $address;
     public $phone;
@@ -100,6 +101,7 @@ class Employees extends Component
             'date_of_birth' => 'nullable|date|before:today',
             'gender' => 'nullable|in:male,female,other',
             'id_card' => 'nullable|unique:employees,id_card,' . $this->employee_id,
+            'biometric_id' => 'nullable|string|max:50|unique:employees,biometric_id,' . $this->employee_id,
             'tax_number' => 'nullable|unique:employees,tax_number,' . $this->employee_id,
             'address' => 'nullable',
             'phone' => 'nullable',
@@ -146,7 +148,7 @@ class Employees extends Component
     public function create()
     {
         $this->reset([
-            'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'tax_number',
+            'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'biometric_id', 'tax_number',
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_id', 'bank_name', 'bank_account', 'bank_iban', 'position_id', 'department_id', 'hire_date',
             'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
@@ -163,6 +165,7 @@ class Employees extends Component
         $this->date_of_birth = $employee->date_of_birth;
         $this->gender = $employee->gender;
         $this->id_card = $employee->id_card;
+        $this->biometric_id = $employee->biometric_id;
         $this->tax_number = $employee->tax_number;
         $this->address = $employee->address;
         $this->phone = $employee->phone;
@@ -274,7 +277,7 @@ class Employees extends Component
 
         $this->showModal = false;
         $this->reset([
-            'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'tax_number',
+            'employee_id', 'full_name', 'date_of_birth', 'gender', 'id_card', 'biometric_id', 'tax_number',
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_name', 'bank_account', 'position_id', 'department_id', 'hire_date',
             'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
@@ -563,6 +566,7 @@ class Employees extends Component
         $this->date_of_birth = $employee->date_of_birth;
         $this->gender = $employee->gender;
         $this->id_card = $employee->id_card;
+        $this->biometric_id = $employee->biometric_id;
         $this->tax_number = $employee->tax_number;
         $this->address = $employee->address;
         $this->phone = $employee->phone;

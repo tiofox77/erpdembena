@@ -283,6 +283,9 @@ Route::middleware(['auth'])->group(function () {
         // Payroll Management
         Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
         
+        // Payroll Batch Management
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-batch', App\Livewire\HR\PayrollBatch::class)->name('payroll-batch');
+        
         // Payroll Periods Management
         Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-periods', App\Livewire\HR\PayrollPeriods::class)->name('payroll-periods');
         
