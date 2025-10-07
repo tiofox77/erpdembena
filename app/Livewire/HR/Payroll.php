@@ -22,6 +22,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\Setting;
 
@@ -90,7 +91,16 @@ class Payroll extends Component
     // Basic Salary Components
     public float $basic_salary = 0.0;
     public float $hourly_rate = 0.0;
+    public float $daily_rate = 0.0;
     public float $monthly_hours = 0.0;
+    
+    // Calculated values from helper
+    public float $inss_base = 0.0;
+    // christmas_subsidy_amount e vacation_subsidy_amount agora são computed properties
+    public float $taxable_transport = 0.0;
+    public float $exempt_transport = 0.0;
+    public float $taxable_food = 0.0;
+    public float $exempt_food = 0.0;
     
     // Attendance & Hours Data
     public float $total_attendance_hours = 0.0;
@@ -180,10 +190,6 @@ class Payroll extends Component
     public bool $vacation_subsidy = false;
     public bool $include_vacation_subsidy = false;
     public bool $include_christmas_subsidy = false;
-    
-    // Holiday Subsidy Amounts
-    public float $christmas_subsidy_amount = 0.0;
-    public float $vacation_subsidy_amount = 0.0;
     
     // Deductions
     public float $income_tax = 0.0;
@@ -1062,9 +1068,156 @@ class Payroll extends Component
     }
 
     /**
-     * Calculate payroll components dynamically
+     * Calculate payroll components dynamically using PayrollCalculatorHelper
      */
     public function calculatePayrollComponents(): void
+    {
+        if (!$this->selectedEmployee || !$this->selectedPayrollPeriod) {
+            return;
+        }
+
+        try {
+            \Log::info('🔄 INICIANDO calculatePayrollComponents', [
+                'employee' => $this->selectedEmployee->full_name,
+                'christmas_subsidy' => $this->christmas_subsidy,
+                'vacation_subsidy' => $this->vacation_subsidy,
+                'basic_salary' => $this->basic_salary,
+            ]);
+            
+            // Criar instância do helper
+            $calculator = new \App\Helpers\PayrollCalculatorHelper(
+                $this->selectedEmployee,
+                \Carbon\Carbon::parse($this->selectedPayrollPeriod->start_date),
+                \Carbon\Carbon::parse($this->selectedPayrollPeriod->end_date)
+            );
+            
+            \Log::info('✅ Helper criado com sucesso');
+            
+            // Carregar todos os dados do empregado
+            $calculator->loadAllEmployeeData();
+            \Log::info('✅ Dados do empregado carregados');
+            
+            // Configurar subsídios e bônus
+            $calculator->setChristmasSubsidy($this->christmas_subsidy);
+            $calculator->setVacationSubsidy($this->vacation_subsidy);
+            $calculator->setAdditionalBonus($this->additional_bonus_amount ?? 0);
+            \Log::info('✅ Subsídios configurados no Helper', [
+                'christmas' => $this->christmas_subsidy,
+                'vacation' => $this->vacation_subsidy,
+            ]);
+            // Food in kind apenas para exibição - food SEMPRE é deduzido (regra de negócio)
+            $calculator->setFoodInKind($this->is_food_in_kind ?? false);
+            
+            \Log::info('🔄 Chamando $calculator->calculate()...');
+            
+            // Calcular tudo
+            $results = $calculator->calculate();
+            
+            \Log::info('✅ Helper calculate() retornou resultados', [
+                'gross_salary' => $results['gross_salary'] ?? 'NULL',
+                'net_salary' => $results['net_salary'] ?? 'NULL',
+                'christmas_subsidy_amount' => $results['christmas_subsidy_amount'] ?? 'NULL',
+                'vacation_subsidy_amount' => $results['vacation_subsidy_amount'] ?? 'NULL',
+            ]);
+            
+            // Atribuir resultados às propriedades do componente
+            $this->basic_salary = $results['basic_salary'];
+            $this->hourly_rate = $results['hourly_rate'];
+            $this->daily_rate = $results['daily_rate'];
+            $this->transport_allowance = $results['transport_allowance'];
+            $this->meal_allowance = $results['food_benefit'];
+            $this->bonus_amount = $results['bonus_amount'];
+            
+            // Dados de presença
+            $this->total_working_days = $results['total_working_days'];
+            $this->present_days = $results['present_days'];
+            $this->absent_days = $results['absent_days'];
+            $this->late_arrivals = $results['late_arrivals'];
+            $this->total_attendance_hours = $results['total_attendance_hours'];
+            $this->attendanceData = $results['attendance_data'];
+            
+            // Horas extras
+            $this->total_overtime_hours = $results['total_overtime_hours'];
+            $this->total_overtime_amount = $results['total_overtime_amount'];
+            $this->overtimeRecords = $results['overtime_records'];
+            
+            // Adiantamentos e descontos
+            $this->advance_deduction = $results['advance_deduction'];
+            $this->total_salary_advances = $results['total_salary_advances'];
+            $this->salaryAdvances = $results['salary_advances'];
+            $this->total_salary_discounts = $results['total_salary_discounts'];
+            $this->salaryDiscounts = $results['salary_discounts'];
+            
+            // Deduções por presença
+            $this->late_deduction = $results['late_deduction'];
+            $this->absence_deduction = $results['absence_deduction'];
+            
+            // Cálculos de salário
+            $this->gross_salary = $results['gross_salary'];
+            $this->main_salary = $results['main_salary'];
+            $this->gross_for_tax = $results['irt_base'];
+            $this->base_irt_taxable_amount = $results['irt_base'];
+            
+            // Base do INSS
+            $this->inss_base = $results['inss_base'];
+            
+            // Impostos
+            $this->calculated_inss = $results['inss_3_percent'];
+            $this->inss_3_percent = $results['inss_3_percent'];
+            $this->inss_8_percent = $results['inss_8_percent'];
+            $this->calculated_irt = $results['irt'];
+            $this->income_tax = $results['irt'];
+            $this->deductions_irt = $results['irt'];
+            
+            // Subsídios são calculados via computed properties
+            // getChristmasSubsidyAmountProperty() e getVacationSubsidyAmountProperty()
+            
+            // Valores tributáveis e isentos (para exibição nos breakdowns)
+            $this->taxable_transport = $results['taxable_transport'];
+            $this->exempt_transport = $results['exempt_transport'];
+            $this->taxable_food = $results['taxable_food'];
+            $this->exempt_food = $results['exempt_food'];
+            
+            // Totais
+            $this->total_deductions_calculated = $results['total_deductions'];
+            $this->total_deductions = $results['total_deductions'];
+            $this->calculated_net_salary = $results['net_salary'];
+            $this->net_salary = $results['net_salary'];
+            
+            // Detalhes de IRT para exibição
+            $this->irtCalculationDetails = $results['irt_details'];
+            
+            Log::info('✅✅✅ Payroll calculado com sucesso (FINAL)', [
+                'employee_id' => $this->selectedEmployee->id,
+                'gross_salary' => $this->gross_salary,
+                'net_salary' => $this->net_salary,
+                'christmas_subsidy' => $this->christmas_subsidy,
+                'vacation_subsidy' => $this->vacation_subsidy,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('ERRO FATAL ao calcular payroll com helper', [
+                'employee_id' => $this->selectedEmployee->id ?? null,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Usar valores padrão para não quebrar a interface
+            $this->gross_salary = 0;
+            $this->net_salary = 0;
+            $this->total_deductions = 0;
+            
+            session()->flash('error', 'Erro ao calcular payroll: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Método legado de cálculo (mantido como fallback)
+     * @deprecated Use calculatePayrollComponents() que usa o PayrollCalculatorHelper
+     */
+    private function calculatePayrollComponentsLegacy(): void
     {
         if (!$this->selectedEmployee || !$this->basic_salary) {
             return;
@@ -1182,21 +1335,9 @@ class Payroll extends Component
         $this->net_salary = max(0, $this->gross_salary - $this->total_deductions - $foodBenefit);
     }
 
-    /**
-     * Get Christmas subsidy amount
-     */
-    public function getChristmasSubsidyAmountProperty(): float
-    {
-        return $this->christmas_subsidy ? ($this->basic_salary * 0.5) : 0.0;
-    }
+    // ✅ REMOVIDO: getChristmasSubsidyAmountProperty() - Valor já calculado pelo helper em $this->christmas_subsidy_amount
 
-    /**
-     * Get Vacation subsidy amount  
-     */
-    public function getVacationSubsidyAmountProperty(): float
-    {
-        return $this->vacation_subsidy ? ($this->basic_salary * 0.5) : 0.0;
-    }
+    // ✅ REMOVIDO: getVacationSubsidyAmountProperty() - Valor já calculado pelo helper em $this->vacation_subsidy_amount
 
     /**
      * Get total subsidies amount
@@ -1392,125 +1533,26 @@ class Payroll extends Component
         return max(0, $this->gross_salary - $this->social_security);
     }
     
-    /**
-     * Calculate Main Salary (base calculation before taxes)
-     */
-    public function getMainSalaryProperty(): float
-    {
-        $basic = (float)($this->basic_salary ?? 0);
-        $transportCash = (float)($this->transport_allowance ?? 0);
-        
-        // Food benefit handling
-        $isFoodInKind = (bool)($this->is_food_in_kind ?? false);
-        $foodBenefit = (float)($this->selectedEmployee->food_benefit ?? 0);
-        $foodCash = $isFoodInKind ? 0.0 : $foodBenefit;
-        
-        $overtime = (float)($this->total_overtime_amount ?? 0);
-        $nightShift = (float)($this->night_shift_allowance ?? 0);
-        $otherAllow = (float)($this->other_allowances ?? 0);
-        
-        // Absence deduction
-        $absence = (float)max(($this->absence_deduction ?? 0), ($this->absenceDeductionAmount ?? 0));
-        
-        return max(0.0, $basic + $transportCash + $foodCash + $overtime + $nightShift + $otherAllow - $absence);
-    }
+    // ✅ REMOVIDO: getMainSalaryProperty() - Valor já calculado pelo helper em $this->main_salary
     
-    /**
-     * Calculate Gross For Tax (includes additional benefits)
-     */
-    public function getGrossForTaxProperty(): float
-    {
-        $mainSalary = $this->getMainSalaryProperty();
-        
-        // Additional benefits
-        $vacationAllow = !empty($this->vacation_subsidy) ? 0.5 * ($this->basic_salary ?? 0) : 0.0;
-        $christmasOffer = !empty($this->christmas_subsidy) ? 0.5 * ($this->basic_salary ?? 0) : 0.0;
-        $bonusTotal = (float)($this->bonus_amount ?? 0) + (float)($this->additional_bonus_amount ?? 0);
-        
-        return $mainSalary + $vacationAllow + $christmasOffer + $bonusTotal;
-    }
+    // ✅ REMOVIDO: getGrossForTaxProperty() - Valor já calculado pelo helper em $this->gross_for_tax
     
-    /**
-     * Calculate INSS (3% on main salary components)
-     */
-    public function getCalculatedInssProperty(): float
-    {
-        $basic = (float)($this->basic_salary ?? 0);
-        $transport = (float)($this->transport_allowance ?? 0);
-        $meal = (float)($this->meal_allowance ?? 0);
-        $overtime = (float)($this->total_overtime_amount ?? 0);
-        
-        return round(($basic + $transport + $meal + $overtime) * 0.03, 2);
-    }
+    // ✅ REMOVIDO: getCalculatedInssProperty() - Valor já calculado pelo helper em $this->inss_3_percent
     
-    /**
-     * Calculate IRT base with exemptions
-     */
-    public function getIrtBaseProperty(): float
-    {
-        $grossForTax = $this->getGrossForTaxProperty();
-        $inssDeduction = $this->getCalculatedInssProperty();
-        
-        // Transport and food exemptions (30k each)
-        $transportCash = (float)($this->transport_allowance ?? 0);
-        $foodBenefit = (float)($this->selectedEmployee->food_benefit ?? 0);
-        $isFoodInKind = (bool)($this->is_food_in_kind ?? false);
-        $foodCash = $isFoodInKind ? 0.0 : $foodBenefit;
-        
-        $exemptTransport = min(30000.0, $transportCash);
-        $exemptFood = min(30000.0, $foodCash);
-        
-        return max(0.0, $grossForTax - $inssDeduction - $exemptTransport - $exemptFood);
-    }
+    // ✅ REMOVIDO: getIrtBaseProperty() - Valor já calculado pelo helper em $this->base_irt_taxable_amount
     
-    /**
-     * Calculate IRT amount
-     */
-    public function getCalculatedIrtProperty(): float
-    {
-        $irtBase = $this->getIrtBaseProperty();
-        return \App\Models\HR\IRTTaxBracket::calculateIRT($irtBase);
-    }
+    // ✅ REMOVIDO: getCalculatedIrtProperty() - Valor já calculado pelo helper em $this->income_tax
     
-    /**
-     * Calculate total deductions
-     */
-    public function getTotalDeductionsCalculatedProperty(): float
-    {
-        $inss = $this->getCalculatedInssProperty();
-        $irt = $this->getCalculatedIrtProperty();
-        $advance = (float)($this->advance_deduction ?? 0);
-        $otherDiscounts = (float)($this->total_salary_discounts ?? 0);
-        $union = (float)($this->union_deduction ?? 0);
-        $uFund = (float)($this->u_fund_ded ?? 0);
-        $loans = (float)($this->loan_installments ?? 0);
-        
-        // Food handling
-        $isFoodInKind = (bool)($this->is_food_in_kind ?? false);
-        $foodBenefit = (float)($this->selectedEmployee->food_benefit ?? 0);
-        $foodInKind = $isFoodInKind ? $foodBenefit : 0.0;
-        $foodCash = $isFoodInKind ? 0.0 : $foodBenefit;
-        
-        return $inss + $irt + $advance + $otherDiscounts + $union + $uFund + $loans + $foodInKind + $foodCash;
-    }
+    // ✅ REMOVIDO: getTotalDeductionsCalculatedProperty() - Valor já calculado pelo helper em $this->total_deductions
     
-    /**
-     * Calculate final net salary
-     */
-    public function getCalculatedNetSalaryProperty(): float
-    {
-        $grossForTax = $this->getGrossForTaxProperty();
-        $deductions = $this->getTotalDeductionsCalculatedProperty();
-        
-        return round(max(0.0, $grossForTax - $deductions), 2);
-    }
+    // ✅ REMOVIDO: getCalculatedNetSalaryProperty() - Valor já calculado pelo helper em $this->net_salary
 
     /**
      * Get detailed IRT calculation breakdown
      */
     public function getIrtCalculationDetailsProperty(): array
     {
-        $mc = $this->getIrtBaseProperty();
+        $mc = $this->base_irt_taxable_amount ?? 0;
         
         // Get the appropriate bracket for this MC value
         $bracket = IRTTaxBracket::getBracketForIncome($mc);
@@ -1618,36 +1660,61 @@ class Payroll extends Component
      */
     public function selectEmployee(int $employeeId): void
     {
-        // Ensure period is selected before proceeding
-        if (!$this->selectedPayrollPeriod) {
-            session()->flash('error', __('messages.please_select_payroll_period_first'));
-            return;
-        }
+        try {
+            // Ensure period is selected before proceeding
+            if (!$this->selectedPayrollPeriod) {
+                session()->flash('error', __('messages.please_select_payroll_period_first'));
+                return;
+            }
 
-        $this->selectedEmployee = Employee::with(['department', 'position'])->find($employeeId);
-        $this->employee_id = $employeeId;
-        
-        if ($this->selectedEmployee) {
-            // Initialize basic salary from employee
-            $this->basic_salary = (float) ($this->selectedEmployee->base_salary ?? 0);
+            $this->selectedEmployee = Employee::with(['department', 'position'])->find($employeeId);
+            $this->employee_id = $employeeId;
             
-            // Use selected period dates for calculations
-            $this->selected_month = (string) $this->selectedPayrollPeriod->start_date->month;
-            $this->selected_year = (string) $this->selectedPayrollPeriod->start_date->year;
+            if ($this->selectedEmployee) {
+                // Initialize basic salary from employee - usando base_salary DIRETO
+                $this->basic_salary = (float) ($this->selectedEmployee->base_salary ?? 0);
+                
+                \Log::info('👤 selectEmployee - Carregando salário', [
+                    'employee' => $this->selectedEmployee->full_name,
+                    'base_salary_from_db' => $this->selectedEmployee->base_salary ?? 'NULL',
+                    'this_basic_salary_set_to' => $this->basic_salary,
+                ]);
+                
+                // Use selected period dates for calculations
+                $this->selected_month = (string) $this->selectedPayrollPeriod->start_date->month;
+                $this->selected_year = (string) $this->selectedPayrollPeriod->start_date->year;
+                
+                // Load HR settings
+                $this->loadHRSettings();
+                
+                // Calculate hourly rate
+                $this->hourly_rate = $this->calculateHourlyRate();
+                
+                // Load employee payroll data based on selected period
+                $this->loadEmployeePayrollDataForPeriod();
+                $this->calculatePayrollComponents();
+                
+                // Close search modal and open process modal
+                $this->showEmployeeSearch = false;
+                $this->showProcessModal = true;
+                
+                // Log estado dos checkboxes ao abrir modal
+                \Log::info('Modal Aberta', [
+                    'employee' => $this->selectedEmployee->full_name,
+                    'basic_salary' => $this->basic_salary,
+                    'christmas_subsidy' => $this->christmas_subsidy,
+                    'vacation_subsidy' => $this->vacation_subsidy,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao selecionar funcionário', [
+                'employee_id' => $employeeId,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
             
-            // Load HR settings
-            $this->loadHRSettings();
-            
-            // Calculate hourly rate
-            $this->hourly_rate = $this->calculateHourlyRate();
-            
-            // Load employee payroll data based on selected period
-            $this->loadEmployeePayrollDataForPeriod();
-            $this->calculatePayrollComponents();
-            
-            // Close search modal and open process modal
-            $this->showEmployeeSearch = false;
-            $this->showProcessModal = true;
+            session()->flash('error', 'Erro ao carregar dados do funcionário: ' . $e->getMessage());
         }
     }
 
@@ -1748,18 +1815,146 @@ class Payroll extends Component
         $this->calculatePayrollComponents();
     }
 
-    public function updatedChristmasSubsidy(): void
+    /**
+     * Computed Property: Christmas Subsidy Amount
+     * Calcula automaticamente quando acessado
+     */
+    public function getChristmasSubsidyAmountProperty(): float
     {
-        $this->calculatePayrollComponents();
+        try {
+            \Log::info('🎄 Christmas Subsidy Computed - INÍCIO', [
+                'checkbox_marcado' => $this->christmas_subsidy,
+                'selectedEmployee_exists' => $this->selectedEmployee ? 'SIM' : 'NÃO',
+            ]);
+            
+            if (!$this->christmas_subsidy) {
+                \Log::info('🎄 Christmas Subsidy - Checkbox DESMARCADO, retornando 0');
+                return 0.0;
+            }
+            
+            // Usar base_salary DIRETO (coluna correta do banco)
+            $basicSalary = 0;
+            
+            if ($this->selectedEmployee && isset($this->selectedEmployee->base_salary)) {
+                $basicSalary = (float)$this->selectedEmployee->base_salary;
+                \Log::info('🎄 Usando selectedEmployee->base_salary', [
+                    'base_salary' => $this->selectedEmployee->base_salary,
+                    'usado' => $basicSalary,
+                ]);
+            } elseif ($this->basic_salary > 0) {
+                $basicSalary = (float)$this->basic_salary;
+                \Log::info('🎄 Usando $this->basic_salary (fallback)', [
+                    'basic_salary' => $this->basic_salary,
+                    'usado' => $basicSalary,
+                ]);
+            } else {
+                \Log::error('🎄 ERRO: Nenhuma fonte de salário disponível!');
+                return 0.0;
+            }
+            
+            $amount = round($basicSalary * 0.5, 2);
+            
+            \Log::info('🎄 Christmas Subsidy - RESULTADO FINAL', [
+                'salario_usado' => $basicSalary,
+                'calculo' => "{$basicSalary} * 0.5",
+                'resultado' => $amount,
+            ]);
+            
+            return $amount;
+            
+        } catch (\Exception $e) {
+            \Log::error('🎄 ERRO FATAL na computed property', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return 0.0;
+        }
     }
-
-    public function updatedVacationSubsidy(): void
+    
+    /**
+     * Computed Property: Vacation Subsidy Amount
+     * Calcula automaticamente quando acessado
+     */
+    public function getVacationSubsidyAmountProperty(): float
     {
-        $this->calculatePayrollComponents();
+        try {
+            \Log::info('🏖️ Vacation Subsidy Computed - INÍCIO', [
+                'checkbox_marcado' => $this->vacation_subsidy,
+                'selectedEmployee_exists' => $this->selectedEmployee ? 'SIM' : 'NÃO',
+            ]);
+            
+            if (!$this->vacation_subsidy) {
+                \Log::info('🏖️ Vacation Subsidy - Checkbox DESMARCADO, retornando 0');
+                return 0.0;
+            }
+            
+            // Usar base_salary DIRETO (coluna correta do banco)
+            $basicSalary = 0;
+            
+            if ($this->selectedEmployee && isset($this->selectedEmployee->base_salary)) {
+                $basicSalary = (float)$this->selectedEmployee->base_salary;
+                \Log::info('🏖️ Usando selectedEmployee->base_salary', [
+                    'base_salary' => $this->selectedEmployee->base_salary,
+                    'usado' => $basicSalary,
+                ]);
+            } elseif ($this->basic_salary > 0) {
+                $basicSalary = (float)$this->basic_salary;
+                \Log::info('🏖️ Usando $this->basic_salary (fallback)', [
+                    'basic_salary' => $this->basic_salary,
+                    'usado' => $basicSalary,
+                ]);
+            } else {
+                \Log::error('🏖️ ERRO: Nenhuma fonte de salário disponível!');
+                return 0.0;
+            }
+            
+            $amount = round($basicSalary * 0.5, 2);
+            
+            \Log::info('🏖️ Vacation Subsidy - RESULTADO FINAL', [
+                'salario_usado' => $basicSalary,
+                'calculo' => "{$basicSalary} * 0.5",
+                'resultado' => $amount,
+            ]);
+            
+            return $amount;
+            
+        } catch (\Exception $e) {
+            \Log::error('🏖️ ERRO FATAL na computed property', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return 0.0;
+        }
     }
 
     public function updatedBonusAmount(): void
     {
+        $this->calculatePayrollComponents();
+    }
+    
+    /**
+     * Recalcular automaticamente quando Christmas Subsidy mudar
+     */
+    public function updatedChristmasSubsidy()
+    {
+        \Log::info('✨ Christmas Subsidy alterado, recalculando...', [
+            'novo_valor' => $this->christmas_subsidy
+        ]);
+        $this->calculatePayrollComponents();
+    }
+    
+    /**
+     * Recalcular automaticamente quando Vacation Subsidy mudar
+     */
+    public function updatedVacationSubsidy()
+    {
+        \Log::info('✨ Vacation Subsidy alterado, recalculando...', [
+            'novo_valor' => $this->vacation_subsidy
+        ]);
         $this->calculatePayrollComponents();
     }
 

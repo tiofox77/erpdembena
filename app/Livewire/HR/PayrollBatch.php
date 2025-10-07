@@ -12,6 +12,7 @@ use App\Models\HR\Employee;
 use App\Models\HR\Payroll;
 use App\Jobs\ProcessPayrollBatch;
 use App\Services\PayrollCalculationService;
+use App\Helpers\PayrollCalculatorHelper;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,13 +23,12 @@ use Illuminate\Support\Facades\Log;
 class PayrollBatch extends Component
 {
     use WithPagination;
-
     public string $search = '';
     public int $perPage = 10;
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
     
-    // Modal states
+    // Modals
     public bool $showBatchModal = false;
     public bool $showCreateModal = false;
     public bool $showViewModal = false;
@@ -40,8 +40,8 @@ class PayrollBatch extends Component
     public string $batch_description = '';
     public ?int $payroll_period_id = null;
     public ?int $department_id = null;
-    public string $payment_method = 'bank_transfer';
     public string $batch_date = '';
+    public string $payment_method = 'bank_transfer';
     public array $selected_employees = [];
     public array $eligible_employees = [];
     
@@ -50,11 +50,15 @@ class PayrollBatch extends Component
     public ?PayrollBatchModel $batchToDelete = null;
     public ?PayrollBatchItem $editingItem = null;
     
-    // Edit item properties
+    // Edit batch item properties
     public float $edit_gross_salary = 0;
     public float $edit_net_salary = 0;
     public float $edit_total_deductions = 0;
     public string $edit_notes = '';
+    public array $calculatedData = [];
+    public float $edit_additional_bonus = 0;
+    public bool $edit_christmas_subsidy = false;
+    public bool $edit_vacation_subsidy = false;
     
     // Filters
     public array $filters = [
@@ -559,59 +563,116 @@ class PayrollBatch extends Component
     }
 
     /**
-     * Open edit modal for batch item
+     * Open edit modal for batch item (usando PayrollCalculatorHelper - replica modal individual)
      */
     public function editBatchItem(int $itemId): void
     {
-        $this->editingItem = PayrollBatchItem::with(['employee', 'payroll'])->findOrFail($itemId);
+        Log::info('=== INICIANDO editBatchItem ===', ['item_id' => $itemId]);
         
-        Log::info('EDIT ITEM - Loading values from database', [
-            'item_id' => $itemId,
-            'db_gross_salary' => $this->editingItem->gross_salary,
-            'db_net_salary' => $this->editingItem->net_salary,
-            'db_total_deductions' => $this->editingItem->total_deductions,
-            'db_notes' => $this->editingItem->notes,
-        ]);
-        
-        // Load current values - convert to float to ensure proper display
-        $this->edit_gross_salary = (float) ($this->editingItem->gross_salary ?? 0);
-        $this->edit_net_salary = (float) ($this->editingItem->net_salary ?? 0);
-        $this->edit_total_deductions = (float) ($this->editingItem->total_deductions ?? 0);
-        $this->edit_notes = $this->editingItem->notes ?? '';
-        
-        $this->showEditItemModal = true;
-        
-        Log::info('EDIT ITEM - Values loaded into properties', [
-            'item_id' => $itemId,
-            'employee' => $this->editingItem->employee->full_name,
-            'edit_gross_salary' => $this->edit_gross_salary,
-            'edit_net_salary' => $this->edit_net_salary,
-            'edit_total_deductions' => $this->edit_total_deductions,
-        ]);
+        try {
+            // Carregar item
+            Log::info('Carregando item do batch...');
+            $this->editingItem = PayrollBatchItem::with(['employee.department', 'payroll', 'payrollBatch.payrollPeriod'])->findOrFail($itemId);
+            Log::info('Item carregado', [
+                'employee' => $this->editingItem->employee->full_name ?? 'N/A',
+                'batch_id' => $this->editingItem->payroll_batch_id,
+            ]);
+            
+            // Carregar valores atuais do item ou usar defaults
+            $this->edit_additional_bonus = $this->editingItem->additional_bonus ?? 0;
+            $this->edit_christmas_subsidy = $this->editingItem->christmas_subsidy ?? false;
+            $this->edit_vacation_subsidy = $this->editingItem->vacation_subsidy ?? false;
+            $this->edit_notes = $this->editingItem->notes ?? '';
+            
+            Log::info('Valores carregados', [
+                'additional_bonus' => $this->edit_additional_bonus,
+                'christmas' => $this->edit_christmas_subsidy,
+                'vacation' => $this->edit_vacation_subsidy,
+            ]);
+            
+            // Calcular usando o helper (popula $calculatedData)
+            Log::info('Chamando recalculateEditingItem...');
+            $this->recalculateEditingItem();
+            
+            // Verificar se calculatedData foi populado
+            if (empty($this->calculatedData)) {
+                Log::error('❌ calculatedData VAZIO após recalcular', [
+                    'item_id' => $itemId,
+                    'employee_id' => $this->editingItem->employee_id,
+                ]);
+                session()->flash('error', 'Erro ao calcular dados do payroll. Verifique os logs.');
+                $this->showEditItemModal = true; // Mostra modal com loading
+                return;
+            }
+            
+            Log::info('✅ Modal de edição pronta para abrir', [
+                'item_id' => $itemId,
+                'employee' => $this->editingItem->employee->full_name,
+                'calculatedData_keys' => array_keys($this->calculatedData),
+                'gross_salary' => $this->calculatedData['gross_salary'] ?? 'N/A',
+                'net_salary' => $this->calculatedData['net_salary'] ?? 'N/A',
+            ]);
+            
+            $this->showEditItemModal = true;
+            Log::info('=== Modal aberta com sucesso ===');
+            
+        } catch (\Exception $e) {
+            Log::error('❌ ERRO CRÍTICO ao abrir modal de edição', [
+                'item_id' => $itemId,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            session()->flash('error', 'Erro ao abrir modal: ' . $e->getMessage());
+            $this->showEditItemModal = false;
+        }
     }
     
     /**
-     * Save edited batch item
+     * Recalculate payroll when subsidies or bonus change (alias para compatibilidade)
+     */
+    public function recalculatePayroll(): void
+    {
+        $this->recalculateEditingItem();
+    }
+    
+    /**
+     * Save edited batch item (usando PayrollCalculatorHelper)
      */
     public function saveEditedItem(): void
     {
+        if (!$this->editingItem || empty($this->calculatedData)) {
+            session()->flash('error', 'Dados de cálculo não disponíveis. Recalcule o item.');
+            return;
+        }
+        
         try {
-            if (!$this->editingItem) {
-                session()->flash('error', 'Item não encontrado.');
-                return;
-            }
-            
-            // Check if batch is editable
-            if ($this->editingItem->status !== PayrollBatchItem::STATUS_PENDING) {
-                session()->flash('error', 'Apenas itens pendentes podem ser editados.');
-                return;
-            }
-            
-            // Update item
+            // Atualizar item com valores calculados pelo helper
             $this->editingItem->update([
-                'gross_salary' => $this->edit_gross_salary,
-                'net_salary' => $this->edit_net_salary,
-                'total_deductions' => $this->edit_total_deductions,
+                'additional_bonus' => $this->edit_additional_bonus,
+                'christmas_subsidy' => $this->edit_christmas_subsidy,
+                'vacation_subsidy' => $this->edit_vacation_subsidy,
+                'christmas_subsidy_amount' => $this->calculatedData['christmas_subsidy_amount'],
+                'vacation_subsidy_amount' => $this->calculatedData['vacation_subsidy_amount'],
+                'basic_salary' => $this->calculatedData['basic_salary'],
+                'transport_allowance' => $this->calculatedData['transport_allowance'],
+                'food_allowance' => $this->calculatedData['food_benefit'],
+                'overtime_amount' => $this->calculatedData['total_overtime_amount'],
+                'bonus_amount' => $this->calculatedData['bonus_amount'],
+                'gross_salary' => $this->calculatedData['gross_salary'],
+                'inss_deduction' => $this->calculatedData['inss_3_percent'],
+                'irt_deduction' => $this->calculatedData['irt'],
+                'advance_deduction' => $this->calculatedData['advance_deduction'],
+                'discount_deduction' => $this->calculatedData['total_salary_discounts'],
+                'late_deduction' => $this->calculatedData['late_deduction'],
+                'absence_deduction' => $this->calculatedData['absence_deduction'],
+                'total_deductions' => $this->calculatedData['total_deductions'],
+                'net_salary' => $this->calculatedData['net_salary'],
+                'present_days' => $this->calculatedData['present_days'],
+                'absent_days' => $this->calculatedData['absent_days'],
+                'late_days' => $this->calculatedData['late_arrivals'],
                 'notes' => $this->edit_notes,
             ]);
             
@@ -620,18 +681,21 @@ class PayrollBatch extends Component
                 $payroll = Payroll::find($this->editingItem->payroll_id);
                 if ($payroll) {
                     $payroll->update([
-                        'gross_salary' => $this->edit_gross_salary,
-                        'net_salary' => $this->edit_net_salary,
-                        'deductions' => $this->edit_total_deductions,
+                        'gross_salary' => $this->calculatedData['gross_salary'],
+                        'net_salary' => $this->calculatedData['net_salary'],
+                        'total_deductions' => $this->calculatedData['total_deductions'],
                     ]);
                 }
             }
             
-            // Update batch totals
+            // Atualizar totais do batch
             $this->updateBatchTotals($this->editingItem->payroll_batch_id);
             
-            session()->flash('message', 'Item atualizado com sucesso!');
-            $this->closeEditItemModal();
+            $this->showEditItemModal = false;
+            $this->editingItem = null;
+            $this->calculatedData = [];
+            
+            session()->flash('success', 'Item atualizado com sucesso!');
             
             // Refresh view
             if ($this->currentBatch) {
@@ -639,11 +703,12 @@ class PayrollBatch extends Component
             }
             
         } catch (\Exception $e) {
-            Log::error('Error updating batch item', [
+            Log::error('Erro ao salvar item editado', [
+                'item_id' => $this->editingItem->id ?? null,
                 'error' => $e->getMessage(),
-                'item_id' => $this->editingItem?->id
             ]);
-            session()->flash('error', 'Erro ao atualizar item: ' . $e->getMessage());
+            
+            session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
         }
     }
     
@@ -696,6 +761,221 @@ class PayrollBatch extends Component
         ]);
 
         session()->flash('success', __('livewire/hr/payroll-batch.debug_executed'));
+    }
+
+    /**
+     * Calcular item do batch usando PayrollCalculatorHelper
+     */
+    public function calculateBatchItemWithHelper(PayrollBatchItem $item): array
+    {
+        try {
+            $employee = $item->employee;
+            $batch = $item->payrollBatch;
+            $period = $batch->payrollPeriod;
+            
+            $startDate = Carbon::parse($period->start_date);
+            $endDate = Carbon::parse($period->end_date);
+            
+            // Criar calculator
+            $calculator = new PayrollCalculatorHelper($employee, $startDate, $endDate);
+            
+            // Carregar todos os dados
+            $calculator->loadAllEmployeeData();
+            
+            // Configurar subsídios do item
+            $calculator->setChristmasSubsidy($item->christmas_subsidy ?? false);
+            $calculator->setVacationSubsidy($item->vacation_subsidy ?? false);
+            $calculator->setAdditionalBonus($item->additional_bonus ?? 0);
+            
+            // Calcular
+            $results = $calculator->calculate();
+            
+            // Atualizar item com resultados
+            $item->update([
+                'basic_salary' => $results['basic_salary'],
+                'transport_allowance' => $results['transport_allowance'],
+                'food_allowance' => $results['food_benefit'],
+                'overtime_amount' => $results['total_overtime_amount'],
+                'bonus_amount' => $results['bonus_amount'],
+                'christmas_subsidy_amount' => $results['christmas_subsidy_amount'],
+                'vacation_subsidy_amount' => $results['vacation_subsidy_amount'],
+                'gross_salary' => $results['gross_salary'],
+                'inss_deduction' => $results['inss_3_percent'],
+                'irt_deduction' => $results['irt'],
+                'advance_deduction' => $results['advance_deduction'],
+                'discount_deduction' => $results['total_salary_discounts'],
+                'late_deduction' => $results['late_deduction'],
+                'absence_deduction' => $results['absence_deduction'],
+                'total_deductions' => $results['total_deductions'],
+                'net_salary' => $results['net_salary'],
+                'present_days' => $results['present_days'],
+                'absent_days' => $results['absent_days'],
+                'late_days' => $results['late_arrivals'],
+                'total_working_days' => $results['total_working_days'],
+                'status' => 'calculated',
+            ]);
+            
+            Log::info('Item do batch calculado com helper', [
+                'item_id' => $item->id,
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->full_name,
+                'net_salary' => $results['net_salary'],
+            ]);
+            
+            return $results;
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao calcular item do batch', [
+                'item_id' => $item->id,
+                'employee_id' => $item->employee_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            $item->update([
+                'status' => 'error',
+                'notes' => 'Erro: ' . $e->getMessage(),
+            ]);
+            
+            throw $e;
+        }
+    }
+
+    /**
+     * Recalcular item em edição usando helper
+     */
+    public function recalculateEditingItem(): void
+    {
+        if (!$this->editingItem) {
+            return;
+        }
+        
+        try {
+            $employee = $this->editingItem->employee;
+            $period = $this->editingItem->payrollBatch->payrollPeriod;
+            
+            $startDate = Carbon::parse($period->start_date);
+            $endDate = Carbon::parse($period->end_date);
+            
+            // Criar calculator
+            $calculator = new PayrollCalculatorHelper($employee, $startDate, $endDate);
+            
+            // Carregar dados
+            $calculator->loadAllEmployeeData();
+            
+            // Configurar subsídios
+            $calculator->setChristmasSubsidy($this->edit_christmas_subsidy);
+            $calculator->setVacationSubsidy($this->edit_vacation_subsidy);
+            $calculator->setAdditionalBonus($this->edit_additional_bonus);
+            
+            // Configurar food in kind (apenas para exibição - food SEMPRE é deduzido)
+            $isFoodInKind = (bool)($employee->is_food_in_kind ?? false);
+            $calculator->setFoodInKind($isFoodInKind);
+            
+            // Calcular
+            $this->calculatedData = $calculator->calculate();
+            
+            // Atualizar propriedades de exibição
+            $this->edit_gross_salary = $this->calculatedData['gross_salary'];
+            $this->edit_net_salary = $this->calculatedData['net_salary'];
+            $this->edit_total_deductions = $this->calculatedData['total_deductions'];
+            
+            Log::info('Item recalculado em edição - DETALHADO', [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->full_name,
+                'period' => $period->name,
+                'basic_salary' => $this->calculatedData['basic_salary'],
+                'absent_days' => $this->calculatedData['absent_days'],
+                'present_days' => $this->calculatedData['present_days'],
+                'absence_deduction' => $this->calculatedData['absence_deduction'],
+                'late_deduction' => $this->calculatedData['late_deduction'],
+                'inss_3_percent' => $this->calculatedData['inss_3_percent'],
+                'irt' => $this->calculatedData['irt'],
+                'total_deductions' => $this->calculatedData['total_deductions'],
+                'gross_salary' => $this->calculatedData['gross_salary'],
+                'net_salary' => $this->calculatedData['net_salary'],
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao recalcular item em edição', [
+                'item_id' => $this->editingItem->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            
+            session()->flash('error', 'Erro ao calcular: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Recalcular quando bônus adicional muda
+     */
+    public function updatedEditAdditionalBonus(): void
+    {
+        $this->recalculateEditingItem();
+    }
+
+    /**
+     * Recalcular quando subsídio de Natal muda
+     */
+    public function updatedEditChristmasSubsidy(): void
+    {
+        $this->recalculateEditingItem();
+    }
+
+    /**
+     * Recalcular quando subsídio de férias muda
+     */
+    public function updatedEditVacationSubsidy(): void
+    {
+        $this->recalculateEditingItem();
+    }
+
+    /**
+     * Processar todos os itens do batch usando helper
+     */
+    public function processBatchWithHelper(int $batchId): void
+    {
+        try {
+            $batch = PayrollBatchModel::with(['batchItems.employee', 'payrollPeriod'])->findOrFail($batchId);
+            
+            $totalProcessed = 0;
+            $totalErrors = 0;
+            
+            foreach ($batch->batchItems as $item) {
+                try {
+                    $this->calculateBatchItemWithHelper($item);
+                    $totalProcessed++;
+                } catch (\Exception $e) {
+                    $totalErrors++;
+                }
+            }
+            
+            // Atualizar status do batch
+            $batch->update([
+                'status' => $totalErrors > 0 ? 'partially_processed' : 'processed',
+                'processed_at' => now(),
+            ]);
+            
+            // Atualizar totais
+            $this->updateBatchTotals($batchId);
+            
+            session()->flash('success', "Batch processado: {$totalProcessed} itens calculados, {$totalErrors} erros");
+            
+            Log::info('Batch processado com helper', [
+                'batch_id' => $batchId,
+                'total_items' => $batch->batchItems->count(),
+                'processed' => $totalProcessed,
+                'errors' => $totalErrors,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao processar batch', [
+                'batch_id' => $batchId,
+                'error' => $e->getMessage(),
+            ]);
+            
+            session()->flash('error', 'Erro ao processar batch: ' . $e->getMessage());
+        }
     }
 
     public function render()

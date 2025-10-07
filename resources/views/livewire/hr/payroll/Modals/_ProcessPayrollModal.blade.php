@@ -1,11 +1,18 @@
 {{-- Advanced Payroll Processing Modal --}}
-@if($showEmployeeSearch || $showProcessModal)
+<style>
+    /* Desabilitar overlay escuro padrão do Livewire nesta modal */
+    [wire\:loading\.delay\.none\.grid] {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+</style>
+
+@if($showEmployeeSearch)
 <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" x-data="{ loading: false }">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl mx-4 max-h-[95vh] overflow-hidden">
         
-        @if($showEmployeeSearch)
-            {{-- Employee Search Modal --}}
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
+        {{-- Employee Search Modal --}}
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <div class="bg-white/20 p-2 rounded-lg">
@@ -380,11 +387,13 @@
                     </div>
                 @endif
             </div>
-        @endif
+        </div>
+    </div>
+@endif
 
-        @if($showProcessModal && $selectedEmployee)
-            {{-- Payroll Processing Modal --}}
-            <div x-data="{ open: @entangle('showProcessModal') }" 
+{{-- Payroll Processing Modal --}}
+@if($selectedEmployee)
+<div x-data="{ open: @entangle('showProcessModal') }" 
                  x-show="open" 
                  x-cloak 
                  class="fixed inset-0 z-50 overflow-hidden" 
@@ -491,11 +500,11 @@
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg">
                                             <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">INSS (3%)</p>
-                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.03), 2) }} {{ __('messages.currency_aoa') }}</p>
+                                            <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($inss_3_percent, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div class="bg-orange-50/60 p-3 rounded-lg border border-orange-200">
                                             <p class="text-xs lg:text-sm text-orange-600 font-medium mb-1">INSS (8%) - {{ __('payroll.illustrative_only') }}</p>
-                                            <p class="text-sm lg:text-base text-orange-700 font-semibold">{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.08), 2) }} {{ __('messages.currency_aoa') }}</p>
+                                            <p class="text-sm lg:text-base text-orange-700 font-semibold">{{ number_format($inss_8_percent, 2) }} {{ __('messages.currency_aoa') }}</p>
                                             <p class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_from_main_salary') }}</p>
                                         </div>
                                         @if(isset($bonus_amount) && $bonus_amount > 0)
@@ -523,16 +532,22 @@
                                                         type="checkbox" 
                                                         wire:model.live="christmas_subsidy"
                                                         id="christmas_subsidy"
-                                                        class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                                        class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
                                                     >
                                                 </div>
                                                 <div class="flex-1">
-                                                    <label for="christmas_subsidy" class="text-base font-semibold text-gray-800 block mb-1">
+                                                    <label for="christmas_subsidy" class="text-base font-semibold text-gray-800 block mb-1 cursor-pointer">
                                                         Christmas Subsidy
                                                     </label>
                                                     <p class="text-sm text-teal-600 mb-3">Additional Christmas payment: 50% do salário base</p>
-                                                    <div class="text-2xl font-bold text-teal-700">
-                                                        {{ $christmas_subsidy ? number_format(($basic_salary ?? 0) * 0.5, 2) : '0.00' }} AOA
+                                                    <div class="text-2xl font-bold text-teal-700" wire:loading.class="opacity-50" wire:target="christmas_subsidy">
+                                                        {{ number_format($this->christmasSubsidyAmount, 2) }} AOA
+                                                    </div>
+                                                    <div class="mt-2" wire:loading wire:target="christmas_subsidy">
+                                                        <span class="text-xs text-gray-500">
+                                                            <i class="fas fa-spinner fa-spin mr-1"></i>
+                                                            Recalculando...
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -546,16 +561,22 @@
                                                         type="checkbox" 
                                                         wire:model.live="vacation_subsidy"
                                                         id="vacation_subsidy"
-                                                        class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                                        class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
                                                     >
                                                 </div>
                                                 <div class="flex-1">
-                                                    <label for="vacation_subsidy" class="text-base font-semibold text-gray-800 block mb-1">
+                                                    <label for="vacation_subsidy" class="text-base font-semibold text-gray-800 block mb-1 cursor-pointer">
                                                         Vacation Subsidy
                                                     </label>
                                                     <p class="text-sm text-teal-600 mb-3">Additional vacation payment: 50% do salário base</p>
-                                                    <div class="text-2xl font-bold text-teal-700">
-                                                        {{ $vacation_subsidy ? number_format(($basic_salary ?? 0) * 0.5, 2) : '0.00' }} AOA
+                                                    <div class="text-2xl font-bold text-teal-700" wire:loading.class="opacity-50" wire:target="vacation_subsidy">
+                                                        {{ number_format($this->vacationSubsidyAmount, 2) }} AOA
+                                                    </div>
+                                                    <div class="mt-2" wire:loading wire:target="vacation_subsidy">
+                                                        <span class="text-xs text-gray-500">
+                                                            <i class="fas fa-spinner fa-spin mr-1"></i>
+                                                            Recalculando...
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -631,7 +652,7 @@
                                         </div>
                                         <div class="bg-white/60 p-3 rounded-lg text-center">
                                             <p class="text-xs text-purple-600 font-medium mb-1">{{ __('messages.daily_rate') }}</p>
-                                            <p class="text-lg text-purple-800 font-bold">{{ number_format(($hourly_rate ?? 0) * 8, 2) }} {{ __('messages.currency_aoa') }}/dia</p>
+                                            <p class="text-lg text-purple-800 font-bold">{{ number_format($daily_rate ?? 0, 2) }} {{ __('messages.currency_aoa') }}/dia</p>
                                         </div>
                                         @else
                                         <div class="bg-gray-100/60 p-3 rounded-lg text-center col-span-3">
@@ -888,7 +909,7 @@
                                             <span class="font-bold text-sm lg:text-lg" 
                                                   :class="{'text-emerald-800': $wire.christmas_subsidy, 'text-gray-500': !$wire.christmas_subsidy}">
                                                 <span x-show="$wire.christmas_subsidy" x-transition>
-                                                    +{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} {{ __('messages.currency_aoa') }}
+                                                    +{{ number_format($this->christmasSubsidyAmount, 2) }} {{ __('messages.currency_aoa') }}
                                                 </span>
                                                 <span x-show="!$wire.christmas_subsidy" x-transition>
                                                     0.00 {{ __('messages.currency_aoa') }}
@@ -907,7 +928,7 @@
                                             <span class="font-bold text-sm lg:text-lg" 
                                                   :class="{'text-emerald-800': $wire.vacation_subsidy, 'text-gray-500': !$wire.vacation_subsidy}">
                                                 <span x-show="$wire.vacation_subsidy" x-transition>
-                                                    +{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} {{ __('messages.currency_aoa') }}
+                                                    +{{ number_format($this->vacationSubsidyAmount, 2) }} {{ __('messages.currency_aoa') }}
                                                 </span>
                                                 <span x-show="!$wire.vacation_subsidy" x-transition>
                                                     0.00 {{ __('messages.currency_aoa') }}
@@ -1011,7 +1032,7 @@
                                                     </button>
                                                 </div>
                                                 <span class="text-lg lg:text-xl font-bold text-blue-800">
-                                                    {{ number_format(($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($total_overtime_amount ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)), 2) }} AOA
+                                                    {{ number_format($gross_salary, 2) }} AOA
                                                 </span>
                                             </div>
                                             
@@ -1049,22 +1070,22 @@
                                                         <span class="font-medium text-blue-800">{{ number_format($additional_bonus_amount ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($christmas_subsidy)
+                                                    @if($this->christmasSubsidyAmount > 0)
                                                     <div class="flex justify-between">
                                                         <span class="text-blue-700">{{ __('messages.christmas_subsidy') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA</span>
+                                                        <span class="font-medium text-blue-800">{{ number_format($this->christmasSubsidyAmount, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($vacation_subsidy)
+                                                    @if($this->vacationSubsidyAmount > 0)
                                                     <div class="flex justify-between">
                                                         <span class="text-blue-700">{{ __('messages.vacation_subsidy') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA</span>
+                                                        <span class="font-medium text-blue-800">{{ number_format($this->vacationSubsidyAmount, 2) }} AOA</span>
                                                     </div>
                                                     @endif
                                                     <div class="border-t border-blue-300 pt-1 mt-1">
                                                         <div class="flex justify-between font-semibold">
                                                             <span class="text-blue-800">{{ __('messages.total') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format(($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($total_overtime_amount ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)), 2) }} AOA</span>
+                                                            <span class="text-blue-900">{{ number_format($gross_salary, 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1084,12 +1105,7 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                @php
-                                                                $food_taxable_amount = max(0, ($selectedEmployee->food_benefit ?? 0) - 30000);
-                                                                $transport_taxable_amount = max(0, ($transport_allowance ?? 0) - 30000);
-                                                                $calculated_gross = ($basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($total_overtime_amount ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0));
-                                                            @endphp
-                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format($calculated_gross - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
+                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format($base_irt_taxable_amount, 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Gross Salary Details Breakdown -->
@@ -1100,13 +1116,10 @@
                                                         <span class="text-green-700">{{ __('messages.basic_salary') }}:</span>
                                                         <span class="font-medium text-green-800">{{ number_format($basic_salary ?? 0, 2) }} AOA</span>
                                                     </div>
-                                                    @php
-                                                        $transport_taxable = max(0, ($transport_allowance ?? 0) - 30000);
-                                                    @endphp
-                                                    @if($transport_taxable > 0)
+                                                    @if(isset($taxable_transport) && $taxable_transport > 0)
                                                     <div class="flex justify-between">
                                                         <span class="text-green-700">{{ __('messages.transport_benefit') }} <span class="text-xs text-gray-500">(excesso tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($transport_taxable, 2) }} AOA</span>
+                                                        <span class="font-medium text-green-800">{{ number_format($taxable_transport, 2) }} AOA</span>
                                                     </div>
                                                     @endif
                                                     @if($bonus_amount > 0)
@@ -1121,16 +1134,16 @@
                                                         <span class="font-medium text-green-800">{{ number_format($additional_bonus_amount ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($christmas_subsidy)
+                                                    @if($this->christmasSubsidyAmount > 0)
                                                     <div class="flex justify-between">
                                                         <span class="text-green-700">{{ __('messages.christmas_subsidy') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA</span>
+                                                        <span class="font-medium text-green-800">{{ number_format($this->christmasSubsidyAmount, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @if($vacation_subsidy)
+                                                    @if($this->vacationSubsidyAmount > 0)
                                                     <div class="flex justify-between">
                                                         <span class="text-green-700">{{ __('messages.vacation_subsidy') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format(($basic_salary ?? 0) * 0.5, 2) }} AOA</span>
+                                                        <span class="font-medium text-green-800">{{ number_format($this->vacationSubsidyAmount, 2) }} AOA</span>
                                                     </div>
                                                     @endif
                                                     @if($total_overtime_amount > 0)
@@ -1139,41 +1152,29 @@
                                                         <span class="font-medium text-green-800">{{ number_format($total_overtime_amount ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     @endif
-                                                    @php
-                                                        $food_taxable = max(0, ($selectedEmployee->food_benefit ?? 0) - 30000);
-                                                    @endphp
-                                                    @if($food_taxable > 0)
+                                                    @if(isset($taxable_food) && $taxable_food > 0)
                                                     <div class="flex justify-between">
                                                         <span class="text-green-700">{{ __('messages.food_benefit') }} <span class="text-xs text-gray-500">(excesso tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($food_taxable, 2) }} AOA</span>
+                                                        <span class="font-medium text-green-800">{{ number_format($taxable_food, 2) }} AOA</span>
                                                     </div>
                                                     @endif
                                                     <div class="mt-2 pt-1 border-t border-green-300">
                                                         <div class="text-xs text-green-600 mb-1">
                                                             <span class="font-medium">{{ __('messages.excluded_from_gross') }}:</span>
                                                         </div>
-                                                        @php
-                                                            $food_non_taxable = min(30000, $selectedEmployee->food_benefit ?? 0);
-                                                            $transport_non_taxable = min(30000, $transport_allowance ?? 0);
-                                                        @endphp
                                                         <div class="flex justify-between text-gray-600">
                                                             <span class="text-xs">{{ __('messages.food_benefit') }} <span class="text-xs">(até 30k não tributável)</span>:</span>
-                                                            <span class="text-xs line-through">{{ number_format($food_non_taxable, 2) }} AOA</span>
+                                                            <span class="text-xs line-through">{{ number_format($exempt_food ?? 0, 2) }} AOA</span>
                                                         </div>
                                                         <div class="flex justify-between text-gray-600">
                                                             <span class="text-xs">{{ __('messages.transport_benefit') }} <span class="text-xs">(até 30k não tributável)</span>:</span>
-                                                            <span class="text-xs line-through">{{ number_format($transport_non_taxable, 2) }} AOA</span>
+                                                            <span class="text-xs line-through">{{ number_format($exempt_transport ?? 0, 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                     <div class="border-t border-green-300 pt-1 mt-1">
                                                         <div class="flex justify-between font-semibold">
                                                             <span class="text-green-800">{{ __('messages.total') }} (Gross Salary):</span>
-                                                            @php
-                                                                $food_taxable_amount = max(0, ($selectedEmployee->food_benefit ?? 0) - 30000);
-                                                                $transport_taxable_amount = max(0, ($transport_allowance ?? 0) - 30000);
-                                                                $calculated_gross = ($basic_salary ?? 0) + $food_taxable_amount + $transport_taxable_amount + ($total_overtime_amount ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0));
-                                                            @endphp
-                                                            <span class="text-green-900">{{ number_format($calculated_gross - round((($basic_salary ?? 0) + ($transport_allowance ?? 0) + ($meal_allowance ?? 0) + ($total_overtime_amount ?? 0)) * 0.03, 2), 2) }} AOA</span>
+                                                            <span class="text-green-900">{{ number_format($base_irt_taxable_amount, 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1214,32 +1215,31 @@
                                                         {{ __('payroll.irt_calculation_details') }}
                                                     </h5>
                                                     
-                                                    @php $details = $this->irtCalculationDetails; @endphp
                                                     
                                                     <div class="space-y-2">
                                                      
                                                         <div class="flex justify-between border-t pt-2">
                                                             <span class="text-gray-700 font-medium">{{ __('payroll.mc_taxable_matter') }}:</span>
-                                                            <span class="font-bold">{{ number_format($details['mc'], 2) }} AOA</span>
+                                                            <span class="font-bold">{{ number_format($this->irtCalculationDetails['mc'] ?? 0, 2) }} AOA</span>
                                                         </div>
                                                         
-                                                        @if($details['bracket'])
+                                                        @if(isset($this->irtCalculationDetails['bracket']) && $this->irtCalculationDetails['bracket'])
                                                             <div class="border-t pt-2 space-y-1">
                                                                 <div class="flex justify-between">
-                                                                    <span class="text-blue-600">{{ __('payroll.bracket') }} {{ $details['bracket']->bracket_number }}:</span>
-                                                                    <span class="text-sm">{{ number_format($details['bracket']->min) }} - {{ $details['bracket']->max > 0 ? number_format($details['bracket']->max) : '+∞' }} AOA</span>
+                                                                    <span class="text-blue-600">{{ __('payroll.bracket') }} {{ $this->irtCalculationDetails['bracket']->bracket_number }}:</span>
+                                                                    <span class="text-sm">{{ number_format($this->irtCalculationDetails['bracket']->min) }} - {{ $this->irtCalculationDetails['bracket']->max > 0 ? number_format($this->irtCalculationDetails['bracket']->max) : '+∞' }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between">
                                                                     <span class="text-gray-600">{{ __('payroll.fixed_amount') }}:</span>
-                                                                    <span class="font-medium">{{ number_format($details['fixed_amount'], 2) }} AOA</span>
+                                                                    <span class="font-medium">{{ number_format($this->irtCalculationDetails['fixed_amount'], 2) }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between">
-                                                                    <span class="text-gray-600">{{ __('payroll.excess') }} ({{ number_format($details['excess'], 2) }} × {{ $details['bracket']->tax_rate }}%):</span>
-                                                                    <span class="font-medium">{{ number_format($details['tax_on_excess'], 2) }} AOA</span>
+                                                                    <span class="text-gray-600">{{ __('payroll.excess') }} ({{ number_format($this->irtCalculationDetails['excess'], 2) }} × {{ $this->irtCalculationDetails['bracket']->tax_rate }}%):</span>
+                                                                    <span class="font-medium">{{ number_format($this->irtCalculationDetails['tax_on_excess'], 2) }} AOA</span>
                                                                 </div>
                                                                 <div class="flex justify-between border-t pt-1 font-bold">
                                                                     <span class="text-red-700">{{ __('payroll.total_irt') }}:</span>
-                                                                    <span class="text-red-800">{{ number_format($details['total_irt'], 2) }} AOA</span>
+                                                                    <span class="text-red-800">{{ number_format($this->irtCalculationDetails['total_irt'], 2) }} AOA</span>
                                                                 </div>
                                                             </div>
                                                         @endif
@@ -1250,7 +1250,7 @@
                                             {{-- INSS --}}
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">INSS (3%)</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format(round((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.03, 2), 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($inss_3_percent, 2) }} AOA</span>
                                             </div>
                                             
                                             {{-- INSS 8% Illustrative --}}
@@ -1259,7 +1259,7 @@
                                                     <span class="font-medium text-orange-700 text-xs lg:text-sm">INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
                                                     <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_gross_salary') }}</div>
                                                 </div>
-                                                <span class="font-bold text-orange-800 text-xs lg:text-sm">{{ number_format(((($basic_salary ?? 0) + ($selectedEmployee->food_benefit ?? 0) + ($transport_allowance ?? 0) + ($bonus_amount ?? 0) + ($additional_bonus_amount ?? 0) + (($christmas_subsidy ? ($basic_salary ?? 0) * 0.5 : 0)) + (($vacation_subsidy ? ($basic_salary ?? 0) * 0.5 : 0))) * 0.08), 2) }} AOA</span>
+                                                <span class="font-bold text-orange-800 text-xs lg:text-sm">{{ number_format($inss_8_percent, 2) }} AOA</span>
                                             </div>
 
                                             {{-- Salary Advances --}}
@@ -1279,10 +1279,10 @@
                                             @endif
 
                                             {{-- Absence Deduction --}}
-                                            @if($this->absenceDeductionAmount > 0)
+                                            @if($absence_deduction > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
                                                 <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('payroll.absence_deductions') }} ({{ $absent_days ?? 0 }} {{ __('payroll.days') }})</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($this->absenceDeductionAmount, 2) }} AOA</span>
+                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($absence_deduction ?? 0, 2) }} AOA</span>
                                             </div>
                                             @endif
 
@@ -1298,6 +1298,7 @@
                                             @endif
                                             
                                             {{-- Absence Deductions --}}
+                                            @if($absence_deduction > 0)
                                             <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg">
                                                 <span class="font-medium text-orange-700 text-xs lg:text-sm">
                                                     <i class="fas fa-calendar-times mr-1"></i>
@@ -1311,14 +1312,14 @@
                                         <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-2 lg:p-3">
                                             <div class="flex justify-between items-center">
                                                 <span class="font-semibold text-yellow-700 text-sm lg:text-base">{{ __('messages.main_salary') }}</span>
-                                                <span class="text-lg lg:text-xl font-bold text-yellow-800">{{ number_format($this->mainSalary, 2) }} AOA</span>
+                                                <span class="text-lg lg:text-xl font-bold text-yellow-800">{{ number_format($main_salary ?? 0, 2) }} AOA</span>
                                             </div>
                                         </div>
 
                                         {{-- Total Deductions --}}
                                         <div class="flex justify-between items-center p-3 lg:p-4 bg-red-50 rounded-xl border border-red-200">
                                             <span class="font-semibold text-red-700 text-sm lg:text-base">{{ __('messages.total_deductions') }}</span>
-                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($this->totalDeductionsCalculated, 2) }} AOA</span>
+                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($total_deductions ?? 0, 2) }} AOA</span>
                                         </div>
 
                                         {{-- Net Salary --}}
@@ -1337,7 +1338,7 @@
                                                         ?
                                                     </button>
                                                 </div>
-                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($this->calculatedNetSalary, 2) }} AOA</span>
+                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($net_salary ?? 0, 2) }} AOA</span>
                                             </div>
                                             
                                             <!-- Net Salary Details Breakdown -->
@@ -1346,22 +1347,22 @@
                                                 <div class="space-y-1 text-xs">
                                                     <div class="flex justify-between">
                                                         <span class="text-blue-700">{{ __('messages.gross_salary') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($this->grossForTax, 2) }} AOA</span>
+                                                        <span class="font-medium text-blue-800">{{ number_format($gross_salary ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-red-700">
                                                         <span>IRT ({{ __('messages.income_tax') }}):</span>
-                                                        <span class="font-medium">-{{ number_format($this->calculatedIrt, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($income_tax ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-red-700">
                                                         <span>INSS (3%):</span>
-                                                        <span class="font-medium">-{{ number_format($this->calculatedInss, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($inss_3_percent ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     <div class="flex justify-between text-orange-600 bg-orange-50 p-2 rounded border border-orange-200 mt-1">
                                                         <div>
                                                             <span>INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
                                                             <div class="text-xs text-orange-500">{{ __('payroll.calculated_gross_salary') }}</div>
                                                         </div>
-                                                        <span class="font-medium">{{ number_format($this->calculatedInss * 8/3, 2) }} AOA</span>
+                                                        <span class="font-medium">{{ number_format($inss_8_percent ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     @if($this->advance_deduction > 0)
                                                     <div class="flex justify-between text-red-700">
@@ -1451,7 +1452,7 @@
                                                             @endif
                                                             <div class="flex justify-between font-semibold border-t border-green-300 pt-1 mt-1">
                                                                 <span class="text-green-800">{{ __('messages.main_salary_total') }}:</span>
-                                                                <span class="text-green-900">{{ number_format($this->mainSalary, 2) }} AOA</span>
+                                                                <span class="text-green-900">{{ number_format($main_salary ?? 0, 2) }} AOA</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1461,16 +1462,16 @@
                                                     <div class="bg-purple-50 p-2 rounded border border-purple-200 mt-2">
                                                         <h6 class="text-xs font-semibold text-purple-800 mb-1">{{ __('messages.additional_benefits') }}:</h6>
                                                         <div class="space-y-1 text-xs">
-                                                            @if($this->vacation_subsidy)
+                                                            @if($this->vacation_subsidy_amount > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-purple-700">{{ __('messages.vacation_subsidy') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->basic_salary * 0.5, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->vacation_subsidy_amount, 2) }} AOA</span>
                                                             </div>
                                                             @endif
-                                                            @if($this->christmas_subsidy)
+                                                            @if($this->christmas_subsidy_amount > 0)
                                                             <div class="flex justify-between">
                                                                 <span class="text-purple-700">{{ __('messages.christmas_subsidy') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->basic_salary * 0.5, 2) }} AOA</span>
+                                                                <span class="font-medium">{{ number_format($this->christmas_subsidy_amount, 2) }} AOA</span>
                                                             </div>
                                                             @endif
                                                             @if(($this->bonus_amount + $this->additional_bonus_amount) > 0)
@@ -1485,7 +1486,7 @@
 
                                                     <div class="flex justify-between text-gray-600 text-xs mt-2 pt-1 border-t border-gray-200">
                                                         <span>{{ __('messages.total_deductions') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->totalDeductionsCalculated, 2) }} AOA</span>
+                                                        <span class="font-medium">-{{ number_format($total_deductions ?? 0, 2) }} AOA</span>
                                                     </div>
                                                     @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && !$this->is_food_in_kind)
                                                     <div class="flex justify-between text-red-700 text-xs">
@@ -1496,7 +1497,7 @@
                                                     <div class="border-t border-blue-300 pt-1 mt-1">
                                                         <div class="flex justify-between font-semibold">
                                                             <span class="text-blue-800">{{ __('messages.net_salary_final') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format($this->calculatedNetSalary, 2) }} AOA</span>
+                                                            <span class="text-blue-900">{{ number_format($net_salary ?? 0, 2) }} AOA</span>
                                                         </div>
                                                     </div>
                                                 </div>
