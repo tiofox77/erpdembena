@@ -102,7 +102,6 @@
                 <i class="fas fa-info-circle text-blue-600 mr-2"></i>
                 <p class="text-sm text-blue-800">
                     <strong>Nota:</strong> Os valores serão recalculados automaticamente ao alterar os campos acima.
-                </p>
             </div>
         </div>
 
@@ -114,7 +113,7 @@
         {{-- Footer with Action Buttons --}}
         <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 p-6">
             <div class="flex justify-between items-center">
-                <div class="text-sm text-gray-600">
+{{ ... }}
                     <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                     Os valores são calculados automaticamente pelo sistema
                 </div>

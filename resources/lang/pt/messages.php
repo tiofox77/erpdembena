@@ -1932,4 +1932,13 @@ return [
     'net_salary' => 'Salário Líquido',
     'illustrative_only' => 'Apenas Ilustrativo',
     'calculated_from_main_salary' => 'Calculado a partir do Salário Principal',
+    'baseIRT_taxable_amount' => 'Base de IRT (Tributável)',
+    'daily_rate' => 'Taxa Diária',
+    'net_salary_breakdown' => 'Detalhamento do Salário Líquido',
+    'absence_deductions' => 'Deduções por Ausências',
+    'already_deducted_from_main' => 'já deduzido do salário principal',
+    'gross_salary_components' => 'Componentes do Salário Bruto',
+    'food_allowance_cash' => 'Subsídio de Alimentação (Dinheiro)',
+    'main_salary_total' => 'Total do Salário Principal',
+    'net_salary_final' => 'Salário Líquido (Final)',
 ];

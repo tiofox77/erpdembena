@@ -1,4 +1,7 @@
-{{-- Advanced Payroll Processing Modal --}}
+{{-- Include Employee Search Modal --}}
+@include('livewire.hr.payroll.Modals._SearchEmployeeModal')
+
+{{-- Payroll Processing Modal --}}
 <style>
     /* Desabilitar overlay escuro padrão do Livewire nesta modal */
     [wire\:loading\.delay\.none\.grid] {
@@ -7,31 +10,48 @@
     }
 </style>
 
-@if($showEmployeeSearch)
-<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" x-data="{ loading: false }">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl mx-4 max-h-[95vh] overflow-hidden">
-        
-        {{-- Employee Search Modal --}}
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-white/20 p-2 rounded-lg">
-                            <i class="fas fa-search text-xl"></i>
+@if($selectedEmployee)
+<div x-data="{ open: @entangle('showProcessModal') }" 
+     x-show="open" 
+     x-cloak 
+     class="fixed inset-0 z-50 overflow-hidden" 
+     role="dialog" 
+     aria-modal="true" 
+     aria-labelledby="modal-title"
+     x-transition:enter="transition ease-out duration-300" 
+     x-transition:enter-start="opacity-0" 
+     x-transition:enter-end="opacity-100" 
+     x-transition:leave="transition ease-in duration-200" 
+     x-transition:leave-start="opacity-100" 
+     x-transition:leave-end="opacity-0">
+
+    {{-- Background Overlay --}}
+    <div class="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-blue-900/70 to-gray-900/90 backdrop-blur-sm"></div>
+
+    {{-- Modal Container --}}
+    <div class="relative flex items-start justify-center min-h-screen p-2 sm:p-4 lg:p-6">
+        <div class="w-full max-w-7xl bg-white rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out my-2 sm:my-4 lg:my-8 flex flex-col h-[90vh] max-h-screen" 
+             x-transition:enter="transition ease-out duration-300" 
+             x-transition:enter-start="transform opacity-0 scale-95" 
+             x-transition:enter-end="transform opacity-100 scale-100" 
+             x-transition:leave="transition ease-in duration-200" 
+             x-transition:leave-start="transform opacity-100 scale-100" 
+             x-transition:leave-end="transform opacity-0 scale-95">
+            
+            {{-- Header --}}
+            <div class="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-700 p-4 lg:p-6 text-white flex-shrink-0 rounded-t-2xl">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3 lg:space-x-4">
+                        <div class="bg-white/20 p-2 lg:p-3 rounded-lg">
+                            <i class="fas fa-calculator text-lg lg:text-2xl"></i>
                         </div>
                         <div>
-                            <h2 class="text-2xl font-bold">{{ __('messages.search_employee_for_payroll') }}</h2>
-                            <p class="text-blue-100">{{ __('messages.search_employee_payroll_description') }}</p>
+                            <h2 class="text-lg lg:text-2xl font-bold">{{ __('messages.process_payroll') }}</h2>
+                            <p class="text-green-100 text-sm lg:text-base">{{ $selectedEmployee->full_name }} - {{ $selected_month }}/{{ $selected_year }}</p>
                         </div>
                     </div>
-                    <button wire:click="closeEmployeeSearch" class="text-white/80 hover:text-white p-2">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="p-8">
-                {{-- Advanced Search and Filters --}}
-                <div class="mb-8">
+                    <div class="flex items-center space-x-2 lg:space-x-3">
+                        <button
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {{-- Search Input --}}
                         <div class="lg:col-span-2">

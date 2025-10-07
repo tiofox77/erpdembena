@@ -27,6 +27,7 @@ return [
     'filter_period' => 'Filter by Period',
     'filter_employee' => 'Filter by Employee',
     'filter_status' => 'Filter by Status',
+    'total_allowance' => 'Total Allowance',
     
     // Table Status Items
     'draft' => 'Draft',
@@ -224,5 +225,37 @@ return [
     'position' => 'Position',
     'created_at' => 'Created at',
     'hours' => 'Hours',
+    
+    // Additional keys
+    'employee' => 'Employee',
+    'period' => 'Period',
+    'start_date' => 'Start Date',
+    'end_date' => 'End Date',
+    'payment' => 'Payment',
+    'account' => 'Account',
+    'total_earnings' => 'Total Earnings',
+    'tax' => 'Tax',
+    'deduction' => 'Deduction',
+    'total_deductions' => 'Total Deductions',
+    'close' => 'Close',
+    'currency' => 'AOA',
+    'days' => 'Days',
+    
+    // Missing translations for payroll processing modal
+    'proportional' => 'proportional',
+    'present_days' => 'Present Days',
+    'discount_for_absences' => 'Discount for Absences',
+    'absence_deductions' => 'Absence Deductions',
+    'amount_to_pay' => 'Amount to Pay',
+    'exempt_up_to' => 'Exempt up to',
+    'exempt_up_to_tz' => 'Exempt up to',
+    'illustrative_only' => 'Illustrative Only',
+    'calculated_from_main_salary' => 'Calculated from Main Salary',
+    'calculated_gross_salary' => 'Calculated Gross Salary',
+    'total_allowances' => 'Total Allowances',
+    'late_arrival_discount' => 'Late Arrival Discount',
+    'absence_discount' => 'Absence Discount',
+    'taxable_excess' => 'Taxable Excess',
+    'included_in_main_salary' => 'included in main salary',
 ];
 

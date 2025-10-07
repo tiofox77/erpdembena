@@ -3640,4 +3640,18 @@ return [
     'expiry_date' => 'Expiry Date',
     'completion' => 'Completion',
     // Trainings - END
+    
+    // Payroll Processing Modal Keys
+    'main_salary' => 'Main Salary',
+    'baseIRT_taxable_amount' => 'IRT Taxable Base Amount',
+    'total_deductions' => 'Total Deductions',
+    'net_salary' => 'Net Salary',
+    'daily_rate' => 'Daily Rate',
+    'net_salary_breakdown' => 'Net Salary Breakdown',
+    'absence_deductions' => 'Absence Deductions',
+    'already_deducted_from_main' => 'already deducted from main salary',
+    'gross_salary_components' => 'Gross Salary Components',
+    'food_allowance_cash' => 'Food Allowance (Cash)',
+    'main_salary_total' => 'Main Salary Total',
+    'net_salary_final' => 'Net Salary (Final)',
 ];

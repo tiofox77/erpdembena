@@ -10,8 +10,8 @@
                     <i class="fas fa-exclamation-triangle text-xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-xl font-bold">{{ __('livewire/hr/payroll-batch.confirm_deletion') }}</h2>
-                    <p class="text-red-100 text-sm">{{ __('livewire/hr/payroll-batch.action_cannot_be_undone') }}</p>
+                    <h2 class="text-xl font-bold">{{ __('payroll.confirm_deletion') }}</h2>
+                    <p class="text-red-100 text-sm">{{ __('payroll.action_cannot_be_undone') }}</p>
                 </div>
             </div>
         </div>
@@ -26,24 +26,24 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-semibold text-red-800 mb-2">
-                                {{ __('livewire/hr/payroll-batch.delete_batch_title') }}
+                                {{ __('payroll.delete_batch_title') }}
                             </h3>
                             <p class="text-red-700 text-sm mb-3">
-                                {{ __('livewire/hr/payroll-batch.delete_batch_message') }} <strong>"{{ $batchToDelete->name }}"</strong>.
+                                {{ __('payroll.delete_batch_message') }} <strong>"{{ $batchToDelete->name }}"</strong>.
                             </p>
                             <div class="space-y-2 text-sm text-red-600">
                                 <div class="flex items-center space-x-2">
                                     <i class="fas fa-users text-xs"></i>
-                                    <span>{{ $batchToDelete->total_employees }} {{ __('livewire/hr/payroll-batch.employees_will_be_removed') }}</span>
+                                    <span>{{ $batchToDelete->total_employees }} {{ __('payroll.employees_will_be_removed') }}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <i class="fas fa-calendar text-xs"></i>
-                                    <span>{{ __('livewire/hr/payroll-batch.period_label') }}: {{ $batchToDelete->payrollPeriod->name ?? 'N/A' }}</span>
+                                    <span>{{ __('payroll.period_label') }}: {{ $batchToDelete->payrollPeriod->name ?? 'N/A' }}</span>
                                 </div>
                                 @if($batchToDelete->department)
                                     <div class="flex items-center space-x-2">
                                         <i class="fas fa-building text-xs"></i>
-                                        <span>{{ __('livewire/hr/payroll-batch.department_label') }}: {{ $batchToDelete->department->name }}</span>
+                                        <span>{{ __('payroll.department_label') }}: {{ $batchToDelete->department->name }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -136,14 +136,14 @@
                     wire:click="closeDeleteModal"
                     class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
                 >
-                    {{ __('livewire/hr/payroll-batch.cancel') }}
+                    {{ __('payroll.cancel') }}
                 </button>
                 <button
                     wire:click="deleteBatch"
                     class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
                 >
                     <i class="fas fa-trash"></i>
-                    <span>{{ __('livewire/hr/payroll-batch.delete_batch') }}</span>
+                    <span>{{ __('payroll.delete_batch') }}</span>
                 </button>
             </div>
         </div>

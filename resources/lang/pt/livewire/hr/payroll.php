@@ -236,5 +236,21 @@ return [
     'total_deductions' => 'Total Deduções',
     'close' => 'Fechar',
     'currency' => 'AOA',
+    
+    // Missing translations for payroll processing modal
+    'proportional' => 'proporcional',
+    'present_days' => 'Dias Presentes',
+    'discount_for_absences' => 'Desconto por Ausências',
+    'absence_deductions' => 'Deduções por Ausências',
+    'amount_to_pay' => 'Valor a Pagar',
+    'exempt_up_to' => 'Isento até',
+    'exempt_up_to_tz' => 'Isento até',
+    'illustrative_only' => 'Apenas Ilustrativo',
+    'calculated_from_main_salary' => 'Calculado a partir do Salário Principal',
+    'calculated_gross_salary' => 'Salário Bruto Calculado',
+    'total_allowances' => 'Total de Subsídios',
+    'late_arrival_discount' => 'Desconto por Atraso',
+    'absence_discount' => 'Desconto por Ausência',
+    'taxable_excess' => 'Excesso Tributável',
 ];
 

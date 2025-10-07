@@ -75,7 +75,7 @@
                     <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-blue-600 font-medium text-sm">{{ __('livewire/hr/payroll-batch.status') }}</p>
+                                <p class="text-blue-600 font-medium text-sm">{{ __('payroll.status') }}</p>
                                 <p class="text-lg font-bold text-blue-700">{{ $currentBatch->status_label }}</p>
                             </div>
                             <div class="bg-blue-500 p-3 rounded-full">
@@ -87,7 +87,7 @@
                     <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-green-600 font-medium text-sm">{{ __('livewire/hr/payroll-batch.employees_text') }}</p>
+                                <p class="text-green-600 font-medium text-sm">{{ __('payroll.employees_text') }}</p>
                                 <p class="text-lg font-bold text-green-700">{{ $currentBatch->total_employees }}</p>
                             </div>
                             <div class="bg-green-500 p-3 rounded-full">
@@ -99,7 +99,7 @@
                     <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-xl border border-yellow-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-yellow-600 font-medium text-sm">{{ __('livewire/hr/payroll-batch.processed_text') }}</p>
+                                <p class="text-yellow-600 font-medium text-sm">{{ __('payroll.processed_text') }}</p>
                                 <p class="text-lg font-bold text-yellow-700">{{ $currentBatch->processed_employees }}</p>
                             </div>
                             <div class="bg-yellow-500 p-3 rounded-full">
@@ -111,7 +111,7 @@
                     <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-purple-600 font-medium text-sm">{{ __('livewire/hr/payroll-batch.processing_progress') }}</p>
+                                <p class="text-purple-600 font-medium text-sm">{{ __('payroll.processing_progress') }}</p>
                                 <p class="text-lg font-bold text-purple-700">{{ $currentBatch->progress_percentage }}%</p>
                             </div>
                             <div class="bg-purple-500 p-3 rounded-full">
@@ -125,7 +125,7 @@
                 @if($currentBatch->total_employees > 0)
                 <div class="mb-8">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium text-gray-700">{{ __('livewire/hr/payroll-batch.processing_progress') }}</span>
+                        <span class="text-sm font-medium text-gray-700">{{ __('payroll.processing_progress') }}</span>
                         <span class="text-sm text-gray-500">{{ $currentBatch->processed_employees }}/{{ $currentBatch->total_employees }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
@@ -141,41 +141,41 @@
                     <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                             <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                            {{ __('livewire/hr/payroll-batch.basic_information') }}
+                            {{ __('payroll.basic_information') }}
                         </h3>
                         <div class="space-y-4">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.name') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.name') }}:</span>
                                 <span class="font-medium text-gray-900">{{ $currentBatch->name }}</span>
                             </div>
                             @if($currentBatch->description)
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.description') }}:</span>
+                                    <span class="text-gray-600">{{ __('payroll.description') }}:</span>
                                     <span class="font-medium text-gray-900">{{ $currentBatch->description }}</span>
                                 </div>
                             @endif
                             <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.period') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.period') }}:</span>
                                 <span class="font-medium text-gray-900">{{ $currentBatch->payrollPeriod->name ?? 'N/A' }}</span>
                             </div>
                             @if($currentBatch->department)
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.department') }}:</span>
+                                    <span class="text-gray-600">{{ __('payroll.department') }}:</span>
                                     <span class="font-medium text-gray-900">{{ $currentBatch->department->name }}</span>
                                 </div>
                             @endif
                             <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.payment_method') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.payment_method') }}:</span>
                                 <span class="font-medium text-gray-900">
                                     @switch($currentBatch->payment_method)
                                         @case('bank_transfer')
-                                            {{ __('livewire/hr/payroll-batch.bank_transfer') }}
+                                            {{ __('payroll.bank_transfer') }}
                                             @break
                                         @case('cash')
-                                            {{ __('livewire/hr/payroll-batch.cash') }}
+                                            {{ __('payroll.cash') }}
                                             @break
                                         @case('check')
-                                            {{ __('livewire/hr/payroll-batch.check') }}
+                                            {{ __('payroll.check') }}
                                             @break
                                         @default
                                             {{ $currentBatch->payment_method }}
@@ -183,7 +183,7 @@
                                 </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.batch_date_label') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.batch_date_label') }}:</span>
                                 <span class="font-medium text-gray-900">{{ $currentBatch->formatted_batch_date }}</span>
                             </div>
                         </div>
@@ -193,20 +193,20 @@
                     <div class="bg-green-50 rounded-xl p-6 border border-green-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                             <i class="fas fa-money-bill-wave text-green-500 mr-2"></i>
-                            {{ __('livewire/hr/payroll-batch.financial_summary') }}
+                            {{ __('payroll.financial_summary') }}
                         </h3>
                         <div class="space-y-4">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.total_gross_amount') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.total_gross_amount') }}:</span>
                                 <span class="font-bold text-green-700 text-lg">{{ number_format($currentBatch->total_gross_amount, 2, ',', '.') }} AOA</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.total_deductions') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.total_deductions') }}:</span>
                                 <span class="font-medium text-red-600">{{ number_format($currentBatch->total_deductions, 2, ',', '.') }} AOA</span>
                             </div>
                             <div class="border-t border-green-200 pt-2">
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600 font-medium">{{ __('livewire/hr/payroll-batch.total_net_amount') }}:</span>
+                                    <span class="text-gray-600 font-medium">{{ __('payroll.total_net_amount') }}:</span>
                                     <span class="font-bold text-green-800 text-xl">{{ number_format($currentBatch->total_net_amount, 2, ',', '.') }} AOA</span>
                                 </div>
                             </div>
@@ -219,13 +219,13 @@
                 <div class="bg-blue-50 rounded-xl p-6 border border-blue-200 mb-8">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                         <i class="fas fa-clock text-blue-500 mr-2"></i>
-                        {{ __('livewire/hr/payroll-batch.processing_timeline') }}
+                        {{ __('payroll.processing_timeline') }}
                     </h3>
                     <div class="space-y-4">
                         <div class="flex items-center space-x-3">
                             <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
                             <div>
-                                <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.created_at') }}:</span>
+                                <span class="text-gray-600">{{ __('payroll.created_at') }}:</span>
                                 <span class="font-medium text-gray-900 ml-2">{{ $currentBatch->created_at->format('d/m/Y H:i') }}</span>
                             </div>
                         </div>
@@ -233,7 +233,7 @@
                             <div class="flex items-center space-x-3">
                                 <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                                 <div>
-                                    <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.processing_started') }}:</span>
+                                    <span class="text-gray-600">{{ __('payroll.processing_started') }}:</span>
                                     <span class="font-medium text-gray-900 ml-2">{{ $currentBatch->processing_started_at->format('d/m/Y H:i') }}</span>
                                 </div>
                             </div>
@@ -242,13 +242,13 @@
                             <div class="flex items-center space-x-3">
                                 <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                                 <div>
-                                    <span class="text-gray-600">{{ __('livewire/hr/payroll-batch.processing_completed') }}:</span>
+                                    <span class="text-gray-600">{{ __('payroll.processing_completed') }}:</span>
                                     <span class="font-medium text-gray-900 ml-2">{{ $currentBatch->processing_completed_at->format('d/m/Y H:i') }}</span>
                                 </div>
                             </div>
                             @if($currentBatch->processing_duration)
                                 <div class="ml-6 text-sm text-gray-500">
-                                    {{ __('livewire/hr/payroll-batch.duration') }}: {{ $currentBatch->processing_duration }} {{ __('livewire/hr/payroll-batch.duration_minutes') }}
+                                    {{ __('payroll.duration') }}: {{ $currentBatch->processing_duration }} {{ __('payroll.duration_minutes') }}
                                 </div>
                             @endif
                         @endif
@@ -261,7 +261,7 @@
                     <div class="p-6 border-b border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                             <i class="fas fa-list text-purple-500 mr-2"></i>
-                            {{ __('livewire/hr/payroll-batch.employees_in_batch') }} ({{ $currentBatch->batchItems->count() }})
+                            {{ __('payroll.employees_in_batch') }} ({{ $currentBatch->batchItems->count() }})
                         </h3>
                     </div>
                     
@@ -269,13 +269,13 @@
                         <table class="w-full">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.employee') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.status') }}</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.gross_salary') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.employee') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.status') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.gross_salary') }}</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deduções</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.net_salary') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.processed_at') }}</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('livewire/hr/payroll-batch.actions') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.net_salary') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.processed_at') }}</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -372,7 +372,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            {{ __('livewire/hr/payroll-batch.no_employees_in_batch') }}
+                                            {{ __('payroll.no_employees_in_batch') }}
                                         </td>
                                     </tr>
                                 @endforelse
@@ -386,7 +386,7 @@
                 <div class="mt-8 bg-yellow-50 rounded-xl p-6 border border-yellow-200">
                     <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                         <i class="fas fa-sticky-note text-yellow-500 mr-2"></i>
-                        {{ __('livewire/hr/payroll-batch.notes') }}
+                        {{ __('payroll.notes') }}
                     </h3>
                     <p class="text-gray-700">{{ $currentBatch->notes }}</p>
                 </div>
@@ -401,7 +401,7 @@
                                 class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
                             >
                                 <i class="fas fa-play"></i>
-                                <span>{{ $currentBatch->status === 'failed' ? 'Reprocessar Lote' : __('livewire/hr/payroll-batch.process_batch_button') }}</span>
+                                <span>{{ $currentBatch->status === 'failed' ? 'Reprocessar Lote' : __('payroll.process_batch_button') }}</span>
                             </button>
                         @endif
                         
@@ -424,7 +424,7 @@
                         wire:click="closeViewModal"
                         class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
                     >
-                        {{ __('livewire/hr/payroll-batch.close') }}
+                        {{ __('payroll.close') }}
                     </button>
                 </div>
             </div>
