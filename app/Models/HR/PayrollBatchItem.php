@@ -58,6 +58,14 @@ class PayrollBatchItem extends Model
     }
 
     /**
+     * Alias for payrollBatch relationship
+     */
+    public function batch(): BelongsTo
+    {
+        return $this->payrollBatch();
+    }
+
+    /**
      * Get the employee for this item
      */
     public function employee(): BelongsTo

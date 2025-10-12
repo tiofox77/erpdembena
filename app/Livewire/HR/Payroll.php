@@ -318,7 +318,7 @@ class Payroll extends Component
     {
         $this->hrSettings = [
             'working_hours_per_day' => (float) \App\Models\HR\HRSetting::get('working_hours_per_day', 8),
-            'working_days_per_month' => (int) \App\Models\HR\HRSetting::get('working_days_per_month', 22),
+            'monthly_working_days' => (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22),
             'vacation_subsidy_percentage' => (float) \App\Models\HR\HRSetting::get('vacation_subsidy_percentage', 50),
             'christmas_subsidy_percentage' => (float) \App\Models\HR\HRSetting::get('christmas_subsidy_percentage', 100),
             'income_tax_percentage' => (float) \App\Models\HR\HRSetting::get('income_tax_percentage', 15),
@@ -333,7 +333,7 @@ class Payroll extends Component
      */
     private function calculateHourlyRate(): float
     {
-        $workingDays = $this->hrSettings['working_days_per_month'] ?? 22;
+        $workingDays = $this->hrSettings['monthly_working_days'] ?? 22;
         $workingHours = $this->hrSettings['working_hours_per_day'] ?? 8;
         $totalMonthlyHours = $workingDays * $workingHours;
         
@@ -731,7 +731,7 @@ class Payroll extends Component
         }
 
         // Calculate leave deduction based on unpaid days
-        $dailyRate = $this->basic_salary / ($this->hrSettings['working_days_per_month'] ?? 22);
+        $dailyRate = $this->basic_salary / ($this->hrSettings['monthly_working_days'] ?? 22);
         $this->leave_deduction = $this->unpaid_leave_days * $dailyRate;
         $this->leaveRecords = $leaves->toArray();
     }

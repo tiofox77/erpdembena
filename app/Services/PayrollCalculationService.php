@@ -472,7 +472,7 @@ class PayrollCalculationService
             // Metadata
             'hourly_rate' => $this->hourlyRate,
             'daily_rate' => $this->dailyRate,
-            'working_days_per_month' => $this->workingDaysPerMonth,
+            'monthly_working_days' => $this->workingDaysPerMonth,
         ];
     }
 

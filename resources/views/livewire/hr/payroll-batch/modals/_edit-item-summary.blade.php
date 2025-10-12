@@ -405,7 +405,7 @@
             </div>
             <div>
                 <span class="text-gray-600">Dias Úteis:</span>
-                <span class="font-bold text-gray-900 ml-2">{{ $calculatedData['working_days_per_month'] }} dias</span>
+                <span class="font-bold text-gray-900 ml-2">{{ $calculatedData['monthly_working_days'] }} dias</span>
             </div>
         </div>
     </div>

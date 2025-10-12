@@ -277,7 +277,7 @@ class ProcessPayrollBatch implements ShouldQueue
     protected function generateRemarks(Employee $employee, array $result, PayrollBatch $batch): string
     {
         $remarks = "Processado via lote: {$batch->name}\n";
-        $remarks .= "Presenças: {$result['present_days']}/{$result['working_days_per_month']} dias\n";
+        $remarks .= "Presenças: {$result['present_days']}/{$result['monthly_working_days']} dias\n";
         $remarks .= "Horas trabalhadas: {$result['attendance_hours']}h\n";
         
         if ($result['absent_days'] > 0) {

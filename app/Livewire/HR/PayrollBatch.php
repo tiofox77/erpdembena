@@ -10,6 +10,7 @@ use App\Models\HR\PayrollPeriod;
 use App\Models\HR\Department;
 use App\Models\HR\Employee;
 use App\Models\HR\Payroll;
+use App\Models\HR\Attendance;
 use App\Jobs\ProcessPayrollBatch;
 use App\Services\PayrollCalculationService;
 use App\Helpers\PayrollCalculatorHelper;
@@ -57,6 +58,8 @@ class PayrollBatch extends Component
     public string $edit_notes = '';
     public array $calculatedData = [];
     public float $edit_additional_bonus = 0;
+    public float $edit_overtime_amount = 0;
+    public float $edit_advance_deduction = 0;
     public bool $edit_christmas_subsidy = false;
     public bool $edit_vacation_subsidy = false;
     
@@ -586,12 +589,16 @@ class PayrollBatch extends Component
             
             // Carregar valores atuais do item ou usar defaults
             $this->edit_additional_bonus = $this->editingItem->additional_bonus ?? 0;
+            $this->edit_overtime_amount = $this->editingItem->overtime_amount ?? 0;
+            $this->edit_advance_deduction = $this->editingItem->advance_deduction ?? 0;
             $this->edit_christmas_subsidy = $this->editingItem->christmas_subsidy ?? false;
             $this->edit_vacation_subsidy = $this->editingItem->vacation_subsidy ?? false;
             $this->edit_notes = $this->editingItem->notes ?? '';
             
             Log::info('Valores carregados', [
                 'additional_bonus' => $this->edit_additional_bonus,
+                'overtime_amount' => $this->edit_overtime_amount,
+                'advance_deduction' => $this->edit_advance_deduction,
                 'christmas' => $this->edit_christmas_subsidy,
                 'vacation' => $this->edit_vacation_subsidy,
             ]);
@@ -695,7 +702,7 @@ class PayrollBatch extends Component
             }
             
             // Atualizar totais do batch
-            $this->updateBatchTotals($this->editingItem->payroll_batch_id);
+            $this->updateBatchTotals((int) $this->editingItem->payroll_batch_id);
             
             $this->showEditItemModal = false;
             $this->editingItem = null;
@@ -705,7 +712,7 @@ class PayrollBatch extends Component
             
             // Refresh view
             if ($this->currentBatch) {
-                $this->viewBatch($this->currentBatch->id);
+                $this->viewBatch((int) $this->currentBatch->id);
             }
             
         } catch (\Exception $e) {
@@ -728,7 +735,13 @@ class PayrollBatch extends Component
         $this->edit_gross_salary = 0;
         $this->edit_net_salary = 0;
         $this->edit_total_deductions = 0;
+        $this->edit_additional_bonus = 0;
+        $this->edit_overtime_amount = 0;
+        $this->edit_advance_deduction = 0;
+        $this->edit_christmas_subsidy = false;
+        $this->edit_vacation_subsidy = false;
         $this->edit_notes = '';
+        $this->calculatedData = [];
     }
     
     /**
@@ -869,10 +882,12 @@ class PayrollBatch extends Component
             // Carregar dados
             $calculator->loadAllEmployeeData();
             
-            // Configurar subsídios
+            // Configurar subsídios e valores editáveis
             $calculator->setChristmasSubsidy($this->edit_christmas_subsidy);
             $calculator->setVacationSubsidy($this->edit_vacation_subsidy);
             $calculator->setAdditionalBonus($this->edit_additional_bonus);
+            $calculator->setOvertimeAmount($this->edit_overtime_amount);
+            $calculator->setAdvanceDeduction($this->edit_advance_deduction);
             
             // Configurar food in kind (apenas para exibição - food SEMPRE é deduzido)
             $isFoodInKind = (bool)($employee->is_food_in_kind ?? false);
@@ -982,6 +997,25 @@ class PayrollBatch extends Component
             
             session()->flash('error', 'Erro ao processar batch: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Verificar se funcionário está de férias no período
+     */
+    public function isEmployeeOnLeave($employeeId, $periodId): bool
+    {
+        $period = PayrollPeriod::find($periodId);
+        if (!$period) {
+            return false;
+        }
+
+        // Verificar attendance com status 'leave'
+        $hasLeave = Attendance::where('employee_id', $employeeId)
+            ->whereBetween('date', [$period->start_date, $period->end_date])
+            ->where('status', 'leave')
+            ->exists();
+
+        return $hasLeave;
     }
 
     public function render()

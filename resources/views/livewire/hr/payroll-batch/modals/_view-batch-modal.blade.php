@@ -293,10 +293,11 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                {{ $item->status === 'pending' ? 'bg-gray-100 text-gray-800' : '' }}
-                                                {{ $item->status === 'processing' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                {{ $item->status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
+                                            <div class="flex items-center space-x-2">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                    {{ $item->status === 'pending' ? 'bg-gray-100 text-gray-800' : '' }}
+                                                    {{ $item->status === 'processing' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                    {{ $item->status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
                                                 {{ $item->status === 'failed' ? 'bg-red-100 text-red-800' : '' }}
                                                 {{ $item->status === 'skipped' ? 'bg-orange-100 text-orange-800' : '' }}
                                             ">
@@ -309,6 +310,14 @@
                                                 "></div>
                                                 {{ $item->status_label }}
                                             </span>
+                                            
+                                            @if($this->isEmployeeOnLeave($item->employee_id, $currentBatch->payroll_period_id))
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-200">
+                                                    <i class="fas fa-umbrella-beach mr-1"></i>
+                                                    Em Férias
+                                                </span>
+                                            @endif
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
                                             <span class="font-semibold text-green-700">

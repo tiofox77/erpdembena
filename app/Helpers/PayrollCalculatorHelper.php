@@ -35,7 +35,8 @@ class PayrollCalculatorHelper
     
     // Dados de presença
     protected int $totalWorkingDays = 0;
-    protected int $presentDays = 0;
+    protected int $presentDays = 0; // Inclui férias para cálculo de salário
+    protected int $daysWorkedEffectively = 0; // Exclui férias (para subsídio transporte)
     protected int $absentDays = 0;
     protected int $lateArrivals = 0;
     protected float $totalAttendanceHours = 0.0;
@@ -104,7 +105,6 @@ class PayrollCalculatorHelper
         $this->hrSettings = [
             // Horas e dias de trabalho
             'working_hours_per_day' => (float) HRSetting::get('working_hours_per_day', 8),
-            'working_days_per_month' => (int) HRSetting::get('working_days_per_month', 22),
             'monthly_working_days' => (int) HRSetting::get('monthly_working_days', 22),
             
             // Subsídios percentuais
@@ -136,7 +136,7 @@ class PayrollCalculatorHelper
     
     public function calculateHourlyRate(): float
     {
-        $workingDays = $this->hrSettings['working_days_per_month'] ?? 22;
+        $workingDays = $this->hrSettings['monthly_working_days'] ?? 22;
         $workingHours = $this->hrSettings['working_hours_per_day'] ?? 8;
         $totalMonthlyHours = $workingDays * $workingHours;
         
@@ -166,7 +166,12 @@ class PayrollCalculatorHelper
             }
         }
         
-        $this->presentDays = $attendances->whereIn('status', ['present', 'late', 'half_day'])->count();
+        // Férias (leave) são consideradas como dias presentes e pagos para salário
+        $this->presentDays = $attendances->whereIn('status', ['present', 'late', 'half_day', 'leave'])->count();
+        
+        // Dias efetivamente trabalhados (EXCLUINDO férias) para subsídio de transporte
+        $this->daysWorkedEffectively = $attendances->whereIn('status', ['present', 'late', 'half_day'])->count();
+        
         $this->absentDays = $this->totalWorkingDays - $this->presentDays;
         $this->lateArrivals = $attendances->where('status', 'late')->count();
         
@@ -174,7 +179,8 @@ class PayrollCalculatorHelper
         $standardWorkDay = 8;
         
         foreach ($attendances as $attendance) {
-            if (in_array($attendance->status, ['present', 'late', 'half_day'])) {
+            // Férias (leave) contam como dia trabalhado completo
+            if (in_array($attendance->status, ['present', 'late', 'half_day', 'leave'])) {
                 $hours = 0;
                 
                 if ($attendance->time_in && $attendance->time_out) {
@@ -195,6 +201,10 @@ class PayrollCalculatorHelper
                             break;
                         case 'half_day':
                             $hours = $standardWorkDay / 2;
+                            break;
+                        case 'leave':
+                            // Férias = dia completo pago
+                            $hours = $standardWorkDay;
                             break;
                     }
                 }
@@ -335,7 +345,7 @@ class PayrollCalculatorHelper
             }
         }
         
-        $dailyRate = $this->basicSalary / ($this->hrSettings['working_days_per_month'] ?? 22);
+        $dailyRate = $this->basicSalary / ($this->hrSettings['monthly_working_days'] ?? 22);
         $this->leaveDeduction = $this->unpaidLeaveDays * $dailyRate;
         $this->leaveRecords = $leaves->toArray();
         
@@ -378,8 +388,21 @@ class PayrollCalculatorHelper
         return $this;
     }
     
+    public function setOvertimeAmount(float $amount): self
+    {
+        $this->totalOvertimeAmount = $amount;
+        return $this;
+    }
+    
+    public function setAdvanceDeduction(float $amount): self
+    {
+        $this->advanceDeduction = $amount;
+        return $this;
+    }
+    
     /**
-     * Calcular subsídio de transporte proporcional baseado na presença
+     * Calcular subsídio de transporte proporcional baseado nos dias EFETIVAMENTE trabalhados
+     * IMPORTANTE: Dias de férias NÃO recebem subsídio de transporte (não há deslocamento)
      */
     public function calculateProportionalTransportAllowance(): float
     {
@@ -388,7 +411,8 @@ class PayrollCalculatorHelper
         }
         
         $fullTransportAllowance = (float) ($this->employee->transport_benefit ?? 0);
-        $proportionalAllowance = ($fullTransportAllowance / $this->totalWorkingDays) * $this->presentDays;
+        // Usar daysWorkedEffectively (EXCLUI férias) em vez de presentDays
+        $proportionalAllowance = ($fullTransportAllowance / $this->totalWorkingDays) * $this->daysWorkedEffectively;
         
         $this->transportAllowance = $proportionalAllowance;
         return $proportionalAllowance;
@@ -772,12 +796,13 @@ class PayrollCalculatorHelper
             'basic_salary' => $this->basicSalary,
             'hourly_rate' => $this->hourlyRate,
             'daily_rate' => $this->hourlyRate * 8,
-            'working_days_per_month' => $this->hrSettings['working_days_per_month'] ?? 22,
+            'monthly_working_days' => $this->hrSettings['monthly_working_days'] ?? 22,
             'attendance_hours' => $this->totalAttendanceHours,
             
             // Presença
             'total_working_days' => $this->totalWorkingDays,
-            'present_days' => $this->presentDays,
+            'present_days' => $this->presentDays, // Inclui férias (para salário)
+            'days_worked_effectively' => $this->daysWorkedEffectively, // Exclui férias (para subsídios)
             'absent_days' => $this->absentDays,
             'late_arrivals' => $this->lateArrivals,
             'total_attendance_hours' => $this->totalAttendanceHours,
@@ -891,7 +916,8 @@ class PayrollCalculatorHelper
     {
         return [
             'total_working_days' => $this->totalWorkingDays,
-            'present_days' => $this->presentDays,
+            'present_days' => $this->presentDays, // Inclui férias
+            'days_worked_effectively' => $this->daysWorkedEffectively, // Exclui férias
             'absent_days' => $this->absentDays,
             'late_arrivals' => $this->lateArrivals,
             'total_attendance_hours' => $this->totalAttendanceHours,
