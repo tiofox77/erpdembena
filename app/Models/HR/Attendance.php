@@ -69,14 +69,6 @@ class Attendance extends Model
     }
 
     /**
-     * Get the approver
-     */
-    public function approver(): BelongsTo
-    {
-        return $this->belongsTo(Employee::class, 'approved_by');
-    }
-
-    /**
      * Calculate total hours worked
      */
     public function getHoursWorkedAttribute(): float
@@ -85,14 +77,6 @@ class Attendance extends Model
             return (float) $this->time_out->diffInHours($this->time_in);
         }
         return 0.0;
-    }
-    
-    /**
-     * Get the payroll record for this attendance
-     */
-    public function payroll(): BelongsTo
-    {
-        return $this->belongsTo(Payroll::class);
     }
     
     /**
@@ -109,36 +93,5 @@ class Attendance extends Model
         }
         
         return $this->hourly_rate * $this->hours_worked;
-    }
-    
-    /**
-     * Calculate overtime pay amount based on overtime hours and overtime rate
-     */
-    public function getOvertimePayAttribute(): float
-    {
-        if (!$this->overtime_hours || !$this->overtime_rate) {
-            return 0.0;
-        }
-        
-        return $this->overtime_hours * $this->overtime_rate;
-    }
-    
-    /**
-     * Calculate total pay (normal + overtime)
-     */
-    public function getTotalPayAttribute(): float
-    {
-        return $this->normal_pay + $this->overtime_pay;
-    }
-    
-    /**
-     * Determine if this attendance is eligible for maternity benefits
-     */
-    public function getIsEligibleForMaternityBenefitsAttribute(): bool
-    {
-        return $this->is_maternity_related && 
-               $this->employee && 
-               $this->employee->gender === 'female' && 
-               $this->is_approved;
     }
 }

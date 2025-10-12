@@ -10,6 +10,8 @@ use App\Models\HR\Attendance;
 use App\Models\HR\OvertimeRecord;
 use App\Models\HR\SalaryAdvance;
 use App\Models\HR\SalaryDiscount;
+use App\Models\HR\Leave;
+use App\Models\HR\LeaveType;
 use App\Models\HR\HRSetting;
 use App\Models\HR\IRTTaxBracket;
 use Carbon\Carbon;
@@ -42,6 +44,12 @@ class PayrollCalculationService
     protected int $absentDays = 0;
     protected int $lateDays = 0;
     protected float $totalHours = 0.0;
+    
+    // Leave data
+    protected int $totalLeaveDays = 0;
+    protected int $paidLeaveDays = 0;
+    protected int $unpaidLeaveDays = 0;
+    protected float $leaveDeduction = 0.0;
     
     // Earnings components
     protected float $basicSalary = 0.0;
@@ -77,6 +85,7 @@ class PayrollCalculationService
     protected $overtimeRecords;
     protected $salaryAdvances;
     protected $salaryDiscounts;
+    protected $leaveRecords;
 
     public function __construct(Employee $employee, PayrollPeriod $period)
     {
@@ -141,6 +150,7 @@ class PayrollCalculationService
 
         // Step 1: Load data
         $this->loadAttendanceData();
+        $this->loadLeaveData();
         $this->loadOvertimeData();
         $this->loadSalaryAdvances();
         $this->loadSalaryDiscounts();
@@ -197,6 +207,76 @@ class PayrollCalculationService
         // Calculate deductions for absences and lates
         $this->absenceDeduction = $this->absentDays * $this->dailyRate;
         $this->lateDeduction = $this->lateDays * $this->hourlyRate; // 1 hour per late
+    }
+
+    /**
+     * Load leave data for the period
+     */
+    protected function loadLeaveData(): void
+    {
+        $this->leaveRecords = Leave::where('employee_id', $this->employee->id)
+            ->where('status', Leave::STATUS_APPROVED)
+            ->where('affects_payroll', true)
+            ->where(function ($query) {
+                $query->whereBetween('start_date', [$this->startDate->format('Y-m-d'), $this->endDate->format('Y-m-d')])
+                      ->orWhereBetween('end_date', [$this->startDate->format('Y-m-d'), $this->endDate->format('Y-m-d')])
+                      ->orWhere(function ($q) {
+                          $q->where('start_date', '<=', $this->startDate->format('Y-m-d'))
+                            ->where('end_date', '>=', $this->endDate->format('Y-m-d'));
+                      });
+            })
+            ->with('leaveType')
+            ->get();
+
+        $this->totalLeaveDays = 0;
+        $this->paidLeaveDays = 0;
+        $this->unpaidLeaveDays = 0;
+        $this->leaveDeduction = 0.0;
+
+        foreach ($this->leaveRecords as $leave) {
+            // Calculate days within the period
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            
+            // Adjust dates if leave extends beyond period
+            $effectiveStart = $leaveStart->lt($this->startDate) ? $this->startDate : $leaveStart;
+            $effectiveEnd = $leaveEnd->gt($this->endDate) ? $this->endDate : $leaveEnd;
+            
+            $daysInPeriod = $effectiveStart->diffInDays($effectiveEnd) + 1;
+            $this->totalLeaveDays += $daysInPeriod;
+            
+            // Check if leave is paid or unpaid
+            if ($leave->is_paid_leave) {
+                $this->paidLeaveDays += $daysInPeriod;
+                
+                // If payment percentage is less than 100%, calculate partial deduction
+                if ($leave->payment_percentage < 100) {
+                    $deductionPercentage = (100 - $leave->payment_percentage) / 100;
+                    $this->leaveDeduction += ($this->dailyRate * $daysInPeriod * $deductionPercentage);
+                }
+            } else {
+                // Unpaid leave - full deduction
+                $this->unpaidLeaveDays += $daysInPeriod;
+                $this->leaveDeduction += ($this->dailyRate * $daysInPeriod);
+            }
+        }
+        
+        // Adjust present days to account for paid leaves
+        // Paid leaves should count as present days
+        $this->presentDays += $this->paidLeaveDays;
+        $this->absentDays = max(0, $this->workingDaysPerMonth - $this->presentDays);
+        
+        // Recalculate absence deduction to exclude paid leave days
+        $this->absenceDeduction = $this->absentDays * $this->dailyRate;
+
+        Log::info('Leave data loaded', [
+            'total_leave_days' => $this->totalLeaveDays,
+            'paid_leave_days' => $this->paidLeaveDays,
+            'unpaid_leave_days' => $this->unpaidLeaveDays,
+            'leave_deduction' => $this->leaveDeduction,
+            'adjusted_present_days' => $this->presentDays,
+            'adjusted_absent_days' => $this->absentDays
+        ]);
     }
 
     /**
@@ -312,6 +392,9 @@ class PayrollCalculationService
         // Attendance deductions
         $deductions += $this->absenceDeduction;
         $deductions += $this->lateDeduction;
+        
+        // Leave deductions (unpaid or partial payment)
+        $deductions += $this->leaveDeduction;
 
         // Salary advances
         $deductions += $this->advanceDeduction;
@@ -348,6 +431,12 @@ class PayrollCalculationService
             'present_days' => $this->presentDays,
             'absent_days' => $this->absentDays,
             'late_days' => $this->lateDays,
+            
+            // Leave
+            'total_leave_days' => $this->totalLeaveDays,
+            'paid_leave_days' => $this->paidLeaveDays,
+            'unpaid_leave_days' => $this->unpaidLeaveDays,
+            'leave_deduction' => $this->leaveDeduction,
             
             // Earnings
             'christmas_subsidy' => $this->christmasSubsidy,
@@ -410,6 +499,7 @@ class PayrollCalculationService
             'INSS 3%' => $this->inss3Percent,
             'Absence Deduction' => $this->absenceDeduction,
             'Late Deduction' => $this->lateDeduction,
+            'Leave Deduction' => $this->leaveDeduction,
             'Salary Advances' => $this->advanceDeduction,
             'Salary Discounts' => $this->discountDeduction,
         ];

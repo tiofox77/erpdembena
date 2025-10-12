@@ -40,14 +40,7 @@ class Attendance extends Component
     public $time_out;
     public $status;
     public $remarks;
-    public $is_approved = false;
-    
-    // Campos para cálculo de pagamento
     public $hourly_rate;
-    public $overtime_hours;
-    public $overtime_rate;
-    public $is_maternity_related = false;
-    public $maternity_type;
     public $affects_payroll = true;
 
     // Modal flags
@@ -100,15 +93,8 @@ class Attendance extends Component
             'time_out' => 'nullable',
             'status' => 'required|in:present,absent,late,half_day,leave',
             'remarks' => 'nullable',
-            'is_approved' => 'boolean',
-            
-            // Campos para cálculo de pagamento
             'hourly_rate' => 'nullable|numeric|min:0',
-            'overtime_hours' => 'nullable|numeric|min:0',
-            'overtime_rate' => 'nullable|numeric|min:0',
-            'is_maternity_related' => 'boolean',
-            'maternity_type' => 'nullable|string|required_if:is_maternity_related,true',
-            'affects_payroll' => 'boolean',
+            'affects_payroll' => 'boolean'
         ];
     }
 
@@ -149,12 +135,13 @@ class Attendance extends Component
         // Reset form fields
         $this->reset([
             'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
-            'status', 'remarks'
+            'status', 'remarks', 'hourly_rate', 'affects_payroll'
         ]);
         
         // Set defaults for new attendance records
         $this->date = Carbon::today()->format('Y-m-d');
         $this->status = 'present'; // Default to present
+        $this->affects_payroll = true;
         
         $this->showModal = true;
     }
@@ -251,15 +238,8 @@ class Attendance extends Component
         $this->time_out = $attendance->time_out ? $attendance->time_out->format('H:i') : null;
         $this->status = $attendance->status;
         $this->remarks = $attendance->remarks;
-        $this->is_approved = $attendance->is_approved;
-        
-        // Campos de pagamento
         $this->hourly_rate = $attendance->hourly_rate;
-        $this->overtime_hours = $attendance->overtime_hours;
-        $this->overtime_rate = $attendance->overtime_rate;
-        $this->is_maternity_related = $attendance->is_maternity_related;
-        $this->maternity_type = $attendance->maternity_type;
-        $this->affects_payroll = $attendance->affects_payroll;
+        $this->affects_payroll = $attendance->affects_payroll ?? true;
 
         $this->isEditing = true;
         $this->showModal = true;
@@ -282,105 +262,99 @@ class Attendance extends Component
         if ($this->time_out) {
             $validatedData['time_out'] = Carbon::parse($this->date . ' ' . $this->time_out);
         }
-
-        // All new records are auto-approved by default
-        if (!$this->isEditing) {
-            // Force approve all new records
-            $validatedData['is_approved'] = true;
-            $validatedData['approved_by'] = auth()->id();
-            $validatedData['status'] = $this->status ?: 'present'; // Ensure status is set
-        } else {
-            // For editing, keep the current approval status
-            if ($this->is_approved) {
-                $validatedData['approved_by'] = auth()->id();
-            } else {
-                $validatedData['approved_by'] = null;
-            }
-        }
         
-        // Gerenciar campos específicos de maternidade
-        if ($this->is_maternity_related) {
-            $employee = Employee::find($this->employee_id);
-            if ($employee && $employee->gender !== 'female') {
-                $this->addError('is_maternity_related', 'Registos relacionados com maternidade só podem ser atribuídos a funcionárias mulher.');
-                return;
-            }
-        } else {
-            $validatedData['maternity_type'] = null;
+        // Garantir que status está definido
+        if (!$this->isEditing) {
+            $validatedData['status'] = $this->status ?: 'present';
         }
 
-        if ($this->isEditing) {
-            $attendance = AttendanceModel::find($this->attendance_id);
-            $attendance->update($validatedData);
-            session()->flash('message', 'Registo de presença atualizado com sucesso.');
-        } else {
-            // Check if there's already an attendance record for this employee on this date
-            $exists = AttendanceModel::where('employee_id', $this->employee_id)
-                ->where('date', $this->date)
-                ->exists();
+        try {
+            if ($this->isEditing) {
+                $attendance = AttendanceModel::find($this->attendance_id);
+                $attendance->update($validatedData);
+                $actionType = 'updated';
+            } else {
+                // Check if there's already an attendance record for this employee on this date
+                $exists = AttendanceModel::where('employee_id', $this->employee_id)
+                    ->where('date', $this->date)
+                    ->exists();
 
-            if ($exists) {
-                session()->flash('error', 'Já existe um registo de presença para este funcionário nesta data.');
-                return;
-            }
-            
-            // Para novos registos, se não for especificado, usar o valor base do funcionário
-            if (empty($this->hourly_rate) && $this->employee_id) {
-                $employee = Employee::find($this->employee_id);
-                if ($employee) {
-                    // Calcular valor hora com base nas configurações HR
-                    $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
-                    $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
-                    $validatedData['hourly_rate'] = $employee->base_salary > 0 ? round($employee->base_salary / $monthlyHours, 2) : 0.0;
-
-                    // Determinar multiplicador de overtime conforme dia útil/fim‑de‑semana/feriado
-                    $currentDate = $this->date ? Carbon::parse($this->date) : Carbon::now();
-                    $isWeekend = $currentDate->isWeekend();
-                    $holidays = [
-                        '01-01','02-04','03-08','04-04','05-01','09-17','11-02','11-11','12-25'
-                    ];
-                    $isHoliday = in_array($currentDate->format('m-d'), $holidays, true);
-
-                    if ($isHoliday) {
-                        $multiplier = (float) HRSetting::get('overtime_multiplier_holiday', 2.5);
-                    } elseif ($isWeekend) {
-                        $multiplier = (float) HRSetting::get('overtime_multiplier_weekend', 2.0);
-                    } else {
-                        // Preferir chave unificada quando existir; aceitar 0 como valor válido
-                        $weekdayMultiplier = (float) HRSetting::get('overtime_multiplier_weekday', -1);
-                        $multiplier = $weekdayMultiplier > 0 || $weekdayMultiplier === 0.0
-                            ? $weekdayMultiplier
-                            : (float) HRSetting::get('overtime_first_hour_weekday', 1.25);
-                    }
-
-                    $validatedData['overtime_rate'] = round($validatedData['hourly_rate'] * $multiplier, 2);
+                if ($exists) {
+                    $this->dispatch('notify', 
+                        type: 'error', 
+                        message: __('attendance.messages.duplicate_found')
+                    );
+                    return;
                 }
+                
+                // Para novos registos, se não for especificado, usar o valor base do funcionário
+                if (empty($this->hourly_rate) && $this->employee_id) {
+                    $employee = Employee::find($this->employee_id);
+                    if ($employee) {
+                        // Calcular valor hora com base nas configurações HR
+                        $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
+                        $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
+                        $validatedData['hourly_rate'] = $employee->base_salary > 0 ? round($employee->base_salary / $monthlyHours, 2) : 0.0;
+                    }
+                }
+
+                AttendanceModel::create($validatedData);
+                $actionType = 'created';
             }
 
-            AttendanceModel::create($validatedData);
-            session()->flash('message', 'Registo de presença criado com sucesso.');
+            // Disparar notificação de sucesso
+            $message = $actionType === 'updated' 
+                ? __('attendance.messages.updated_successfully') 
+                : __('attendance.messages.saved_successfully');
+                
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: $message
+            );
+            
+            // Fechar modal e resetar campos
+            $this->closeModal();
+            $this->dispatch('attendanceUpdated');
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('attendance.messages.error_saving', ['error' => $e->getMessage()])
+            );
         }
-
-        $this->showModal = false;
-        $this->reset([
-            'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
-            'status', 'remarks', 'is_approved', 'hourly_rate', 'overtime_hours',
-            'overtime_rate', 'is_maternity_related', 'maternity_type', 'affects_payroll'
-        ]);
     }
 
     public function delete()
     {
-        $attendance = AttendanceModel::find($this->attendance_id);
-        $attendance->delete();
-        $this->showDeleteModal = false;
-        session()->flash('message', 'Attendance deleted successfully.');
+        try {
+            $attendance = AttendanceModel::find($this->attendance_id);
+            $attendance->delete();
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('attendance.messages.deleted_successfully')
+            );
+            
+            $this->showDeleteModal = false;
+            $this->dispatch('attendanceUpdated');
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('attendance.messages.error_deleting', ['error' => $e->getMessage()])
+            );
+        }
     }
 
     public function closeModal()
     {
         $this->showModal = false;
+        $this->isEditing = false;
         $this->resetValidation();
+        $this->reset([
+            'attendance_id', 'employee_id', 'date', 'time_in', 'time_out',
+            'status', 'remarks', 'hourly_rate', 'affects_payroll'
+        ]);
     }
     
     public function closeDeleteModal()
@@ -717,12 +691,18 @@ class Attendance extends Component
         
         // Validar se um shift foi selecionado
         if (!$this->selectedShift) {
-            session()->flash('error', __('attendance.select_shift_first'));
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('attendance.messages.select_shift_first')
+            );
             return;
         }
         
         if (empty($this->selectedEmployees)) {
-            session()->flash('error', __('attendance.no_employees_selected'));
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('attendance.messages.no_employees_selected')
+            );
             return;
         }
         
@@ -751,42 +731,21 @@ class Attendance extends Component
                 $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
                 $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
                 $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
-
-                // Determinar multiplicador de overtime conforme dia seleccionado
-                $selectedDate = $this->selectedDate ? Carbon::parse($this->selectedDate) : Carbon::now();
-                $isWeekend = $selectedDate->isWeekend();
-                $holidays = [
-                    '01-01','02-04','03-08','04-04','05-01','09-17','11-02','11-11','12-25'
-                ];
-                $isHoliday = in_array($selectedDate->format('m-d'), $holidays, true);
-
-                if ($isHoliday) {
-                    $multiplier = (float) HRSetting::get('overtime_multiplier_holiday', 2.5);
-                } elseif ($isWeekend) {
-                    $multiplier = (float) HRSetting::get('overtime_multiplier_weekend', 2.0);
-                } else {
-                    // Preferir chave unificada quando existir; aceitar 0 como valor válido
-                    $weekdayMultiplier = (float) HRSetting::get('overtime_multiplier_weekday', -1);
-                    $multiplier = $weekdayMultiplier > 0 || $weekdayMultiplier === 0.0
-                        ? $weekdayMultiplier
-                        : (float) HRSetting::get('overtime_first_hour_weekday', 1.25);
-                }
-
-                $overtimeRate = round($hourlyRate * $multiplier, 2);
                 
                 \Log::info('Dados do funcionário obtidos', [
                     'employee' => $employee->full_name,
                     'baseSalary' => $baseSalary,
-                    'hourlyRate' => $hourlyRate,
-                    'overtimeRate' => $overtimeRate
+                    'hourly_rate' => $hourlyRate
                 ]);
                 
-                // Criar dados para salvar (apenas campos que existem na tabela)
+                // Criar dados para salvar
                 $attendanceData = [
                     'employee_id' => $employeeId,
                     'date' => Carbon::parse($this->selectedDate)->format('Y-m-d'),
                     'status' => $this->batchStatus,
                     'remarks' => $this->batchRemarks ?? '',
+                    'hourly_rate' => $hourlyRate,
+                    'affects_payroll' => true,
                 ];
                 
                 // Adicionar horários se status for 'present'
@@ -849,7 +808,10 @@ class Attendance extends Component
         }
         
         if ($successCount > 0) {
-            session()->flash('message', "Registadas {$successCount} presenças com sucesso.");
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('attendance.messages.batch_saved', ['count' => $successCount])
+            );
             
             // Fechar a modal após salvar com sucesso
             $this->closeCalendarModal();
@@ -863,7 +825,13 @@ class Attendance extends Component
         }
         
         if (!empty($errors)) {
-            session()->flash('errors', $errors);
+            // Mostra erros em notificações separadas
+            foreach ($errors as $error) {
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: $error
+                );
+            }
             \Log::warning('Erros durante o registo de presenças', ['errors' => $errors]);
         }
         
@@ -1117,8 +1085,43 @@ class Attendance extends Component
      */
     public function processConflictResolution()
     {
+        \Log::info('Processing conflict resolution', [
+            'conflicts_count' => count($this->timeConflicts),
+            'selected_times' => $this->selectedTimes
+        ]);
+        
         try {
+            // Validate that all conflicts have selected times
+            $missingSelections = [];
+            foreach ($this->timeConflicts as $index => $conflict) {
+                $hasCheckInOptions = !empty($conflict['check_in_options']);
+                $hasCheckOutOptions = !empty($conflict['check_out_options']);
+                $selectedCheckIn = $this->selectedTimes[$index]['check_in'] ?? null;
+                $selectedCheckOut = $this->selectedTimes[$index]['check_out'] ?? null;
+                
+                // Check if required selections are missing
+                if ($hasCheckInOptions && !$selectedCheckIn) {
+                    $missingSelections[] = $conflict['employee_name'] . ' (Hora de Entrada)';
+                }
+                if ($hasCheckOutOptions && !$selectedCheckOut) {
+                    $missingSelections[] = $conflict['employee_name'] . ' (Hora de Saída)';
+                }
+            }
+            
+            // If there are missing selections, show error
+            if (!empty($missingSelections)) {
+                \Log::warning('Missing time selections', ['missing' => $missingSelections]);
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: 'Por favor, selecione os horários para: ' . implode(', ', $missingSelections)
+                );
+                return;
+            }
+            
+            \Log::info('All selections valid, proceeding with import');
+            
             $created = 0;
+            $updated = 0;
             
             foreach ($this->timeConflicts as $index => $conflict) {
                 $selectedCheckIn = $this->selectedTimes[$index]['check_in'] ?? null;
@@ -1139,32 +1142,93 @@ class Attendance extends Component
                     $status = 'absent';
                 }
                 
-                // Create attendance
+                // Check if attendance already exists
+                $existingAttendance = \App\Models\HR\Attendance::where('employee_id', $conflict['employee_id'])
+                    ->whereDate('date', $conflict['date'])
+                    ->first();
+                
+                $timeIn = $selectedCheckIn ? \Carbon\Carbon::parse($conflict['date'] . ' ' . $selectedCheckIn) : null;
+                $timeOut = $selectedCheckOut ? \Carbon\Carbon::parse($conflict['date'] . ' ' . $selectedCheckOut) : null;
+                
+                // Prepare attendance data
                 $attendanceData = [
-                    'employee_id' => $conflict['employee_id'],
-                    'date' => $conflict['date'],
-                    'time_in' => $selectedCheckIn ? \Carbon\Carbon::parse($conflict['date'] . ' ' . $selectedCheckIn) : null,
-                    'time_out' => $selectedCheckOut ? \Carbon\Carbon::parse($conflict['date'] . ' ' . $selectedCheckOut) : null,
+                    'time_in' => $timeIn,
+                    'time_out' => $timeOut,
                     'status' => $status,
                     'hourly_rate' => $hourlyRate,
                     'affects_payroll' => true,
                     'remarks' => 'Importado do sistema biométrico (hora selecionada manualmente)',
                 ];
                 
-                \App\Models\HR\Attendance::create($attendanceData);
-                $created++;
+                if ($existingAttendance) {
+                    // Check if there are changes
+                    $hasChanges = false;
+                    if ($existingAttendance->time_in != $timeIn) $hasChanges = true;
+                    if ($existingAttendance->time_out != $timeOut) $hasChanges = true;
+                    if ($existingAttendance->status != $status) $hasChanges = true;
+                    
+                    if ($hasChanges) {
+                        // Update existing attendance
+                        $existingAttendance->update($attendanceData);
+                        $updated++;
+                        \Log::info('Updated attendance', [
+                            'employee_id' => $conflict['employee_id'],
+                            'date' => $conflict['date']
+                        ]);
+                    } else {
+                        \Log::info('No changes detected, skipping', [
+                            'employee_id' => $conflict['employee_id'],
+                            'date' => $conflict['date']
+                        ]);
+                    }
+                } else {
+                    // Create new attendance
+                    $attendanceData['employee_id'] = $conflict['employee_id'];
+                    $attendanceData['date'] = $conflict['date'];
+                    \App\Models\HR\Attendance::create($attendanceData);
+                    $created++;
+                    \Log::info('Created new attendance', [
+                        'employee_id' => $conflict['employee_id'],
+                        'date' => $conflict['date']
+                    ]);
+                }
             }
             
-            session()->flash('message', "Conflitos resolvidos: {$created} registos criados");
+            \Log::info('Successfully processed attendance records', [
+                'created' => $created,
+                'updated' => $updated
+            ]);
+            
+            // Build message
+            $messageParts = [];
+            if ($created > 0) $messageParts[] = "{$created} criado(s)";
+            if ($updated > 0) $messageParts[] = "{$updated} atualizado(s)";
+            
+            $skipped = count($this->timeConflicts) - ($created + $updated);
+            if ($skipped > 0) $messageParts[] = "{$skipped} ignorado(s) (sem alterações)";
+            
+            if (empty($messageParts)) {
+                $message = "ℹ️ Nenhum registo foi alterado (todos os dados já estavam atualizados)";
+            } else {
+                $message = "✅ Conflitos resolvidos com sucesso! " . implode(', ', $messageParts);
+            }
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: $message
+            );
             $this->closeTimeConflictsModal();
             $this->dispatch('attendanceUpdated');
             
         } catch (\Exception $e) {
-            session()->flash('error', 'Erro ao processar conflitos: ' . $e->getMessage());
             \Log::error('Conflict resolution error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: '❌ Erro ao processar conflitos: ' . $e->getMessage()
+            );
         }
     }
 
@@ -1184,7 +1248,10 @@ class Attendance extends Component
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('DEBUG: Validation failed:', $e->errors());
-            session()->flash('error', 'Erro de validação: ' . implode(', ', $e->validator->errors()->all()));
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('attendance.messages.validation_error', ['error' => implode(', ', $e->validator->errors()->all())])
+            );
             return;
         }
 
@@ -1199,6 +1266,8 @@ class Attendance extends Component
             $skippedCount = $import->getSkippedCount();
             $errors = $import->getErrors();
             $timeConflicts = $import->getTimeConflicts();
+            $notFoundEmployees = $import->getNotFoundEmployees();
+            $notFoundCount = $import->getNotFoundCount();
             
             // Check if there are time conflicts that need user confirmation
             if (!empty($timeConflicts)) {
@@ -1206,7 +1275,10 @@ class Attendance extends Component
                 $this->closeImportModal();
                 $this->showTimeConflictsModal = true;
                 
-                session()->flash('warning', 'Foram encontrados ' . count($timeConflicts) . ' registos com horas duplicadas. Por favor, selecione as horas corretas.');
+                $this->dispatch('notify', 
+                    type: 'warning', 
+                    message: __('attendance.messages.conflicts_found', ['count' => count($timeConflicts)])
+                );
                 return;
             }
             
@@ -1217,19 +1289,56 @@ class Attendance extends Component
                     'imported' => $importedCount,
                     'updated' => $updatedCount,
                     'skipped' => $skippedCount,
+                    'not_found' => $notFoundCount,
                     'errors' => $errors,
                 ]
             ];
 
-            $successMessage = "Importação concluída: {$importedCount} novos registos, {$updatedCount} atualizados";
-            if ($skippedCount > 0) {
-                $successMessage .= ", {$skippedCount} ignorados";
+            // Build success message
+            $messageParts = [];
+            if ($importedCount > 0) $messageParts[] = "{$importedCount} novos registos";
+            if ($updatedCount > 0) $messageParts[] = "{$updatedCount} atualizados";
+            
+            if (!empty($messageParts)) {
+                $successMessage = "✅ Importação concluída: " . implode(', ', $messageParts);
+            } else {
+                $successMessage = "ℹ️ Importação concluída sem novos registos";
             }
             
-            session()->flash('message', $successMessage);
+            // Add info about not found employees
+            if ($notFoundCount > 0) {
+                $empIds = implode(', ', array_slice($notFoundEmployees, 0, 5));
+                if ($notFoundCount > 5) {
+                    $empIds .= '...';
+                }
+                
+                $this->dispatch('notify', 
+                    type: 'warning', 
+                    message: __('attendance.messages.employees_not_found', [
+                        'count' => $notFoundCount,
+                        'ids' => $empIds
+                    ])
+                );
+                
+                \Log::warning('Employees not found during import', [
+                    'count' => $notFoundCount,
+                    'emp_ids' => $notFoundEmployees
+                ]);
+            }
             
-            if (!empty($errors)) {
-                session()->flash('import_errors', $errors);
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: $successMessage
+            );
+            
+            if (!empty($errors) && count($errors) > $notFoundCount) {
+                // Show other errors separately
+                $otherErrors = array_filter($errors, function($error) {
+                    return !str_contains($error, 'não encontrado');
+                });
+                if (!empty($otherErrors)) {
+                    session()->flash('import_errors', $otherErrors);
+                }
             }
             
             $this->closeImportModal();
@@ -1246,7 +1355,10 @@ class Attendance extends Component
                 'details' => []
             ];
             
-            session()->flash('error', __('messages.import_failed') . ': ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.import_failed') . ': ' . $e->getMessage()
+            );
         }
     }
 
@@ -1304,7 +1416,7 @@ class Attendance extends Component
         $startOfMonth = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1);
         $startDayOfWeek = $startOfMonth->dayOfWeek; // 0 = Sunday, 1 = Monday, etc.
 
-        return view('livewire.hr.attendance', [
+        return view('livewire.hr.attendance.attendance', [
             'attendances' => $attendances,
             'employees' => $employees,
             'departments' => $departments,

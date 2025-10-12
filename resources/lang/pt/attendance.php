@@ -147,4 +147,27 @@ return [
     'vacation' => 'Férias',
     'wednesday' => 'Qua',
     'work_from_home' => 'Trabalho Remoto',
+    
+    // Notification Messages
+    'messages' => [
+        'saved_successfully' => 'Registo de presença criado com sucesso.',
+        'updated_successfully' => 'Registo de presença atualizado com sucesso.',
+        'deleted_successfully' => 'Registo de presença eliminado com sucesso.',
+        'duplicate_found' => 'Já existe um registo de presença para este funcionário nesta data.',
+        'import_completed' => 'Importação concluída: :created criado(s), :updated atualizado(s)',
+        'import_failed' => 'Erro ao importar: :error',
+        'employees_not_found' => 'Não foi possível importar :count funcionário(s): IDs não encontrados (:ids)',
+        'conflicts_found' => 'Foram encontrados :count registos com horas duplicadas. Por favor, selecione as horas corretas.',
+        'conflicts_resolved' => 'Conflitos resolvidos com sucesso! :message',
+        'select_shift_first' => 'Por favor, selecione um turno primeiro.',
+        'no_employees_selected' => 'Nenhum funcionário selecionado.',
+        'batch_saved' => 'Registadas :count presenças com sucesso.',
+        'error_saving' => 'Erro ao salvar registo: :error',
+        'error_deleting' => 'Erro ao eliminar registo: :error',
+        'validation_error' => 'Erro de validação: :error',
+    ],
+    
+    // Additional fields
+    'fill_form_below' => 'Preencha o formulário abaixo',
+    'enter_remarks' => 'Insira observações adicionais',
 ];

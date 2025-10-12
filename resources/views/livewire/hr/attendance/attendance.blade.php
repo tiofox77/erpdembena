@@ -46,13 +46,6 @@
                                     <i class="fas fa-users mr-2"></i>
                                     {{ __('attendance.batch_attendance') }}
                                 </button>
-                                <button
-                                    wire:click="create"
-                                    class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
-                                >
-                                    <i class="fas fa-plus mr-2"></i>
-                                    {{ __('attendance.register_attendance') }}
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -646,7 +639,20 @@
         </div>
     </div>
 
-    <!-- Calendar Modal for Batch Attendance -->
+    {{-- Modals --}}
+    @include('livewire.hr.attendance.modals._create-edit-modal')
+    @include('livewire.hr.attendance.modals._batch-attendance-modal')
+    @include('livewire.hr.attendance.modals._delete-modal')
+    @include('livewire.hr.attendance.modals._import-modal')
+    @include('livewire.hr.attendance.modals._time-conflicts-modal')
+
+    {{-- Notificações são tratadas pelo layout global (livewire.blade.php) --}}
+    {{-- Usa eventos: $this->dispatch('toast', ['type' => 'success', 'message' => '...']) --}}
+</div>
+
+{{-- BACKUP - OLD MODALS (KEEP FOR REFERENCE) --}}
+@if(false)
+    <!-- BACKUP: Calendar Modal for Batch Attendance -->
     @if($showCalendarModal)
         <div x-data="{ open: @entangle('showCalendarModal') }" 
              x-show="open" 
@@ -1006,157 +1012,6 @@
         </div>
     @endif
 
-    <!-- Create/Edit Attendance Modal -->
-    @if($showModal)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium">
-                        <i class="fas {{ $isEditing ? 'fa-edit' : 'fa-plus-circle' }} mr-2"></i>
-                        {{ $isEditing ? __('attendance.edit_attendance') : __('attendance.record_attendance') }}
-                    </h3>
-                    <button type="button" class="text-gray-500 hover:text-gray-700 text-xl" wire:click="closeModal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                @if($errors->any())
-                    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-                        <p class="font-bold flex items-center">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            {{ __('common.correct_following_errors') }}:
-                        </p>
-                        <ul class="mt-2 list-disc list-inside text-sm">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                <form wire:submit.prevent="save">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Employee -->
-                        <div class="md:col-span-2">
-                            <label for="employee_id" class="block text-sm font-medium text-gray-700">{{ __('attendance.employee') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <select id="employee_id"
-                                    class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('employee_id') border-red-300 text-red-900 @enderror"
-                                    wire:model.live="employee_id">
-                                    <option value="">{{ __('attendance.select_employee') }}</option>
-                                    @foreach($employees as $employee)
-                                        <option value="{{ $employee->id }}">{{ $employee->full_name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('employee_id')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Date -->
-                        <div class="md:col-span-2">
-                            <label for="date" class="block text-sm font-medium text-gray-700">{{ __('attendance.date') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <input type="date" id="date"
-                                    class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('date') border-red-300 text-red-900 @enderror"
-                                    wire:model.live="date">
-                                @error('date')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Time In -->
-                        <div>
-                            <label for="time_in" class="block text-sm font-medium text-gray-700">{{ __('attendance.time_in') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <input type="time" id="time_in"
-                                    class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('time_in') border-red-300 text-red-900 @enderror"
-                                    wire:model.live="time_in">
-                                @error('time_in')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Time Out -->
-                        <div>
-                            <label for="time_out" class="block text-sm font-medium text-gray-700">{{ __('attendance.time_out') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <input type="time" id="time_out"
-                                    class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('time_out') border-red-300 text-red-900 @enderror"
-                                    wire:model.live="time_out">
-                                @error('time_out')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Status -->
-                        <div class="md:col-span-2">
-                            <label for="status" class="block text-sm font-medium text-gray-700">{{ __('attendance.status') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <select id="status"
-                                    class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('status') border-red-300 text-red-900 @enderror"
-                                    wire:model.live="status">
-                                    <option value="">{{ __('attendance.select_status') }}</option>
-                                    <option value="present">{{ __('attendance.present') }}</option>
-                                    <option value="absent">{{ __('attendance.absent') }}</option>
-                                    <option value="late">{{ __('attendance.late') }}</option>
-                                    <option value="half_day">{{ __('attendance.half_day') }}</option>
-                                </select>
-                                @error('status')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Remarks -->
-                        <div class="md:col-span-2">
-                            <label for="remarks" class="block text-sm font-medium text-gray-700">{{ __('attendance.remarks') }}</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
-                                <textarea id="remarks" rows="3"
-                                    class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('remarks') border-red-300 text-red-900 @enderror"
-                                    wire:model.live="remarks"></textarea>
-                                @error('remarks')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Approval -->
-                        <div class="flex items-start mb-6">
-                            <div class="flex items-center h-5">
-                                <input id="is_approved" type="checkbox"
-                                    class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                    wire:model.live="is_approved">
-                            </div>
-                            <div class="ml-3 text-sm">
-                                <label for="is_approved" class="font-medium text-gray-700">{{ __('attendance.approved') }}</label>
-                                <p class="text-gray-500">{{ __('attendance.mark_record_approved') }}</p>
-                            </div>
-                        </div>
-                        @error('is_approved')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button"
-                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            wire:click="closeModal">
-                            {{ __('common.cancel') }}
-                        </button>
-                        <button type="submit"
-                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {{ $isEditing ? __('common.update') : __('common.save') }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
 
     <!-- Delete Confirmation Modal -->
     @if($showDeleteModal)
@@ -1470,8 +1325,8 @@
         </div>
     @endif
 
-    <!-- Flash Message -->
-    @if (session()->has('message'))
+    {{-- Flash Message Backup --}}
+    @if (false && session()->has('message'))
         <div x-data="{ show: true }"
              x-init="setTimeout(() => show = false, 3000)"
              x-show="show"
@@ -1479,4 +1334,4 @@
             {{ session('message') }}
         </div>
     @endif
-</div>
+@endif

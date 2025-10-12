@@ -869,6 +869,12 @@ class Payroll extends Component
         if ($this->payroll_period_id) {
             $query->whereDoesntHave('payrolls', function ($payrollQuery) {
                 $payrollQuery->where('payroll_period_id', $this->payroll_period_id);
+            })
+            // Excluir funcionários que já estão em batch items para este período
+            ->whereDoesntHave('payrollBatchItems', function ($batchItemQuery) {
+                $batchItemQuery->whereHas('batch', function ($batchQuery) {
+                    $batchQuery->where('payroll_period_id', $this->payroll_period_id);
+                });
             });
         }
 
@@ -3625,6 +3631,12 @@ class Payroll extends Component
         if (!empty($this->filters['period_id'])) {
             $employeesQuery->whereDoesntHave('payrolls', function ($query) {
                 $query->where('payroll_period_id', $this->filters['period_id']);
+            })
+            // Excluir funcionários que já estão em batch items para este período
+            ->whereDoesntHave('payrollBatchItems', function ($batchItemQuery) {
+                $batchItemQuery->whereHas('batch', function ($batchQuery) {
+                    $batchQuery->where('payroll_period_id', $this->filters['period_id']);
+                });
             });
         }
         

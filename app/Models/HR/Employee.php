@@ -161,4 +161,12 @@ class Employee extends Model
     {
         return $this->hasMany(OvertimeRecord::class);
     }
+
+    /**
+     * Get the payroll batch items for this employee
+     */
+    public function payrollBatchItems(): HasMany
+    {
+        return $this->hasMany(PayrollBatchItem::class);
+    }
 }

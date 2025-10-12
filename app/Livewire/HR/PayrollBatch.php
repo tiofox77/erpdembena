@@ -205,9 +205,15 @@ class PayrollBatch extends Component
             ->when($this->department_id, function ($q) {
                 $q->where('department_id', $this->department_id);
             })
-            // Exclude employees already processed in this period
+            // Exclude employees already processed individually in this period
             ->whereDoesntHave('payrolls', function ($payrollQuery) {
                 $payrollQuery->where('payroll_period_id', $this->payroll_period_id);
+            })
+            // Exclude employees already in batch items for this period
+            ->whereDoesntHave('payrollBatchItems', function ($batchItemQuery) {
+                $batchItemQuery->whereHas('batch', function ($batchQuery) {
+                    $batchQuery->where('payroll_period_id', $this->payroll_period_id);
+                });
             });
 
         $employees = $query->get();

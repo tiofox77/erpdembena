@@ -32,6 +32,7 @@ class AttendanceImport implements
     protected $errors = [];
     protected $processedEmployeeDates = []; // Track processed employee+date combinations
     protected $timeConflicts = []; // Store time conflicts for user confirmation
+    protected $notFoundEmployees = []; // Track employees not found in system
 
     public function model(array $row): ?Attendance
     {
@@ -51,7 +52,13 @@ class AttendanceImport implements
         $employee = Employee::where('biometric_id', (string)$empId)->first();
         
         if (!$employee) {
+            // Track employee not found
+            if (!in_array($empId, $this->notFoundEmployees)) {
+                $this->notFoundEmployees[] = $empId;
+            }
+            $this->errors[] = "Funcionário não encontrado (Emp ID: {$empId})";
             $this->skippedCount++;
+            \Log::warning('Employee not found in system', ['emp_id' => $empId]);
             return null;
         }
 
@@ -232,6 +239,16 @@ class AttendanceImport implements
     public function hasTimeConflicts(): bool
     {
         return !empty($this->timeConflicts);
+    }
+
+    public function getNotFoundEmployees(): array
+    {
+        return $this->notFoundEmployees;
+    }
+
+    public function getNotFoundCount(): int
+    {
+        return count($this->notFoundEmployees);
     }
 
     /**

@@ -140,4 +140,27 @@ return array (
   'showing_records' => 'Showing Records',
   'times' => 'Times',
   'total_records' => 'Total Records',
+  
+  // Notification Messages
+  'messages' => [
+      'saved_successfully' => 'Attendance record created successfully.',
+      'updated_successfully' => 'Attendance record updated successfully.',
+      'deleted_successfully' => 'Attendance record deleted successfully.',
+      'duplicate_found' => 'An attendance record already exists for this employee on this date.',
+      'import_completed' => 'Import completed: :created created, :updated updated',
+      'import_failed' => 'Import failed: :error',
+      'employees_not_found' => 'Could not import :count employee(s): IDs not found (:ids)',
+      'conflicts_found' => 'Found :count records with duplicate times. Please select the correct times.',
+      'conflicts_resolved' => 'Conflicts resolved successfully! :message',
+      'select_shift_first' => 'Please select a shift first.',
+      'no_employees_selected' => 'No employees selected.',
+      'batch_saved' => 'Successfully registered :count attendance records.',
+      'error_saving' => 'Error saving record: :error',
+      'error_deleting' => 'Error deleting record: :error',
+      'validation_error' => 'Validation error: :error',
+  ],
+  
+  // Additional fields
+  'fill_form_below' => 'Fill the form below',
+  'enter_remarks' => 'Enter additional remarks',
 );
