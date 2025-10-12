@@ -220,6 +220,8 @@ return [
     'employees_in_batch' => 'Funcionários no Lote',
     'employee' => 'Funcionário',
     'gross_salary' => 'Salário Bruto',
+    'deductions' => 'Deduções',
+    'net_salary' => 'Salário Líquido',
     'processed_at' => 'Processado Em',
     'actions' => 'Ações',
     'no_employees_in_batch' => 'Nenhum funcionário neste lote',

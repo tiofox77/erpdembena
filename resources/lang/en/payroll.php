@@ -194,6 +194,8 @@ return [
     'employees_in_batch' => 'Employees in Batch',
     'employee' => 'Employee',
     'gross_salary' => 'Gross Salary',
+    'deductions' => 'Deductions',
+    'net_salary' => 'Net Salary',
     'processed_at' => 'Processed At',
     'actions' => 'Actions',
     'no_employees_in_batch' => 'No employees in this batch',

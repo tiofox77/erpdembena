@@ -269,13 +269,13 @@
                         <table class="w-full">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.employee') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.status') }}</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.gross_salary') }}</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deduções</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.net_salary') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.processed_at') }}</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.actions') }}</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('payroll.employee') }}</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">{{ __('payroll.status') }}</th>
+                                    <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">{{ __('payroll.gross_salary') }}</th>
+                                    <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{{ __('payroll.deductions') }}</th>
+                                    <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">{{ __('payroll.net_salary') }}</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">{{ __('payroll.processed_at') }}</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">{{ __('payroll.actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -292,8 +292,8 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center space-x-2">
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-col space-y-1">
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                                     {{ $item->status === 'pending' ? 'bg-gray-100 text-gray-800' : '' }}
                                                     {{ $item->status === 'processing' ? 'bg-yellow-100 text-yellow-800' : '' }}
@@ -319,20 +319,23 @@
                                             @endif
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                            <span class="font-semibold text-green-700">
-                                                {{ number_format($item->gross_salary ?? 0, 2, ',', '.') }} AOA
+                                        <td class="px-3 py-4 text-sm text-right">
+                                            <span class="font-semibold text-green-700 block">
+                                                {{ number_format($item->gross_salary ?? 0, 2, ',', '.') }}
                                             </span>
+                                            <span class="text-xs text-gray-500">AOA</span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                            <span class="font-semibold text-red-600">
-                                                -{{ number_format($item->total_deductions ?? 0, 2, ',', '.') }} AOA
+                                        <td class="px-3 py-4 text-sm text-right">
+                                            <span class="font-semibold text-red-600 block">
+                                                -{{ number_format($item->total_deductions ?? 0, 2, ',', '.') }}
                                             </span>
+                                            <span class="text-xs text-gray-500">AOA</span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                            <span class="font-bold text-blue-700">
-                                                {{ number_format($item->net_salary ?? 0, 2, ',', '.') }} AOA
+                                        <td class="px-3 py-4 text-sm text-right">
+                                            <span class="font-bold text-blue-700 block">
+                                                {{ number_format($item->net_salary ?? 0, 2, ',', '.') }}
                                             </span>
+                                            <span class="text-xs text-gray-500">AOA</span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             @if($item->processed_at)
