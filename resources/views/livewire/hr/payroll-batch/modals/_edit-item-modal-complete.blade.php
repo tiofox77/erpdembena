@@ -166,12 +166,14 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                 
                 {{-- Overtime Records Card --}}
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-2 border border-purple-200">
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-2 border border-purple-200 cursor-pointer hover:shadow-md transition" 
+                     x-data="{ showDetails: false }" 
+                     @click="showDetails = !showDetails">
                     <div class="flex items-center mb-2">
                         <div class="w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center">
                             <i class="fas fa-clock text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-2 font-bold text-xs text-purple-900">Overtime Records</h4>
+                        <h4 class="ml-2 font-bold text-xs text-purple-900">Overtime Records ({{ count($overtimeRecords) }})</h4>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -183,15 +185,32 @@
                             <p class="text-sm font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_amount'] ?? 0, 0) }}</p>
                         </div>
                     </div>
+                    
+                    {{-- Overtime Details --}}
+                    <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-purple-200 space-y-1">
+                        @forelse($overtimeRecords as $record)
+                            <div class="text-[10px] bg-white p-1 rounded">
+                                <span class="font-semibold">{{ \Carbon\Carbon::parse($record['date'])->format('d/m/Y') }}</span>: 
+                                {{ $record['hours'] ?? 0 }}h 
+                                @if($record['amount'])
+                                    - {{ number_format($record['amount'], 0) }} AOA
+                                @endif
+                            </div>
+                        @empty
+                            <p class="text-[10px] text-purple-600">Sem registros</p>
+                        @endforelse
+                    </div>
                 </div>
 
                 {{-- Salary Advances Card --}}
-                <div class="bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg p-2 border border-orange-200">
+                <div class="bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg p-2 border border-orange-200 cursor-pointer hover:shadow-md transition" 
+                     x-data="{ showDetails: false }" 
+                     @click="showDetails = !showDetails">
                     <div class="flex items-center mb-2">
                         <div class="w-7 h-7 bg-orange-600 rounded-full flex items-center justify-center">
                             <i class="fas fa-hand-holding-usd text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-2 font-bold text-xs text-orange-900">Salary Advances</h4>
+                        <h4 class="ml-2 font-bold text-xs text-orange-900">Salary Advances ({{ count($salaryAdvances) }})</h4>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -203,15 +222,32 @@
                             <p class="text-sm font-bold text-orange-900">{{ number_format($calculatedData['advance_deduction'] ?? 0, 0) }}</p>
                         </div>
                     </div>
+                    
+                    {{-- Advances Details --}}
+                    <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-orange-200 space-y-1">
+                        @forelse($salaryAdvances as $advance)
+                            <div class="text-[10px] bg-white p-1 rounded">
+                                <span class="font-semibold">{{ \Carbon\Carbon::parse($advance['date'])->format('d/m/Y') }}</span>: 
+                                {{ number_format($advance['amount'] ?? 0, 0) }} AOA
+                                @if(($advance['remaining_amount'] ?? 0) > 0)
+                                    <span class="text-orange-600">(Restante: {{ number_format($advance['remaining_amount'], 0) }})</span>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="text-[10px] text-orange-600">Sem adiantamentos</p>
+                        @endforelse
+                    </div>
                 </div>
 
                 {{-- Salary Discounts Card --}}
-                <div class="bg-gradient-to-br from-red-50 to-pink-100 rounded-lg p-2 border border-red-200">
+                <div class="bg-gradient-to-br from-red-50 to-pink-100 rounded-lg p-2 border border-red-200 cursor-pointer hover:shadow-md transition" 
+                     x-data="{ showDetails: false }" 
+                     @click="showDetails = !showDetails">
                     <div class="flex items-center mb-2">
                         <div class="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center">
                             <i class="fas fa-minus-circle text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-2 font-bold text-xs text-red-900">Salary Discounts</h4>
+                        <h4 class="ml-2 font-bold text-xs text-red-900">Salary Discounts ({{ count($salaryDiscounts) }})</h4>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -220,8 +256,23 @@
                         </div>
                         <div>
                             <p class="text-[10px] text-red-700 font-medium mb-0.5">Active</p>
-                            <p class="text-sm font-bold text-red-900">{{ count($calculatedData['salary_discount_records'] ?? []) }}</p>
+                            <p class="text-sm font-bold text-red-900">{{ count($salaryDiscounts) }}</p>
                         </div>
+                    </div>
+                    
+                    {{-- Discounts Details --}}
+                    <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-red-200 space-y-1">
+                        @forelse($salaryDiscounts as $discount)
+                            <div class="text-[10px] bg-white p-1 rounded">
+                                <span class="font-semibold">{{ $discount['description'] ?? 'Desconto' }}</span>: 
+                                {{ number_format($discount['amount'] ?? 0, 0) }} AOA
+                                @if($discount['type'] === 'recurring')
+                                    <span class="text-red-600">(Recorrente)</span>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="text-[10px] text-red-600">Sem descontos</p>
+                        @endforelse
                     </div>
                 </div>
 

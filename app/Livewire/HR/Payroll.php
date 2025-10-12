@@ -190,6 +190,8 @@ class Payroll extends Component
     public bool $vacation_subsidy = false;
     public bool $include_vacation_subsidy = false;
     public bool $include_christmas_subsidy = false;
+    public float $christmas_subsidy_amount = 0.0;
+    public float $vacation_subsidy_amount = 0.0;
     
     // Deductions
     public float $income_tax = 0.0;

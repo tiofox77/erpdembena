@@ -64,6 +64,11 @@ class PayrollBatch extends Component
     public bool $edit_christmas_subsidy = false;
     public bool $edit_vacation_subsidy = false;
     
+    // Related data from other tables
+    public array $overtimeRecords = [];
+    public array $salaryAdvances = [];
+    public array $salaryDiscounts = [];
+    
     // Filters
     public array $filters = [
         'status' => '',
@@ -596,6 +601,43 @@ class PayrollBatch extends Component
             $this->edit_vacation_subsidy = $this->editingItem->vacation_subsidy ?? false;
             $this->edit_notes = $this->editingItem->notes ?? '';
             
+            // Carregar dados relacionados do período (como no payroll individual)
+            $period = $this->editingItem->payrollBatch->payrollPeriod;
+            $employee = $this->editingItem->employee;
+            
+            // Carregar overtime records do período
+            $this->overtimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $employee->id)
+                ->whereBetween('date', [$period->start_date, $period->end_date])
+                ->where('status', 'approved')
+                ->get()
+                ->toArray();
+            
+            // Carregar salary advances do período
+            $this->salaryAdvances = \App\Models\HR\SalaryAdvance::where('employee_id', $employee->id)
+                ->where('status', 'approved')
+                ->where(function($query) use ($period) {
+                    $query->whereBetween('date', [$period->start_date, $period->end_date])
+                          ->orWhere('remaining_amount', '>', 0);
+                })
+                ->get()
+                ->toArray();
+            
+            // Carregar salary discounts do período
+            $this->salaryDiscounts = \App\Models\HR\SalaryDiscount::where('employee_id', $employee->id)
+                ->where('status', 'active')
+                ->where(function($query) use ($period) {
+                    $query->whereBetween('start_date', [$period->start_date, $period->end_date])
+                          ->orWhere(function($q) use ($period) {
+                              $q->where('start_date', '<=', $period->end_date)
+                                ->where(function($q2) use ($period) {
+                                    $q2->whereNull('end_date')
+                                       ->orWhere('end_date', '>=', $period->start_date);
+                                });
+                          });
+                })
+                ->get()
+                ->toArray();
+            
             Log::info('Valores carregados', [
                 'additional_bonus' => $this->edit_additional_bonus,
                 'overtime_amount' => $this->edit_overtime_amount,
@@ -743,6 +785,11 @@ class PayrollBatch extends Component
         $this->edit_vacation_subsidy = false;
         $this->edit_notes = '';
         $this->calculatedData = [];
+        
+        // Clear related data
+        $this->overtimeRecords = [];
+        $this->salaryAdvances = [];
+        $this->salaryDiscounts = [];
     }
     
     /**
