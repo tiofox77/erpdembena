@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de Folha de Pagamento - {{ $batch->name }}</title>
+    <title>Relatorio de Folha de Pagamento</title>
     <style>
         * {
             margin: 0;
@@ -130,21 +130,21 @@
 <body>
     {{-- Header --}}
     <div class="header">
-        <h1>RELATÓRIO DE FOLHA DE PAGAMENTO</h1>
-        <p>{{ $batch->name }}</p>
-        <p>Período: {{ $batch->payrollPeriod->name ?? 'N/A' }} | {{ $batch->formatted_batch_date }}</p>
+        <h1>RELATORIO DE FOLHA DE PAGAMENTO</h1>
+        <p>{{ $batchName }}</p>
+        <p>Periodo: {{ $periodName }} | {{ $batchDate }}</p>
     </div>
     
     {{-- Batch Information --}}
     <div class="batch-info">
         <table>
             <tr>
-                <td width="50%"><strong>Departamento:</strong> {{ $batch->department->name ?? 'Todos' }}</td>
-                <td width="50%"><strong>Total Funcionários:</strong> {{ $totals['employee_count'] }}</td>
+                <td width="50%"><strong>Departamento:</strong> {{ $departmentName }}</td>
+                <td width="50%"><strong>Total Funcionarios:</strong> {{ $totalEmployees }}</td>
             </tr>
             <tr>
-                <td><strong>Criado por:</strong> {{ $batch->creator->name ?? 'N/A' }}</td>
-                <td><strong>Data de Geração:</strong> {{ $generatedAt }}</td>
+                <td><strong>Criado por:</strong> {{ $creatorName }}</td>
+                <td><strong>Data de Geracao:</strong> {{ $generatedAt }}</td>
             </tr>
         </table>
     </div>
@@ -289,8 +289,8 @@
     
     {{-- Footer --}}
     <div class="footer">
-        <p>Relatório gerado automaticamente pelo sistema ERP DEMBENA em {{ $generatedAt }}</p>
-        <p>Este documento é confidencial e destinado exclusivamente ao departamento de Recursos Humanos</p>
+        <p>Relatorio gerado automaticamente pelo sistema ERP DEMBENA em {{ $generatedAt }}</p>
+        <p>Este documento e confidencial e destinado exclusivamente ao departamento de Recursos Humanos</p>
     </div>
 </body>
 </html>

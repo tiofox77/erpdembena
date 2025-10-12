@@ -2736,6 +2736,11 @@ class Payroll extends Component
             'selectedEmployee' => $this->selectedEmployee ? $this->selectedEmployee->full_name : null,
             'isEditing' => $this->isEditing,
             'payroll_id' => $this->payroll_id,
+            'selected_month' => $this->selected_month,
+            'selected_year' => $this->selected_year,
+            'basic_salary' => $this->basic_salary,
+            'gross_salary' => $this->gross_salary,
+            'net_salary' => $this->net_salary,
         ]);
         
         try {
@@ -2746,6 +2751,23 @@ class Payroll extends Component
                     'employee_id' => $this->employee_id
                 ]);
                 session()->flash('error', 'Funcionário não selecionado.');
+                $this->dispatch('showToast', [
+                    'type' => 'error',
+                    'message' => 'Funcionário não selecionado.'
+                ]);
+                return;
+            }
+            
+            if (!$this->selected_month || !$this->selected_year) {
+                \Log::error('PAYROLL SAVE: Período não selecionado', [
+                    'selected_month' => $this->selected_month,
+                    'selected_year' => $this->selected_year
+                ]);
+                session()->flash('error', 'Selecione o mês e ano do pagamento.');
+                $this->dispatch('showToast', [
+                    'type' => 'error',
+                    'message' => 'Selecione o mês e ano do pagamento.'
+                ]);
                 return;
             }
 
@@ -2892,6 +2914,12 @@ class Payroll extends Component
             // Success message and close modal
             session()->flash('message', $message);
             
+            // Dispatch success event with toast
+            $this->dispatch('showToast', [
+                'type' => 'success',
+                'message' => $message
+            ]);
+            
             // Close modal and reset
             $this->showProcessModal = false;
             $this->reset([
@@ -2913,15 +2941,26 @@ class Payroll extends Component
             // Refresh the payroll list
             $this->dispatch('refreshPayrolls');
             
+            \Log::info('PAYROLL SAVE: Modal fechado e dados resetados');
+            
         } catch (\Exception $e) {
-            \Log::error('Error saving payroll: ' . $e->getMessage(), [
+            \Log::error('❌ PAYROLL SAVE ERROR: ' . $e->getMessage(), [
                 'employee_id' => $this->employee_id,
                 'selected_month' => $this->selected_month,
                 'selected_year' => $this->selected_year,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            session()->flash('error', 'Erro ao salvar folha de pagamento: ' . $e->getMessage());
+            $errorMessage = 'Erro ao salvar folha de pagamento: ' . $e->getMessage();
+            session()->flash('error', $errorMessage);
+            
+            // Dispatch error event with toast
+            $this->dispatch('showToast', [
+                'type' => 'error',
+                'message' => $errorMessage
+            ]);
         }
     }
     

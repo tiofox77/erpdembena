@@ -5,34 +5,36 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\HR\PayrollBatch;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayrollBatchReportService
 {
     /**
-     * Gerar relatório completo do batch de payroll
+     * Gerar relatório HTML do batch de payroll (preview para impressão)
      */
-    public function generateBatchReport(PayrollBatch $batch): \Illuminate\Http\Response
+    public function generateBatchReport(PayrollBatch $batch)
     {
         $batch->load(['batchItems.employee', 'payrollPeriod', 'department', 'creator']);
         
         // Calcular totais agregados
         $totals = $this->calculateBatchTotals($batch);
         
+        // Preparar dados
         $data = [
-            'batch' => $batch,
-            'totals' => $totals,
+            'batchName' => $batch->name ?? 'N/A',
+            'batchDate' => $batch->formatted_batch_date ?? '',
+            'periodName' => $batch->payrollPeriod->name ?? 'N/A',
+            'departmentName' => $batch->department->name ?? 'Todos',
+            'creatorName' => $batch->creator->name ?? 'N/A',
+            'totalEmployees' => $batch->total_employees ?? 0,
             'generatedAt' => now()->format('d/m/Y H:i:s'),
+            'totals' => $totals,
         ];
         
-        $pdf = Pdf::loadView('reports.payroll-batch-summary', $data);
-        $pdf->setPaper('a4', 'portrait');
-        
-        $filename = 'Payroll_Batch_' . $batch->name . '_' . now()->format('Ymd_His') . '.pdf';
-        
-        return $pdf->download($filename);
+        // Retornar view HTML para impressão
+        return view('reports.payroll-batch-html', $data);
     }
     
+
     /**
      * Calcular totais agregados do batch
      */
