@@ -13,6 +13,7 @@ use App\Models\HR\Payroll;
 use App\Models\HR\Attendance;
 use App\Jobs\ProcessPayrollBatch;
 use App\Services\PayrollCalculationService;
+use App\Services\PayrollBatchReportService;
 use App\Helpers\PayrollCalculatorHelper;
 use Carbon\Carbon;
 use Livewire\Component;
@@ -1016,6 +1017,27 @@ class PayrollBatch extends Component
             ->exists();
 
         return $hasLeave;
+    }
+
+    /**
+     * Gerar relatório de resumo do batch
+     */
+    public function downloadBatchReport($batchId)
+    {
+        try {
+            $batch = PayrollBatchModel::findOrFail($batchId);
+            
+            $reportService = new PayrollBatchReportService();
+            return $reportService->generateBatchReport($batch);
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar relatório do batch', [
+                'batch_id' => $batchId,
+                'error' => $e->getMessage(),
+            ]);
+            
+            session()->flash('error', 'Erro ao gerar relatório: ' . $e->getMessage());
+        }
     }
 
     public function render()

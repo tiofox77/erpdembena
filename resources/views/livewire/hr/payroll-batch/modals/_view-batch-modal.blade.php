@@ -422,6 +422,14 @@
                                 <i class="fas fa-check-circle text-green-600"></i>
                                 <span class="text-sm font-medium text-green-700">Lote processado com sucesso</span>
                             </div>
+                            
+                            <button
+                                wire:click="downloadBatchReport({{ $currentBatch->id }})"
+                                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
+                            >
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Gerar Relatório PDF</span>
+                            </button>
                         @endif
                         
                         @if($currentBatch->status === 'processing')

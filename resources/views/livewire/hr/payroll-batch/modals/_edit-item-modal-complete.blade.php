@@ -1,27 +1,27 @@
 {{-- Complete Edit Batch Item Modal - Similar to Individual Payroll Processing --}}
 @if($showEditItemModal && $editingItem && !empty($calculatedData))
-<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" wire:key="edit-item-modal-complete">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[98vw] mx-4 max-h-[98vh] overflow-hidden flex flex-col">
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" wire:key="edit-item-modal-complete">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[98vw] max-h-[95vh] overflow-y-auto flex flex-col">
         
         {{-- Header --}}
-        <div class="bg-gradient-to-r from-orange-600 to-orange-700 p-6 text-white flex-shrink-0">
+        <div class="bg-gradient-to-r from-orange-600 to-orange-700 p-4 text-white flex-shrink-0 sticky top-0 z-10">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user-edit text-3xl"></i>
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-edit text-2xl"></i>
                     </div>
                     <div>
-                        <div class="flex items-center space-x-3">
-                            <h2 class="text-3xl font-bold">{{ $editingItem->employee->full_name }}</h2>
+                        <div class="flex items-center space-x-2">
+                            <h2 class="text-2xl font-bold">{{ $editingItem->employee->full_name }}</h2>
                             @if($this->isEmployeeOnLeave($editingItem->employee_id, $editingItem->payrollBatch->payroll_period_id))
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/30 text-white border-2 border-white/50 backdrop-blur-sm">
-                                    <i class="fas fa-umbrella-beach mr-2"></i>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/30 text-white border border-white/50 backdrop-blur-sm">
+                                    <i class="fas fa-umbrella-beach mr-1"></i>
                                     Em Férias
                                 </span>
                             @endif
                         </div>
-                        <p class="text-orange-100 text-lg">BI: {{ $editingItem->employee->id_card }} | {{ $editingItem->employee->department->name ?? 'N/A' }}</p>
-                        <p class="text-orange-200 text-sm mt-1">
+                        <p class="text-orange-100 text-sm">BI: {{ $editingItem->employee->id_card }} | {{ $editingItem->employee->department->name ?? 'N/A' }}</p>
+                        <p class="text-orange-200 text-xs mt-0.5">
                             <i class="fas fa-calendar-alt mr-1"></i>
                             Período: {{ $editingItem->payrollBatch->payrollPeriod->name }}
                         </p>
@@ -34,14 +34,14 @@
         </div>
 
         {{-- Editable Fields Section --}}
-        <div class="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-200 p-6 flex-shrink-0">
-            <h3 class="text-lg font-bold text-teal-800 mb-4 flex items-center">
+        <div class="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-200 p-4 flex-shrink-0">
+            <h3 class="text-base font-bold text-teal-800 mb-3 flex items-center">
                 <i class="fas fa-edit text-teal-600 mr-2"></i>
                 Campos Editáveis - Ajuste o Pagamento
             </h3>
             
             {{-- Primeira Linha: Valores Monetários --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 
                 {{-- Additional Bonus --}}
                 <div>
@@ -106,7 +106,7 @@
             </div>
 
             {{-- Segunda Linha: Subsídios (Checkboxes) --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 
                 {{-- Christmas Subsidy --}}
                 <div>
@@ -153,74 +153,74 @@
             </div>
             
             {{-- Recalculation Notice --}}
-            <div class="mt-4 bg-blue-100 border border-blue-300 rounded-lg p-3 flex items-center">
-                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                <p class="text-sm text-blue-800">
+            <div class="mt-3 bg-blue-100 border border-blue-300 rounded-lg p-2 flex items-center">
+                <i class="fas fa-info-circle text-blue-600 mr-2 text-sm"></i>
+                <p class="text-xs text-blue-800">
                     <strong>Nota:</strong> Os valores serão recalculados automaticamente ao alterar os campos acima.
                 </p>
             </div>
         </div>
 
         {{-- Information Cards Section --}}
-        <div class="bg-gray-50 border-y border-gray-200 p-6 flex-shrink-0">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-50 border-y border-gray-200 p-3 flex-shrink-0">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                 
                 {{-- Overtime Records Card --}}
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
-                    <div class="flex items-center mb-3">
-                        <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                            <i class="fas fa-clock text-white text-lg"></i>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-2 border border-purple-200">
+                    <div class="flex items-center mb-2">
+                        <div class="w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-3 font-bold text-purple-900">Overtime Records</h4>
+                        <h4 class="ml-2 font-bold text-xs text-purple-900">Overtime Records</h4>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-xs text-purple-700 font-medium mb-1">Total Overtime Hours</p>
-                            <p class="text-lg font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_hours'] ?? 0, 2) }}h</p>
+                            <p class="text-[10px] text-purple-700 font-medium mb-0.5">Total Hours</p>
+                            <p class="text-sm font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_hours'] ?? 0, 2) }}h</p>
                         </div>
                         <div>
-                            <p class="text-xs text-purple-700 font-medium mb-1">Overtime Amount</p>
-                            <p class="text-lg font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_amount'] ?? 0, 2) }} AOA</p>
+                            <p class="text-[10px] text-purple-700 font-medium mb-0.5">Amount</p>
+                            <p class="text-sm font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_amount'] ?? 0, 0) }}</p>
                         </div>
                     </div>
                 </div>
 
                 {{-- Salary Advances Card --}}
-                <div class="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-4 border border-orange-200">
-                    <div class="flex items-center mb-3">
-                        <div class="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
-                            <i class="fas fa-hand-holding-usd text-white text-lg"></i>
+                <div class="bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg p-2 border border-orange-200">
+                    <div class="flex items-center mb-2">
+                        <div class="w-7 h-7 bg-orange-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-hand-holding-usd text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-3 font-bold text-orange-900">Salary Advances</h4>
+                        <h4 class="ml-2 font-bold text-xs text-orange-900">Salary Advances</h4>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-xs text-orange-700 font-medium mb-1">Total Advances</p>
-                            <p class="text-lg font-bold text-orange-900">{{ number_format($calculatedData['total_advances'] ?? 0, 2) }} AOA</p>
+                            <p class="text-[10px] text-orange-700 font-medium mb-0.5">Total Advances</p>
+                            <p class="text-sm font-bold text-orange-900">{{ number_format($calculatedData['total_advances'] ?? 0, 0) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-orange-700 font-medium mb-1">Deduction Amount</p>
-                            <p class="text-lg font-bold text-orange-900">{{ number_format($calculatedData['advance_deduction'] ?? 0, 2) }} AOA</p>
+                            <p class="text-[10px] text-orange-700 font-medium mb-0.5">Deduction</p>
+                            <p class="text-sm font-bold text-orange-900">{{ number_format($calculatedData['advance_deduction'] ?? 0, 0) }}</p>
                         </div>
                     </div>
                 </div>
 
                 {{-- Salary Discounts Card --}}
-                <div class="bg-gradient-to-br from-red-50 to-pink-100 rounded-xl p-4 border border-red-200">
-                    <div class="flex items-center mb-3">
-                        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
-                            <i class="fas fa-minus-circle text-white text-lg"></i>
+                <div class="bg-gradient-to-br from-red-50 to-pink-100 rounded-lg p-2 border border-red-200">
+                    <div class="flex items-center mb-2">
+                        <div class="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-minus-circle text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-3 font-bold text-red-900">Salary Discounts</h4>
+                        <h4 class="ml-2 font-bold text-xs text-red-900">Salary Discounts</h4>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-xs text-red-700 font-medium mb-1">Total Discounts</p>
-                            <p class="text-lg font-bold text-red-900">{{ number_format($calculatedData['total_salary_discounts'] ?? 0, 2) }} AOA</p>
+                            <p class="text-[10px] text-red-700 font-medium mb-0.5">Total Discounts</p>
+                            <p class="text-sm font-bold text-red-900">{{ number_format($calculatedData['total_salary_discounts'] ?? 0, 0) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-red-700 font-medium mb-1">Active Discounts</p>
-                            <p class="text-lg font-bold text-red-900">{{ count($calculatedData['salary_discount_records'] ?? []) }}</p>
+                            <p class="text-[10px] text-red-700 font-medium mb-0.5">Active</p>
+                            <p class="text-sm font-bold text-red-900">{{ count($calculatedData['salary_discount_records'] ?? []) }}</p>
                         </div>
                     </div>
                 </div>
@@ -229,7 +229,7 @@
         </div>
 
         {{-- Content - Two Column Layout (INCLUDE DO SUMMARY) --}}
-        <div class="flex flex-1 overflow-hidden max-h-[calc(98vh-350px)]">
+        <div class="flex flex-1">
             @include('livewire.hr.payroll-batch.modals._edit-item-summary')
         </div>
 

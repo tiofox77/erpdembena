@@ -985,6 +985,20 @@
                 <span>{{ trans('messages.payroll_periods') }}</span>
             </a>
             @endcanany
+            
+            @canany(['hr.payroll.view', 'hr.payroll.process'])
+            <a href="{{ route('hr.payroll-batch') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-batch') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-layer-group text-gray-500"></i>
+                <span>Payroll Batch</span>
+            </a>
+            @endcanany
+            
+            @can('hr.payroll.view')
+            <a href="{{ route('hr.payroll-reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-file-pdf text-red-600"></i>
+                <span>Relatórios de Payroll</span>
+            </a>
+            @endcan
             <!--
             @can('hr.leave.view')
             <a href="{{ route('hr.payroll-items') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-items') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
