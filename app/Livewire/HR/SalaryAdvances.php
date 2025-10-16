@@ -8,6 +8,7 @@ use App\Models\HR\Employee;
 use App\Models\HR\SalaryAdvance;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use App\Models\HR\SalaryAdvancePayment;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -15,7 +16,7 @@ use App\Models\Setting;
 
 class SalaryAdvances extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
     
     // Propriedades do formulário
     public ?int $advance_id = null;
@@ -28,6 +29,8 @@ class SalaryAdvances extends Component
     public ?string $reason = null;
     public ?string $status = 'pending';
     public ?string $notes = null;
+    public $signed_document = null;
+    public ?string $existing_signed_document = null;
     
     // Controles da modal
     public bool $showModal = false;
@@ -84,6 +87,7 @@ class SalaryAdvances extends Component
             'reason' => 'nullable|string|max:255',
             'status' => 'required|in:pending,approved,rejected,completed',
             'notes' => 'nullable|string',
+            'signed_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ];
     }
     
@@ -141,7 +145,8 @@ class SalaryAdvances extends Component
      */
     public function getSalaryAdvancesProperty()
     {
-        $query = SalaryAdvance::with('employee')
+        $query = SalaryAdvance::select('salary_advances.*')
+            ->with('employee')
             ->when($this->filters['search'], function ($q) {
                 $q->whereHas('employee', function ($eq) {
                     $eq->where('full_name', 'like', '%' . $this->filters['search'] . '%')
@@ -172,36 +177,6 @@ class SalaryAdvances extends Component
     }
     
     /**
-     * Generate PDF for salary advance
-     */
-    public function generatePDF(int $advanceId)
-    {
-        $advance = SalaryAdvance::with(['employee.department', 'payments'])->findOrFail($advanceId);
-        
-        // Get company information from settings
-        $companyName = Setting::where('key', 'company_name')->value('value') ?? 'ERPDEMBENA';
-        $companyAddress = Setting::where('key', 'company_address')->value('value') ?? 'Luanda, Angola';
-        $companyCity = Setting::where('key', 'company_city')->value('value') ?? 'Luanda';
-        
-        $pdf = Pdf::loadView('pdfs.salary-advance-form', [
-            'advance' => $advance,
-            'company_name' => $companyName,
-            'company_address' => $companyAddress,
-            'company_city' => $companyCity,
-            'approved_by' => Auth::user()->name ?? 'Sistema'
-        ]);
-        
-        $pdf->setPaper('A4', 'portrait');
-        
-        $filename = "adiantamento_salarial_{$advance->employee->full_name}_{$advance->id}.pdf";
-        $filename = str_replace(' ', '_', $filename);
-        
-        return response()->streamDownload(function() use ($pdf) {
-            echo $pdf->stream();
-        }, $filename);
-    }
-
-    /**
      * Método para ordenar os registos
      */
     public function sortBy($field): void
@@ -219,7 +194,7 @@ class SalaryAdvances extends Component
      */
     public function create(): void
     {
-        $this->reset(['advance_id', 'employee_id', 'request_date', 'amount', 'installments', 'installment_amount', 'first_deduction_date', 'reason', 'status', 'notes']);
+        $this->reset(['advance_id', 'employee_id', 'request_date', 'amount', 'installments', 'installment_amount', 'first_deduction_date', 'reason', 'status', 'notes', 'signed_document', 'existing_signed_document']);
         $this->status = 'pending';
         $this->request_date = date('Y-m-d');
         $this->installments = 1;
@@ -245,6 +220,7 @@ class SalaryAdvances extends Component
         $this->reason = $advance->reason;
         $this->status = $advance->status;
         $this->notes = $advance->notes;
+        $this->existing_signed_document = $advance->signed_document;
         
         $this->showModal = true;
     }
@@ -275,6 +251,24 @@ class SalaryAdvances extends Component
         // Definir a aba inicial como "details"
         $this->currentViewTab = 'details';
         $this->showViewModal = true;
+    }
+    
+    /**
+     * Remove o documento assinado
+     */
+    public function removeSignedDocument(): void
+    {
+        if ($this->advance_id && $this->existing_signed_document) {
+            $advance = SalaryAdvance::find($this->advance_id);
+            if ($advance && $advance->signed_document && \Storage::disk('public')->exists($advance->signed_document)) {
+                \Storage::disk('public')->delete($advance->signed_document);
+                $advance->signed_document = null;
+                $advance->save();
+            }
+        }
+        
+        $this->existing_signed_document = null;
+        session()->flash('message', __('messages.document_removed_successfully'));
     }
     
     /**
@@ -314,6 +308,19 @@ class SalaryAdvances extends Component
         $advance->status = $this->status;
         $advance->notes = $this->notes;
         
+        // Processar upload do documento assinado
+        if ($this->signed_document) {
+            // Deletar documento antigo se existir
+            if ($advance->signed_document && \Storage::disk('public')->exists($advance->signed_document)) {
+                \Storage::disk('public')->delete($advance->signed_document);
+            }
+            
+            // Salvar novo documento
+            $filename = 'advance_' . $this->employee_id . '_' . time() . '.' . $this->signed_document->extension();
+            $path = $this->signed_document->storeAs('salary-advances', $filename, 'public');
+            $advance->signed_document = $path;
+        }
+        
         if ($this->status === 'approved' && $advance->approved_by === null) {
             $advance->approved_by = Auth::id();
             $advance->approved_at = now();
@@ -322,7 +329,7 @@ class SalaryAdvances extends Component
         $advance->save();
         
         $this->showModal = false;
-        $this->reset(['advance_id', 'employee_id', 'request_date', 'amount', 'installments', 'installment_amount', 'first_deduction_date', 'reason', 'notes']);
+        $this->reset(['advance_id', 'employee_id', 'request_date', 'amount', 'installments', 'installment_amount', 'first_deduction_date', 'reason', 'notes', 'signed_document', 'existing_signed_document']);
         
         if ($this->isEditing) {
             session()->flash('message', __('messages.advance_updated'));

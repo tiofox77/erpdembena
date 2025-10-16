@@ -2772,40 +2772,81 @@ class Payroll extends Component
             }
 
             // Get or create payroll period for selected month/year
+            \Log::info('PAYROLL SAVE: Buscando/criando período...', [
+                'selected_month' => $this->selected_month,
+                'selected_year' => $this->selected_year
+            ]);
+            
             $payrollPeriod = $this->getOrCreatePayrollPeriod();
             
+            \Log::info('PAYROLL SAVE: Período retornado', [
+                'payrollPeriod' => $payrollPeriod ? $payrollPeriod->id : null,
+                'period_name' => $payrollPeriod ? $payrollPeriod->name : null
+            ]);
+            
             if (!$payrollPeriod) {
+                \Log::error('PAYROLL SAVE: Falha ao criar período');
                 session()->flash('error', 'Erro ao criar período de folha de pagamento.');
+                $this->dispatch('showToast', [
+                    'type' => 'error',
+                    'message' => 'Erro ao criar período de folha de pagamento.'
+                ]);
                 return;
             }
 
             // Check if we're editing an existing payroll
             if ($this->isEditing && $this->payroll_id) {
+                \Log::info('PAYROLL SAVE: Modo edição', ['payroll_id' => $this->payroll_id]);
+                
                 // Editing mode - update existing payroll
                 $existingPayroll = PayrollModel::find($this->payroll_id);
                 if (!$existingPayroll) {
+                    \Log::error('PAYROLL SAVE: Payroll não encontrado para edição', ['payroll_id' => $this->payroll_id]);
                     session()->flash('error', 'Folha de pagamento não encontrada para edição.');
                     return;
                 }
             } else {
+                \Log::info('PAYROLL SAVE: Modo criação, verificando duplicatas...', [
+                    'employee_id' => $this->employee_id,
+                    'payroll_period_id' => $payrollPeriod->id
+                ]);
+                
                 // Creating mode - check for duplicates
                 $existingPayroll = PayrollModel::where('employee_id', $this->employee_id)
                     ->where('payroll_period_id', $payrollPeriod->id)
                     ->first();
 
                 if ($existingPayroll) {
+                    \Log::warning('PAYROLL SAVE: Payroll duplicado detectado', [
+                        'existing_payroll_id' => $existingPayroll->id,
+                        'employee_id' => $this->employee_id,
+                        'period_id' => $payrollPeriod->id
+                    ]);
                     session()->flash('error', 'Já existe uma folha de pagamento para este funcionário neste período.');
+                    $this->dispatch('showToast', [
+                        'type' => 'error',
+                        'message' => 'Já existe uma folha de pagamento para este funcionário neste período.'
+                    ]);
                     return;
                 }
+                
+                \Log::info('PAYROLL SAVE: Nenhum duplicata encontrada, prosseguindo...');
             }
 
             // Ensure all calculations are up to date
+            \Log::info('PAYROLL SAVE: Recalculando componentes...');
             $this->calculatePayrollComponents();
+            \Log::info('PAYROLL SAVE: Componentes recalculados', [
+                'gross_salary' => $this->gross_salary,
+                'net_salary' => $this->net_salary
+            ]);
             
             // Sanitize all numeric fields to prevent null values
+            \Log::info('PAYROLL SAVE: Sanitizando campos numéricos...');
             $this->sanitizeNumericFields();
 
             // Prepare comprehensive payroll data
+            \Log::info('PAYROLL SAVE: Preparando dados do payroll...');
             $payrollData = [
                 'employee_id' => $this->employee_id,
                 'payroll_period_id' => $payrollPeriod->id,
@@ -2893,15 +2934,41 @@ class Payroll extends Component
                 
                 $message = 'Folha de pagamento atualizada com sucesso para ' . $this->selectedEmployee->full_name . '.';
             } else {
-                \Log::info('PAYROLL SAVE: Criando novo payroll', ['employee_name' => $this->selectedEmployee->full_name]);
+                \Log::info('PAYROLL SAVE: Criando novo payroll', [
+                    'employee_name' => $this->selectedEmployee->full_name,
+                    'employee_id' => $this->employee_id,
+                    'period_id' => $payrollPeriod->id
+                ]);
                 
-                // Create new payroll
-                $payroll = PayrollModel::create($payrollData);
-                
-                \Log::info('PAYROLL SAVE: Payroll criado', ['payroll_id' => $payroll->id]);
+                try {
+                    // Create new payroll
+                    \Log::info('PAYROLL SAVE: Executando PayrollModel::create...', [
+                        'payrollData_keys' => array_keys($payrollData),
+                        'basic_salary' => $payrollData['basic_salary'],
+                        'net_salary' => $payrollData['net_salary']
+                    ]);
+                    
+                    $payroll = PayrollModel::create($payrollData);
+                    
+                    \Log::info('PAYROLL SAVE: Payroll criado com sucesso!', [
+                        'payroll_id' => $payroll->id,
+                        'employee_id' => $payroll->employee_id
+                    ]);
+                    
+                } catch (\Exception $createException) {
+                    \Log::error('❌ PAYROLL SAVE: Erro ao criar registro no banco', [
+                        'error' => $createException->getMessage(),
+                        'file' => $createException->getFile(),
+                        'line' => $createException->getLine(),
+                        'trace' => $createException->getTraceAsString()
+                    ]);
+                    throw $createException;
+                }
                 
                 // Create detailed payroll items for transparency
+                \Log::info('PAYROLL SAVE: Criando payroll items...');
                 $this->createPayrollItems($payroll);
+                \Log::info('PAYROLL SAVE: Payroll items criados com sucesso');
                 
                 $message = 'Folha de pagamento criada com sucesso para ' . $this->selectedEmployee->full_name . '.';
             }
@@ -3011,35 +3078,72 @@ class Payroll extends Component
      */
     private function getOrCreatePayrollPeriod(): ?PayrollPeriod
     {
-        $startDate = Carbon::create((int)$this->selected_year, (int)$this->selected_month, 1);
-        $endDate = $startDate->copy()->endOfMonth();
-        
-        // Create period name in Portuguese
-        $monthNames = [
-            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
-        ];
-        $periodName = $monthNames[(int)$this->selected_month] . ' ' . $this->selected_year;
-        
-        // Try to find existing period
-        $period = PayrollPeriod::where('start_date', $startDate->format('Y-m-d'))
-            ->where('end_date', $endDate->format('Y-m-d'))
-            ->first();
-            
-        if (!$period) {
-            // Create new period
-            $period = PayrollPeriod::create([
-                'name' => $periodName,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'payment_date' => $endDate->copy()->addDays(5), // Payment 5 days after month end
-                'status' => PayrollPeriod::STATUS_OPEN,
-                'remarks' => 'Auto-created for payroll processing'
+        try {
+            \Log::info('getOrCreatePayrollPeriod: INÍCIO', [
+                'selected_month' => $this->selected_month,
+                'selected_year' => $this->selected_year
             ]);
+            
+            $startDate = Carbon::create((int)$this->selected_year, (int)$this->selected_month, 1);
+            $endDate = $startDate->copy()->endOfMonth();
+            
+            \Log::info('getOrCreatePayrollPeriod: Datas calculadas', [
+                'startDate' => $startDate->format('Y-m-d'),
+                'endDate' => $endDate->format('Y-m-d')
+            ]);
+            
+            // Create period name in Portuguese
+            $monthNames = [
+                1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+                5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+                9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+            ];
+            $periodName = $monthNames[(int)$this->selected_month] . ' ' . $this->selected_year;
+            
+            \Log::info('getOrCreatePayrollPeriod: Buscando período existente...', [
+                'periodName' => $periodName
+            ]);
+            
+            // Try to find existing period
+            $period = PayrollPeriod::where('start_date', $startDate->format('Y-m-d'))
+                ->where('end_date', $endDate->format('Y-m-d'))
+                ->first();
+                
+            if (!$period) {
+                \Log::info('getOrCreatePayrollPeriod: Período não encontrado, criando novo...');
+                
+                // Create new period
+                $period = PayrollPeriod::create([
+                    'name' => $periodName,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'payment_date' => $endDate->copy()->addDays(5), // Payment 5 days after month end
+                    'status' => PayrollPeriod::STATUS_OPEN,
+                    'remarks' => 'Auto-created for payroll processing'
+                ]);
+                
+                \Log::info('getOrCreatePayrollPeriod: Período criado com sucesso!', [
+                    'period_id' => $period->id,
+                    'period_name' => $period->name
+                ]);
+            } else {
+                \Log::info('getOrCreatePayrollPeriod: Período existente encontrado', [
+                    'period_id' => $period->id,
+                    'period_name' => $period->name
+                ]);
+            }
+            
+            return $period;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ getOrCreatePayrollPeriod: ERRO', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
         }
-        
-        return $period;
     }
     
     /**

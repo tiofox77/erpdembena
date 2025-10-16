@@ -63,6 +63,10 @@ class Trainings extends Component
     public $selectedEmployee;
     public $employeeSearch = '';
     public $employees = [];
+    
+    // Selected training for actions
+    public $selectedTraining;
+    public $deleteConfirmation = '';
 
     protected $paginationTheme = 'bootstrap';
 
@@ -302,12 +306,14 @@ class Trainings extends Component
     public function view($trainingId): void
     {
         $this->trainingId = $trainingId;
+        $this->selectedTraining = Training::with('employee.department')->find($trainingId);
         $this->showViewModal = true;
     }
 
     public function delete($trainingId): void
     {
         $this->trainingId = $trainingId;
+        $this->selectedTraining = Training::with('employee')->find($trainingId);
         $this->showDeleteModal = true;
     }
 
@@ -362,12 +368,16 @@ class Trainings extends Component
     public function closeViewModal(): void
     {
         $this->showViewModal = false;
+        $this->trainingId = null;
+        $this->selectedTraining = null;
     }
 
     public function closeDeleteModal(): void
     {
         $this->showDeleteModal = false;
         $this->trainingId = null;
+        $this->selectedTraining = null;
+        $this->deleteConfirmation = '';
     }
 
     private function resetForm(): void

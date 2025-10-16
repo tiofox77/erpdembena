@@ -291,6 +291,8 @@ Route::middleware(['auth'])->group(function () {
         
         // Payroll Reports
         Route::middleware(['permission:hr.payroll.view'])->get('/payroll-reports', App\Livewire\HR\PayrollReports::class)->name('payroll-reports');
+        Route::middleware(['permission:hr.payroll.view'])->get('/payroll-batch-report/{batchId}', [App\Http\Controllers\HR\PayrollBatchReportController::class, 'show'])->name('payroll-batch.report');
+        Route::middleware(['permission:hr.payroll.view'])->get('/payroll-period-report/{periodId}', [App\Http\Controllers\HR\PayrollPeriodReportController::class, 'show'])->name('payroll-period.report');
         
         // Payroll Periods Management
         Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-periods', App\Livewire\HR\PayrollPeriods::class)->name('payroll-periods');
@@ -300,6 +302,8 @@ Route::middleware(['auth'])->group(function () {
         
         // Salary Advances Management
         Route::middleware(['permission:hr.payroll.view'])->get('/salary-advances', App\Livewire\HR\SalaryAdvances::class)->name('salary-advances');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-advance-report/{id}', [App\Http\Controllers\HR\SalaryAdvanceReportController::class, 'show'])->name('salary-advance-report');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-advance-report/{id}/pdf', [App\Http\Controllers\HR\SalaryAdvanceReportController::class, 'pdf'])->name('salary-advance-report.pdf');
         
         // Salary Discounts Management
         Route::middleware(['permission:hr.payroll.view'])->get('/salary-discounts', App\Livewire\HR\SalaryDiscounts::class)->name('salary-discounts');

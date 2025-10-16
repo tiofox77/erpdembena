@@ -32,6 +32,7 @@ class SalaryAdvance extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'signed_document',
     ];
     
     /**
@@ -78,6 +79,14 @@ class SalaryAdvance extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+    
+    /**
+     * Obtém o utilizador que criou o adiantamento salarial.
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
     
     /**

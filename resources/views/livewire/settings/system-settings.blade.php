@@ -85,6 +85,14 @@
                                     </div>
                                     {{ __('messages.system_requirements') }}
                                 </button>
+                                
+                                <button wire:click="setActiveTab('opcache')" type="button" 
+                                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 {{ $activeTab === 'opcache' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                                    <div class="w-8 h-8 mr-3 rounded-lg flex items-center justify-center {{ $activeTab === 'opcache' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200' }}">
+                                        <i class="fas fa-tachometer-alt text-sm"></i>
+                                    </div>
+                                    OPcache
+                                </button>
                             </nav>
                         </div>
                     </div>
@@ -1074,6 +1082,345 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- OPcache Tab -->
+        <div class="{{ $activeTab === 'opcache' ? 'block' : 'hidden' }}" role="tabpanel">
+            <div class="space-y-6">
+                <!-- Header Card -->
+                <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white flex items-center">
+                                <i class="fas fa-tachometer-alt mr-3 animate-pulse"></i>
+                                OPcache Status & Performance
+                            </h2>
+                            <p class="text-green-100 mt-1">Monitor e otimização do cache de bytecode PHP</p>
+                        </div>
+                        <button wire:click="loadOpcacheStatus" class="px-4 py-2 bg-white text-green-700 rounded-lg hover:bg-green-50 transition-all duration-200 font-medium">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                @if(!empty($opcacheHealth))
+                    <!-- Health Status Card -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-heartbeat text-red-500 mr-2"></i>
+                            Estado de Saúde
+                        </h3>
+                        
+                        @if($opcacheHealth['status'] === 'healthy')
+                            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-600 text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-green-900">{{ $opcacheHealth['message'] }}</p>
+                                        <p class="text-sm text-green-700 mt-1">OPcache está funcionando perfeitamente</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif($opcacheHealth['status'] === 'warning')
+                            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-3 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-yellow-900 mb-2">{{ $opcacheHealth['message'] }}</p>
+                                        
+                                        @if(!empty($opcacheHealth['issues']))
+                                            <div class="mt-3">
+                                                <p class="text-sm font-semibold text-yellow-800 mb-1">Problemas Detectados:</p>
+                                                <ul class="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                                                    @foreach($opcacheHealth['issues'] as $issue)
+                                                        <li>{{ $issue }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+                                        
+                                        @if(!empty($opcacheHealth['recommendations']))
+                                            <div class="mt-3">
+                                                <p class="text-sm font-semibold text-yellow-800 mb-1">Recomendações:</p>
+                                                <ul class="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                                                    @foreach($opcacheHealth['recommendations'] as $recommendation)
+                                                        <li>{{ $recommendation }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif($opcacheHealth['status'] === 'disabled')
+                            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-times-circle text-red-600 text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-red-900">{{ $opcacheHealth['message'] }}</p>
+                                        <p class="text-sm text-red-700 mt-1">OPcache não está habilitado</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="bg-gray-50 border-l-4 border-gray-500 p-4 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-info-circle text-gray-600 text-2xl mr-3"></i>
+                                    <p class="text-gray-700">{{ $opcacheHealth['message'] ?? 'Status desconhecido' }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                @if(!empty($opcacheStatus) && isset($opcacheStatus['enabled']) && $opcacheStatus['enabled'])
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- Memory Usage -->
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="p-3 bg-blue-100 rounded-lg">
+                                    <i class="fas fa-memory text-blue-600 text-xl"></i>
+                                </div>
+                                <span class="text-2xl font-bold text-blue-600">
+                                    {{ $opcacheStatus['memory']['usage_percent'] ?? 0 }}%
+                                </span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-700">Uso de Memória</h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $opcacheStatus['memory']['used'] ?? 0 }}MB / {{ $opcacheStatus['memory']['total'] ?? 0 }}MB
+                            </p>
+                            <div class="mt-3 w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                                     style="width: {{ $opcacheStatus['memory']['usage_percent'] ?? 0 }}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Hit Rate -->
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="p-3 bg-green-100 rounded-lg">
+                                    <i class="fas fa-bullseye text-green-600 text-xl"></i>
+                                </div>
+                                <span class="text-2xl font-bold text-green-600">
+                                    {{ $opcacheStatus['statistics']['hit_rate'] ?? 0 }}%
+                                </span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-700">Hit Rate</h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ number_format($opcacheStatus['statistics']['hits'] ?? 0) }} hits
+                            </p>
+                            <div class="mt-3 w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full transition-all duration-500" 
+                                     style="width: {{ $opcacheStatus['statistics']['hit_rate'] ?? 0 }}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Cached Files -->
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="p-3 bg-purple-100 rounded-lg">
+                                    <i class="fas fa-file-code text-purple-600 text-xl"></i>
+                                </div>
+                                <span class="text-2xl font-bold text-purple-600">
+                                    {{ number_format($opcacheStatus['statistics']['num_cached_scripts'] ?? 0) }}
+                                </span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-700">Arquivos Cached</h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                max: {{ number_format($opcacheStatus['configuration']['max_accelerated_files'] ?? 0) }}
+                            </p>
+                            <div class="mt-3 w-full bg-gray-200 rounded-full h-2">
+                                @php
+                                    $filePercent = ($opcacheStatus['configuration']['max_accelerated_files'] ?? 0) > 0 
+                                        ? (($opcacheStatus['statistics']['num_cached_scripts'] ?? 0) / ($opcacheStatus['configuration']['max_accelerated_files'] ?? 1)) * 100 
+                                        : 0;
+                                @endphp
+                                <div class="bg-purple-600 h-2 rounded-full transition-all duration-500" 
+                                     style="width: {{ min(100, $filePercent) }}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- JIT Status -->
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="p-3 {{ ($opcacheStatus['jit']['enabled'] ?? false) ? 'bg-yellow-100' : 'bg-gray-100' }} rounded-lg">
+                                    <i class="fas fa-bolt {{ ($opcacheStatus['jit']['enabled'] ?? false) ? 'text-yellow-600' : 'text-gray-400' }} text-xl"></i>
+                                </div>
+                                <span class="text-2xl font-bold {{ ($opcacheStatus['jit']['enabled'] ?? false) ? 'text-yellow-600' : 'text-gray-400' }}">
+                                    {{ ($opcacheStatus['jit']['enabled'] ?? false) ? 'ON' : 'OFF' }}
+                                </span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-700">JIT Compiler</h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $opcacheStatus['jit']['buffer_size'] ?? '0' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Statistics -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Memory Details -->
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-chart-pie text-blue-600 mr-2"></i>
+                                Detalhes de Memória
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Memória Usada</span>
+                                    <span class="font-bold text-blue-600">{{ $opcacheStatus['memory']['used'] ?? 0 }}MB</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Memória Livre</span>
+                                    <span class="font-bold text-green-600">{{ $opcacheStatus['memory']['free'] ?? 0 }}MB</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Memória Desperdiçada</span>
+                                    <span class="font-bold text-yellow-600">{{ $opcacheStatus['memory']['wasted'] ?? 0 }}MB</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Total Alocado</span>
+                                    <span class="font-bold text-gray-900">{{ $opcacheStatus['memory']['total'] ?? 0 }}MB</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Stats -->
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-chart-line text-green-600 mr-2"></i>
+                                Estatísticas de Performance
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Cache Hits</span>
+                                    <span class="font-bold text-green-600">{{ number_format($opcacheStatus['statistics']['hits'] ?? 0) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Cache Misses</span>
+                                    <span class="font-bold text-red-600">{{ number_format($opcacheStatus['statistics']['misses'] ?? 0) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Hit Rate</span>
+                                    <span class="font-bold text-blue-600">{{ $opcacheStatus['statistics']['hit_rate'] ?? 0 }}%</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Scripts Cached</span>
+                                    <span class="font-bold text-purple-600">{{ number_format($opcacheStatus['statistics']['num_cached_scripts'] ?? 0) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Details -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-cogs text-gray-600 mr-2"></i>
+                            Configuração Atual
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Max Accelerated Files</p>
+                                <p class="text-lg font-bold text-gray-900">{{ number_format($opcacheStatus['configuration']['max_accelerated_files'] ?? 0) }}</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Memory Consumption</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $opcacheStatus['configuration']['memory_consumption'] ?? 0 }}MB</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Interned Strings Buffer</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $opcacheStatus['configuration']['interned_strings_buffer'] ?? 0 }}MB</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Max Wasted %</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $opcacheStatus['configuration']['max_wasted_percentage'] ?? 0 }}%</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Validate Timestamps</p>
+                                <p class="text-lg font-bold text-gray-900">{{ ($opcacheStatus['configuration']['validate_timestamps'] ?? false) ? 'Sim' : 'Não' }}</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Revalidate Freq</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $opcacheStatus['configuration']['revalidate_freq'] ?? 0 }}s</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JIT Details (if enabled) -->
+                    @if($opcacheStatus['jit']['enabled'] ?? false)
+                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-lg border border-yellow-200 p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-bolt text-yellow-600 mr-2 animate-pulse"></i>
+                                JIT Compiler Ativo
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-4 bg-white rounded-lg border border-yellow-200">
+                                    <p class="text-xs text-gray-500 mb-1">Buffer Size</p>
+                                    <p class="text-lg font-bold text-yellow-700">{{ $opcacheStatus['jit']['buffer_size'] ?? '0' }}</p>
+                                </div>
+                                <div class="p-4 bg-white rounded-lg border border-yellow-200">
+                                    <p class="text-xs text-gray-500 mb-1">JIT Mode</p>
+                                    <p class="text-lg font-bold text-yellow-700">{{ $opcacheStatus['jit']['mode'] ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 bg-yellow-100 rounded-lg">
+                                <p class="text-sm text-yellow-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    JIT (Just-In-Time) está ativo e otimizando o código PHP em tempo real para melhor performance.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Quick Actions -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-200 p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-tools text-blue-600 mr-2"></i>
+                            Ações Rápidas
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <a href="{{ asset('opcache-status.php') }}" target="_blank" 
+                               class="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-external-link-alt mr-2"></i>
+                                Dashboard Completo
+                            </a>
+                            <button onclick="window.location.reload()" 
+                                    class="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Recarregar Página
+                            </button>
+                            <a href="{{ url('/maintenance/settings?activeTab=opcache') }}" 
+                               class="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-refresh mr-2"></i>
+                                Atualizar Status
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    <!-- OPcache Not Enabled -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
+                        <div class="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-4">
+                            <i class="fas fa-times-circle text-red-600 text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">OPcache Não Está Ativo</h3>
+                        <p class="text-gray-600 mb-6">
+                            O OPcache não está habilitado ou configurado corretamente neste servidor.
+                        </p>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                            <p class="text-sm font-semibold text-blue-900 mb-2">Como Habilitar:</p>
+                            <ol class="list-decimal list-inside text-sm text-blue-800 space-y-1">
+                                <li>Edite o arquivo php.ini</li>
+                                <li>Adicione ou descomente: opcache.enable=1</li>
+                                <li>Configure: opcache.memory_consumption=256</li>
+                                <li>Configure: opcache.max_accelerated_files=20000</li>
+                                <li>Reinicie o servidor web</li>
+                            </ol>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

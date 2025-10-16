@@ -75,7 +75,7 @@
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <span class="text-gray-500 sm:text-sm">Kz</span>
                                         </div>
-                                        <input type="number" step="0.01" id="amount" wire:model="amount" 
+                                        <input type="number" step="0.01" id="amount" wire:model.live.debounce.500ms="amount" 
                                             placeholder="0.00"
                                             class="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                                     </div>
@@ -85,7 +85,7 @@
                                 <!-- Número de Parcelas -->
                                 <div>
                                     <label for="installments" class="block text-sm font-medium text-gray-700">{{ __('messages.installments') }} *</label>
-                                    <input type="number" min="1" max="12" id="installments" wire:model="installments" 
+                                    <input type="number" min="1" max="12" id="installments" wire:model.live.debounce.300ms="installments" 
                                         placeholder="{{ __('messages.enter_installments') }}"
                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                                     @error('installments') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
@@ -142,6 +142,35 @@
                                         placeholder="{{ __('messages.enter_notes') }}"
                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"></textarea>
                                     @error('notes') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                                
+                                <!-- Documento Assinado -->
+                                <div class="md:col-span-2">
+                                    <label for="signed_document" class="block text-sm font-medium text-gray-700">
+                                        {{ __('messages.signed_document') }}
+                                        <span class="text-gray-500 text-xs">(PDF, JPG, PNG - Máx: 5MB)</span>
+                                    </label>
+                                    <div class="mt-1">
+                                        @if($existing_signed_document)
+                                            <div class="mb-2 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-md">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-file-check text-green-600 mr-2"></i>
+                                                    <span class="text-sm text-green-700">{{ __('messages.document_attached') }}</span>
+                                                    <a href="{{ asset('storage/' . $existing_signed_document) }}" target="_blank" class="ml-2 text-blue-600 hover:text-blue-800 text-xs underline">
+                                                        {{ __('messages.view') }}
+                                                    </a>
+                                                </div>
+                                                <button type="button" wire:click="removeSignedDocument" class="text-red-600 hover:text-red-800">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        @endif
+                                        <input type="file" id="signed_document" wire:model="signed_document" 
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        @error('signed_document') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                        <p class="mt-1 text-xs text-gray-500">{{ __('messages.upload_signed_advance_document') }}</p>
+                                    </div>
                                 </div>
                                 
                                 <!-- Status -->

@@ -1,0 +1,131 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           🚀 GUIA RÁPIDO - HABILITAR JIT NO LARAGON              ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📌 MÉTODO 1: MANUAL (5 minutos)
+═══════════════════════════════════════════════════════════════════
+
+1️⃣  Abrir php.ini:
+   → Laragon (ícone na bandeja)
+   → Botão direito > Menu > PHP > php.ini
+   
+   OU usar o caminho:
+   C:\laragon\bin\php\php-8.2.29\php.ini
+
+2️⃣  Encontrar seção [opcache]:
+   → Pressione Ctrl+F
+   → Busque por: [opcache]
+
+3️⃣  Adicionar/Modificar estas linhas:
+
+   opcache.enable=1
+   opcache.jit_buffer_size=128M
+   opcache.jit=1255
+
+4️⃣  Salvar e Fechar (Ctrl+S)
+
+5️⃣  Reiniciar Laragon:
+   → Stop All
+   → Aguardar 3 segundos
+   → Start All
+
+6️⃣  Verificar:
+   → http://erpdembena.test/maintenance/settings?activeTab=opcache
+   → JIT Status deve mostrar "ON" 🟡
+
+
+═══════════════════════════════════════════════════════════════════
+📌 MÉTODO 2: AUTOMATIZADO (1 minuto)
+═══════════════════════════════════════════════════════════════════
+
+1️⃣  Abrir PowerShell como Administrador:
+   → Botão direito no menu Iniciar
+   → "Windows PowerShell (Admin)"
+
+2️⃣  Navegar até a pasta do projeto:
+   cd C:\laragon\www\ERPDEMBENA
+
+3️⃣  Executar o script:
+   .\enable-jit.ps1
+
+4️⃣  Seguir as instruções na tela
+
+5️⃣  Reiniciar Laragon quando solicitado
+
+
+═══════════════════════════════════════════════════════════════════
+📊 VALORES RECOMENDADOS
+═══════════════════════════════════════════════════════════════════
+
+┌──────────────────────────┬─────────────────────────────────────┐
+│ Configuração             │ Valor Recomendado                   │
+├──────────────────────────┼─────────────────────────────────────┤
+│ opcache.jit_buffer_size  │ 128M (desenvolvimento)              │
+│                          │ 256M (produção)                     │
+├──────────────────────────┼─────────────────────────────────────┤
+│ opcache.jit              │ 1255 (balanceado) ⭐               │
+│                          │ 1205 (conservador)                  │
+│                          │ 1275 (agressivo)                    │
+└──────────────────────────┴─────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════
+✅ COMO VERIFICAR SE FUNCIONOU
+═══════════════════════════════════════════════════════════════════
+
+Método 1 - Via Web:
+→ http://erpdembena.test/maintenance/settings?activeTab=opcache
+→ Procure por "JIT Compiler: ON" com ícone amarelo 🟡
+
+Método 2 - Via Terminal:
+→ php -i | findstr jit
+→ Deve mostrar: opcache.jit_buffer_size => 128M
+
+Método 3 - Dashboard OPcache:
+→ http://erpdembena.test/opcache-status.php
+→ Seção "JIT" deve estar visível
+
+
+═══════════════════════════════════════════════════════════════════
+🎯 BENEFÍCIOS DO JIT
+═══════════════════════════════════════════════════════════════════
+
+✅ Performance 20-40% melhor
+✅ Menos uso de CPU (15-30%)
+✅ Mais requisições simultâneas
+✅ Respostas mais rápidas
+✅ Menor consumo de memória
+
+
+═══════════════════════════════════════════════════════════════════
+⚠️  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════
+
+❌ JIT ainda mostra "OFF":
+   → Verifique se salvou o php.ini correto
+   → Reinicie o Laragon completamente
+   → Limpe cache do navegador (Ctrl+F5)
+   → Execute: http://erpdembena.test/clear-opcache.php
+
+❌ "Failed to load opcache":
+   → Verifique se existe: extension=opcache
+   → Remova o ";" no início da linha se existir
+
+❌ Buffer size é 0:
+   → Certifique-se: opcache.jit_buffer_size=128M
+   → Sem espaços extras antes do =
+
+
+═══════════════════════════════════════════════════════════════════
+📚 ARQUIVOS DE AJUDA
+═══════════════════════════════════════════════════════════════════
+
+→ ENABLE-JIT.md          - Guia detalhado completo
+→ enable-jit.ps1         - Script automático PowerShell
+→ OPCACHE-README.md      - Documentação OPcache completa
+→ clear-opcache.php      - Limpar cache via web
+
+
+═══════════════════════════════════════════════════════════════════
+
+🎉 Boa sorte! Qualquer problema, consulte ENABLE-JIT.md

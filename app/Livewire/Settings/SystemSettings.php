@@ -64,6 +64,10 @@ class SystemSettings extends Component
         'warnings' => 0,
         'failed' => 0
     ];
+    
+    // OPcache Status
+    public $opcacheStatus = [];
+    public $opcacheHealth = [];
 
     // Modal states
     public $showConfirmModal = false;
@@ -128,6 +132,7 @@ class SystemSettings extends Component
             $this->loadSettings();
             $this->loadAvailableBackups();
             $this->checkSystemRequirements();
+            $this->loadOpcacheStatus();
         } catch (\Exception $e) {
             Log::error('Erro crítico ao inicializar configurações do sistema: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
@@ -144,6 +149,8 @@ class SystemSettings extends Component
                 'warnings' => 0,
                 'failed' => 1
             ];
+            $this->opcacheStatus = [];
+            $this->opcacheHealth = [];
             
             $this->dispatch('notify', type: 'warning', message: 'Sistema carregado em modo seguro devido a erros. Algumas funcionalidades podem estar limitadas.');
         }
@@ -245,6 +252,32 @@ class SystemSettings extends Component
         $this->debug_mode = false;
         $this->current_version = '1.0.0';
         $this->update_status = 'Sistema funcionando em modo seguro';
+    }
+    
+    /**
+     * Load OPcache status information
+     */
+    public function loadOpcacheStatus()
+    {
+        try {
+            if (class_exists(\App\Helpers\OpcacheHelper::class)) {
+                $this->opcacheStatus = \App\Helpers\OpcacheHelper::getStats();
+                $this->opcacheHealth = \App\Helpers\OpcacheHelper::getHealth();
+            } else {
+                $this->opcacheStatus = [];
+                $this->opcacheHealth = [
+                    'status' => 'unavailable',
+                    'message' => 'OpcacheHelper não disponível',
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Erro ao carregar status do OPcache: ' . $e->getMessage());
+            $this->opcacheStatus = [];
+            $this->opcacheHealth = [
+                'status' => 'error',
+                'message' => 'Erro ao carregar informações do OPcache',
+            ];
+        }
     }
 
     /**
@@ -616,6 +649,15 @@ class SystemSettings extends Component
             $this->clearSettingsCache();
             $this->clearCaches();
             $this->logToFile($logFile, "Caches cleared");
+            
+            // Optimize OPcache
+            try {
+                Artisan::call('opcache:optimize', ['--clear' => true]);
+                $this->logToFile($logFile, "OPcache optimized and cleared");
+            } catch (\Exception $e) {
+                $this->logToFile($logFile, "Warning: OPcache optimization failed - " . $e->getMessage());
+                // Continue even if OPcache optimization fails
+            }
 
             // Bring application back online
             $this->disableMaintenanceMode();
@@ -1817,6 +1859,7 @@ class SystemSettings extends Component
             'config:clear' => 'Clear config cache',
             'view:clear' => 'Clear compiled views',
             'route:clear' => 'Clear route cache',
+            'opcache:optimize' => 'Optimize and clear OPcache',
             'migrate' => 'Run database migrations',
             'storage:link' => 'Create symbolic link to storage',
         ];
@@ -1947,7 +1990,7 @@ class SystemSettings extends Component
         foreach ($requiredExtensions as $extension => $description) {
             $isLoaded = extension_loaded($extension);
             $isCritical = in_array($extension, ['zip', 'curl', 'pdo', 'pdo_mysql', 'openssl', 'mbstring', 'json']);
-            $status = $isLoaded ? 'passed' : ($isCritical ? 'failed' : 'warning');
+            $status = $isLoaded ? 'passed' : ($isCritical ? 'failed' : 'warnings');
 
             $this->addRequirement(
                 "PHP Extension: $extension",
@@ -2056,7 +2099,7 @@ class SystemSettings extends Component
                         'cURL Test',
                         'Ability to make HTTP requests',
                         'Failed to connect to GitHub API',
-                        'warning',
+                        'warnings',
                         true
                     );
                 }
@@ -2065,7 +2108,7 @@ class SystemSettings extends Component
                     'cURL Test',
                     'Ability to make HTTP requests',
                     'Error: ' . $e->getMessage(),
-                    'warning',
+                    'warnings',
                     true
                 );
             }
@@ -2087,7 +2130,12 @@ class SystemSettings extends Component
             'is_critical' => $isCritical
         ];
 
-        $this->requirementsStatus[$status]++;
+        // Ensure the status key exists before incrementing
+        if (isset($this->requirementsStatus[$status])) {
+            $this->requirementsStatus[$status]++;
+        } else {
+            Log::warning("Invalid requirement status: {$status}. Valid statuses: passed, warnings, failed");
+        }
     }
 
     /**
@@ -2107,7 +2155,7 @@ class SystemSettings extends Component
 
         $status = 'passed';
         if ($numericValue < $minValue) {
-            $status = $isCritical ? 'failed' : 'warning';
+            $status = $isCritical ? 'failed' : 'warnings';
         }
 
         $this->addRequirement(
@@ -2133,7 +2181,7 @@ class SystemSettings extends Component
                     "Directory: " . basename($path),
                     $description,
                     "Directory doesn't exist and couldn't be created",
-                    $isCritical ? 'failed' : 'warning',
+                    $isCritical ? 'failed' : 'warnings',
                     $isCritical
                 );
                 return;
@@ -2141,7 +2189,7 @@ class SystemSettings extends Component
         }
 
         $isWritable = is_writable($path);
-        $status = $isWritable ? 'passed' : ($isCritical ? 'failed' : 'warning');
+        $status = $isWritable ? 'passed' : ($isCritical ? 'failed' : 'warnings');
 
         $this->addRequirement(
             "Directory: " . basename($path),

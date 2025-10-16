@@ -12,10 +12,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 
 class SalaryDiscounts extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
     
     // Propriedades do formulário
     public ?int $discount_id = null;
@@ -29,6 +30,8 @@ class SalaryDiscounts extends Component
     public string $discount_type = 'others';
     public ?string $status = 'pending';
     public ?string $notes = null;
+    public $signed_document = null;
+    public ?string $existing_signed_document = null;
     
     // Controles da modal
     public bool $showModal = false;
@@ -83,6 +86,7 @@ class SalaryDiscounts extends Component
             'reason' => ['required', 'string', 'min:3'],
             'discount_type' => ['required', 'in:union,others,quixiquila'],
             'notes' => ['nullable', 'string'],
+            'signed_document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ];
     }
     
@@ -184,7 +188,7 @@ class SalaryDiscounts extends Component
         $this->reset([
             'discount_id', 'employee_id', 'request_date', 'amount',
             'installments', 'installment_amount', 'first_deduction_date',
-            'reason', 'discount_type', 'notes'
+            'reason', 'discount_type', 'notes', 'signed_document', 'existing_signed_document'
         ]);
         
         $this->request_date = date('Y-m-d');
@@ -211,6 +215,7 @@ class SalaryDiscounts extends Component
         $this->reason = $discount->reason;
         $this->discount_type = $discount->discount_type;
         $this->notes = $discount->notes;
+        $this->existing_signed_document = $discount->signed_document;
         
         $this->isEditing = true;
         $this->showModal = true;
@@ -246,6 +251,24 @@ class SalaryDiscounts extends Component
     }
     
     /**
+     * Remove o documento assinado
+     */
+    public function removeSignedDocument(): void
+    {
+        if ($this->discount_id && $this->existing_signed_document) {
+            $discount = SalaryDiscount::find($this->discount_id);
+            if ($discount && $discount->signed_document && \Storage::disk('public')->exists($discount->signed_document)) {
+                \Storage::disk('public')->delete($discount->signed_document);
+                $discount->signed_document = null;
+                $discount->save();
+            }
+        }
+        
+        $this->existing_signed_document = null;
+        session()->flash('message', __('messages.document_removed_successfully'));
+    }
+    
+    /**
      * Calcula o valor da parcela com base no montante total e número de parcelas
      */
     public function calculateInstallmentAmount(): void
@@ -278,9 +301,33 @@ class SalaryDiscounts extends Component
         if ($this->isEditing) {
             $discount = SalaryDiscount::findOrFail($this->discount_id);
             $discount->update($data);
+            
+            // Processar upload do documento assinado
+            if ($this->signed_document) {
+                // Deletar documento antigo se existir
+                if ($discount->signed_document && \Storage::disk('public')->exists($discount->signed_document)) {
+                    \Storage::disk('public')->delete($discount->signed_document);
+                }
+                
+                // Salvar novo documento
+                $filename = 'discount_' . $this->employee_id . '_' . time() . '.' . $this->signed_document->extension();
+                $path = $this->signed_document->storeAs('salary-discounts', $filename, 'public');
+                $discount->signed_document = $path;
+                $discount->save();
+            }
+            
             session()->flash('message', __('messages.discount_updated'));
         } else {
-            SalaryDiscount::create($data);
+            $discount = SalaryDiscount::create($data);
+            
+            // Processar upload do documento assinado
+            if ($this->signed_document) {
+                $filename = 'discount_' . $this->employee_id . '_' . time() . '.' . $this->signed_document->extension();
+                $path = $this->signed_document->storeAs('salary-discounts', $filename, 'public');
+                $discount->signed_document = $path;
+                $discount->save();
+            }
+            
             session()->flash('message', __('messages.discount_created'));
         }
         
@@ -288,7 +335,7 @@ class SalaryDiscounts extends Component
         $this->reset([
             'discount_id', 'employee_id', 'request_date', 'amount',
             'installments', 'installment_amount', 'first_deduction_date',
-            'reason', 'discount_type', 'notes'
+            'reason', 'discount_type', 'notes', 'signed_document', 'existing_signed_document'
         ]);
     }
     

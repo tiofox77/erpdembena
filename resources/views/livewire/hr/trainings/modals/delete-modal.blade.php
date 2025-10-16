@@ -78,16 +78,6 @@
                 </div>
             </div>
 
-            {{-- Confirmation Input --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    {{ __('messages.type_delete_to_confirm') }}
-                </label>
-                <input type="text" 
-                       class="w-full pl-4 pr-4 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                       placeholder="{{ __('messages.type_delete') }}"
-                       wire:model="deleteConfirmation">
-            </div>
         </div>
         @endif
 
@@ -99,8 +89,7 @@
                 {{ __('messages.cancel') }}
             </button>
             <button wire:click="confirmDelete" 
-                    class="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    {{ !isset($deleteConfirmation) || strtolower($deleteConfirmation) !== 'delete' ? 'disabled' : '' }}>
+                    class="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                 <i class="fas fa-trash mr-2"></i>
                 {{ __('messages.delete_training') }}
             </button>

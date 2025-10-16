@@ -107,16 +107,6 @@
                 </div>
             </div>
 
-            {{-- Confirmation --}}
-            <div class="text-center">
-                <p class="text-gray-600 mb-4">
-                    {{ __('messages.type_delete_to_confirm') }}
-                </p>
-                <input wire:model="deleteConfirmation" 
-                       type="text" 
-                       placeholder="{{ __('messages.type_delete') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-center">
-            </div>
         </div>
 
         {{-- Footer --}}
@@ -126,8 +116,7 @@
                 {{ __('messages.cancel') }}
             </button>
             <button wire:click="delete" 
-                    class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled="{{ strtolower($deleteConfirmation ?? '') !== 'delete' }}">
+                    class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                 <div wire:loading wire:target="delete" class="inline-flex items-center">
                     <i class="fas fa-spinner fa-spin mr-2"></i>
                 </div>

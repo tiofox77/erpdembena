@@ -1,251 +1,223 @@
-<div class="container-fluid px-4">
-    {{-- Header --}}
-    <div class="mb-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-                    <i class="fas fa-file-pdf text-red-600 mr-3"></i>
-                    Relatórios de Folha de Pagamento
-                </h1>
-                <p class="text-gray-600 mt-1">Gere relatórios de batches (lotes) ou recibos individuais de pagamento</p>
-            </div>
-        </div>
-    </div>
-
-    {{-- Filters --}}
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {{-- Report Type --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-list mr-1"></i>
-                    Tipo de Relatório
-                </label>
-                <select 
-                    wire:model.live="reportType"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    <option value="batch">Batch (Lotes)</option>
-                    <option value="individual">Individual (Funcionários)</option>
-                </select>
-            </div>
+{{-- Modern Full Width Payroll Reports Interface --}}
+<div class="min-h-screen bg-gray-50">
+    <div class="w-full h-full">
+        <div class="flex flex-col min-h-screen">
             
-            {{-- Search --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-search mr-1"></i>
-                    Pesquisar
-                </label>
-                <input 
-                    type="text" 
-                    wire:model.live="search"
-                    placeholder="{{ $reportType === 'batch' ? 'Nome do batch...' : 'Nome do funcionário...' }}"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-            </div>
-
-            {{-- Period Filter --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-calendar mr-1"></i>
-                    Período
-                </label>
-                <select 
-                    wire:model.live="selectedPeriod"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    <option value="">Todos os Períodos</option>
-                    @foreach($periods as $period)
-                        <option value="{{ $period->id }}">{{ $period->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Department Filter --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-building mr-1"></i>
-                    Departamento
-                </label>
-                <select 
-                    wire:model.live="selectedDepartment"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    <option value="">Todos os Departamentos</option>
-                    @foreach($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Clear Filters --}}
-            <div class="flex items-end">
-                <button 
-                    wire:click="clearFilters"
-                    class="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors flex items-center justify-center"
-                >
-                    <i class="fas fa-times mr-2"></i>
-                    Limpar Filtros
-                </button>
-            </div>
-        </div>
-    </div>
-
-    {{-- Results --}}
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-                <i class="fas fa-list text-blue-600 mr-2"></i>
-                @if($reportType === 'batch')
-                    Batches Disponíveis ({{ $batches->total() }})
-                @else
-                    Pagamentos Individuais ({{ $individualPayrolls->total() }})
-                @endif
-            </h2>
-        </div>
-
-        @if($reportType === 'batch' && $batches->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departamento</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Funcionários</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Líquido</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($batches as $batch)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900">{{ $batch->name }}</div>
-                                        <div class="text-sm text-gray-500">{{ $batch->formatted_batch_date }}</div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $batch->payrollPeriod->name ?? 'N/A' }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $batch->department->name ?? 'Todos' }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <i class="fas fa-check-circle mr-1"></i>
-                                        {{ $batch->status_label }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center text-sm font-semibold text-gray-900">
-                                    {{ $batch->total_employees }}
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-green-700">
-                                    {{ number_format($batch->total_net_amount, 2, ',', '.') }} AOA
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <button 
-                                        wire:click="generateBatchReport({{ $batch->id }})"
-                                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
-                                    >
-                                        <i class="fas fa-file-pdf mr-2"></i>
-                                        Gerar PDF
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Pagination --}}
-            <div class="px-6 py-4 border-t border-gray-200">
-                {{ $batches->links() }}
-            </div>
-        @elseif($reportType === 'individual' && $individualPayrolls->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funcionário</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departamento</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Salário Bruto</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deduções</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Salário Líquido</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($individualPayrolls as $payroll)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900">{{ $payroll->employee->full_name ?? 'N/A' }}</div>
-                                        <div class="text-sm text-gray-500">BI: {{ $payroll->employee->id_card ?? 'N/A' }}</div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $payroll->payrollPeriod->name ?? 'N/A' }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $payroll->employee->department->name ?? 'N/A' }}
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-semibold text-green-700">
-                                    {{ number_format($payroll->gross_salary ?? 0, 2, ',', '.') }} AOA
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-semibold text-red-600">
-                                    -{{ number_format($payroll->total_deductions ?? 0, 2, ',', '.') }} AOA
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-blue-700">
-                                    {{ number_format($payroll->net_salary ?? 0, 2, ',', '.') }} AOA
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <button 
-                                        wire:click="generateIndividualReceipt({{ $payroll->id }})"
-                                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
-                                    >
-                                        <i class="fas fa-receipt mr-2"></i>
-                                        Ver Recibo
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Pagination --}}
-            <div class="px-6 py-4 border-t border-gray-200">
-                {{ $individualPayrolls->links() }}
-            </div>
-        @else
-            <div class="p-12 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                    <i class="fas fa-inbox text-3xl text-gray-400"></i>
+            {{-- Header Section with Gradient - Full Width --}}
+            <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-6 py-8 text-white flex-shrink-0">
+                <div class="w-full flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3">
+                            <i class="fas fa-chart-line text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold">{{ __("messages.payroll_reports") }}</h1>
+                            <p class="text-sm text-gray-200 mt-1">
+                                {{ __("messages.consult_processed_payments_period") }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                @if($reportType === 'batch')
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum Batch Encontrado</h3>
-                    <p class="text-gray-500">Não há batches processados disponíveis para gerar relatórios.</p>
-                    <p class="text-gray-500 text-sm mt-2">Processe batches primeiro na seção de Payroll Batch.</p>
-                @else
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum Pagamento Encontrado</h3>
-                    <p class="text-gray-500">Não há pagamentos individuais processados disponíveis.</p>
-                    <p class="text-gray-500 text-sm mt-2">Processe pagamentos primeiro na seção de Payroll Processing.</p>
-                @endif
             </div>
-        @endif
-    </div>
 
-    {{-- Flash Messages --}}
-    @if (session()->has('error'))
-        <div class="fixed bottom-4 right-4 bg-red-100 border-l-4 border-red-500 p-4 rounded-lg shadow-lg z-50">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
-                <p class="text-red-700">{{ session('error') }}</p>
+            {{-- Filters Section - Full Width --}}
+            <div class="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-filter text-blue-600 text-lg"></i>
+                            <span class="text-lg font-semibold text-gray-800">{{ __("messages.filters_and_search") }}</span>
+                        </div>
+                        <button
+                            wire:click="clearFilters"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors flex items-center space-x-2"
+                        >
+                            <i class="fas fa-undo text-sm"></i>
+                            <span class="text-sm font-medium">{{ __("messages.reset") }}</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {{-- Year Filter --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
+                                {{ __("messages.year") }}
+                            </label>
+                            <select 
+                                wire:model.live="selectedYear"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            >
+                                @foreach($availableYears as $year)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+            
+                        {{-- Search --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-search text-gray-400 mr-1"></i>
+                                {{ __("messages.search_period") }}
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    wire:model.live.debounce.300ms="search"
+                                    placeholder="{{ __("messages.period_name") }}"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                >
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Department Filter --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-building text-gray-400 mr-1"></i>
+                                {{ __("messages.department") }}
+                            </label>
+                            <select 
+                                wire:model.live="selectedDepartment"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            >
+                                <option value="">{{ __("messages.all_departments") }}</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {{-- Listagem de Períodos com Pagamentos --}}
+            @if(count($periodsWithTotals) > 0)
+            <div class="flex-1 bg-gray-50 px-6 py-6 overflow-y-auto">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                    <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                        <div class="flex items-center space-x-2 mb-4">
+                            <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+                            <span class="text-xl font-bold text-gray-900">{{ __("messages.payments_by_period") }}</span>
+                            <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">{{ $periodsWithTotals->count() }} {{ $periodsWithTotals->count() === 1 ? __("messages.period") : __("messages.periods") }}</span>
+                        </div>
+                    </div>
+                
+                <div class="p-6 grid grid-cols-1 gap-4">
+                    @foreach($periodsWithTotals as $periodData)
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all">
+                                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                                    <div>
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-calendar text-blue-600 mr-2 text-xl"></i>
+                                            <span class="text-gray-900 font-bold text-lg">{{ $periodData['period']->name }}</span>
+                                        </div>
+                                        <div class="text-gray-600 text-sm font-medium">
+                                            {{ $periodData['period']->start_date->format('d/m/Y') }} - {{ $periodData['period']->end_date->format('d/m/Y') }}
+                                        </div>
+                                        <div class="mt-3 flex items-center space-x-2">
+                                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                                                <i class="fas fa-users mr-1"></i>
+                                                {{ $periodData['total_employees'] }} func.
+                                            </span>
+                                            @if($periodData['batch_count'] > 0)
+                                                <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                                                    <i class="fas fa-layer-group mr-1"></i>{{ $periodData['batch_count'] }} batch
+                                                </span>
+                                            @endif
+                                            @if($periodData['individual_count'] > 0)
+                                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                                                    <i class="fas fa-user mr-1"></i>{{ $periodData['individual_count'] }} ind.
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-center bg-white rounded-lg p-4 shadow-sm">
+                                        <div class="text-gray-500 text-xs font-medium uppercase mb-1">{{ __("messages.salary_gross") }}</div>
+                                        <div class="text-2xl font-bold text-green-600">
+                                            {{ number_format($periodData['gross_total'], 2, ',', '.') }}
+                                        </div>
+                                        <div class="text-gray-400 text-xs mt-1">AOA</div>
+                                    </div>
+                                    
+                                    <div class="text-center bg-white rounded-lg p-4 shadow-sm">
+                                        <div class="text-gray-500 text-xs font-medium uppercase mb-1">{{ __("messages.deductions") }}</div>
+                                        <div class="text-2xl font-bold text-red-600">
+                                            {{ number_format($periodData['deductions_total'], 2, ',', '.') }}
+                                        </div>
+                                        <div class="text-gray-400 text-xs mt-1">AOA</div>
+                                    </div>
+                                    
+                                    <div class="text-center bg-white rounded-lg p-4 shadow-sm">
+                                        <div class="text-gray-500 text-xs font-medium uppercase mb-1">{{ __("messages.salary_liquid") }}</div>
+                                        <div class="text-2xl font-bold text-blue-700">
+                                            {{ number_format($periodData['net_total'], 2, ',', '.') }}
+                                        </div>
+                                        <div class="text-gray-400 text-xs mt-1">AOA</div>
+                                    </div>
+                                    
+                                    <div class="flex flex-col items-center justify-center space-y-2">
+                                        <span class="px-4 py-2 {{ $periodData['period']->status === 'closed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }} rounded-lg text-sm font-semibold">
+                                            {{ $periodData['period']->status === 'closed' ? '✓ ' . __("messages.closed") : '○ ' . __("messages.open") }}
+                                        </span>
+                                        <button 
+                                            wire:click="generatePeriodReport({{ $periodData['period']->id }})"
+                                            class="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md flex items-center justify-center"
+                                        >
+                                            <i class="fas fa-chart-bar mr-2"></i>
+                                            {{ __("messages.view_summary_report") }}
+                                        </button>
+                                        @if($periodData['batch_count'] > 0)
+                                        <button 
+                                            wire:click="generateBatchReportForPeriod({{ $periodData['period']->id }})"
+                                            class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md flex items-center justify-center"
+                                        >
+                                            <i class="fas fa-file-invoice-dollar mr-2"></i>
+                                            {{ __("messages.view_detailed_report") }}
+                                        </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                    @endforeach
+                </div>
+                </div>
+            </div>
+            @else
+                <div class="flex-1 bg-gray-50 px-6 py-6 overflow-y-auto">
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                        <div class="p-16 text-center">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6">
+                                <i class="fas fa-inbox text-4xl text-gray-400"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">{{ __("messages.no_payments_found") }}</h3>
+                            <p class="text-gray-600 mb-2">{{ __("messages.no_payments_for_year") }}</p>
+                            <p class="text-gray-500 text-sm">{{ __("messages.process_payrolls_first", ['section' => '<span class="font-semibold text-blue-600">' . __("messages.payroll_section") . '</span>']) }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Flash Messages --}}
+            @if (session()->has('error'))
+                <div class="fixed bottom-4 right-4 bg-red-100 border-l-4 border-red-500 p-4 rounded-lg shadow-lg z-50 animate-slide-up">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                        <p class="text-red-700 font-medium">{{ session('error') }}</p>
+                    </div>
+                </div>
+            @endif
+            
+            @if (session()->has('message'))
+                <div class="fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 p-4 rounded-lg shadow-lg z-50 animate-slide-up">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <p class="text-green-700 font-medium">{{ session('message') }}</p>
+                    </div>
+                </div>
+            @endif
         </div>
-    @endif
+    </div>
 </div>

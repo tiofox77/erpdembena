@@ -227,8 +227,8 @@ class PerformanceEvaluations extends Component
         $data = [
             'employee_id' => $this->employee_id,
             'evaluation_type' => $this->evaluation_type,
-            'period_start' => $this->period_start,
-            'period_end' => $this->period_end,
+            'period_start' => $this->period_start ?: null,
+            'period_end' => $this->period_end ?: null,
             'overall_score' => $this->overall_score,
             'goals_achievement' => $this->goals_achievement,
             'technical_skills' => $this->technical_skills,
@@ -242,8 +242,8 @@ class PerformanceEvaluations extends Component
             'development_plan' => $this->development_plan,
             'additional_comments' => $this->additional_comments,
             'status' => $this->status,
-            'evaluation_date' => $this->evaluation_date,
-            'next_evaluation_date' => $this->next_evaluation_date,
+            'evaluation_date' => $this->evaluation_date ?: null,
+            'next_evaluation_date' => $this->next_evaluation_date ?: null,
             'attachments' => $attachmentPaths,
             'evaluated_by' => auth()->id(),
         ];

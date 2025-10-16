@@ -33,6 +33,7 @@ class SalaryDiscount extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'signed_document',
     ];
     
     /**

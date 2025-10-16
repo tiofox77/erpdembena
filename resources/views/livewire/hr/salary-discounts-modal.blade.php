@@ -174,6 +174,63 @@
                                     <textarea id="notes" wire:model="notes" rows="3" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm" placeholder="{{ __('messages.notes_placeholder') }}"></textarea>
                                     @error('notes') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
+                                
+                                <!-- Upload de Documento Assinado -->
+                                <div>
+                                    <label for="signed_document" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-file-signature mr-1 text-gray-400"></i>
+                                        {{ __('messages.signed_document') }}
+                                    </label>
+                                    
+                                    @if($existing_signed_document)
+                                        <div class="mb-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-file-pdf text-green-600 mr-2"></i>
+                                                    <span class="text-sm text-green-700">{{ __('messages.document_uploaded') }}</span>
+                                                </div>
+                                                <div class="flex space-x-2">
+                                                    <a href="{{ asset('storage/' . $existing_signed_document) }}" 
+                                                       target="_blank"
+                                                       class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                                        <i class="fas fa-eye mr-1"></i>
+                                                        {{ __('messages.view') }}
+                                                    </a>
+                                                    <button type="button" 
+                                                            wire:click="removeSignedDocument" 
+                                                            class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                                        <i class="fas fa-trash mr-1"></i>
+                                                        {{ __('messages.remove') }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
+                                    <input type="file" 
+                                           id="signed_document" 
+                                           wire:model="signed_document" 
+                                           accept=".pdf,.jpg,.jpeg,.png"
+                                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                                    
+                                    @error('signed_document') 
+                                        <span class="text-red-500 text-xs">{{ $message }}</span> 
+                                    @enderror
+                                    
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        {{ __('messages.allowed_formats') }}: PDF, JPG, PNG ({{ __('messages.max_size') }}: 5MB)
+                                    </p>
+                                    
+                                    @if($signed_document)
+                                        <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-upload text-blue-600 mr-2"></i>
+                                                <span class="text-sm text-blue-700">{{ __('messages.file_ready_to_upload') }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>

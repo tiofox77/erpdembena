@@ -258,6 +258,21 @@
                                         <i class="fas fa-spinner fa-spin" wire:loading wire:target="generatePDF({{ $discount->id }})"></i>
                                     </button>
                                     
+                                    <!-- Documento Assinado -->
+                                    @if($discount->signed_document)
+                                        <a href="{{ asset('storage/' . $discount->signed_document) }}" 
+                                           target="_blank"
+                                           class="inline-flex items-center px-2 py-1 text-xs font-medium text-teal-600 hover:text-teal-900 hover:bg-teal-50 rounded-md transition-all duration-200"
+                                           title="{{ __('messages.view_signed_document') }}">
+                                            <i class="fas fa-file-signature"></i>
+                                        </a>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-300 cursor-not-allowed rounded-md"
+                                              title="{{ __('messages.no_signed_document') }}">
+                                            <i class="fas fa-file-signature"></i>
+                                        </span>
+                                    @endif
+                                    
                                     <!-- Editar (apenas se pending ou approved) -->
                                     @if(in_array($discount->status, ['pending', 'approved']))
                                         <button wire:click="edit({{ $discount->id }})" 
