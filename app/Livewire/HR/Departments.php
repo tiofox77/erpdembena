@@ -14,6 +14,7 @@ class Departments extends Component
     public $perPage = 10;
     public $sortField = 'name';
     public $sortDirection = 'asc';
+    public $status_filter = 'all'; // all, active, inactive
 
     // Form properties
     public $department_id;
@@ -29,6 +30,8 @@ class Departments extends Component
 
     // Listeners
     protected $listeners = ['refreshDepartments' => '$refresh'];
+    
+    protected $paginationTheme = 'tailwind';
 
     // Rules
     protected function rules()
@@ -52,6 +55,16 @@ class Departments extends Component
     }
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatingPerPage()
     {
         $this->resetPage();
     }
@@ -137,12 +150,33 @@ class Departments extends Component
 
     public function render()
     {
-        $departments = Department::where('name', 'like', "%{$this->search}%")
-            ->orderBy($this->sortField, $this->sortDirection)
+        $query = Department::query();
+        
+        // Apply search filter
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('name', 'like', "%{$this->search}%")
+                  ->orWhere('description', 'like', "%{$this->search}%");
+            });
+        }
+        
+        // Apply status filter
+        if ($this->status_filter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->status_filter === 'inactive') {
+            $query->where('is_active', false);
+        }
+        
+        $departments = $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
+        
+        // Get employees for manager select
+        $employees = \App\Models\HR\Employee::orderBy('full_name')
+            ->get();
 
-        return view('livewire.hr.departments', [
+        return view('livewire.hr.departments.departments', [
             'departments' => $departments,
+            'employees' => $employees,
         ]);
     }
 }

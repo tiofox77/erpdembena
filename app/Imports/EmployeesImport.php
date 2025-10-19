@@ -208,17 +208,80 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation, WithBa
         };
     }
 
-    private function parseDecimal(?string $value): ?float
+    private function parseDecimal(string|int|float|null $value): ?float
     {
-        if (!$value) {
+        // Se for null ou vazio, retorna null
+        if ($value === null || $value === '') {
             return null;
         }
 
-        // Remove currency symbols and spaces
+        // Se já for numérico (int ou float), converte diretamente
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        // Se for string, processa diferentes formatos
+        $value = trim($value);
+        
+        // Remove símbolos de moeda e espaços
+        // Mantém apenas dígitos, vírgulas, pontos e sinais negativos
         $value = preg_replace('/[^\d,.-]/', '', $value);
         
-        // Convert comma to dot for decimal
-        $value = str_replace(',', '.', $value);
+        if (empty($value)) {
+            return null;
+        }
+
+        // Detecta o formato baseado na posição de vírgula e ponto
+        // Formato PT/BR: 100.000,00 ou 1.000.000,00
+        // Formato US: 100,000.00 ou 1,000,000.00
+        // Formato simples: 100000 ou 100000.00
+        
+        $hasComma = strpos($value, ',') !== false;
+        $hasDot = strpos($value, '.') !== false;
+        
+        if ($hasComma && $hasDot) {
+            // Tem ambos - detectar qual é o separador decimal
+            $lastCommaPos = strrpos($value, ',');
+            $lastDotPos = strrpos($value, '.');
+            
+            if ($lastCommaPos > $lastDotPos) {
+                // Formato PT/BR: 100.000,00
+                // Remove pontos (separadores de milhares) e converte vírgula para ponto
+                $value = str_replace('.', '', $value);
+                $value = str_replace(',', '.', $value);
+            } else {
+                // Formato US: 100,000.00
+                // Remove vírgulas (separadores de milhares)
+                $value = str_replace(',', '', $value);
+            }
+        } elseif ($hasComma) {
+            // Só tem vírgula
+            // Detectar se é separador decimal ou de milhares
+            $commaPos = strrpos($value, ',');
+            $afterComma = substr($value, $commaPos + 1);
+            
+            if (strlen($afterComma) <= 2) {
+                // Provavelmente é separador decimal: 100,00
+                $value = str_replace(',', '.', $value);
+            } else {
+                // Provavelmente são milhares: 1,000 ou 10,000
+                $value = str_replace(',', '', $value);
+            }
+        } elseif ($hasDot) {
+            // Só tem ponto
+            // Detectar se é separador decimal ou de milhares
+            $dotPos = strrpos($value, '.');
+            $afterDot = substr($value, $dotPos + 1);
+            
+            if (strlen($afterDot) <= 2 && strlen($afterDot) > 0) {
+                // Provavelmente é separador decimal: 100.00
+                // Já está no formato correto
+            } else {
+                // Provavelmente são milhares: 1.000 ou 10.000
+                $value = str_replace('.', '', $value);
+            }
+        }
+        // Se não tem vírgula nem ponto, já está no formato correto: 100000
         
         return is_numeric($value) ? (float) $value : null;
     }
