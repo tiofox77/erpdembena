@@ -700,6 +700,12 @@ class Employees extends Component
 
     public function exportToExcel()
     {
+        // Verificar permissões - apenas super-admin e hr-manager podem exportar
+        if (!auth()->user()->hasRole(['super-admin', 'hr-manager'])) {
+            session()->flash('error', 'Você não tem permissão para exportar funcionários.');
+            return;
+        }
+
         try {
             // Log início do processo
             \Log::info('Iniciando exportação Excel de funcionários');
@@ -750,6 +756,12 @@ class Employees extends Component
 
     public function openImportModal()
     {
+        // Verificar permissões - apenas super-admin e hr-manager podem importar
+        if (!auth()->user()->hasRole(['super-admin', 'hr-manager'])) {
+            session()->flash('error', 'Você não tem permissão para importar funcionários.');
+            return;
+        }
+
         $this->reset(['importFile', 'importResults']);
         $this->showImportModal = true;
     }
@@ -762,6 +774,12 @@ class Employees extends Component
 
     public function importFromExcel()
     {
+        // Verificar permissões - apenas super-admin e hr-manager podem importar
+        if (!auth()->user()->hasRole(['super-admin', 'hr-manager'])) {
+            session()->flash('error', 'Você não tem permissão para importar funcionários.');
+            return;
+        }
+
         \Log::info('DEBUG: importFromExcel method called');
         \Log::info('DEBUG: importFile value:', ['file' => $this->importFile]);
         
@@ -813,6 +831,12 @@ class Employees extends Component
 
     public function downloadTemplate()
     {
+        // Verificar permissões - apenas super-admin e hr-manager podem baixar template
+        if (!auth()->user()->hasRole(['super-admin', 'hr-manager'])) {
+            session()->flash('error', 'Você não tem permissão para baixar o template.');
+            return;
+        }
+
         try {
             // Create empty export with just headers
             $templateData = collect([

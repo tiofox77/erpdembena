@@ -14,6 +14,7 @@
                                 <p class="text-blue-100 mt-2">{{ __('messages.manage_employees_description') }}</p>
                             </div>
                             <div class="flex space-x-3">
+                                @if(auth()->user()->hasRole(['super-admin', 'hr-manager']))
                                 <!-- Export Button -->
                                 <button wire:click="exportToExcel" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                                     <i class="fas fa-file-excel mr-2"></i>
@@ -38,6 +39,7 @@
                                         {{ __('messages.import') }}
                                     </span>
                                 </button>
+                                @endif
                                 
                                 <!-- Create Employee Button -->
                                 <button wire:click="create" class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105">
@@ -623,6 +625,7 @@
                                                     @else
                                                         <p class="text-gray-500 mb-6">{{ __('messages.no_employees_description') }}</p>
                                                         <div class="flex items-center space-x-3">
+                                                            @if(auth()->user()->hasRole(['super-admin', 'hr-manager']))
                                                             <!-- Export Button -->
                                                             <button type="button" 
                                                                     wire:click="exportToExcel" 
@@ -653,6 +656,7 @@
                                                                     {{ __('messages.import') }}
                                                                 </span>
                                                             </button>
+                                                            @endif
 
                                                             <!-- Create Employee Button -->
                                                             <button type="button" 

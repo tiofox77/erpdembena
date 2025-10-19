@@ -62,6 +62,7 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation, WithBa
         $employeeData = [
             'full_name' => $fullName,
             'id_card' => $this->convertToString($row['bilhete_de_identidade'] ?? $row['id_card'] ?? null),
+            'biometric_id' => $this->convertToString($row['id_biometrico'] ?? $row['biometric_id'] ?? null),
             'tax_number' => $this->convertToString($row['numero_contribuinte'] ?? $row['tax_number'] ?? null),
             'email' => $this->getRowValue($row, ['email', 'endereco_de_email']),
             'phone' => $this->convertToString($row['telefone'] ?? $row['phone'] ?? null),

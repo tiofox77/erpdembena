@@ -844,6 +844,7 @@ return [
     'employees_list' => 'Lista de Funcionários',
     'total_employees' => 'Total de Funcionários',
     'employee' => 'Funcionário',
+    'new_employee' => 'Novo Funcionário',
     'add_first_employee' => 'Adicionar Primeiro Funcionário',
     'no_employees_found' => 'Nenhum funcionário encontrado',
     'no_employees_description' => 'Comece criando o primeiro registro de funcionário',

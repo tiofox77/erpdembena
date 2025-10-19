@@ -97,6 +97,7 @@ return [
     
     // HR Employees Management
     'employee' => 'Employee',
+    'new_employee' => 'New Employee',
     'personal_information' => 'Personal Information',
     'full_name' => 'Full Name',
     'date_of_birth' => 'Date of Birth',
