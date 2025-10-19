@@ -528,48 +528,6 @@
                             </div>
                             @endif
 
-                            @if($isUpdating)
-                            <!-- Update Progress Card -->
-                            <div class="bg-white rounded-2xl shadow-lg border border-blue-200 overflow-hidden mb-8">
-                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
-                                    <h3 class="text-lg font-semibold text-white flex items-center">
-                                        <i class="fas fa-cog fa-spin mr-3"></i>
-                                        Progresso da Actualização
-                                    </h3>
-                                </div>
-                                <div class="p-6">
-                                    <p class="mb-4 text-sm text-slate-600">{{ $update_status }}</p>
-                                    <div class="bg-slate-200 rounded-full h-3 overflow-hidden">
-                                        <div 
-                                            style="width: {{ $update_progress }}%" 
-                                            class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500 ease-out">
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-between items-center mt-2">
-                                        <span class="text-xs text-slate-500">Progresso</span>
-                                        <span class="text-sm font-semibold text-blue-600">{{ $update_progress }}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-
-                            @if($update_logs)
-                            <!-- Update Logs Card -->
-                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-8">
-                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4">
-                                    <h3 class="text-lg font-semibold text-white flex items-center">
-                                        <i class="fas fa-terminal mr-3"></i>
-                                        Logs da Actualização
-                                    </h3>
-                                </div>
-                                <div class="p-6">
-                                    <div class="bg-slate-900 rounded-lg p-4 max-h-64 overflow-y-auto">
-                                        <pre class="text-xs text-green-400 font-mono whitespace-pre-wrap">{{ $update_logs }}</pre>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-
                             <!-- Update Settings Card -->
                             <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
                                 <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
@@ -1674,4 +1632,7 @@
         </div>
     </div>
     @endif
+
+    <!-- Modern Update Modal with Live CLI -->
+    @include('livewire.settings.partials.update-modal')
 </div>

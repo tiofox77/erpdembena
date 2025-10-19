@@ -41,7 +41,9 @@ class SystemSettings extends Component
     public $backup_before_update = true;
     public $update_progress = 0;
     public $update_status = '';
-    public $update_logs = '';
+    public $update_logs = [];
+    public $update_step = '';
+    public $showUpdateModal = false;
     public $isCheckingForUpdates = false;
     public $isUpdating = false;
     
@@ -504,9 +506,23 @@ class SystemSettings extends Component
             return;
         }
 
-        $this->confirmAction = 'startUpdate';
-        $this->confirmMessage = "Tem a certeza que deseja actualizar para a versão {$this->latest_version}? Esta ação tornará o site temporariamente indisponível durante o processo de actualização.";
-        $this->showConfirmModal = true;
+        // Show update modal instead of confirm modal
+        $this->showUpdateModal = true;
+        $this->update_logs = [];
+        $this->update_progress = 0;
+        $this->update_status = 'Aguardando confirmação...';
+        $this->update_step = 'ready';
+    }
+    
+    /**
+     * Close update modal
+     */
+    public function closeUpdateModal()
+    {
+        if (!$this->isUpdating) {
+            $this->showUpdateModal = false;
+            $this->update_logs = [];
+        }
     }
 
     /**
@@ -514,8 +530,6 @@ class SystemSettings extends Component
      */
     public function startUpdate()
     {
-        $this->showConfirmModal = false;
-
         if (!$this->update_available) {
             $this->dispatch('notify', type: 'error', message: 'No updates available to install.');
             return;
@@ -523,32 +537,44 @@ class SystemSettings extends Component
 
         $this->isUpdating = true;
         $this->update_progress = 0;
-        $this->update_status = 'Starting update process...';
+        $this->update_logs = [];
+        $this->update_status = 'Iniciando processo de atualização...';
+        $this->update_step = 'starting';
 
         // Create a log file for this update
         $timestamp = date('Y-m-d_H-i-s');
         $logFile = storage_path("logs/update_{$timestamp}.log");
-        $this->logToFile($logFile, "Starting update process to version {$this->latest_version}");
-        $this->logToFile($logFile, "Current version: {$this->current_version}");
+        $this->logToFile($logFile, "╔═══════════════════════════════════════════════════════════╗", 'success');
+        $this->logToFile($logFile, "║  SISTEMA DE ATUALIZAÇÃO - DEMBENA ERP                   ║", 'success');
+        $this->logToFile($logFile, "╚═══════════════════════════════════════════════════════════╝", 'success');
+        $this->logToFile($logFile, "Iniciando atualização para versão {$this->latest_version}", 'info');
+        $this->logToFile($logFile, "Versão atual: {$this->current_version}", 'info');
+        $this->logToFile($logFile, "", 'info');
 
         try {
             // Create backup if option selected
             if ($this->backup_before_update) {
-                $this->update_status = 'Creating backup...';
+                $this->update_step = 'backup';
+                $this->update_status = '📦 Criando backup do sistema...';
                 $this->update_progress = 10;
+                $this->logToFile($logFile, "[ETAPA 1/6] Criando backup do sistema...", 'warning');
                 $backupPath = $this->createSimpleBackup();
-                $this->logToFile($logFile, "Backup created at: $backupPath");
+                $this->logToFile($logFile, "✓ Backup criado com sucesso: $backupPath", 'success');
             }
 
             // Put application in maintenance mode
-            $this->update_status = 'Putting application in maintenance mode...';
+            $this->update_step = 'maintenance';
+            $this->update_status = '🔧 Ativando modo de manutenção...';
             $this->update_progress = 20;
+            $this->logToFile($logFile, "[ETAPA 2/6] Ativando modo de manutenção...", 'warning');
             $this->enableMaintenanceMode();
-            $this->logToFile($logFile, "Maintenance mode enabled");
+            $this->logToFile($logFile, "✓ Modo de manutenção ativado", 'success');
 
             // Download the update
-            $this->update_status = 'Downloading update...';
+            $this->update_step = 'download';
+            $this->update_status = '⬇️ Baixando atualização...';
             $this->update_progress = 30;
+            $this->logToFile($logFile, "[ETAPA 3/6] Baixando pacote de atualização...", 'warning');
             
             // Verificar se download_url existe
             if (empty($this->update_notes['download_url'])) {
@@ -556,12 +582,16 @@ class SystemSettings extends Component
             }
             
             $update_file = $this->downloadUpdate($this->update_notes['download_url']);
-            $this->logToFile($logFile, "Update package downloaded to: $update_file");
+            $this->logToFile($logFile, "✓ Pacote baixado: $update_file", 'success');
 
             // Extract the update
-            $this->update_status = 'Extracting update files...';
+            $this->update_step = 'extract';
+            $this->update_status = '📂 Extraindo arquivos...';
             $this->update_progress = 50;
+            $this->logToFile($logFile, "[ETAPA 4/6] Extraindo arquivos da atualização...", 'warning');
             $updatedFiles = $this->extractUpdate($update_file);
+            $fileCount = is_array($updatedFiles) ? count($updatedFiles) : 0;
+            $this->logToFile($logFile, "✓ {$fileCount} arquivos extraídos com sucesso", 'success');
 
             // Handle case where updatedFiles might not be an array
             if (!is_array($updatedFiles)) {
@@ -569,25 +599,29 @@ class SystemSettings extends Component
             }
 
             // Run database migrations
-            $this->update_status = 'Running database migrations...';
+            $this->update_step = 'migrate';
+            $this->update_status = '🗃️ Executando migrações da base de dados...';
             $this->update_progress = 70;
+            $this->logToFile($logFile, "[ETAPA 5/6] Executando migrações da base de dados...", 'warning');
             $migrationsResult = $this->runMigrations($logFile);
 
             if ($migrationsResult['success']) {
-                $this->logToFile($logFile, "Database migrations completed successfully");
+                $this->logToFile($logFile, "✓ Migrações executadas com sucesso", 'success');
             } else {
-                $this->logToFile($logFile, "Database migrations failed: " . $migrationsResult['error']);
+                $this->logToFile($logFile, "✗ Falha nas migrações: " . $migrationsResult['error'], 'error');
             }
 
             // Update version in configuration
-            $this->update_status = 'Finalizing update...';
+            $this->update_step = 'finalize';
+            $this->update_status = '✨ Finalizando atualização...';
             $this->update_progress = 90;
+            $this->logToFile($logFile, "[ETAPA 6/6] Finalizando atualização...", 'warning');
 
             // Ensure the version is updated in the database
             try {
                 // Make sure we get the current version from the database, not from memory
                 $oldVersion = Setting::get('app_version', config('app.version', '1.0.0'));
-                $this->logToFile($logFile, "Retrieved current version from database: {$oldVersion}");
+                $this->logToFile($logFile, "Versão atual na base de dados: {$oldVersion}", 'info');
 
                 // Explicitly update with forced cache refresh
                 DB::beginTransaction();
@@ -616,8 +650,8 @@ class SystemSettings extends Component
                 Setting::clearCache();
                 $newVersionInDb = Setting::get('app_version', 'unknown');
 
-                $this->logToFile($logFile, "Version updated in database from {$oldVersion} to {$this->latest_version}");
-                $this->logToFile($logFile, "Verified new version in database: {$newVersionInDb}");
+                $this->logToFile($logFile, "✓ Versão atualizada: {$oldVersion} → {$this->latest_version}", 'success');
+                $this->logToFile($logFile, "✓ Verificação: {$newVersionInDb}", 'info');
 
                 Log::info("System version updated in database settings", [
                     'old_version' => $oldVersion,
@@ -643,29 +677,36 @@ class SystemSettings extends Component
                 $this->update_available = false;
             }
 
-            $this->logToFile($logFile, "System version updated to: {$this->latest_version}");
+            $this->logToFile($logFile, "✓ Versão do sistema atualizada para: {$this->latest_version}", 'success');
 
             // Clear caches
+            $this->logToFile($logFile, "Limpando caches do sistema...", 'info');
             $this->clearSettingsCache();
             $this->clearCaches();
-            $this->logToFile($logFile, "Caches cleared");
+            $this->logToFile($logFile, "✓ Caches limpos com sucesso", 'success');
             
             // Optimize OPcache
             try {
                 Artisan::call('opcache:optimize', ['--clear' => true]);
-                $this->logToFile($logFile, "OPcache optimized and cleared");
+                $this->logToFile($logFile, "✓ OPcache otimizado e limpo", 'success');
             } catch (\Exception $e) {
-                $this->logToFile($logFile, "Warning: OPcache optimization failed - " . $e->getMessage());
+                $this->logToFile($logFile, "⚠ Aviso: Falha na otimização do OPcache - " . $e->getMessage(), 'warning');
                 // Continue even if OPcache optimization fails
             }
 
             // Bring application back online
+            $this->logToFile($logFile, "Desativando modo de manutenção...", 'info');
             $this->disableMaintenanceMode();
-            $this->logToFile($logFile, "Maintenance mode disabled");
+            $this->logToFile($logFile, "✓ Modo de manutenção desativado", 'success');
+            $this->logToFile($logFile, "", 'info');
+            $this->logToFile($logFile, "╔═══════════════════════════════════════════════════════════╗", 'success');
+            $this->logToFile($logFile, "║  ATUALIZAÇÃO CONCLUÍDA COM SUCESSO!                     ║", 'success');
+            $this->logToFile($logFile, "║  Versão: {$this->latest_version}" . str_repeat(' ', 54 - strlen($this->latest_version)) . "║", 'success');
+            $this->logToFile($logFile, "╚═══════════════════════════════════════════════════════════╝", 'success');
 
-            $this->update_status = 'Update completed successfully!';
+            $this->update_status = '✅ Atualização concluída com sucesso!';
             $this->update_progress = 100;
-            $this->logToFile($logFile, "Update process completed successfully");
+            $this->update_step = 'completed';
 
             $this->dispatch('notify', type: 'success', message: "System has been updated to version {$this->latest_version}");
             Log::info("System updated to version {$this->latest_version}", [
@@ -673,9 +714,14 @@ class SystemSettings extends Component
                 'updated_files' => count($updatedFiles)
             ]);
         } catch (\Exception $e) {
-            $this->update_status = "Update failed: {$e->getMessage()}";
-            $this->logToFile($logFile, "Update failed: {$e->getMessage()}");
-            $this->logToFile($logFile, "Error trace: {$e->getTraceAsString()}");
+            $this->update_status = "❌ Falha na atualização: {$e->getMessage()}";
+            $this->update_step = 'failed';
+            $this->logToFile($logFile, "", 'error');
+            $this->logToFile($logFile, "╔═══════════════════════════════════════════════════════════╗", 'error');
+            $this->logToFile($logFile, "║  ERRO NA ATUALIZAÇÃO                                     ║", 'error');
+            $this->logToFile($logFile, "╚═══════════════════════════════════════════════════════════╝", 'error');
+            $this->logToFile($logFile, "✗ Falha: {$e->getMessage()}", 'error');
+            $this->logToFile($logFile, "Rastreamento do erro: {$e->getTraceAsString()}", 'error');
             Log::error("Update process error: {$e->getMessage()}", [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -685,7 +731,7 @@ class SystemSettings extends Component
 
             // Ensure site comes back online even if update fails
             $this->disableMaintenanceMode();
-            $this->logToFile($logFile, "Maintenance mode disabled after error");
+            $this->logToFile($logFile, "✓ Modo de manutenção desativado após erro", 'warning');
 
             $this->dispatch('notify', type: 'error', message: "Update failed: {$e->getMessage()}");
         }
@@ -694,11 +740,11 @@ class SystemSettings extends Component
     }
 
     /**
-     * Log message to update log file
+     * Log message to update log file and live stream
      */
-    protected function logToFile($logFile, $message)
+    protected function logToFile($logFile, $message, $type = 'info')
     {
-        $timestamp = date('Y-m-d H:i:s');
+        $timestamp = date('H:i:s');
         $logMessage = "[$timestamp] $message" . PHP_EOL;
 
         // Create directory if it doesn't exist
@@ -708,6 +754,22 @@ class SystemSettings extends Component
         }
 
         file_put_contents($logFile, $logMessage, FILE_APPEND);
+        
+        // Add to live logs array for real-time display
+        $this->update_logs[] = [
+            'timestamp' => $timestamp,
+            'message' => $message,
+            'type' => $type  // info, success, warning, error
+        ];
+        
+        // Keep only last 100 log entries
+        if (count($this->update_logs) > 100) {
+            array_shift($this->update_logs);
+        }
+        
+        // Force Livewire to update the view
+        $this->dispatch('log-updated');
+        
         return true;
     }
 
