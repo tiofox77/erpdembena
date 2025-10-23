@@ -3,7 +3,7 @@
 <div class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
      x-data="{ scrollToBottom() { let el = $refs.logContainer; if(el) el.scrollTop = el.scrollHeight; } }"
      x-init="$watch('$wire.update_logs', () => { setTimeout(() => scrollToBottom(), 50) })"
-     wire:poll.1000ms>
+     wire:poll.500ms="@if($isUpdating) $refresh @endif">
     <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-slate-700" 
          @click.stop>
         

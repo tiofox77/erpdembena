@@ -130,6 +130,12 @@ class SystemSettings extends Component
      */
     public function mount()
     {
+        // Initialize update properties to prevent null errors
+        $this->update_logs = $this->update_logs ?? [];
+        $this->update_step = $this->update_step ?? '';
+        $this->showUpdateModal = $this->showUpdateModal ?? false;
+        $this->update_notes = $this->update_notes ?? [];
+        
         try {
             $this->loadSettings();
             $this->loadAvailableBackups();
@@ -254,6 +260,11 @@ class SystemSettings extends Component
         $this->debug_mode = false;
         $this->current_version = '1.0.0';
         $this->update_status = 'Sistema funcionando em modo seguro';
+        $this->update_logs = [];
+        $this->update_step = '';
+        $this->showUpdateModal = false;
+        $this->update_available = false;
+        $this->update_notes = [];
     }
     
     /**
@@ -524,6 +535,23 @@ class SystemSettings extends Component
             $this->update_logs = [];
         }
     }
+    
+    /**
+     * Test update modal with fake progress (for demo purposes)
+     */
+    public function testUpdateModal()
+    {
+        $this->showUpdateModal = true;
+        $this->update_logs = [];
+        $this->update_progress = 0;
+        $this->update_status = 'Modo de Teste - Demonstração';
+        $this->update_step = 'ready';
+        $this->isUpdating = false;
+        
+        // Add sample logs
+        $this->update_logs[] = ['timestamp' => date('H:i:s'), 'message' => 'Sistema de atualização em modo de teste', 'type' => 'info'];
+        $this->update_logs[] = ['timestamp' => date('H:i:s'), 'message' => 'Clique em "Iniciar Atualização" para ver o feedback visual', 'type' => 'warning'];
+    }
 
     /**
      * Start the update process
@@ -540,16 +568,26 @@ class SystemSettings extends Component
         $this->update_logs = [];
         $this->update_status = 'Iniciando processo de atualização...';
         $this->update_step = 'starting';
+        
+        // Force Livewire to update the view before starting
+        $this->dispatch('update-started');
+        usleep(500000); // 0.5 seconds
 
         // Create a log file for this update
         $timestamp = date('Y-m-d_H-i-s');
         $logFile = storage_path("logs/update_{$timestamp}.log");
         $this->logToFile($logFile, "╔═══════════════════════════════════════════════════════════╗", 'success');
+        usleep(200000); // 0.2 seconds
         $this->logToFile($logFile, "║  SISTEMA DE ATUALIZAÇÃO - DEMBENA ERP                   ║", 'success');
+        usleep(200000);
         $this->logToFile($logFile, "╚═══════════════════════════════════════════════════════════╝", 'success');
+        usleep(200000);
         $this->logToFile($logFile, "Iniciando atualização para versão {$this->latest_version}", 'info');
+        usleep(200000);
         $this->logToFile($logFile, "Versão atual: {$this->current_version}", 'info');
+        usleep(200000);
         $this->logToFile($logFile, "", 'info');
+        usleep(500000);
 
         try {
             // Create backup if option selected
@@ -558,8 +596,10 @@ class SystemSettings extends Component
                 $this->update_status = '📦 Criando backup do sistema...';
                 $this->update_progress = 10;
                 $this->logToFile($logFile, "[ETAPA 1/6] Criando backup do sistema...", 'warning');
+                usleep(300000); // 0.3 seconds
                 $backupPath = $this->createSimpleBackup();
                 $this->logToFile($logFile, "✓ Backup criado com sucesso: $backupPath", 'success');
+                usleep(500000); // 0.5 seconds
             }
 
             // Put application in maintenance mode
@@ -567,14 +607,17 @@ class SystemSettings extends Component
             $this->update_status = '🔧 Ativando modo de manutenção...';
             $this->update_progress = 20;
             $this->logToFile($logFile, "[ETAPA 2/6] Ativando modo de manutenção...", 'warning');
+            usleep(300000);
             $this->enableMaintenanceMode();
             $this->logToFile($logFile, "✓ Modo de manutenção ativado", 'success');
+            usleep(500000);
 
             // Download the update
             $this->update_step = 'download';
             $this->update_status = '⬇️ Baixando atualização...';
             $this->update_progress = 30;
             $this->logToFile($logFile, "[ETAPA 3/6] Baixando pacote de atualização...", 'warning');
+            usleep(300000);
             
             // Verificar se download_url existe
             if (empty($this->update_notes['download_url'])) {
@@ -583,15 +626,18 @@ class SystemSettings extends Component
             
             $update_file = $this->downloadUpdate($this->update_notes['download_url']);
             $this->logToFile($logFile, "✓ Pacote baixado: $update_file", 'success');
+            usleep(500000);
 
             // Extract the update
             $this->update_step = 'extract';
             $this->update_status = '📂 Extraindo arquivos...';
             $this->update_progress = 50;
             $this->logToFile($logFile, "[ETAPA 4/6] Extraindo arquivos da atualização...", 'warning');
+            usleep(300000);
             $updatedFiles = $this->extractUpdate($update_file);
             $fileCount = is_array($updatedFiles) ? count($updatedFiles) : 0;
             $this->logToFile($logFile, "✓ {$fileCount} arquivos extraídos com sucesso", 'success');
+            usleep(500000);
 
             // Handle case where updatedFiles might not be an array
             if (!is_array($updatedFiles)) {
@@ -603,6 +649,7 @@ class SystemSettings extends Component
             $this->update_status = '🗃️ Executando migrações da base de dados...';
             $this->update_progress = 70;
             $this->logToFile($logFile, "[ETAPA 5/6] Executando migrações da base de dados...", 'warning');
+            usleep(300000);
             $migrationsResult = $this->runMigrations($logFile);
 
             if ($migrationsResult['success']) {
@@ -610,12 +657,14 @@ class SystemSettings extends Component
             } else {
                 $this->logToFile($logFile, "✗ Falha nas migrações: " . $migrationsResult['error'], 'error');
             }
+            usleep(500000);
 
             // Update version in configuration
             $this->update_step = 'finalize';
             $this->update_status = '✨ Finalizando atualização...';
             $this->update_progress = 90;
             $this->logToFile($logFile, "[ETAPA 6/6] Finalizando atualização...", 'warning');
+            usleep(300000);
 
             // Ensure the version is updated in the database
             try {
@@ -678,31 +727,43 @@ class SystemSettings extends Component
             }
 
             $this->logToFile($logFile, "✓ Versão do sistema atualizada para: {$this->latest_version}", 'success');
+            usleep(300000);
 
             // Clear caches
             $this->logToFile($logFile, "Limpando caches do sistema...", 'info');
+            usleep(300000);
             $this->clearSettingsCache();
             $this->clearCaches();
             $this->logToFile($logFile, "✓ Caches limpos com sucesso", 'success');
+            usleep(300000);
             
             // Optimize OPcache
             try {
                 Artisan::call('opcache:optimize', ['--clear' => true]);
                 $this->logToFile($logFile, "✓ OPcache otimizado e limpo", 'success');
+                usleep(300000);
             } catch (\Exception $e) {
                 $this->logToFile($logFile, "⚠ Aviso: Falha na otimização do OPcache - " . $e->getMessage(), 'warning');
+                usleep(300000);
                 // Continue even if OPcache optimization fails
             }
 
             // Bring application back online
             $this->logToFile($logFile, "Desativando modo de manutenção...", 'info');
+            usleep(300000);
             $this->disableMaintenanceMode();
             $this->logToFile($logFile, "✓ Modo de manutenção desativado", 'success');
+            usleep(300000);
             $this->logToFile($logFile, "", 'info');
+            usleep(200000);
             $this->logToFile($logFile, "╔═══════════════════════════════════════════════════════════╗", 'success');
+            usleep(200000);
             $this->logToFile($logFile, "║  ATUALIZAÇÃO CONCLUÍDA COM SUCESSO!                     ║", 'success');
+            usleep(200000);
             $this->logToFile($logFile, "║  Versão: {$this->latest_version}" . str_repeat(' ', 54 - strlen($this->latest_version)) . "║", 'success');
+            usleep(200000);
             $this->logToFile($logFile, "╚═══════════════════════════════════════════════════════════╝", 'success');
+            usleep(500000);
 
             $this->update_status = '✅ Atualização concluída com sucesso!';
             $this->update_progress = 100;
