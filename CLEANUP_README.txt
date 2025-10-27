@@ -8,7 +8,9 @@
 
 🎯 COMO USAR NO CPANEL:
 
-  1. Acesse via navegador:
+  1. Upload do arquivo cleanup_system.php para: public/cleanup_system.php
+  
+  2. Acesse via navegador:
      https://seudominio.com/cleanup_system.php
 
   2. O sistema mostrará:
