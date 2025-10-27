@@ -118,6 +118,9 @@ $filesToRemove = [
     'change_password.php',
     '8.2)',
     '-i',
+    'deploy-production.sh',
+    'deploy-with-opcache.sh',
+    'enable-jit.ps1',
 ];
 
 // Arquivos .md de documentação temporária
@@ -197,9 +200,6 @@ $protectedFiles = [
     '.editorconfig',
     'vite.config.js',
     'preload.php',
-    'deploy-production.sh',
-    'deploy-with-opcache.sh',
-    'enable-jit.ps1',
     'opcache-config-recomendado.ini',
     'opcache.env.example',
 ];
