@@ -1,6 +1,6 @@
 @extends('layouts.maintenance')
 
-@section('title', 'Gerenciamento de Tarefas')
+@section('title', __('messages.task_management'))
 
 @section('content')
     <livewire:maintenance-task />

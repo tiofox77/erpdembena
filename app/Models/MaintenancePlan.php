@@ -6,10 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\Technician;
 
 class MaintenancePlan extends Model
 {
     use HasFactory, SoftDeletes;
+    
+    /**
+     * The "booted" method of the model.
+     * Garante que todos os relacionamentos também filtrem registros excluídos
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('not_deleted', function($builder) {
+            $builder->whereNull('deleted_at');
+        });
+    }
 
     /**
      * The table associated with the model.
@@ -88,11 +102,11 @@ class MaintenancePlan extends Model
     }
 
     /**
-     * Get the user assigned to this plan.
+     * Get the technician assigned to this plan.
      */
     public function assignedTo()
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(Technician::class, 'assigned_to');
     }
 
     /**
@@ -257,5 +271,29 @@ class MaintenancePlan extends Model
         } else {
             return "{$minutes}m";
         }
+    }
+    
+    /**
+     * Get maintenance task logs associated with this plan
+     */
+    public function taskLogs()
+    {
+        return $this->hasMany(MaintenanceTaskLog::class, 'maintenance_plan_id');
+    }
+    
+    /**
+     * Get maintenance task logs that are completed
+     */
+    public function completedTaskLogs()
+    {
+        return $this->taskLogs()->where('status', 'completed');
+    }
+    
+    /**
+     * Get maintenance task logs that are pending or in progress
+     */
+    public function pendingTaskLogs()
+    {
+        return $this->taskLogs()->whereIn('status', ['pending', 'in_progress']);
     }
 }

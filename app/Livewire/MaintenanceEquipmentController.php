@@ -26,6 +26,8 @@ class MaintenanceEquipmentController extends Component
 
     // Modal state (nova propriedade para controlar a visibilidade da modal)
     public $isModalOpen = false;
+    public $showViewModal = false;
+    public $viewingEquipment = null;
 
     // Filter and sort properties
     public $search = '';
@@ -34,6 +36,7 @@ class MaintenanceEquipmentController extends Component
     public $statusFilter = '';
     public $sortField = 'name';
     public $sortDirection = 'asc';
+    public $perPage = 10;
 
     // Listen for events
     protected $listeners = ['delete'];
@@ -89,25 +92,70 @@ class MaintenanceEquipmentController extends Component
     public function closeModal()
     {
         $this->isModalOpen = false;
+        $this->showViewModal = false;
+        $this->viewingEquipment = null;
         $this->resetInputFields();
+    }
+
+    // View equipment details
+    public function viewEquipment($id)
+    {
+        try {
+            $this->viewingEquipment = Equipment::with(['line', 'area'])->findOrFail($id);
+            $this->showViewModal = true;
+        } catch (\Exception $e) {
+            $notificationType = 'error';
+            $message = 'The equipment you are looking for could not be found.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
+        }
+    }
+
+    // Close view modal
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewingEquipment = null;
+    }
+
+    // Clear all filters
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->lineFilter = '';
+        $this->areaFilter = '';
+        $this->statusFilter = '';
+        $this->perPage = 10;
+        $this->resetPage();
+
+        $this->dispatch('filters-cleared');
+
+        $notificationType = 'info';
+        $message = 'All search filters have been reset.';
+        $this->dispatch('notify', type: $notificationType, message: $message);
     }
 
     // Load equipment data for editing
     public function edit($id)
     {
-        $equipment = Equipment::findOrFail($id);
-        $this->equipmentId = $id;
-        $this->name = $equipment->name;
-        $this->serial_number = $equipment->serial_number;
-        $this->line_id = $equipment->line_id;
-        $this->area_id = $equipment->area_id;
-        $this->status = $equipment->status;
-        $this->purchase_date = $equipment->purchase_date;
-        $this->last_maintenance = $equipment->last_maintenance;
-        $this->next_maintenance = $equipment->next_maintenance;
-        $this->notes = $equipment->notes;
+        try {
+            $equipment = Equipment::findOrFail($id);
+            $this->equipmentId = $id;
+            $this->name = $equipment->name;
+            $this->serial_number = $equipment->serial_number;
+            $this->line_id = $equipment->line_id;
+            $this->area_id = $equipment->area_id;
+            $this->status = $equipment->status;
+            $this->purchase_date = $equipment->purchase_date;
+            $this->last_maintenance = $equipment->last_maintenance;
+            $this->next_maintenance = $equipment->next_maintenance;
+            $this->notes = $equipment->notes;
 
-        $this->isModalOpen = true;
+            $this->isModalOpen = true;
+        } catch (\Exception $e) {
+            $notificationType = 'error';
+            $message = 'The equipment you are trying to edit could not be found.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
+        }
     }
 
     // Save equipment data
@@ -121,46 +169,61 @@ class MaintenanceEquipmentController extends Component
             'status' => 'required|in:operational,maintenance,out_of_service',
         ]);
 
-        $equipment = $this->equipmentId
-            ? Equipment::find($this->equipmentId)
-            : new Equipment();
+        try {
+            $equipment = $this->equipmentId
+                ? Equipment::findOrFail($this->equipmentId)
+                : new Equipment();
 
-        $equipment->name = $this->name;
-        $equipment->serial_number = $this->serial_number;
-        $equipment->line_id = $this->line_id;
-        $equipment->area_id = $this->area_id;
-        $equipment->status = $this->status;
-        $equipment->purchase_date = $this->purchase_date;
+            $equipment->name = $this->name;
+            $equipment->serial_number = $this->serial_number;
+            $equipment->line_id = $this->line_id;
+            $equipment->area_id = $this->area_id;
+            $equipment->status = $this->status;
+            $equipment->purchase_date = $this->purchase_date;
 
-        // Auto-set maintenance dates
-        // TODO: This is a temporary solution. Will be replaced with a proper maintenance scheduling system in the future.
-        $today = now()->format('Y-m-d');
-        $equipment->last_maintenance = $this->last_maintenance ?? $today; // Default to today if not provided
-        $equipment->next_maintenance = $this->next_maintenance ?? now()->addMonths(6)->format('Y-m-d'); // Default to 6 months from now
+            // Auto-set maintenance dates
+            // TODO: This is a temporary solution. Will be replaced with a proper maintenance scheduling system in the future.
+            $today = now()->format('Y-m-d');
+            $equipment->last_maintenance = $this->last_maintenance ?? $today; // Default to today if not provided
+            $equipment->next_maintenance = $this->next_maintenance ?? now()->addMonths(6)->format('Y-m-d'); // Default to 6 months from now
 
-        $equipment->notes = $this->notes;
+            $equipment->notes = $this->notes;
 
-        $equipment->save();
+            $equipment->save();
 
-        $this->closeModal();
+            $this->closeModal();
 
-        $this->dispatch('notify', [
-            'type' => 'success',
-            'title' => $this->equipmentId ? 'Equipment Updated' : 'Equipment Added',
-            'message' => $this->equipmentId ? 'Equipment updated successfully!' : 'Equipment added successfully!'
-        ]);
+            // Send notification
+            $notificationType = 'info';
+            $message = $this->equipmentId
+                ? "Equipment '{$equipment->name}' has been updated successfully."
+                : "Equipment '{$equipment->name}' has been created successfully.";
+            $this->dispatch('notify', type: $notificationType, message: $message);
+
+        } catch (\Exception $e) {
+            // Send notification
+            $notificationType = 'error';
+            $message = 'An error occurred while saving the equipment. Please try again.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
+        }
     }
 
     // Delete equipment
     public function delete($id)
     {
-        Equipment::find($id)->delete();
+        try {
+            $equipment = Equipment::findOrFail($id);
+            $name = $equipment->name;
+            $equipment->delete();
 
-        $this->dispatch('notify', [
-            'type' => 'error',
-            'title' => 'Equipment Deleted',
-            'message' => 'Equipment deleted successfully!'
-        ]);
+            $notificationType = 'success';
+            $message = "Equipment '{$name}' has been deleted successfully.";
+            $this->dispatch('notify', type: $notificationType, message: $message);
+        } catch (\Exception $e) {
+            $notificationType = 'error';
+            $message = 'An error occurred while deleting the equipment. Please try again.';
+            $this->dispatch('notify', type: $notificationType, message: $message);
+        }
     }
 
     // Main render method
@@ -187,7 +250,7 @@ class MaintenanceEquipmentController extends Component
                 return $query->where('status', $this->statusFilter);
             })
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate(10);
+            ->paginate($this->perPage);
 
         return view('livewire.maintenance-equipment', [
             'equipment' => $equipment,

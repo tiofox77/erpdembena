@@ -316,14 +316,44 @@
                         legend: {
                             position: 'top',
                         },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.raw || 0;
+                                    
+                                    if (label.includes('Downtime')) {
+                                        return `${label}: ${value} hours`;
+                                    } else {
+                                        return `${label}: ${value}%`;
+                                    }
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
                             beginAtZero: true,
                             max: 100,
                             title: {
                                 display: true,
-                                text: 'Reliability Rate (%)'
+                                text: 'Percentage (%)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Downtime Hours'
+                            },
+                            grid: {
+                                drawOnChartArea: false
                             }
                         },
                         x: {

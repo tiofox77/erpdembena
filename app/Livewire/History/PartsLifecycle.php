@@ -4,9 +4,9 @@ namespace App\Livewire\History;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Part;
-use App\Models\PartTransaction;
-use App\Models\Supplier;
+use App\Models\EquipmentPart;
+use App\Models\StockTransaction;
+use App\Models\SupplyChain\Supplier;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -166,15 +166,24 @@ class PartsLifecycle extends Component
     public function loadCategories()
     {
         try {
-            // Get unique categories from parts table
-            $this->categories = Part::select('category')
-                ->distinct()
-                ->whereNotNull('category')
-                ->orderBy('category')
-                ->pluck('category')
+            // Obter equipamentos únicos agrupados por maintenance_equipment_id
+            // Precisamos incluir name no SELECT para usá-lo no ORDER BY
+            $parts = EquipmentPart::select('name', 'maintenance_equipment_id')
+                ->orderBy('name')
+                ->get()
+                ->map(function($part) {
+                    // Criar o identificador composto depois de buscar dados
+                    return $part->maintenance_equipment_id 
+                        ? $part->maintenance_equipment_id . '-' . $part->name 
+                        : '0-' . $part->name;
+                })
+                ->unique() // Remover duplicatas depois de buscar todos os dados
+                ->values() // Reindexar o array
                 ->toArray();
+                
+            $this->categories = $parts;
         } catch (\Exception $e) {
-            Log::error('Error loading part categories: ' . $e->getMessage());
+            Log::error('Error loading part equipment groups: ' . $e->getMessage());
             $this->categories = [];
         }
     }
@@ -182,10 +191,15 @@ class PartsLifecycle extends Component
     public function loadParts()
     {
         try {
-            $query = Part::query()->orderBy('name');
+            $query = EquipmentPart::query()->orderBy('name');
 
             if ($this->partCategory) {
-                $query->where('category', $this->partCategory);
+                // Usamos o formato 'maintenance_equipment_id-name' para filtrar
+                $parts = explode('-', $this->partCategory);
+                if (count($parts) == 2 && is_numeric($parts[0])) {
+                    $query->where('maintenance_equipment_id', $parts[0])
+                          ->where('name', 'like', '%' . $parts[1] . '%');
+                }
             }
 
             $this->parts = $query->get();
@@ -213,16 +227,16 @@ class PartsLifecycle extends Component
             $endDateTime = $this->endDate . ' 23:59:59';
 
             // Total parts in inventory
-            $this->totalParts = Part::count();
+            $this->totalParts = EquipmentPart::count();
 
             // Total inventory value
-            $this->totalValue = Part::sum(\DB::raw('quantity * unit_cost'));
+            $this->totalValue = EquipmentPart::sum(\DB::raw('stock_quantity * unit_cost'));
 
             // Total transactions in the period
-            $transactionQuery = PartTransaction::whereBetween('created_at', [$startDateTime, $endDateTime]);
+            $transactionQuery = StockTransaction::whereBetween('created_at', [$startDateTime, $endDateTime]);
 
             if ($this->partId) {
-                $transactionQuery->where('part_id', $this->partId);
+                $transactionQuery->where('equipment_part_id', $this->partId);
             }
 
             if ($this->supplierId) {
@@ -230,20 +244,28 @@ class PartsLifecycle extends Component
             }
 
             if ($this->partCategory) {
-                $transactionQuery->whereHas('part', function($query) {
-                    $query->where('category', $this->partCategory);
-                });
+                // Usamos o formato 'maintenance_equipment_id-name' para filtrar
+                $parts = explode('-', $this->partCategory);
+                if (count($parts) == 2 && is_numeric($parts[0])) {
+                    $equipment_id = $parts[0];
+                    $name = $parts[1];
+                    
+                    $transactionQuery->whereHas('part', function($query) use ($equipment_id, $name) {
+                        $query->where('maintenance_equipment_id', $equipment_id)
+                              ->where('name', 'like', '%' . $name . '%');
+                    });
+                }
             }
 
             if ($this->transactionType && $this->transactionType !== 'all') {
-                $transactionQuery->where('transaction_type', $this->transactionType);
+                $transactionQuery->where('type', $this->transactionType);
             }
 
             if ($this->searchQuery) {
                 $transactionQuery->where(function($query) {
                     $query->whereHas('part', function($q) {
                         $q->where('name', 'like', '%' . $this->searchQuery . '%')
-                          ->orWhere('sku', 'like', '%' . $this->searchQuery . '%');
+                          ->orWhere('part_number', 'like', '%' . $this->searchQuery . '%');
                     })
                     ->orWhereHas('supplier', function($q) {
                         $q->where('name', 'like', '%' . $this->searchQuery . '%');
@@ -256,29 +278,31 @@ class PartsLifecycle extends Component
             $this->totalTransactions = $transactionQuery->count();
 
             // Most used part in the period
-            $mostUsedPartId = PartTransaction::whereBetween('created_at', [$startDateTime, $endDateTime])
-                ->where('transaction_type', 'usage')
-                ->select('part_id')
+            $mostUsedPartId = StockTransaction::whereBetween('created_at', [$startDateTime, $endDateTime])
+                ->where('type', 'stock_out')
+                ->select('equipment_part_id')
                 ->selectRaw('SUM(quantity) as total_used')
-                ->groupBy('part_id')
+                ->groupBy('equipment_part_id')
                 ->orderByDesc('total_used')
                 ->first();
 
             if ($mostUsedPartId) {
-                $this->mostUsedPart = Part::find($mostUsedPartId->part_id);
+                $this->mostUsedPart = EquipmentPart::find($mostUsedPartId->equipment_part_id);
             }
 
             // Top supplier by purchase value
-            $topSupplierId = PartTransaction::whereBetween('created_at', [$startDateTime, $endDateTime])
-                ->where('transaction_type', 'purchase')
-                ->select('supplier_id')
+            $topSupplier = StockTransaction::whereBetween('created_at', [$startDateTime, $endDateTime])
+                ->where('type', 'stock_in')
+                ->select('supplier')
                 ->selectRaw('SUM(quantity * unit_cost) as total_value')
-                ->groupBy('supplier_id')
+                ->whereNotNull('supplier')
+                ->groupBy('supplier')
                 ->orderByDesc('total_value')
                 ->first();
 
-            if ($topSupplierId && $topSupplierId->supplier_id) {
-                $this->topSupplier = Supplier::find($topSupplierId->supplier_id);
+            if ($topSupplier && $topSupplier->supplier) {
+                // Armazenamos o nome do fornecedor diretamente
+                $this->topSupplier = (object)['name' => $topSupplier->supplier];
             }
 
         } catch (\Exception $e) {
@@ -306,11 +330,11 @@ class PartsLifecycle extends Component
             $startDateTime = $this->startDate . ' 00:00:00';
             $endDateTime = $this->endDate . ' 23:59:59';
 
-            $query = PartTransaction::with(['part', 'supplier', 'maintenance'])
+            $query = StockTransaction::with(['part', 'user'])
                 ->whereBetween('created_at', [$startDateTime, $endDateTime]);
 
             if ($this->partId) {
-                $query->where('part_id', $this->partId);
+                $query->where('equipment_part_id', $this->partId);
             }
 
             if ($this->supplierId) {
@@ -324,19 +348,17 @@ class PartsLifecycle extends Component
             }
 
             if ($this->transactionType && $this->transactionType !== 'all') {
-                $query->where('transaction_type', $this->transactionType);
+                $query->where('type', $this->transactionType);
             }
 
             if ($this->searchQuery) {
                 $query->where(function($q) {
                     $q->whereHas('part', function($pq) {
                         $pq->where('name', 'like', '%' . $this->searchQuery . '%')
-                          ->orWhere('sku', 'like', '%' . $this->searchQuery . '%');
+                          ->orWhere('part_number', 'like', '%' . $this->searchQuery . '%');
                     })
-                    ->orWhereHas('supplier', function($sq) {
-                        $sq->where('name', 'like', '%' . $this->searchQuery . '%');
-                    })
-                    ->orWhere('reference_number', 'like', '%' . $this->searchQuery . '%')
+                    ->orWhere('supplier', 'like', '%' . $this->searchQuery . '%')
+                    ->orWhere('invoice_number', 'like', '%' . $this->searchQuery . '%')
                     ->orWhere('notes', 'like', '%' . $this->searchQuery . '%');
                 });
             }
@@ -346,7 +368,9 @@ class PartsLifecycle extends Component
 
         } catch (\Exception $e) {
             Log::error('Error fetching part transactions: ' . $e->getMessage());
-            return [];
+            return \Illuminate\Pagination\Paginator::resolveCurrentPath()
+                ? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15)
+                : collect([]);
         }
     }
 

@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\MaintenanceEquipment;
 use App\Models\MaintenanceCorrective;
 use App\Models\MaintenancePlan;
+use App\Models\MaintenanceNote;
 use App\Models\MaintenanceArea;
 use App\Models\MaintenanceLine;
 use Carbon\Carbon;
@@ -185,6 +186,7 @@ class EquipmentReliability extends Component
             $labels = [];
             $plannedDowntime = [];
             $unplannedDowntime = [];
+            $availabilityData = [];
 
             foreach ($months as $month) {
                 $monthStart = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
@@ -199,18 +201,61 @@ class EquipmentReliability extends Component
                     ->sum('downtime_length');
 
                 // 2. Obter tempo de inatividade PLANEJADO (manutenção preventiva)
-                // Vamos considerar manutenções preventivas concluídas no mês
-                $preventiveMaintenance = MaintenancePlan::whereIn('equipment_id', $equipmentIds)
-                    ->where('status', 'completed')
+                // Agora considerando as notas de manutenção para status mais preciso
+                $planIds = MaintenancePlan::whereIn('equipment_id', $equipmentIds)
                     ->whereBetween('scheduled_date', [$monthStart, $monthEnd])
-                    ->get();
-
-                // Estimativa do tempo de inatividade planejada (usando estimated_duration_minutes ou um valor padrão)
-                $preventiveDowntime = 0;
-                foreach ($preventiveMaintenance as $plan) {
-                    // Converter minutos para horas
-                    $preventiveDowntime += ($plan->estimated_duration_minutes ?? 60) / 60;
+                    ->pluck('id')
+                    ->toArray();
+                
+                // Obter planos que têm notas de manutenção com status concluído
+                $completedPlanIds = [];
+                if (!empty($planIds)) {
+                    $completedPlanIds = MaintenanceNote::whereIn('maintenance_plan_id', $planIds)
+                        ->whereIn('status', ['completed'])
+                        ->pluck('maintenance_plan_id')
+                        ->unique()
+                        ->toArray();
                 }
+                
+                // Obter planos em andamento ou pendentes via notas
+                $activePlanIds = [];
+                if (!empty($planIds)) {
+                    $activePlanIds = MaintenanceNote::whereIn('maintenance_plan_id', $planIds)
+                        ->whereIn('status', ['in_progress', 'pending'])
+                        ->pluck('maintenance_plan_id')
+                        ->unique()
+                        ->toArray();
+                }
+                
+                // Obter detalhes dos planos concluídos
+                $completedPlans = MaintenancePlan::whereIn('id', $completedPlanIds)->get();
+                $activePlans = MaintenancePlan::whereIn('id', $activePlanIds)->get();
+                
+                // Calcular downtime planejado com base nas notas de manutenção
+                $completedDowntime = 0;
+                foreach ($completedPlans as $plan) {
+                    // Usar duração real da nota ou estimada do plano
+                    $completedNote = MaintenanceNote::where('maintenance_plan_id', $plan->id)
+                        ->where('status', 'completed')
+                        ->latest()
+                        ->first();
+                        
+                    if ($completedNote && $completedNote->duration_minutes > 0) {
+                        $completedDowntime += $completedNote->duration_minutes / 60; // Converter minutos para horas
+                    } else {
+                        $completedDowntime += ($plan->estimated_duration_minutes ?? 60) / 60;
+                    }
+                }
+                
+                // Tempo de inatividade planejado ATUAL (em andamento)
+                $activeDowntime = 0;
+                foreach ($activePlans as $plan) {
+                    // Considerar a duração estimada para planos em andamento
+                    $activeDowntime += ($plan->estimated_duration_minutes ?? 60) / 60;
+                }
+                
+                // Total de tempo de inatividade planejado
+                $preventiveDowntime = $completedDowntime + $activeDowntime;
 
                 // Cálculo da confiabilidade:
                 // Reliability = (Total Time - Unplanned Downtime) / Total Time * 100
@@ -219,13 +264,21 @@ class EquipmentReliability extends Component
                     ? (($totalHoursInMonth - $correctiveDowntime) / $totalHoursInMonth) * 100
                     : 100;
 
-                // Garantir que a confiabilidade esteja entre 0 e 100
+                // Cálculo da disponibilidade (Availability) considerando ambos os tipos de inatividade
+                // Availability = (Total Time - (Planned + Unplanned Downtime)) / Total Time * 100
+                $availability = $totalHoursInMonth > 0
+                    ? (($totalHoursInMonth - ($preventiveDowntime + $correctiveDowntime)) / $totalHoursInMonth) * 100
+                    : 100;
+
+                // Garantir que os valores estejam entre 0 e 100
                 $reliability = max(0, min(100, $reliability));
+                $availability = max(0, min(100, $availability));
 
                 $data[] = round($reliability, 2);
+                $availabilityData[] = round($availability, 2);
                 $labels[] = Carbon::createFromFormat('Y-m', $month)->format('M Y');
 
-                // Armazenar dados de tempo de inatividade para potencial uso futuro
+                // Armazenar dados de tempo de inatividade para uso nos gráficos
                 $plannedDowntime[] = round($preventiveDowntime, 2);
                 $unplannedDowntime[] = round($correctiveDowntime, 2);
             }
@@ -240,9 +293,35 @@ class EquipmentReliability extends Component
                         'borderColor' => 'rgba(54, 162, 235, 1)',
                         'borderWidth' => 1,
                         'tension' => 0.4
+                    ],
+                    [
+                        'label' => 'Availability (%)',
+                        'data' => $availabilityData,
+                        'backgroundColor' => 'rgba(75, 192, 192, 0.5)',
+                        'borderColor' => 'rgba(75, 192, 192, 1)',
+                        'borderWidth' => 1,
+                        'tension' => 0.4
+                    ],
+                    [
+                        'label' => 'Planned Downtime (h)',
+                        'data' => $plannedDowntime,
+                        'backgroundColor' => 'rgba(255, 159, 64, 0.5)',
+                        'borderColor' => 'rgba(255, 159, 64, 1)',
+                        'borderWidth' => 1,
+                        'tension' => 0.1,
+                        'yAxisID' => 'y1',
+                        'hidden' => true
+                    ],
+                    [
+                        'label' => 'Unplanned Downtime (h)',
+                        'data' => $unplannedDowntime,
+                        'backgroundColor' => 'rgba(255, 99, 132, 0.5)',
+                        'borderColor' => 'rgba(255, 99, 132, 1)',
+                        'borderWidth' => 1,
+                        'tension' => 0.1,
+                        'yAxisID' => 'y1',
+                        'hidden' => true
                     ]
-                    // Poderíamos adicionar datasets adicionais para mostrar downtime planejado vs não planejado
-                    // se for necessário no futuro
                 ]
             ];
         } catch (\Exception $e) {

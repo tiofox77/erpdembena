@@ -9,6 +9,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class MaintenanceEquipment extends Model
 {
     use HasFactory, SoftDeletes;
+    
+    /**
+     * The "booted" method of the model.
+     * Garante que todos os relacionamentos também filtrem registros excluídos
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('not_deleted', function($builder) {
+            $builder->whereNull('deleted_at');
+        });
+    }
 
     /**
      * The table associated with the model.
@@ -101,6 +114,28 @@ class MaintenanceEquipment extends Model
     {
         return $this->hasMany(EquipmentPart::class, 'maintenance_equipment_id');
     }
-
-
+    
+    /**
+     * Get the task logs associated with the equipment.
+     */
+    public function taskLogs()
+    {
+        return $this->hasMany(MaintenanceTaskLog::class, 'equipment_id');
+    }
+    
+    /**
+     * Get the completed task logs associated with the equipment.
+     */
+    public function completedTaskLogs()
+    {
+        return $this->taskLogs()->where('status', 'completed');
+    }
+    
+    /**
+     * Get the pending task logs associated with the equipment.
+     */
+    public function pendingTaskLogs()
+    {
+        return $this->taskLogs()->whereIn('status', ['pending', 'in_progress']);
+    }
 }

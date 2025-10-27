@@ -1,344 +1,494 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Log;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Computed;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RolePermissions extends Component
 {
     use WithPagination;
 
-    // URL properties
     #[Url(history: true)]
-    public $search = '';
+    public string $search = '';
 
     #[Url]
-    public $activeTab = 'roles';
+    public string $activeTab = 'roles';
 
     #[Url]
-    public $filterPermissionGroup = '';
+    public string $filterPermissionGroup = '';
 
-    // State properties
-    public $perPage = 30;
-    public $showRoleModal = false;
-    public $showPermissionModal = false;
-    public $showDeleteModal = false;
-    public $isEditing = false;
-    public $deleteType = '';
-    public $deleteId = null;
+    public int $perPage = 25;
+    public bool $showRoleModal = false;
+    public bool $showPermissionModal = false;
+    public bool $showDeleteModal = false;
+    public bool $showDuplicateModal = false;
+    public bool $isEditing = false;
+    public string $deleteType = '';
+    public ?int $deleteId = null;
+    public ?int $duplicateRoleId = null;
+    public string $duplicateRoleName = '';
 
-    // Form data
-    public $role = [
+    public array $roleData = [
+        'id' => null,
         'name' => '',
-        'permissions' => [],
+        'description' => ''
     ];
 
-    public $permission = [
+    public array $permissionData = [
+        'id' => null,
         'name' => '',
-        'guard_name' => 'web',
+        'description' => ''
     ];
 
-    // Temporary property for permission editing
-    public $selectedPermissions = [];
+    public array $selectedPermissions = [];
+    public string $permissionSearch = '';
+    public string $selectedModuleFilter = '';
 
-    public function mount()
+    public function mount(): void
     {
-        if (!auth()->user()->can('roles.manage')) {
-            return redirect()->route('maintenance.dashboard')->with('error', 'You do not have permission to access this page.');
+        // Use the same permission pattern as super-admin - allow multiple ways to access
+        if (!auth()->user()->canAny(['roles.manage', 'maintenance.roles.manage', 'system.roles.view', 'system.roles.edit'])) {
+            abort(403, 'Acesso negado. Apenas utilizadores com permissões de gestão de roles podem aceder a esta página.');
         }
-
-        $this->loadPermissions();
     }
 
-    /**
-     * Load permissions data
-     */
-    protected function loadPermissions()
-    {
-        // This method is intentionally left empty as permissions
-        // are loaded through the computed properties
-        // Permission groups are loaded in getPermissionGroupsProperty
-        // Roles are loaded in getRolesProperty
-        // Permissions are loaded in getPermissionsProperty
-    }
-
-    // Validation rules
-    protected function rules()
-    {
-        return [
-            'role.name' => 'required|string|max:255',
-            'permission.name' => 'required|string|max:255',
-            'permission.guard_name' => 'required|string|max:255',
-        ];
-    }
-
-    // Validation messages
-    protected function messages()
-    {
-        return [
-            'role.name.required' => 'The role name is required.',
-            'permission.name.required' => 'The permission name is required.',
-        ];
-    }
-
-    // Group permissions by module for easier viewing
     #[Computed]
-    public function getPermissionGroupsProperty()
+    public function roles()
     {
-        $permissions = Permission::all();
-        $groups = [];
+        return Role::query()
+            ->when($this->search, fn($query) => $query->where('name', 'like', '%' . $this->search . '%'))
+            ->with(['permissions' => fn($q) => $q->select('id', 'name')])
+            ->orderBy('name')
+            ->paginate($this->perPage);
+    }
+
+    #[Computed]
+    public function permissions()
+    {
+        return Permission::query()
+            ->when($this->search, fn($query) => $query->where('name', 'like', '%' . $this->search . '%'))
+            ->when($this->filterPermissionGroup, fn($query) => 
+                $query->where('name', 'like', $this->filterPermissionGroup . '.%')
+            )
+            ->orderBy('name')
+            ->paginate($this->perPage);
+    }
+
+    #[Computed]
+    public function permissionGroups(): array
+    {
+        $permissions = Permission::all(['id', 'name']);
+        $groups = [
+            'maintenance' => ['label' => '🔧 Manutenção', 'permissions' => []],
+            'mrp' => ['label' => '🏭 MRP (Produção)', 'permissions' => []],
+            'supplychain' => ['label' => '📦 Supply Chain', 'permissions' => []],
+            'hr' => ['label' => '👥 Recursos Humanos', 'permissions' => []],
+            'system' => ['label' => '⚙️ Sistema', 'permissions' => []],
+            'reports' => ['label' => '📊 Relatórios', 'permissions' => []],
+            'other' => ['label' => '❓ Outras', 'permissions' => []]
+        ];
 
         foreach ($permissions as $permission) {
-            $parts = explode('.', $permission->name);
-            $module = $parts[0] ?? 'other';
-
-            if (!isset($groups[$module])) {
-                $groups[$module] = [];
-            }
-
-            $groups[$module][] = $permission;
+            $module = $this->getPermissionModule($permission->name);
+            $groups[$module]['permissions'][] = $permission;
         }
 
-        ksort($groups);
-        return $groups;
+        return array_filter($groups, fn($group) => !empty($group['permissions']));
     }
 
-    // List of permission groups for filtering
-    #[Computed]
-    public function getPermissionGroupNamesProperty()
+    public function openCreateRoleModal(): void
     {
-        return array_keys($this->permissionGroups);
-    }
-
-    // Paginated list of roles
-    #[Computed]
-    public function getRolesProperty()
-    {
-        return Role::when($this->search, function ($query) {
-                return $query->where('name', 'like', '%' . $this->search . '%');
-            })
-            ->with('permissions')
-            ->orderBy('name')
-            ->paginate($this->perPage);
-    }
-
-    // Paginated list of permissions
-    #[Computed]
-    public function getPermissionsProperty()
-    {
-        return Permission::when($this->search, function ($query) {
-                return $query->where('name', 'like', '%' . $this->search . '%');
-            })
-            ->when($this->filterPermissionGroup, function ($query) {
-                return $query->where('name', 'like', $this->filterPermissionGroup . '.%');
-            })
-            ->orderBy('name')
-            ->paginate($this->perPage);
-    }
-
-    // Open modal to create role
-    public function openCreateRoleModal()
-    {
-        $this->reset('role', 'selectedPermissions');
+        $this->resetRoleData();
+        $this->selectedPermissions = [];
         $this->isEditing = false;
         $this->showRoleModal = true;
     }
 
-    // Open modal to edit role
-    public function editRole($id)
+    public function editRole(int $roleId): void
     {
         try {
-            $role = Role::with('permissions')->findOrFail($id);
-            $this->role = [
+            $role = Role::with('permissions')->findOrFail($roleId);
+            
+            $this->roleData = [
                 'id' => $role->id,
                 'name' => $role->name,
+                'description' => $role->description ?? ''
             ];
-
-            // Fill in selected permissions
+            
             $this->selectedPermissions = $role->permissions->pluck('id')->toArray();
-
             $this->isEditing = true;
             $this->showRoleModal = true;
+            
         } catch (\Exception $e) {
-            Log::error('Error editing role: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Role not found.');
+            $this->dispatch('notify', type: 'error', message: 'Role não encontrada.');
+            Log::error('Erro ao editar role: ' . $e->getMessage());
         }
     }
 
-    // Save role (create or update)
-    public function saveRole()
+    public function saveRole(): void
     {
         $this->validate([
-            'role.name' => 'required|string|max:255',
+            'roleData.name' => 'required|string|max:255|unique:roles,name,' . ($this->roleData['id'] ?? 'NULL'),
+            'roleData.description' => 'nullable|string|max:500'
         ]);
 
         try {
-            // Check if selectedPermissions contains valid IDs
-            if (!empty($this->selectedPermissions)) {
-                // Filter only valid numeric IDs
-                $this->selectedPermissions = array_filter($this->selectedPermissions, function($id) {
-                    return is_numeric($id);
-                });
+            DB::beginTransaction();
 
-                // Check if permissions exist in the database
-                $validPermissionIds = Permission::whereIn('id', $this->selectedPermissions)->pluck('id')->toArray();
-                $this->selectedPermissions = $validPermissionIds;
-            }
-
-            if ($this->isEditing) {
-                $role = Role::findOrFail($this->role['id']);
-                $role->name = $this->role['name'];
-                $role->save();
-
-                // Sync permissions with valid IDs
-                $role->syncPermissions($this->selectedPermissions);
-
-                $message = 'Role updated successfully.';
-                $notificationType = 'info';
+            if ($this->isEditing && $this->roleData['id']) {
+                $role = Role::findOrFail($this->roleData['id']);
+                $role->update([
+                    'name' => $this->roleData['name'],
+                    'description' => $this->roleData['description']
+                ]);
+                $message = "Role '{$role->name}' actualizada com sucesso.";
             } else {
                 $role = Role::create([
-                    'name' => $this->role['name'],
-                    'guard_name' => 'web',
+                    'name' => $this->roleData['name'],
+                    'description' => $this->roleData['description'],
+                    'guard_name' => 'web'
                 ]);
-
-                // Assign permissions with valid IDs
-                if (!empty($this->selectedPermissions)) {
-                    $role->syncPermissions($this->selectedPermissions);
-                }
-
-                $message = 'Role created successfully.';
-                $notificationType = 'success';
+                $message = "Role '{$role->name}' criada com sucesso.";
             }
 
-            $this->dispatch('notify', type: $notificationType, message: $message);
-            $this->showRoleModal = false;
-            $this->reset('role', 'selectedPermissions');
+            if (!empty($this->selectedPermissions)) {
+                $validPermissions = Permission::whereIn('id', $this->selectedPermissions)->pluck('id');
+                $role->syncPermissions($validPermissions);
+            } else {
+                $role->syncPermissions([]);
+            }
+
+            DB::commit();
+            
+            $this->dispatch('notify', type: 'success', message: $message);
+            $this->closeModal();
+            $this->resetPage();
+
         } catch (\Exception $e) {
-            Log::error('Error saving role: ' . $e->getMessage());
-            Log::error('selectedPermissions: ' . json_encode($this->selectedPermissions));
-            $this->dispatch('notify', type: 'error', message: 'Error saving role: ' . $e->getMessage());
+            DB::rollBack();
+            $this->dispatch('notify', type: 'error', message: 'Erro ao guardar role: ' . $e->getMessage());
+            Log::error('Erro ao guardar role: ' . $e->getMessage());
         }
     }
 
-    // Open modal to create permission
-    public function openCreatePermissionModal()
+    public function openCreatePermissionModal(): void
     {
-        $this->reset('permission');
+        $this->resetPermissionData();
         $this->isEditing = false;
         $this->showPermissionModal = true;
     }
 
-    // Open modal to edit permission
-    public function editPermission($id)
+    public function editPermission(int $permissionId): void
     {
         try {
-            $permission = Permission::findOrFail($id);
-            $this->permission = [
+            $permission = Permission::findOrFail($permissionId);
+            
+            $this->permissionData = [
                 'id' => $permission->id,
                 'name' => $permission->name,
-                'guard_name' => $permission->guard_name,
+                'description' => $permission->description ?? ''
             ];
-
+            
             $this->isEditing = true;
             $this->showPermissionModal = true;
+            
         } catch (\Exception $e) {
-            Log::error('Error editing permission: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Permission not found.');
+            $this->dispatch('notify', type: 'error', message: 'Permissão não encontrada.');
+            Log::error('Erro ao editar permissão: ' . $e->getMessage());
         }
     }
 
-    // Save permission (create or update)
-    public function savePermission()
+    public function savePermission(): void
     {
         $this->validate([
-            'permission.name' => 'required|string|max:255',
-            'permission.guard_name' => 'required|string|max:255',
+            'permissionData.name' => 'required|string|max:255|unique:permissions,name,' . ($this->permissionData['id'] ?? 'NULL'),
+            'permissionData.description' => 'nullable|string|max:500'
         ]);
 
         try {
-            if ($this->isEditing) {
-                $permission = Permission::findOrFail($this->permission['id']);
-                $permission->name = $this->permission['name'];
-                $permission->guard_name = $this->permission['guard_name'];
-                $permission->save();
-
-                $message = 'Permission updated successfully.';
-                $notificationType = 'info';
-            } else {
-                Permission::create([
-                    'name' => $this->permission['name'],
-                    'guard_name' => $this->permission['guard_name'],
+            if ($this->isEditing && $this->permissionData['id']) {
+                $permission = Permission::findOrFail($this->permissionData['id']);
+                $permission->update([
+                    'name' => $this->permissionData['name'],
+                    'description' => $this->permissionData['description']
                 ]);
-
-                $message = 'Permission created successfully.';
-                $notificationType = 'success';
+                $message = "Permissão '{$permission->name}' actualizada com sucesso.";
+            } else {
+                $permission = Permission::create([
+                    'name' => $this->permissionData['name'],
+                    'description' => $this->permissionData['description'],
+                    'guard_name' => 'web'
+                ]);
+                $message = "Permissão '{$permission->name}' criada com sucesso.";
             }
 
-            $this->dispatch('notify', type: $notificationType, message: $message);
-            $this->showPermissionModal = false;
-            $this->reset('permission');
+            $this->dispatch('notify', type: 'success', message: $message);
+            $this->closeModal();
+            $this->resetPage();
+
         } catch (\Exception $e) {
-            Log::error('Error saving permission: ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error saving permission: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Erro ao guardar permissão: ' . $e->getMessage());
+            Log::error('Erro ao guardar permissão: ' . $e->getMessage());
         }
     }
 
-    // Open delete confirmation modal
-    public function confirmDelete($id, $type)
+    public function delete(int $id = null, string $type = 'role'): void
+    {
+        if ($id) {
+            $this->confirmDelete($id, $type);
+        } else {
+            $this->deleteConfirmed();
+        }
+    }
+
+    public function confirmDelete(int $id, string $type): void
     {
         $this->deleteId = $id;
         $this->deleteType = $type;
         $this->showDeleteModal = true;
     }
 
-    // Process confirmed deletion
-    public function deleteConfirmed()
+    public function deleteConfirmed(): void
     {
         try {
             if ($this->deleteType === 'role') {
                 $role = Role::findOrFail($this->deleteId);
-
-                // Prevent deletion of critical roles
+                
                 if (in_array($role->name, ['super-admin', 'admin'])) {
-                    throw new \Exception('Cannot delete system roles.');
+                    throw new \Exception('Não é possível eliminar roles críticas do sistema.');
                 }
-
+                
                 $role->delete();
-                $message = 'Role deleted successfully.';
-            } else if ($this->deleteType === 'permission') {
+                $message = "Role '{$role->name}' eliminada com sucesso.";
+                
+            } elseif ($this->deleteType === 'permission') {
                 $permission = Permission::findOrFail($this->deleteId);
                 $permission->delete();
-                $message = 'Permission deleted successfully.';
+                $message = "Permissão '{$permission->name}' eliminada com sucesso.";
             }
 
-            $this->dispatch('notify', type: 'warning', message: $message);
-            $this->showDeleteModal = false;
-            $this->reset(['deleteId', 'deleteType']);
+            $this->dispatch('notify', type: 'success', message: $message);
+            $this->closeModal();
+            $this->resetPage();
+
         } catch (\Exception $e) {
-            Log::error('Error deleting ' . $this->deleteType . ': ' . $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error deleting: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Erro ao eliminar: ' . $e->getMessage());
+            Log::error('Erro ao eliminar ' . $this->deleteType . ': ' . $e->getMessage());
         }
     }
 
-    // Close modals
-    public function closeModal()
+    public function selectAllPermissions(): void
+    {
+        $this->selectedPermissions = Permission::pluck('id')->toArray();
+        $this->dispatch('notify', type: 'info', message: 'Todas as permissões seleccionadas.');
+    }
+
+    public function deselectAllPermissions(): void
+    {
+        $this->selectedPermissions = [];
+        $this->dispatch('notify', type: 'info', message: 'Todas as permissões desseleccionadas.');
+    }
+
+    public function toggleModulePermissions(string $module): void
+    {
+        // Usar a mesma lógica de agrupamento do método permissionGroups
+        $allPermissions = Permission::all(['id', 'name']);
+        $modulePermissions = [];
+        
+        foreach ($allPermissions as $permission) {
+            if ($this->getPermissionModule($permission->name) === $module) {
+                $modulePermissions[] = $permission->id;
+            }
+        }
+        
+        $allSelected = !array_diff($modulePermissions, $this->selectedPermissions);
+        
+        if ($allSelected) {
+            $this->selectedPermissions = array_diff($this->selectedPermissions, $modulePermissions);
+            $message = "Permissões do módulo {$this->getModuleLabel($module)} desseleccionadas.";
+        } else {
+            $this->selectedPermissions = array_unique(array_merge($this->selectedPermissions, $modulePermissions));
+            $message = "Permissões do módulo {$this->getModuleLabel($module)} seleccionadas.";
+        }
+        
+        $this->dispatch('notify', type: 'info', message: $message);
+    }
+
+    public function openDuplicateModal(int $roleId): void
+    {
+        $role = Role::findOrFail($roleId);
+        $this->duplicateRoleId = $roleId;
+        $this->duplicateRoleName = $role->name . ' - Cópia';
+        $this->showDuplicateModal = true;
+    }
+
+    public function duplicateRole(): void
+    {
+        $this->validate([
+            'duplicateRoleName' => 'required|string|max:255|unique:roles,name'
+        ], [
+            'duplicateRoleName.required' => 'O nome da função é obrigatório.',
+            'duplicateRoleName.unique' => 'Já existe uma função com este nome.',
+            'duplicateRoleName.max' => 'O nome da função não pode ter mais de 255 caracteres.'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $originalRole = Role::with('permissions')->findOrFail($this->duplicateRoleId);
+            
+            $newRole = Role::create([
+                'name' => $this->duplicateRoleName,
+                'guard_name' => $originalRole->guard_name ?? 'web'
+            ]);
+
+            // Copiar todas as permissões da função original
+            $newRole->syncPermissions($originalRole->permissions);
+
+            DB::commit();
+
+            $this->dispatch('notify', type: 'success', message: 'Função duplicada com sucesso!');
+            $this->closeDuplicateModal();
+            $this->resetPage();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('notify', type: 'error', message: 'Erro ao duplicar função: ' . $e->getMessage());
+            Log::error('Erro ao duplicar função: ' . $e->getMessage());
+        }
+    }
+
+    public function closeDuplicateModal(): void
+    {
+        $this->showDuplicateModal = false;
+        $this->duplicateRoleId = null;
+        $this->duplicateRoleName = '';
+        $this->resetErrorBag(['duplicateRoleName']);
+    }
+
+    public function closeModal(): void
     {
         $this->showRoleModal = false;
         $this->showPermissionModal = false;
         $this->showDeleteModal = false;
-        $this->reset(['role', 'permission', 'selectedPermissions', 'deleteId', 'deleteType']);
+        $this->showDuplicateModal = false;
+        $this->resetRoleData();
+        $this->resetPermissionData();
+        $this->selectedPermissions = [];
+        $this->deleteId = null;
+        $this->deleteType = '';
+        $this->duplicateRoleId = null;
+        $this->duplicateRoleName = '';
+        $this->isEditing = false;
     }
 
-    // Method for real-time validation
-    public function updated($propertyName)
+    private function resetRoleData(): void
     {
-        $this->validateOnly($propertyName);
+        $this->roleData = [
+            'id' => null,
+            'name' => '',
+            'description' => ''
+        ];
+    }
+
+    private function resetPermissionData(): void
+    {
+        $this->permissionData = [
+            'id' => null,
+            'name' => '',
+            'description' => ''
+        ];
+    }
+
+    private function getPermissionModule(string $permissionName): string
+    {
+        // Mapeamento correto baseado na análise completa
+        $moduleMapping = [
+            'maintenance' => [
+                'maintenance.', 'equipment.', 'preventive.', 'corrective.',
+                'parts.', 'areas.', 'lines.', 'technicians.', 'task.',
+                'stocks.', 'stock.', 'holidays.',
+                'history.equipment.', 'history.maintenance.', 'history.parts.'
+            ],
+            'mrp' => [
+                'mrp.', 'production.', 'manufacturing.',
+                'planning.', 'bom.', 'workorder.'
+            ],
+            'supplychain' => [
+                'supplychain.', 'inventory.', 'purchase.',
+                'supplier.', 'warehouse.', 'goods.'
+            ],
+            'hr' => [
+                'hr.', 'payroll.', 'attendance.', 'employee.',
+                'department.', 'position.', 'leave.', 'performance.',
+                'contracts.', 'training.'
+            ],
+            'system' => [
+                'system.', 'admin.', 'users.', 'roles.',
+                'permissions.', 'settings.', 'config.',
+                'history.team.'
+            ],
+            'reports' => [
+                'reports.', 'dashboard.'
+            ]
+        ];
+
+        // Determinar módulo correto
+        foreach ($moduleMapping as $module => $prefixes) {
+            foreach ($prefixes as $prefix) {
+                if (str_starts_with($permissionName, $prefix)) {
+                    // Casos especiais para reports específicos de módulos
+                    if ($module === 'reports' && (
+                        str_contains($permissionName, 'hr.reports.') ||
+                        str_contains($permissionName, 'supplychain.reports.') ||
+                        str_contains($permissionName, 'mrp.reports.')
+                    )) {
+                        // Manter report no módulo de origem
+                        if (str_contains($permissionName, 'hr.reports.')) return 'hr';
+                        elseif (str_contains($permissionName, 'supplychain.reports.')) return 'supplychain';
+                        elseif (str_contains($permissionName, 'mrp.reports.')) return 'mrp';
+                    }
+                    return $module;
+                }
+            }
+        }
+
+        return 'other';
+    }
+
+    private function getModuleLabel(string $module): string
+    {
+        $labels = [
+            'maintenance' => '🔧 Manutenção',
+            'mrp' => '🏭 MRP (Produção)',
+            'supplychain' => '📦 Supply Chain',
+            'hr' => '👥 Recursos Humanos',
+            'system' => '⚙️ Sistema',
+            'reports' => '📊 Relatórios',
+            'other' => '❓ Outras'
+        ];
+        
+        return $labels[$module] ?? ucfirst($module);
+    }
+
+    public function updated($propertyName): void
+    {
+        if (str_starts_with($propertyName, 'roleData.') || str_starts_with($propertyName, 'permissionData.')) {
+            $this->validateOnly($propertyName);
+        }
+        
+        if ($propertyName === 'duplicateRoleName') {
+            $this->validateOnly('duplicateRoleName');
+        }
     }
 
     public function render()

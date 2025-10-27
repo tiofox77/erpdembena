@@ -2,89 +2,205 @@
     <div class="py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                <!-- Header and Add Button -->
                 <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-semibold">Task Management</h1>
+                    <h1 class="text-2xl font-semibold flex items-center">
+                        <i class="fas fa-tasks mr-3 text-gray-700"></i> Task Management
+                    </h1>
                     <button
                         wire:click="createTask"
                         type="button"
-                        class="bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium py-2 px-4 rounded flex items-center"
+                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded flex items-center transition-colors duration-150"
                     >
-                        <svg class="w-5 h-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <i class="fas fa-plus-circle mr-2"></i>
                         Add New Task
                     </button>
                 </div>
 
-                <div class="mb-4">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                <!-- Filter Section -->
+                <div class="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-filter mr-2 text-blue-500"></i> Filters and Search
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="search" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-search mr-1 text-gray-500"></i> Search
+                            </label>
+                            <div class="relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input
+                                    wire:model.live.debounce.300ms="search"
+                                    type="text"
+                                    id="search"
+                                    placeholder="Search tasks..."
+                                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                >
+                            </div>
                         </div>
-                        <input wire:model.live="search" type="text" placeholder="Search tasks..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+
+                        <div>
+                            <label for="perPage" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-list-ol mr-1 text-gray-500"></i> Items Per Page
+                            </label>
+                            <div class="relative rounded-md shadow-sm">
+                                <select
+                                    id="perPage"
+                                    wire:model.live="perPage"
+                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                >
+                                    <option value="10">10 per page</option>
+                                    <option value="25">25 per page</option>
+                                    <option value="50">50 per page</option>
+                                    <option value="100">100 per page</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-3">
+                        <button
+                            wire:click="clearFilters"
+                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            <i class="fas fa-times-circle mr-1"></i> Clear Filters
+                        </button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Name
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Description
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Created
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Updated
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($tasks as $task)
+                <!-- Tasks Table -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg w-full border border-gray-200">
+                    <div class="overflow-x-auto w-full">
+                        <table class="min-w-full divide-y divide-gray-200 w-full">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $task->title }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        {{ $task->description }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $task->created_at->format('M d, Y g:i A') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $task->updated_at->format('M d, Y g:i A') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button wire:click="editTask({{ $task->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                        </button>
-                                        <button wire:click="delete({{ $task->id }})" wire:confirm="Are you sure you want to delete this task?" class="text-red-600 hover:text-red-900">
-                                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('title')">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-clipboard-list text-gray-400 mr-1"></i>
+                                            <span>Task Name</span>
+                                            @if($sortField === 'title')
+                                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
+                                            @else
+                                                <i class="fas fa-sort text-gray-300"></i>
+                                            @endif
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-align-left text-gray-400 mr-1"></i>
+                                            <span>Description</span>
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('created_at')">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-calendar-plus text-gray-400 mr-1"></i>
+                                            <span>Created</span>
+                                            @if($sortField === 'created_at')
+                                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
+                                            @else
+                                                <i class="fas fa-sort text-gray-300"></i>
+                                            @endif
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('updated_at')">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-calendar-check text-gray-400 mr-1"></i>
+                                            <span>Updated</span>
+                                            @if($sortField === 'updated_at')
+                                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
+                                            @else
+                                                <i class="fas fa-sort text-gray-300"></i>
+                                            @endif
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-cogs text-gray-400 mr-1"></i>
+                                            <span>Actions</span>
+                                        </div>
+                                    </th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                                        No tasks found.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($tasks as $task)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="text-sm font-medium text-gray-900">{{ $task->title }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-500 truncate max-w-xs">{{ $task->description }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500 flex items-center">
+                                                <i class="far fa-calendar-alt mr-1 text-gray-400"></i>
+                                                {{ Carbon\Carbon::parse($task->created_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500 flex items-center">
+                                                <i class="far fa-clock mr-1 text-gray-400"></i>
+                                                {{ Carbon\Carbon::parse($task->updated_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex justify-start space-x-2">
+                                                <button
+                                                    wire:click="viewTask({{ $task->id }})"
+                                                    class="text-blue-600 hover:text-blue-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-100"
+                                                    title="View Details"
+                                                >
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button
+                                                    wire:click="editTask({{ $task->id }})"
+                                                    class="text-indigo-600 hover:text-indigo-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-indigo-100"
+                                                    title="Edit"
+                                                >
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    wire:click="delete({{ $task->id }})"
+                                                    wire:confirm="Are you sure you want to delete this task?"
+                                                    class="text-red-600 hover:text-red-900 w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-100"
+                                                    title="Delete"
+                                                >
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                            <div class="flex flex-col items-center justify-center py-8">
+                                                <div class="bg-gray-100 rounded-full p-3 mb-4">
+                                                    <i class="fas fa-clipboard-list text-gray-400 text-4xl"></i>
+                                                </div>
+                                                <p class="text-lg font-medium">No tasks found</p>
+                                                <p class="text-sm text-gray-500 mt-1 flex items-center">
+                                                    @if($search)
+                                                        <i class="fas fa-filter mr-1"></i> Try adjusting your search filters or
+                                                        <button
+                                                            wire:click="clearFilters"
+                                                            class="ml-1 text-blue-600 hover:text-blue-800 underline flex items-center"
+                                                        >
+                                                            <i class="fas fa-times-circle mr-1"></i> clear all filters
+                                                        </button>
+                                                    @else
+                                                        <i class="fas fa-info-circle mr-1"></i> Click "Add New Task" to create your first task
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="mt-4">
@@ -94,27 +210,140 @@
         </div>
     </div>
 
-    <!-- Modal CRUD implementado conforme o guia -->
+    <!-- View Task Modal -->
+    @if($showViewModal)
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
+            <!-- Enhanced Header with Icon -->
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 p-2 rounded-full mr-3">
+                        <i class="fas fa-clipboard-check text-lg"></i>
+                    </span>
+                    Task Details
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <button
+                        type="button"
+                        class="bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors duration-150 p-2 rounded-full"
+                        wire:click="editTask({{ $viewingTask->id }})"
+                        title="Edit Task"
+                    >
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button
+                        type="button"
+                        class="bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-150 p-2 rounded-full"
+                        wire:click="closeViewModal"
+                        title="Close"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Task Summary Card -->
+            <div class="bg-gray-50 rounded-lg mb-6 shadow-sm">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+                        <div class="flex items-center mb-3 md:mb-0">
+                            <span class="ml-4 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                                <i class="fas fa-hashtag mr-1"></i>
+                                ID: {{ $viewingTask->id }}
+                            </span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="far fa-calendar-alt mr-2"></i>
+                            <span>Created: {{ Carbon\Carbon::parse($viewingTask->created_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Primary Task Fields Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                    <div class="flex items-start">
+                        <span class="bg-blue-50 p-2 rounded-full text-blue-600 mr-3">
+                            <i class="fas fa-clipboard-list"></i>
+                        </span>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase">Task Name</p>
+                            <p class="text-sm font-medium">{{ $viewingTask->title }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="bg-blue-50 p-2 rounded-full text-blue-600 mr-3">
+                            <i class="fas fa-clock"></i>
+                        </span>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase">Last Updated</p>
+                            <p class="text-sm font-medium">{{ Carbon\Carbon::parse($viewingTask->updated_at)->format(App\Models\Setting::getSystemDateTimeFormat()) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Content Section -->
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-6">
+                <div class="bg-gray-50 px-4 py-2 rounded-t-lg flex items-center">
+                    <i class="fas fa-align-left text-gray-600 mr-2"></i>
+                    <h4 class="text-sm font-semibold text-gray-700">Description</h4>
+                </div>
+                <div class="p-4 h-40 overflow-y-auto">
+                    @if($viewingTask->description)
+                        <p class="text-sm leading-relaxed">{{ $viewingTask->description }}</p>
+                    @else
+                        <div class="flex items-center justify-center h-full text-gray-400">
+                            <i class="fas fa-file-alt mr-2"></i>
+                            <span>No description provided</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Footer Action Buttons -->
+            <div class="flex justify-end space-x-3 border-t border-gray-200 pt-4">
+                <button
+                    type="button"
+                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 flex items-center"
+                    wire:click="closeViewModal"
+                >
+                    <i class="fas fa-times mr-2"></i> Close
+                </button>
+                <button
+                    type="button"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
+                    wire:click="editTask({{ $viewingTask->id }})"
+                >
+                    <i class="fas fa-edit mr-2"></i> Edit Task
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Edit/Create Modal -->
     @if($showModal)
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <!-- Cabeçalho do modal -->
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium">
-                    <i class="fas {{ $taskId ? 'fa-edit' : 'fa-plus-circle' }} mr-2"></i>
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-4">
+                <h3 class="text-lg font-medium flex items-center">
+                    <span class="bg-indigo-100 text-indigo-600 p-2 rounded-full mr-3">
+                        <i class="fas {{ $taskId ? 'fa-edit' : 'fa-plus-circle' }} text-lg"></i>
+                    </span>
                     {{ $taskId ? 'Edit Task' : 'Create New Task' }}
                 </h3>
                 <button wire:click="closeModal" class="text-gray-400 hover:text-gray-500">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
 
             <!-- Sumário de erros -->
             @if($errors->any())
                 <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-                    <p class="font-bold"><i class="fas fa-exclamation-circle mr-2"></i>Please correct the following errors:</p>
+                    <p class="font-bold flex items-center">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        Please correct the following errors:
+                    </p>
                     <ul class="mt-2 list-disc list-inside text-sm">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -123,82 +352,86 @@
                 </div>
             @endif
 
-            <!-- Formulário -->
+            <!-- Form Section -->
             <form wire:submit.prevent="save">
-                <div class="space-y-4">
-                    <!-- Task Name -->
-                    <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700">Task Name <span class="text-red-500">*</span></label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <input
-                                type="text"
-                                id="title"
-                                wire:model.live="title"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('title') border-red-300 text-red-900 @enderror"
-                                placeholder="Enter task name"
-                            >
+                <div class="bg-gray-50 p-3 rounded-md mb-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-blue-500"></i> Task Information
+                    </h4>
+                    <div class="space-y-4">
+                        <!-- Task Name -->
+                        <div>
+                            <label for="title" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-clipboard-list mr-1 text-gray-500"></i>
+                                Task Name <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <input
+                                    type="text"
+                                    id="title"
+                                    wire:model.live="title"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2 @error('title') border-red-300 text-red-900 @enderror"
+                                    placeholder="Enter task name"
+                                >
+                                @error('title')
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-exclamation-circle text-red-500"></i>
+                                    </div>
+                                @enderror
+                            </div>
                             @error('title')
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-                        @error('title')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
 
-                    <!-- Description -->
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <textarea
-                                id="description"
-                                wire:model.live="description"
-                                rows="4"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('description') border-red-300 text-red-900 @enderror"
-                                placeholder="Enter task description"
-                            ></textarea>
+                        <!-- Description -->
+                        <div>
+                            <label for="description" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                <i class="fas fa-align-left mr-1 text-gray-500"></i>
+                                Description
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <textarea
+                                    id="description"
+                                    wire:model.live="description"
+                                    rows="4"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2 @error('description') border-red-300 text-red-900 @enderror"
+                                    placeholder="Enter detailed description of the task..."
+                                ></textarea>
+                                @error('description')
+                                    <div class="absolute top-0 right-0 pr-3 pt-2 flex items-center pointer-events-none">
+                                        <i class="fas fa-exclamation-circle text-red-500"></i>
+                                    </div>
+                                @enderror
+                            </div>
                             @error('description')
-                                <div class="absolute top-0 right-0 pr-3 pt-2 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-                        @error('description')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
 
-                <!-- Botões de ação -->
+                <!-- Action Buttons -->
                 <div class="flex justify-end space-x-2 mt-6">
                     <button
                         type="button"
                         wire:click="closeModal"
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
                     >
-                        <i class="fas fa-times mr-1"></i> Cancel
+                        <i class="fas fa-times mr-2"></i> Cancel
                     </button>
                     <button
                         type="submit"
-                        class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150 flex items-center"
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-50 cursor-not-allowed"
                     >
                         <span wire:loading.remove wire:target="save">
-                            <i class="fas {{ $taskId ? 'fa-save' : 'fa-plus' }} mr-1"></i>
+                            <i class="fas {{ $taskId ? 'fa-save' : 'fa-plus' }} mr-2"></i>
                             {{ $taskId ? 'Update' : 'Create' }}
                         </span>
                         <span wire:loading wire:target="save">
-                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
                             Processing...
                         </span>
                     </button>
@@ -221,24 +454,44 @@
 
                 // Choose color based on notification type
                 let bgColor = 'bg-blue-500'; // default info color
-                if (type === 'success') bgColor = 'bg-green-500';
-                else if (type === 'error') bgColor = 'bg-red-500';
-                else if (type === 'warning') bgColor = 'bg-yellow-500';
+                let icon = 'fa-info-circle';
 
-                notificationElement.className = `fixed top-4 right-4 z-50 p-4 rounded-md ${bgColor} text-white max-w-xs shadow-lg transition-opacity duration-500`;
+                if (type === 'success') {
+                    bgColor = 'bg-green-500';
+                    icon = 'fa-check-circle';
+                }
+                else if (type === 'error') {
+                    bgColor = 'bg-red-500';
+                    icon = 'fa-exclamation-circle';
+                }
+                else if (type === 'warning') {
+                    bgColor = 'bg-yellow-500';
+                    icon = 'fa-exclamation-triangle';
+                }
+
+                notificationElement.className = `fixed top-4 right-4 z-50 p-4 rounded-md ${bgColor} text-white max-w-xs shadow-lg transition-opacity duration-500 flex items-start`;
+
+                // Add icon
+                const iconElement = document.createElement('i');
+                iconElement.className = `fas ${icon} mr-3 mt-0.5`;
+                notificationElement.appendChild(iconElement);
+
+                const contentElement = document.createElement('div');
 
                 // Add title if provided
                 if (title) {
                     const titleElement = document.createElement('div');
                     titleElement.className = 'font-bold';
                     titleElement.textContent = title;
-                    notificationElement.appendChild(titleElement);
+                    contentElement.appendChild(titleElement);
                 }
 
                 // Add message
                 const messageElement = document.createElement('div');
                 messageElement.textContent = message;
-                notificationElement.appendChild(messageElement);
+                contentElement.appendChild(messageElement);
+
+                notificationElement.appendChild(contentElement);
 
                 document.body.appendChild(notificationElement);
 
@@ -255,6 +508,18 @@
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     Livewire.dispatch('escape-pressed');
+                }
+            });
+
+            // Listen for filters-cleared event
+            Livewire.on('filters-cleared', () => {
+                // Optional: Add visual feedback
+                const clearBtn = document.querySelector('button[wire\\:click="clearFilters"]');
+                if (clearBtn) {
+                    clearBtn.classList.add('bg-blue-50');
+                    setTimeout(() => {
+                        clearBtn.classList.remove('bg-blue-50');
+                    }, 300);
                 }
             });
         });

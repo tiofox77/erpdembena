@@ -22,8 +22,40 @@ class UpdateNotification extends Component
         ];
     }
 
+    /**
+     * Verifica se o usuário atual tem permissão para ver atualizações
+     */
+    private function userCanSeeUpdates()
+    {
+        // Verifica se o usuário está logado
+        if (!auth()->check()) {
+            return false;
+        }
+
+        // Verifica se o usuário tem role admin ou super-admin
+        $user = auth()->user();
+
+        // Para sistemas com Spatie Permission
+        if (method_exists($user, 'hasRole')) {
+            return $user->hasRole(['admin', 'super-admin']);
+        }
+
+        // Para sistemas com campo role na tabela users
+        if (isset($user->role)) {
+            return in_array($user->role, ['admin', 'super-admin']);
+        }
+
+        return false;
+    }
+
     public function mount()
     {
+        // Sai da função se o usuário não tem permissão para ver atualizações
+        if (!$this->userCanSeeUpdates()) {
+            $this->updateAvailable = false;
+            return;
+        }
+
         // First try to get version from database, then fall back to config
         try {
             $dbVersion = Setting::get('app_version');

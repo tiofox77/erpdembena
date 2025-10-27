@@ -14,7 +14,16 @@
                         </div>
                     @endif
 
-                    {{ __('You are logged in!') }}
+                    <p class="mb-4">{{ __('You are logged in!') }}</p>
+                    
+                    <div class="mt-4">
+                        <h5 class="mb-3">{{ __('Quick Links') }}</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ url('/hr-guide.html') }}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-book-open mr-2"></i> {{ __('messages.hr_guide') }}
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

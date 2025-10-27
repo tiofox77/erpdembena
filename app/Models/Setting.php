@@ -223,4 +223,24 @@ class Setting extends Model
             })->toArray();
         });
     }
+    
+    /**
+     * Obter o formato de data padrão configurado no sistema
+     *
+     * @return string
+     */
+    public static function getSystemDateFormat()
+    {
+        return self::get('date_format', 'd/m/Y');
+    }
+    
+    /**
+     * Obter o formato de data e hora padrão configurado no sistema
+     *
+     * @return string
+     */
+    public static function getSystemDateTimeFormat()
+    {
+        return self::get('date_format', 'd/m/Y') . ' H:i';
+    }
 }

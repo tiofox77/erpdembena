@@ -1,0 +1,15 @@
+# Proteger cleanup_system.php
+# Copie este conteúdo para .htaccess na produção se necessário
+
+<Files "cleanup_system.php">
+    # Permitir apenas para IPs específicos (opcional)
+    # Order Deny,Allow
+    # Deny from all
+    # Allow from 192.168.1.100
+    
+    # Ou exigir autenticação
+    # AuthType Basic
+    # AuthName "Área Restrita"
+    # AuthUserFile /path/to/.htpasswd
+    # Require valid-user
+</Files>

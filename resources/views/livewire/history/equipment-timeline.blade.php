@@ -59,7 +59,7 @@
                     </div>
                     <div class="flex justify-between border-b border-gray-100 pb-1">
                         <span class="text-sm font-medium text-gray-500">Purchase Date:</span>
-                        <span class="text-sm text-gray-900">{{ $equipment['purchase_date'] }}</span>
+                        <span class="text-sm text-gray-900">{{ \Carbon\Carbon::parse($equipment['purchase_date'])->format(\App\Models\Setting::getSystemDateFormat()) }}</span>
                     </div>
                 </div>
             </div>
@@ -74,11 +74,11 @@
                     </div>
                     <div class="flex justify-between border-b border-gray-100 pb-1">
                         <span class="text-sm font-medium text-gray-500">Last Maintenance:</span>
-                        <span class="text-sm text-gray-900">{{ $equipment['last_maintenance'] }}</span>
+                        <span class="text-sm text-gray-900">{{ $equipment['last_maintenance'] ? \Carbon\Carbon::parse($equipment['last_maintenance'])->format(\App\Models\Setting::getSystemDateTimeFormat()) : 'N/A' }}</span>
                     </div>
                     <div class="flex justify-between border-b border-gray-100 pb-1">
                         <span class="text-sm font-medium text-gray-500">Next Scheduled:</span>
-                        <span class="text-sm text-gray-900">{{ $equipment['next_maintenance'] }}</span>
+                        <span class="text-sm text-gray-900">{{ $equipment['next_maintenance'] ? \Carbon\Carbon::parse($equipment['next_maintenance'])->format(\App\Models\Setting::getSystemDateFormat()) : 'N/A' }}</span>
                     </div>
                     <div class="flex justify-between border-b border-gray-100 pb-1">
                         <span class="text-sm font-medium text-gray-500">Notes:</span>
@@ -112,7 +112,7 @@
                                         <i class="fas fa-{{ $event['icon'] }} mr-1"></i>
                                         {{ $event['type'] }}
                                     </span>
-                                    <span class="text-sm text-gray-600">{{ $event['date'] }}</span>
+                                    <span class="text-sm text-gray-600">{{ \Carbon\Carbon::parse($event['date'])->format(\App\Models\Setting::getSystemDateTimeFormat()) }}</span>
                                 </div>
 
                                 <h4 class="text-md font-medium text-gray-900 mb-1">{{ $event['title'] }}</h4>

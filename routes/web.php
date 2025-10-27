@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Services\UserDashboardService;
 use App\Livewire\MaintenanceDashboard;
 use App\Livewire\MaintenanceEquipment;
 use App\Livewire\MaintenanceTaskComponent;
@@ -23,6 +24,24 @@ use App\Livewire\EquipmentParts;
 // Rotas de autenticação
 Auth::routes();
 
+// Rota para alterar o idioma
+Route::get('/language/{locale}', [\App\Http\Controllers\LanguageController::class, 'changeLocale'])->name('change.locale');
+
+// Visualizar recibo de salário em HTML
+Route::get('/payroll/receipt', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('payroll.receipt.view');
+
+// Visualizar recibo individual por payroll ID
+Route::get('/payroll/receipt/{payrollId}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptByPayrollId'])->name('payroll.receipt.view.by-id');
+
+// Debug: Visualizar recibo com dados específicos
+Route::get('/debug/payroll-receipt/{employee_id?}', [\App\Http\Controllers\PayrollReceiptController::class, 'showReceiptHTML'])->name('debug.payroll.receipt');
+
+// Gerar recibos em lote (HTML)
+Route::get('/payroll/bulk-receipts', [\App\Http\Controllers\PayrollReceiptController::class, 'generateBulkReceiptsHTML'])->name('payroll.bulk-receipts');
+
+// Gerar recibos em lote (PDF)
+Route::get('/payroll/bulk-receipts-pdf', [\App\Http\Controllers\PayrollReceiptController::class, 'generateBulkReceiptsPDF'])->name('payroll.bulk-receipts-pdf');
+
 // Rota principal - redireciona para o dashboard se estiver logado ou para login se não estiver
 Route::get('/', function () {
     return auth()->check()
@@ -32,8 +51,45 @@ Route::get('/', function () {
 
 // Todas as rotas protegidas pelo middleware auth (usuário deve estar autenticado)
 Route::middleware(['auth'])->group(function () {
-    // Main dashboard route - alias to maintenance.dashboard
-    Route::get('/dashboard', MaintenanceDashboard::class)->name('dashboard');
+    // Main dashboard route - redirects based on user permissions using centralized service
+    Route::get('/dashboard', function() {
+        $user = auth()->user();
+        
+        // Use centralized service to determine redirect
+        $dashboardUrl = UserDashboardService::determineUserDashboard($user);
+        
+        // If it's the same route (dashboard), show restricted view
+        if ($dashboardUrl === route('dashboard')) {
+            $primaryModule = UserDashboardService::getUserPrimaryModule($user);
+            $accessibleModules = UserDashboardService::getUserModules($user);
+            
+            return view('dashboard-restricted')
+                ->with('info', 'Você não possui permissões para acessar nenhum módulo específico. Entre em contato com o administrador do sistema.')
+                ->with('primaryModule', $primaryModule)
+                ->with('accessibleModules', $accessibleModules);
+        }
+        
+        // Redirect to appropriate dashboard
+        return redirect($dashboardUrl);
+    })->name('dashboard');
+
+    // HR Guide Pages
+    Route::get('/hr/payroll-guide', App\Livewire\HR\PayrollGuide::class)->name('hr.payroll-guide');
+    
+    // Disciplinary Measures
+    Route::get('/hr/disciplinary-measures', \App\Livewire\HR\DisciplinaryMeasures\DisciplinaryMeasures::class)
+        ->middleware(['auth', 'verified'])
+        ->name('hr.disciplinary-measures');
+
+    // Performance Evaluations
+    Route::get('/hr/performance-evaluations', \App\Livewire\HR\PerformanceEvaluations\PerformanceEvaluations::class)
+        ->middleware(['auth', 'verified'])
+        ->name('hr.performance-evaluations');
+    
+    // Trainings
+    Route::get('/hr/trainings', \App\Livewire\HR\Trainings\Trainings::class)
+        ->middleware(['auth', 'verified'])
+        ->name('hr.trainings');
 
     // Maintenance Management Routes
     Route::prefix('maintenance')->name('maintenance.')->group(function() {
@@ -71,8 +127,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/users', App\Livewire\UserManagement::class)->name('users');
         });
 
-        // Rotas de Funções e Permissões - Requer permissão roles.manage
-        Route::middleware(['permission:roles.manage'])->group(function() {
+        // Rotas de Funções e Permissões - Múltiplas permissões aceites (padrão super-admin)
+        Route::middleware(['can:roles.manage|maintenance.roles.manage|system.roles.view|system.roles.edit'])->group(function() {
             Route::get('/roles', App\Livewire\RolePermissions::class)->name('roles');
         });
 
@@ -91,8 +147,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/corrective', App\Livewire\Maintenance\CorrectiveMaintenance::class)->name('corrective');
         });
 
-        // API routes
-        // Route::post('/api/notification/mark-as-read', [MaintenanceController::class, 'markNotificationAsRead'])->name('api.notification.mark-as-read');
+        // Gerenciamento de Técnicos - Requer permissão technicians.view
+        Route::middleware(['permission:technicians.view'])->group(function() {
+            Route::get('/technicians', App\Livewire\Technicians::class)->name('technicians');
+        });
 
         // Configurações de Manutenção Corretiva - Requer permissão corrective.manage
         Route::middleware(['permission:corrective.manage'])->group(function() {
@@ -106,10 +164,19 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
+    // Rotas de Gestão de Estoque - Requer permissão inventory.manage
+    Route::middleware(['permission:inventory.manage'])->prefix('stocks')->name('stocks.')->group(function() {
+        Route::get('/stock-in', App\Livewire\Stocks\StockIn::class)->name('stockin');
+        Route::get('/stock-out', App\Livewire\Stocks\StockOut::class)->name('stockout');
+        Route::get('/stock-history', App\Livewire\Stocks\StockHistory::class)->name('history');
+        Route::get('/part-requests', App\Livewire\EquipmentPartRequests::class)->name('part-requests');
+    });
+
     // Equipment Parts Management - Requer permissão equipment.view
     Route::middleware(['permission:equipment.view'])->group(function() {
         Route::get('/equipment/parts', EquipmentParts::class)->name('equipment.parts');
         Route::get('/equipment/parts/{equipmentId}', EquipmentParts::class)->name('equipment.parts.filtered');
+        Route::get('/equipment/types', App\Livewire\Maintenance\EquipmentTypes::class)->name('equipment.types');
     });
 
     // Rotas de Relatórios - Requer permissão reports.view
@@ -124,6 +191,7 @@ Route::middleware(['auth'])->group(function () {
         // Maintenance Effectiveness Reports
         Route::get('/maintenance-types', App\Livewire\Reports\MaintenanceTypes::class)->name('maintenance.types');
         Route::get('/maintenance-compliance', App\Livewire\Reports\MaintenanceCompliance::class)->name('maintenance.compliance');
+        Route::get('/maintenance-plan-report', App\Livewire\MaintenancePlanReport::class)->name('maintenance.plan');
 
         // Cost & Resource Analysis Reports
         Route::get('/cost-analysis', App\Livewire\Reports\CostAnalysis::class)->name('cost.analysis');
@@ -157,10 +225,13 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('maintenance.users');
     })->name('users.management');
 
-    // Rota de Permissões de Acesso
-    Route::middleware(['permission:roles.manage'])->get('/permissions', function() {
+    // Rota de Permissões de Acesso - Múltiplas permissões aceites (padrão super-admin)
+    Route::middleware(['can:roles.manage|maintenance.roles.manage|system.roles.view|system.roles.edit'])->get('/permissions', function() {
         return redirect()->route('maintenance.roles');
     })->name('permissions.management');
+
+    // Gerenciador Avançado de Permissões (Super Admin apenas)
+    Route::middleware(['role:super-admin'])->get('/admin/permissions-manager', App\Livewire\Admin\PermissionsManager::class)->name('admin.permissions-manager');
 
     // Rota de Gerenciamento de Feriados
     Route::middleware(['permission:settings.manage'])->get('/holidays', function() {
@@ -171,5 +242,182 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:settings.manage'])->prefix('settings')->name('settings.')->group(function () {
         // Configurações do Sistema
         Route::get('/system', App\Livewire\Settings\SystemSettings::class)->name('system');
+        
+        // Tipos de Unidades
+        Route::get('/unit-types', App\Livewire\Settings\UnitTypes::class)->name('unit-types');
+    });
+
+    // HR Module Routes
+    Route::prefix('hr')->name('hr.')->group(function() {
+        // Dashboard
+        Route::middleware(['permission:hr.dashboard'])->get('/dashboard', App\Livewire\HR\Reports::class)->name('dashboard');
+        
+        // Employees Management
+        Route::middleware(['permission:hr.employees.view'])->get('/employees', App\Livewire\HR\Employees::class)->name('employees');
+        
+        // Departments Management
+        Route::middleware(['permission:hr.departments.view'])->get('/departments', App\Livewire\HR\Departments::class)->name('departments');
+        
+        // Job Categories Management
+        Route::middleware(['permission:hr.positions.view'])->get('/job-categories', App\Livewire\HR\JobCategories::class)->name('job-categories');
+        
+        // Job Positions Management
+        Route::middleware(['permission:hr.positions.view'])->get('/job-positions', App\Livewire\HR\JobPositions::class)->name('job-positions');
+        
+        // Attendance Management
+        Route::middleware(['permission:hr.attendance.view'])->get('/attendance', App\Livewire\HR\Attendance::class)->name('attendance');
+        
+        // Leave Management
+        Route::middleware(['permission:hr.leave.view'])->get('/leave', App\Livewire\HR\Leaves::class)->name('leave');
+        
+        // Leave Types Management
+        Route::middleware(['permission:hr.leave.view'])->get('/leave-types', App\Livewire\HR\LeaveTypes::class)->name('leave-types');
+        
+        // Shift Management
+        Route::middleware(['permission:hr.attendance.view'])->get('/shifts', App\Livewire\HR\ShiftManagement::class)->name('shifts');
+        
+        // Work Equipment Categories Management
+        // ATENÇÃO: Como estamos dentro de um grupo com prefixo 'hr.', o nome da rota deve ser apenas 'work-equipment-categories'
+        Route::middleware(['permission:hr.equipment.view'])->get('/work-equipment-categories', App\Livewire\HR\WorkEquipmentCategories::class)->name('work-equipment-categories');
+        
+        // Banks Management
+        Route::middleware(['permission:hr.settings.view'])->get('/banks', App\Livewire\HR\Banks::class)->name('banks');
+        
+        // Payroll Management
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll', App\Livewire\HR\Payroll::class)->name('payroll');
+        
+        // Payroll Batch Management
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-batch', App\Livewire\HR\PayrollBatch::class)->name('payroll-batch');
+        
+        // Payroll Reports
+        Route::middleware(['permission:hr.payroll.view'])->get('/payroll-reports', App\Livewire\HR\PayrollReports::class)->name('payroll-reports');
+        Route::middleware(['permission:hr.payroll.view'])->get('/payroll-batch-report/{batchId}', [App\Http\Controllers\HR\PayrollBatchReportController::class, 'show'])->name('payroll-batch.report');
+        Route::middleware(['permission:hr.payroll.view'])->get('/payroll-period-report/{periodId}', [App\Http\Controllers\HR\PayrollPeriodReportController::class, 'show'])->name('payroll-period.report');
+        
+        // Payroll Periods Management
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-periods', App\Livewire\HR\PayrollPeriods::class)->name('payroll-periods');
+        
+        // Payroll Items Management
+        Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-items', App\Livewire\HR\PayrollItems::class)->name('payroll-items');
+        
+        // Salary Advances Management
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-advances', App\Livewire\HR\SalaryAdvances::class)->name('salary-advances');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-advance-report/{id}', [App\Http\Controllers\HR\SalaryAdvanceReportController::class, 'show'])->name('salary-advance-report');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-advance-report/{id}/pdf', [App\Http\Controllers\HR\SalaryAdvanceReportController::class, 'pdf'])->name('salary-advance-report.pdf');
+        
+        // Salary Discounts Management
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-discounts', App\Livewire\HR\SalaryDiscounts::class)->name('salary-discounts');
+        
+        // Overtime Records Management
+        Route::middleware(['permission:hr.leave.view'])->get('/overtime-records', App\Livewire\HR\OvertimeRecords::class)->name('overtime-records');
+        
+        // Equipment Management
+        Route::middleware(['permission:hr.employees.view'])->get('/equipment', App\Livewire\HR\WorkEquipment::class)->name('equipment');
+        
+        // Configurações de RH para Angola
+        Route::middleware(['permission:hr.settings.view'])->get('/settings', App\Livewire\HR\Settings::class)->name('settings');
+        
+        // Reports
+        Route::middleware(['permission:hr.dashboard'])->get('/reports', App\Livewire\HR\Reports::class)->name('reports');
+    });
+    
+    // MRP (Material Requirements Planning) Routes
+    Route::prefix('mrp')->name('mrp.')->group(function() {
+        // Dashboard
+        Route::middleware(['permission:mrp.dashboard'])->get('/dashboard', App\Livewire\Mrp\MrpDashboard::class)->name('dashboard');
+        
+        // Demand Forecasting
+        Route::middleware(['permission:mrp.demand_forecasting.view'])->get('/demand-forecasting', App\Livewire\Mrp\DemandForecasting::class)->name('demand-forecasting');
+        
+        // BOM Management
+        Route::middleware(['permission:mrp.bom_management.view'])->get('/bom-management', App\Livewire\Mrp\BomManagement::class)->name('bom-management');
+        
+        // Inventory Levels
+        Route::middleware(['permission:mrp.inventory_levels.view'])->get('/inventory-levels', App\Livewire\Mrp\InventoryLevels::class)->name('inventory-levels');
+        
+        // Production Scheduling
+        Route::middleware(['permission:mrp.production_scheduling.view'])->get('/production-scheduling', App\Livewire\Mrp\ProductionScheduling::class)->name('production-scheduling');
+        
+        // Production Orders
+        Route::middleware(['permission:mrp.production_orders.view'])->get('/production-orders', App\Livewire\Mrp\ProductionOrders::class)->name('production-orders');
+        
+        // Purchase Planning
+        Route::middleware(['permission:mrp.purchase_planning.view'])->get('/purchase-planning', App\Livewire\Mrp\PurchasePlanning::class)->name('purchase-planning');
+        
+        // Capacity Planning
+        Route::middleware(['permission:mrp.capacity_planning.view'])->get('/capacity-planning', App\Livewire\Mrp\CapacityPlanning::class)->name('capacity-planning');
+        
+        // Resources Management
+        Route::middleware(['permission:mrp.resources.view'])->get('/resources-management', App\Livewire\Mrp\ResourcesManagement::class)->name('resources-management');
+        
+        // Shifts Management
+        Route::middleware(['permission:mrp.shifts.view'])->get('/shifts', App\Livewire\Mrp\Shifts::class)->name('shifts');
+        
+        // Lines Management
+        Route::middleware(['permission:mrp.lines.view'])->get('/lines', App\Livewire\Mrp\Lines::class)->name('lines');
+        
+        // Financial Reporting
+        Route::middleware(['permission:mrp.financial_reporting.view'])->get('/financial-reporting', App\Livewire\Mrp\FinancialReporting::class)->name('financial-reporting');
+        
+        // Failure Root Cause Analysis
+        Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-categories', App\Livewire\Mrp\FailureCategories::class)->name('failure-categories');
+        Route::middleware(['permission:mrp.root_cause.view'])->get('/failure-root-causes', App\Livewire\Mrp\FailureRootCauses::class)->name('failure-root-causes');
+        
+        // Reports
+        Route::middleware(['permission:mrp.reports.raw_material'])->get('/reports/raw-material', App\Livewire\Mrp\Reports\RawMaterialReport::class)->name('raw-material-report');
+        
+        // Responsibles Management
+        Route::middleware(['permission:mrp.responsibles.view'])->get('/responsibles', App\Livewire\Mrp\Responsibles::class)->name('responsibles');
+    });
+
+    // Supply Chain Module Routes
+    Route::prefix('supply-chain')->name('supply-chain.')->group(function() {
+        // Dashboard
+        Route::middleware(['permission:supplychain.dashboard'])->get('/dashboard', App\Livewire\SupplyChain\Dashboard::class)->name('dashboard');
+        
+        // Suppliers Management
+        Route::middleware(['permission:supplychain.suppliers.view'])->get('/suppliers', App\Livewire\SupplyChain\Suppliers::class)->name('suppliers');
+        
+        // Supplier Categories Management
+        Route::middleware(['permission:supplychain.suppliers.manage'])->get('/supplier-categories', App\Livewire\SupplyChain\SupplierCategories::class)->name('supplier-categories');
+        
+        // Product Categories Management
+        Route::middleware(['permission:supplychain.products.view'])->get('/product-categories', App\Livewire\SupplyChain\ProductCategories::class)->name('product-categories');
+        
+        // Products Management
+        Route::middleware(['permission:supplychain.products.view'])->get('/products', App\Livewire\SupplyChain\Products::class)->name('products');
+        
+        // Inventory Locations Management
+        Route::middleware(['permission:supplychain.inventory.view'])->get('/inventory-locations', App\Livewire\SupplyChain\InventoryLocations::class)->name('inventory-locations');
+        
+        // Inventory Management
+        Route::middleware(['permission:supplychain.inventory.view'])->get('/inventory', App\Livewire\SupplyChain\Inventory::class)->name('inventory');
+        
+        // Purchase Orders Management
+        Route::middleware(['permission:supplychain.purchase_orders.view'])->get('/purchase-orders', App\Livewire\SupplyChain\PurchaseOrders::class)->name('purchase-orders');
+        
+        // Goods Receipts Management
+        Route::middleware(['permission:supplychain.goods_receipts.view'])->get('/goods-receipts', App\Livewire\SupplyChain\GoodsReceipts::class)->name('goods-receipts');
+        
+        // Warehouse Transfers Management
+        Route::middleware(['permission:supplychain.warehouse_transfers.view'])->get('/warehouse-transfers', App\Livewire\SupplyChain\WarehouseTransfers::class)->name('warehouse-transfers');
+        
+        // Custom Forms Management
+        Route::middleware(['permission:supplychain.forms.manage'])->get('/custom-forms', App\Livewire\SupplyChain\CustomFormsPage::class)->name('custom-forms');
+        
+        // Reports Section
+        Route::prefix('reports')->name('reports.')->middleware(['permission:supplychain.reports.view'])->group(function() {
+            // Inventory Management Report
+            Route::get('/inventory-management', App\Livewire\SupplyChain\Reports\InventoryManagement::class)->name('inventory-management');
+            
+            // Stock Movement Report
+            Route::get('/stock-movement', App\Livewire\SupplyChain\Reports\StockMovementReport::class)->name('stock-movement');
+            
+            // Raw Material Report
+            Route::get('/raw-material', App\Livewire\Mrp\Reports\RawMaterialReport::class)->name('raw-material');
+        });
     });
 });
+
+// Debug routes (temporary)
+require __DIR__.'/debug.php';

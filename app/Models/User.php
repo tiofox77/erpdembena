@@ -28,6 +28,7 @@ class User extends Authenticatable
         'role',
         'department',
         'is_active',
+        'locale',
     ];
 
     /**
@@ -96,6 +97,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(MaintenanceTask::class, 'assigned_to');
     }
+    
+    /**
+     * Get the technician profile associated with the user
+     */
+    public function technician()
+    {
+        return $this->hasOne(Technician::class);
+    }
+    
+    /**
+     * Check if the user is a technician
+     */
+    public function isTechnician()
+    {
+        return $this->technician()->exists();
+    }
 
     public function plansAssigned()
     {
@@ -120,5 +137,15 @@ class User extends Authenticatable
     public function updatedPlans()
     {
         return $this->hasMany(MaintenancePlan::class, 'updated_by');
+    }
+    
+    public function assignedMaintenancePlans()
+    {
+        return $this->plansAssigned();
+    }
+    
+    public function maintenanceTaskLogs()
+    {
+        return $this->hasMany(MaintenanceTaskLog::class, 'user_id');
     }
 }

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">
+  <rect width="1200" height="400" fill="#6366f1"/>
+  <rect x="20" y="20" width="1160" height="360" rx="8" ry="8" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- Header -->
+  <rect x="20" y="20" width="1160" height="60" rx="8" ry="8" fill="#f9fafb"/>
+  <text x="50" y="55" fill="#111827" font-family="Arial" font-size="20" font-weight="bold">Gerenciamento de Licenças e Ausências</text>
+  <rect x="900" y="30" width="150" height="40" rx="4" ry="4" fill="#6366f1"/>
+  <text x="915" y="55" fill="#ffffff" font-family="Arial" font-size="14" font-weight="bold">+ Nova Licença</text>
+  
+  <!-- Filters -->
+  <rect x="50" y="100" width="1100" height="60" rx="4" ry="4" fill="#f3f4f6"/>
+  
+  <rect x="70" y="110" width="180" height="40" rx="4" ry="4" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <text x="90" y="135" fill="#374151" font-family="Arial" font-size="14">Funcionário ▼</text>
+  
+  <rect x="260" y="110" width="180" height="40" rx="4" ry="4" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <text x="280" y="135" fill="#374151" font-family="Arial" font-size="14">Departamento ▼</text>
+  
+  <rect x="450" y="110" width="180" height="40" rx="4" ry="4" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <text x="470" y="135" fill="#374151" font-family="Arial" font-size="14">Tipo de Licença ▼</text>
+  
+  <rect x="640" y="110" width="180" height="40" rx="4" ry="4" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <text x="660" y="135" fill="#374151" font-family="Arial" font-size="14">Status ▼</text>
+  
+  <rect x="830" y="110" width="150" height="40" rx="4" ry="4" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <text x="850" y="135" fill="#374151" font-family="Arial" font-size="14">Data Inicial</text>
+  
+  <rect x="990" y="110" width="150" height="40" rx="4" ry="4" fill="#ffffff" stroke="#d1d5db" stroke-width="1"/>
+  <text x="1010" y="135" fill="#374151" font-family="Arial" font-size="14">Data Final</text>
+  
+  <!-- Table -->
+  <rect x="50" y="180" width="1100" height="200" rx="4" ry="4" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- Table Header -->
+  <rect x="50" y="180" width="1100" height="40" fill="#f9fafb" rx="4" ry="4"/>
+  <text x="70" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">FUNCIONÁRIO</text>
+  <text x="260" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">TIPO</text>
+  <text x="450" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">DATA INICIAL</text>
+  <text x="620" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">DATA FINAL</text>
+  <text x="790" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">DURAÇÃO</text>
+  <text x="910" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">STATUS</text>
+  <text x="1080" y="205" fill="#6b7280" font-family="Arial" font-size="12" font-weight="bold">AÇÕES</text>
+  
+  <!-- Leave Row 1 -->
+  <line x1="50" y1="220" x2="1150" y2="220" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="70" y="250" fill="#111827" font-family="Arial" font-size="14">Maria Silva</text>
+  <text x="260" y="250" fill="#111827" font-family="Arial" font-size="14">Férias</text>
+  <text x="450" y="250" fill="#111827" font-family="Arial" font-size="14">15/04/2025</text>
+  <text x="620" y="250" fill="#111827" font-family="Arial" font-size="14">30/04/2025</text>
+  <text x="790" y="250" fill="#111827" font-family="Arial" font-size="14">15 dias</text>
+  <rect x="910" y="235" width="80" height="25" rx="12" ry="12" fill="#dcfce7"/>
+  <text x="920" y="250" fill="#15803d" font-family="Arial" font-size="12">Aprovada</text>
+  <rect x="1050" y="235" width="30" height="25" rx="4" ry="4" fill="#3b82f6"/>
+  <rect x="1090" y="235" width="30" height="25" rx="4" ry="4" fill="#ef4444"/>
+  
+  <!-- Leave Row 2 -->
+  <line x1="50" y1="270" x2="1150" y2="270" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="70" y="300" fill="#111827" font-family="Arial" font-size="14">João Santos</text>
+  <text x="260" y="300" fill="#111827" font-family="Arial" font-size="14">Médica</text>
+  <text x="450" y="300" fill="#111827" font-family="Arial" font-size="14">12/04/2025</text>
+  <text x="620" y="300" fill="#111827" font-family="Arial" font-size="14">14/04/2025</text>
+  <text x="790" y="300" fill="#111827" font-family="Arial" font-size="14">3 dias</text>
+  <rect x="910" y="285" width="80" height="25" rx="12" ry="12" fill="#dbeafe"/>
+  <text x="920" y="300" fill="#1e40af" font-family="Arial" font-size="12">Pendente</text>
+  <rect x="1050" y="285" width="30" height="25" rx="4" ry="4" fill="#3b82f6"/>
+  <rect x="1090" y="285" width="30" height="25" rx="4" ry="4" fill="#ef4444"/>
+  
+  <!-- Leave Row 3 -->
+  <line x1="50" y1="320" x2="1150" y2="320" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="70" y="350" fill="#111827" font-family="Arial" font-size="14">Ana Oliveira</text>
+  <text x="260" y="350" fill="#111827" font-family="Arial" font-size="14">Maternidade</text>
+  <text x="450" y="350" fill="#111827" font-family="Arial" font-size="14">01/05/2025</text>
+  <text x="620" y="350" fill="#111827" font-family="Arial" font-size="14">01/11/2025</text>
+  <text x="790" y="350" fill="#111827" font-family="Arial" font-size="14">180 dias</text>
+  <rect x="910" y="335" width="80" height="25" rx="12" ry="12" fill="#dcfce7"/>
+  <text x="920" y="350" fill="#15803d" font-family="Arial" font-size="12">Aprovada</text>
+  <rect x="1050" y="335" width="30" height="25" rx="4" ry="4" fill="#3b82f6"/>
+  <rect x="1090" y="335" width="30" height="25" rx="4" ry="4" fill="#ef4444"/>
+</svg>

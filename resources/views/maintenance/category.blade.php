@@ -1,6 +1,6 @@
 @extends('layouts.maintenance')
 
-@section('title', 'Gerenciamento de Categorias')
+@section('title', __('messages.categories_management'))
 
 @section('content')
     <livewire:maintenance-category />

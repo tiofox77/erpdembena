@@ -1,0 +1,152 @@
+<?php
+
+return [
+    // Page Headers
+    'preventive_maintenance_management' => 'Gerenciamento de Manutenção Preventiva',
+    'create_preventive_maintenance' => 'Criar Manutenção Preventiva',
+    
+    // Form Fields and Labels
+    'search' => 'Pesquisar',
+    'search_maintenance' => 'Pesquisar manutenção...',
+    'show' => 'Mostrar',
+    'id' => 'ID',
+    'title' => 'Título',
+    'equipment' => 'Equipamento',
+    'scheduled_date' => 'Data Agendada',
+    'completion_date' => 'Data de Conclusão',
+    'status' => 'Status',
+    'priority' => 'Prioridade',
+    'assigned_to' => 'Atribuído A',
+    'description' => 'Descrição',
+    'actions' => 'Ações',
+    'created_at' => 'Criado Em',
+    'updated_at' => 'Atualizado Em',
+    'frequency' => 'Frequência',
+    'duration' => 'Duração',
+    'notes' => 'Observações',
+    'attachments' => 'Anexos',
+    'checklist' => 'Lista de Verificação',
+    'parts_required' => 'Peças Necessárias',
+    'filter_status' => 'Filtrar por Status',
+    'filter_priority' => 'Filtrar por Prioridade',
+    'filter_equipment' => 'Filtrar por Equipamento',
+    'filter_assigned' => 'Filtrar por Técnico Atribuído',
+    'filter_date_range' => 'Filtrar por Intervalo de Data',
+    
+    // Status Options
+    'scheduled' => 'Agendado',
+    'in_progress' => 'Em Andamento',
+    'completed' => 'Concluído',
+    'postponed' => 'Adiado',
+    'cancelled' => 'Cancelado',
+    'overdue' => 'Atrasado',
+    
+    // Priority Options
+    'low' => 'Baixa',
+    'medium' => 'Média',
+    'high' => 'Alta',
+    'critical' => 'Crítica',
+    
+    // Frequency Options
+    'daily' => 'Diária',
+    'weekly' => 'Semanal',
+    'bi_weekly' => 'Quinzenal',
+    'monthly' => 'Mensal',
+    'quarterly' => 'Trimestral',
+    'semi_annually' => 'Semestral',
+    'annually' => 'Anual',
+    'custom' => 'Personalizada',
+    
+    // Modal Titles
+    'add_preventive_maintenance' => 'Adicionar Manutenção Preventiva',
+    'edit_preventive_maintenance' => 'Editar Manutenção Preventiva',
+    'view_preventive_maintenance' => 'Visualizar Detalhes da Manutenção Preventiva',
+    'confirm_deletion' => 'Confirmar Exclusão',
+    'complete_maintenance' => 'Concluir Manutenção',
+    'postpone_maintenance' => 'Adiar Manutenção',
+    'add_checklist_item' => 'Adicionar Item à Lista de Verificação',
+    'add_part' => 'Adicionar Peça',
+    'assign_technician' => 'Atribuir Técnico',
+    
+    // Form Fields
+    'maintenance_title' => 'Título da Manutenção',
+    'select_equipment' => 'Selecionar Equipamento',
+    'schedule_date' => 'Data de Agendamento',
+    'select_frequency' => 'Selecionar Frequência',
+    'select_priority' => 'Selecionar Prioridade',
+    'select_technician' => 'Selecionar Técnico',
+    'maintenance_description' => 'Descrição da Manutenção',
+    'estimated_duration' => 'Duração Estimada (horas)',
+    'maintenance_notes' => 'Observações da Manutenção',
+    'upload_attachments' => 'Carregar Anexos',
+    'checklist_item' => 'Item da Lista de Verificação',
+    'select_part' => 'Selecionar Peça',
+    'quantity' => 'Quantidade',
+    'completion_notes' => 'Observações de Conclusão',
+    'actual_duration' => 'Duração Real (horas)',
+    'issues_encountered' => 'Problemas Encontrados',
+    'next_scheduled_date' => 'Próxima Data Agendada',
+    'postpone_reason' => 'Motivo do Adiamento',
+    'postpone_until' => 'Adiar Até',
+    
+    // Form Validation Messages
+    'title_required' => 'O título da manutenção é obrigatório',
+    'equipment_required' => 'O equipamento é obrigatório',
+    'scheduled_date_required' => 'A data agendada é obrigatória',
+    'frequency_required' => 'A frequência é obrigatória',
+    'assigned_to_required' => 'O técnico atribuído é obrigatório',
+    'duration_numeric' => 'A duração deve ser um número',
+    'quantity_required' => 'A quantidade é obrigatória',
+    'quantity_numeric' => 'A quantidade deve ser um número',
+    'quantity_min' => 'A quantidade deve ser pelo menos 1',
+    
+    // Button Labels
+    'save' => 'Salvar',
+    'create' => 'Criar',
+    'update' => 'Atualizar',
+    'cancel' => 'Cancelar',
+    'delete' => 'Excluir',
+    'close' => 'Fechar',
+    'edit' => 'Editar',
+    'view' => 'Visualizar',
+    'complete' => 'Concluir',
+    'postpone' => 'Adiar',
+    'add_item' => 'Adicionar Item',
+    'add_part' => 'Adicionar Peça',
+    'assign' => 'Atribuir',
+    'upload' => 'Carregar',
+    'generate_report' => 'Gerar Relatório',
+    'print' => 'Imprimir',
+    'export' => 'Exportar',
+    
+    // Confirmation Messages
+    'delete_maintenance_confirmation' => 'Tem certeza que deseja excluir esta manutenção preventiva? Esta ação não pode ser desfeita.',
+    'complete_maintenance_confirmation' => 'Tem certeza que deseja marcar esta manutenção como concluída?',
+    'postpone_maintenance_confirmation' => 'Tem certeza que deseja adiar esta manutenção?',
+    
+    // Notifications
+    'maintenance_created' => 'Manutenção preventiva criada com sucesso',
+    'maintenance_updated' => 'Manutenção preventiva atualizada com sucesso',
+    'maintenance_deleted' => 'Manutenção preventiva excluída com sucesso',
+    'maintenance_completed' => 'Manutenção preventiva concluída com sucesso',
+    'maintenance_postponed' => 'Manutenção preventiva adiada com sucesso',
+    'technician_assigned' => 'Técnico atribuído com sucesso',
+    'checklist_added' => 'Item da lista de verificação adicionado com sucesso',
+    'part_added' => 'Peça adicionada com sucesso',
+    'error_occurred' => 'Ocorreu um erro',
+    
+    // Empty States
+    'no_maintenance_found' => 'Nenhuma manutenção preventiva encontrada',
+    'create_first_maintenance' => 'Crie sua primeira manutenção preventiva',
+    'no_checklist_items' => 'Nenhum item de verificação adicionado',
+    'no_parts_required' => 'Nenhuma peça necessária',
+    
+    // Reports
+    'maintenance_report' => 'Relatório de Manutenção Preventiva',
+    'report_period' => 'Período do Relatório',
+    'total_scheduled' => 'Total Agendado',
+    'total_completed' => 'Total Concluído',
+    'completion_rate' => 'Taxa de Conclusão',
+    'average_duration' => 'Duração Média',
+    'most_maintained_equipment' => 'Equipamento Mais Mantido',
+];

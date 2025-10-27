@@ -1,0 +1,160 @@
+<?php
+
+return [
+    // Page Headers
+    'maintenance_reports' => 'Relatórios de Manutenção',
+    'generate_report' => 'Gerar Relatório',
+    
+    // Report Types
+    'equipment_performance' => 'Desempenho de Equipamentos',
+    'maintenance_costs' => 'Custos de Manutenção',
+    'technician_productivity' => 'Produtividade de Técnicos',
+    'work_order_analysis' => 'Análise de Ordens de Serviço',
+    'failure_analysis' => 'Análise de Falhas',
+    'downtime_analysis' => 'Análise de Tempo de Inatividade',
+    'maintenance_compliance' => 'Conformidade de Manutenção',
+    'parts_usage' => 'Uso de Peças',
+    'inventory_status' => 'Status de Inventário',
+    'maintenance_backlog' => 'Backlog de Manutenção',
+    'preventive_maintenance_completion' => 'Conclusão de Manutenção Preventiva',
+    'custom_report' => 'Relatório Personalizado',
+    
+    // Form Fields and Labels
+    'report_type' => 'Tipo de Relatório',
+    'time_period' => 'Período de Tempo',
+    'date_range' => 'Intervalo de Data',
+    'start_date' => 'Data de Início',
+    'end_date' => 'Data de Término',
+    'equipment' => 'Equipamento',
+    'location' => 'Localização',
+    'department' => 'Departamento',
+    'technician' => 'Técnico',
+    'category' => 'Categoria',
+    'include_charts' => 'Incluir Gráficos',
+    'include_tables' => 'Incluir Tabelas',
+    'format' => 'Formato',
+    'grouping' => 'Agrupamento',
+    'sorting' => 'Ordenação',
+    'filters' => 'Filtros',
+    'chart_type' => 'Tipo de Gráfico',
+    'table_columns' => 'Colunas da Tabela',
+    'scheduled_report' => 'Relatório Agendado',
+    'frequency' => 'Frequência',
+    'recipients' => 'Destinatários',
+    
+    // Time Periods
+    'today' => 'Hoje',
+    'yesterday' => 'Ontem',
+    'this_week' => 'Esta Semana',
+    'last_week' => 'Semana Passada',
+    'this_month' => 'Este Mês',
+    'last_month' => 'Mês Passado',
+    'this_quarter' => 'Este Trimestre',
+    'last_quarter' => 'Trimestre Passado',
+    'this_year' => 'Este Ano',
+    'last_year' => 'Ano Passado',
+    'custom_range' => 'Intervalo Personalizado',
+    
+    // Report Formats
+    'pdf' => 'PDF',
+    'excel' => 'Excel',
+    'csv' => 'CSV',
+    'html' => 'HTML',
+    
+    // Chart Types
+    'bar_chart' => 'Gráfico de Barras',
+    'line_chart' => 'Gráfico de Linha',
+    'pie_chart' => 'Gráfico de Pizza',
+    'stacked_bar' => 'Barras Empilhadas',
+    'area_chart' => 'Gráfico de Área',
+    'scatter_plot' => 'Gráfico de Dispersão',
+    
+    // Grouping Options
+    'by_day' => 'Por Dia',
+    'by_week' => 'Por Semana',
+    'by_month' => 'Por Mês',
+    'by_quarter' => 'Por Trimestre',
+    'by_year' => 'Por Ano',
+    'by_equipment' => 'Por Equipamento',
+    'by_category' => 'Por Categoria',
+    'by_technician' => 'Por Técnico',
+    'by_department' => 'Por Departamento',
+    'by_location' => 'Por Localização',
+    
+    // Frequency Options
+    'daily' => 'Diariamente',
+    'weekly' => 'Semanalmente',
+    'bi_weekly' => 'Quinzenalmente',
+    'monthly' => 'Mensalmente',
+    'quarterly' => 'Trimestralmente',
+    'semi_annually' => 'Semestralmente',
+    'annually' => 'Anualmente',
+    
+    // Button Labels
+    'generate' => 'Gerar',
+    'save' => 'Salvar',
+    'cancel' => 'Cancelar',
+    'export' => 'Exportar',
+    'print' => 'Imprimir',
+    'email' => 'Enviar Email',
+    'schedule' => 'Agendar',
+    'save_template' => 'Salvar como Modelo',
+    'load_template' => 'Carregar Modelo',
+    
+    // Report Metrics
+    'total_work_orders' => 'Total de Ordens de Serviço',
+    'completed_work_orders' => 'Ordens de Serviço Concluídas',
+    'open_work_orders' => 'Ordens de Serviço Abertas',
+    'overdue_work_orders' => 'Ordens de Serviço Atrasadas',
+    'mean_time_between_failures' => 'Tempo Médio Entre Falhas (MTBF)',
+    'mean_time_to_repair' => 'Tempo Médio para Reparo (MTTR)',
+    'downtime_hours' => 'Horas de Inatividade',
+    'maintenance_cost' => 'Custo de Manutenção',
+    'labor_hours' => 'Horas de Trabalho',
+    'parts_cost' => 'Custo de Peças',
+    'labor_cost' => 'Custo de Mão de Obra',
+    'total_cost' => 'Custo Total',
+    'availability' => 'Disponibilidade',
+    'reliability' => 'Confiabilidade',
+    'compliance_rate' => 'Taxa de Conformidade',
+    'pm_completion_rate' => 'Taxa de Conclusão de MP',
+    'most_frequent_failures' => 'Falhas Mais Frequentes',
+    'most_expensive_repairs' => 'Reparos Mais Caros',
+    'top_consuming_equipment' => 'Equipamentos que Mais Consomem Peças',
+    'technician_efficiency' => 'Eficiência do Técnico',
+    'work_order_backlog' => 'Backlog de Ordens de Serviço',
+    
+    // Notifications
+    'report_generated' => 'Relatório gerado com sucesso',
+    'report_scheduled' => 'Relatório agendado com sucesso',
+    'report_emailed' => 'Relatório enviado por email com sucesso',
+    'template_saved' => 'Modelo de relatório salvo com sucesso',
+    'error_occurred' => 'Ocorreu um erro',
+    
+    // Empty States
+    'no_data_available' => 'Não há dados disponíveis para os critérios selecionados',
+    'try_different_filters' => 'Tente filtros diferentes ou outro intervalo de datas',
+    
+    // Report Templates
+    'saved_templates' => 'Modelos Salvos',
+    'template_name' => 'Nome do Modelo',
+    'created_by' => 'Criado Por',
+    'created_date' => 'Data de Criação',
+    'no_templates_found' => 'Nenhum modelo salvo encontrado',
+    'delete_template' => 'Excluir Modelo',
+    'template_description' => 'Descrição do Modelo',
+    
+    // Scheduled Reports
+    'scheduled_reports' => 'Relatórios Agendados',
+    'schedule_name' => 'Nome do Agendamento',
+    'next_run' => 'Próxima Execução',
+    'last_run' => 'Última Execução',
+    'schedule_status' => 'Status',
+    'no_scheduled_reports' => 'Nenhum relatório agendado encontrado',
+    'delete_schedule' => 'Excluir Agendamento',
+    'edit_schedule' => 'Editar Agendamento',
+    'pause_schedule' => 'Pausar Agendamento',
+    'resume_schedule' => 'Retomar Agendamento',
+    'schedule_active' => 'Ativo',
+    'schedule_inactive' => 'Inativo',
+];

@@ -98,11 +98,11 @@ class EquipmentTimeline extends Component
                     'name' => $equipment->name,
                     'serial_number' => $equipment->serial_number,
                     'status' => $equipment->status,
-                    'purchase_date' => $equipment->purchase_date ? Carbon::parse($equipment->purchase_date)->format('Y-m-d') : 'Unknown',
+                    'purchase_date' => $equipment->purchase_date ? Carbon::parse($equipment->purchase_date)->format(\App\Models\Setting::getSystemDateFormat()) : 'Unknown',
                     'area' => $equipment->area ? $equipment->area->name : 'Unknown',
                     'line' => $equipment->line ? $equipment->line->name : 'Unknown',
-                    'last_maintenance' => $equipment->last_maintenance ? Carbon::parse($equipment->last_maintenance)->format('Y-m-d') : 'None',
-                    'next_maintenance' => $equipment->next_maintenance ? Carbon::parse($equipment->next_maintenance)->format('Y-m-d') : 'None scheduled',
+                    'last_maintenance' => $equipment->last_maintenance ? Carbon::parse($equipment->last_maintenance)->format(\App\Models\Setting::getSystemDateFormat()) : 'None',
+                    'next_maintenance' => $equipment->next_maintenance ? Carbon::parse($equipment->next_maintenance)->format(\App\Models\Setting::getSystemDateFormat()) : 'None scheduled',
                     'notes' => $equipment->notes ?? 'No notes'
                 ];
             } else {
@@ -205,7 +205,7 @@ class EquipmentTimeline extends Component
 
                 $events[] = [
                     'id' => 'task-' . $task->id,
-                    'date' => Carbon::parse($date)->format('Y-m-d'),
+                    'date' => Carbon::parse($date)->format(\App\Models\Setting::getSystemDateFormat()),
                     'timestamp' => Carbon::parse($date)->timestamp,
                     'type' => 'Maintenance Task',
                     'title' => $task->task ? $task->task->title : 'Maintenance Task',
@@ -215,8 +215,8 @@ class EquipmentTimeline extends Component
                     'color_class' => $colorClass,
                     'technician' => $task->assignedTo ? $task->assignedTo->name : 'Unassigned',
                     'details' => [
-                        'Scheduled Date' => $task->scheduled_date ? Carbon::parse($task->scheduled_date)->format('Y-m-d') : 'N/A',
-                        'Completed Date' => $task->completed_at ? Carbon::parse($task->completed_at)->format('Y-m-d') : 'N/A',
+                        'Scheduled Date' => $task->scheduled_date ? Carbon::parse($task->scheduled_date)->format(\App\Models\Setting::getSystemDateFormat()) : 'N/A',
+                        'Completed Date' => $task->completed_at ? Carbon::parse($task->completed_at)->format(\App\Models\Setting::getSystemDateFormat()) : 'N/A',
                         'Duration' => $task->actual_hours ? $task->actual_hours . ' hours' : 'N/A',
                         'Parts Used' => $task->parts_used ?? 'None',
                         'Notes' => $task->notes ?? 'None'
@@ -265,7 +265,7 @@ class EquipmentTimeline extends Component
 
                 $events[] = [
                     'id' => 'corrective-' . $corrective->id,
-                    'date' => Carbon::parse($date)->format('Y-m-d'),
+                    'date' => Carbon::parse($date)->format(\App\Models\Setting::getSystemDateFormat()),
                     'timestamp' => Carbon::parse($date)->timestamp,
                     'type' => 'Failure/Breakdown',
                     'title' => 'Failure: ' . ($corrective->failureMode ? $corrective->failureMode->name : 'Unknown'),
@@ -275,8 +275,8 @@ class EquipmentTimeline extends Component
                     'color_class' => $colorClass,
                     'technician' => $corrective->resolver ? $corrective->resolver->name : 'Unassigned',
                     'details' => [
-                        'Start Time' => Carbon::parse($corrective->start_time)->format('Y-m-d H:i'),
-                        'End Time' => $corrective->end_time ? Carbon::parse($corrective->end_time)->format('Y-m-d H:i') : 'N/A',
+                        'Start Time' => Carbon::parse($corrective->start_time)->format(\App\Models\Setting::getSystemDateTimeFormat()),
+                        'End Time' => $corrective->end_time ? Carbon::parse($corrective->end_time)->format(\App\Models\Setting::getSystemDateTimeFormat()) : 'N/A',
                         'Downtime' => $corrective->downtime_length ?? 'Unknown',
                         'Failure Mode' => $corrective->failureMode ? $corrective->failureMode->name : 'Unknown',
                         'Root Cause' => $corrective->failureCause ? $corrective->failureCause->name : 'Unknown',
@@ -300,7 +300,7 @@ class EquipmentTimeline extends Component
                 if ($includeEvent) {
                     $events[] = [
                         'id' => 'purchase-' . $this->equipmentId,
-                        'date' => $purchaseDate->format('Y-m-d'),
+                        'date' => $purchaseDate->format(\App\Models\Setting::getSystemDateFormat()),
                         'timestamp' => $purchaseDate->timestamp,
                         'type' => 'Equipment Purchase',
                         'title' => 'Equipment Purchased',
@@ -310,7 +310,7 @@ class EquipmentTimeline extends Component
                         'color_class' => 'info',
                         'technician' => 'N/A',
                         'details' => [
-                            'Purchase Date' => $purchaseDate->format('Y-m-d'),
+                            'Purchase Date' => $purchaseDate->format(\App\Models\Setting::getSystemDateFormat()),
                             'Notes' => $this->equipment['notes'] ?? 'None'
                         ]
                     ];

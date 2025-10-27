@@ -28,13 +28,13 @@
                 </div>
             @endif
 
-            <!-- User Filter -->
+            <!-- Technician Filter -->
             <div class="w-full md:w-1/4 px-2 mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Team Member</label>
                 <select wire:model.live="userId" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
                     <option value="">All Team Members</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @foreach($technicians as $technician)
+                        <option value="{{ $technician->id }}">{{ $technician->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -159,9 +159,9 @@
                                 @endif
                             @endif
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sort('completed_tasks')">
-                            Completed Tasks
-                            @if($sortField === 'completed_tasks')
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sort('completed_plans')">
+                            Completed Plans
+                            @if($sortField === 'completed_plans')
                                 @if($sortDirection === 'asc')
                                     <svg class="inline-block w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
                                 @else
@@ -189,9 +189,9 @@
                                 @endif
                             @endif
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sort('overdue_tasks')">
-                            Overdue Tasks
-                            @if($sortField === 'overdue_tasks')
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sort('overdue_plans')">
+                            Overdue Plans
+                            @if($sortField === 'overdue_plans')
                                 @if($sortDirection === 'asc')
                                     <svg class="inline-block w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
                                 @else
@@ -203,58 +203,58 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($userPerformance as $member)
+                    @forelse($technicians as $technician)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10">
                                         <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <span class="text-gray-600 font-medium">{{ substr($member->name, 0, 2) }}</span>
+                                            <span class="text-gray-600 font-medium">{{ substr($technician->name, 0, 2) }}</span>
                                         </div>
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $member->name }}</div>
-                                        <div class="text-sm text-gray-500">{{ $member->email }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $technician->name }}</div>
+                                        <div class="text-sm text-gray-500">{{ $technician->function ?? '' }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $member->completed_tasks }} / {{ $member->total_tasks }}
+                                {{ $technician->completed_plans }} / {{ $technician->total_plans }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="relative pt-1">
                                     <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                                        <div style="width: {{ $member->completion_rate }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center
-                                            @if($member->completion_rate >= 90)
+                                        <div style="width: {{ $technician->completion_rate }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center
+                                            @if($technician->completion_rate >= 90)
                                                 bg-green-500
-                                            @elseif($member->completion_rate >= 70)
+                                            @elseif($technician->completion_rate >= 70)
                                                 bg-blue-500
-                                            @elseif($member->completion_rate >= 50)
+                                            @elseif($technician->completion_rate >= 50)
                                                 bg-yellow-500
                                             @else
                                                 bg-red-500
                                             @endif
                                         "></div>
                                     </div>
-                                    <div class="text-xs text-right mt-1">{{ $member->completion_rate }}%</div>
+                                    <div class="text-xs text-right mt-1">{{ $technician->completion_rate }}%</div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $member->avg_duration }}
+                                {{ $technician->avg_duration }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $member->overdue_tasks > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                    {{ $member->overdue_tasks }}
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $technician->overdue_plans > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
+                                    {{ $technician->overdue_plans }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 @php
-                                    // Calculate efficiency rating based on completion rate, average duration, and overdue tasks
+                                    // Calculate efficiency rating based on completion rate, average duration, and overdue plans
                                     $efficiencyScore = 0;
-                                    if ($member->total_tasks > 0) {
-                                        $completionFactor = $member->completion_rate / 100;
-                                        $overdueRatio = $member->total_tasks > 0 ? $member->overdue_tasks / $member->total_tasks : 0;
-                                        $durationFactor = $member->avg_duration > 0 ? min(1, 3 / $member->avg_duration) : 1;
+                                    if ($technician->total_plans > 0) {
+                                        $completionFactor = $technician->completion_rate / 100;
+                                        $overdueRatio = $technician->total_plans > 0 ? $technician->overdue_plans / $technician->total_plans : 0;
+                                        $durationFactor = $technician->avg_duration > 0 ? min(1, 3 / $technician->avg_duration) : 1;
 
                                         $efficiencyScore = (($completionFactor * 0.5) + ($durationFactor * 0.3) - ($overdueRatio * 0.2)) * 100;
                                         $efficiencyScore = max(0, min(100, $efficiencyScore));

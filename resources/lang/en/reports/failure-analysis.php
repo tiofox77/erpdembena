@@ -1,0 +1,103 @@
+<?php
+
+return [
+    // General
+    'title' => 'Failure Analysis',
+    'subtitle' => 'Analysis of failures, causes, and patterns',
+    
+    // Filters
+    'date_range' => 'Date Range',
+    'from_date' => 'From',
+    'to_date' => 'To',
+    'area' => 'Area',
+    'line' => 'Line',
+    'equipment' => 'Equipment',
+    'all_areas' => 'All Areas',
+    'all_lines' => 'All Lines',
+    'all_equipment' => 'All Equipment',
+    'apply_filters' => 'Apply Filters',
+    'reset_filters' => 'Reset Filters',
+    'filters_and_period' => 'Filters and Period',
+    'period' => 'Period',
+    'current_week' => 'Current Week',
+    'current_month' => 'Current Month',
+    'current_quarter' => 'Current Quarter',
+    'current_year' => 'Current Year',
+    'custom_period' => 'Custom Period',
+    'start_date' => 'Start Date',
+    'end_date' => 'End Date',
+    
+    // KPI Cards
+    'total_failures' => 'Total Failures',
+    'avg_repair_time' => 'Average Repair Time',
+    'total_downtime' => 'Total Downtime',
+    'common_failures' => 'Most Common Failures',
+    'in_selected_period' => 'in selected period',
+    'main_cause' => 'Main Cause',
+    'occurrences' => 'occurrences',
+    'most_failing_equipment' => 'Most Failing Equipment',
+    'failures' => 'failures',
+    'average_downtime' => 'Average Downtime',
+    'hours_per_failure' => 'hours per failure',
+    
+    // Charts
+    'failure_distribution' => 'Failure Distribution',
+    'downtime_by_equipment' => 'Downtime by Equipment',
+    'failure_causes_distribution' => 'Failure Causes Distribution',
+    'equipment_failure_count' => 'Equipment Failure Count',
+    'failure_impact_distribution' => 'Failure Impact Distribution',
+    'failures_by_day' => 'Failures by Day',
+    'failures_by_area' => 'Failures by Area',
+    'failure_trends' => 'Failure Trends',
+    'failure_modes' => 'Failure Modes',
+    'no_chart_data' => 'No data available to display chart',
+    'failure_modes_distribution' => 'Failure Modes Distribution',
+    'failure_trend_over_time' => 'Failure Trend Over Time',
+    
+    // Detailed Failure Records
+    'detailed_failure_records' => 'Detailed Failure Records',
+    'filters_and_search' => 'Filters and Search',
+    'search' => 'Search',
+    'search_placeholder' => 'Enter equipment, area, cause or mode...',
+    'search_instruction' => 'Type to search across all fields',
+    'sort_by' => 'Sort By',
+    'direction' => 'Direction',
+    'ascending' => 'Ascending',
+    'descending' => 'Descending',
+    'items_per_page' => 'Items Per Page',
+    'date' => 'Date',
+    'cause' => 'Cause',
+    'mode' => 'Mode',
+    'downtime' => 'Downtime',
+    'actions' => 'Actions',
+    'hours' => 'hrs',
+    'no_records_found' => 'No failure records found',
+    
+    // Pagination
+    'previous' => 'Previous',
+    'next' => 'Next',
+    'showing' => 'Showing',
+    'of' => 'of',
+    'results' => 'results',
+    'pagination' => 'Pagination',
+    
+    // Patterns & Recommendations
+    'identified_patterns' => 'Identified Patterns & Recommendations',
+    'pattern_title' => 'Pattern',
+    'recommendation' => 'Recommendation',
+    'no_patterns_found' => 'No patterns identified yet',
+    
+    // Failure Details Modal
+    'failure_details' => 'Failure Details',
+    'close' => 'Close',
+    'failure_information' => 'Failure Information',
+    'reported_by' => 'Reported By',
+    'resolved_by' => 'Resolved By',
+    'description' => 'Description',
+    'serial_number' => 'Serial Number',
+    'resolution' => 'Resolution', 
+    'actions_taken' => 'Actions Taken',
+    'failure_time' => 'Failure Time',
+    'resolution_time' => 'Resolution Time',
+    'downtime_hours' => 'Downtime (hours)',
+];

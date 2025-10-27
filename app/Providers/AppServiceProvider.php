@@ -25,6 +25,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Check if user has set a language preference in session
+        if (session()->has('locale')) {
+            app()->setLocale(session('locale'));
+        } else {
+            // Set default locale to English
+            app()->setLocale('en');
+        }
+
+        // Definir timezone baseado nas settings ou usar UTC como padrão
+        try {
+            $timezone = Setting::get('app_timezone', 'UTC');
+            date_default_timezone_set($timezone);
+            Config::set('app.timezone', $timezone);
+        } catch (\Exception $e) {
+            // Se as settings não estiverem disponíveis, usar UTC como padrão
+            date_default_timezone_set('UTC');
+        }
+
         // Update app version from database
         try {
             $dbVersion = Setting::get('app_version');

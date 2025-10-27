@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class SetUserLocale
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        // Se o usuário estiver autenticado, define o idioma com base na preferência do usuário
+        if (auth()->check()) {
+            $locale = auth()->user()->locale ?? config('app.locale');
+            
+            // Sanitize locale to prevent UTF-8 issues
+            $locale = preg_replace('/[^a-zA-Z_-]/', '', $locale);
+            
+            // Validate locale format
+            if (in_array($locale, ['en', 'pt', 'pt_BR', 'pt-BR'])) {
+                app()->setLocale($locale);
+            } else {
+                app()->setLocale(config('app.locale')); // Use app default instead of hardcoded 'en'
+            }
+        } else {
+            // Se não autenticado, usa o locale da aplicação
+            app()->setLocale(config('app.locale'));
+        }
+        
+        return $next($request);
+    }
+}

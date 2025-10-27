@@ -4,12 +4,15 @@ namespace App\Livewire\History;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\User;
-use App\Models\MaintenanceTask;
-use App\Models\Equipment;
+use App\Models\Technician;
+use App\Models\MaintenancePlan;
+use App\Models\MaintenanceEquipment;
+use App\Models\MaintenanceNote;
+use App\Models\MaintenanceArea;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TeamPerformance extends Component
 {
@@ -27,7 +30,7 @@ class TeamPerformance extends Component
     public $sortDirection = 'desc';
 
     // Data collections
-    public $users = [];
+    public $technicians = [];
     public $areas = [];
     public $taskTypes = [
         'all' => 'All Task Types',
@@ -57,7 +60,7 @@ class TeamPerformance extends Component
     public function mount()
     {
         $this->setDateRange($this->dateRange);
-        $this->loadUsersList();
+        $this->loadTechniciansList();
         $this->loadAreasList();
         $this->loadPerformanceData();
     }
@@ -151,30 +154,27 @@ class TeamPerformance extends Component
         $this->resetPage();
     }
 
-    public function loadUsersList()
+    public function loadTechniciansList()
     {
         try {
-            // Get users with maintenance roles
-            $this->users = User::whereHas('roles', function($query) {
-                    $query->whereIn('name', ['technician', 'maintenance_manager', 'engineer']);
-                })
+            // Carregamos os técnicos diretamente do modelo Technician
+            $this->technicians = Technician::with(['area', 'line'])
                 ->orderBy('name')
                 ->get();
         } catch (\Exception $e) {
-            Log::error('Error loading users list: ' . $e->getMessage());
-            $this->users = [];
+            Log::error('Error loading technicians list: ' . $e->getMessage());
+            $this->technicians = [];
         }
     }
 
     public function loadAreasList()
     {
         try {
-            // Get unique areas from equipment table
-            $this->areas = Equipment::select('area')
-                ->distinct()
-                ->whereNotNull('area')
-                ->orderBy('area')
-                ->pluck('area')
+            // Obter diretamente da tabela de áreas
+            $this->areas = MaintenanceArea::select('id', 'name')
+                ->orderBy('name')
+                ->get()
+                ->pluck('name', 'id')
                 ->toArray();
         } catch (\Exception $e) {
             Log::error('Error loading areas list: ' . $e->getMessage());
@@ -185,108 +185,70 @@ class TeamPerformance extends Component
     public function loadPerformanceData()
     {
         try {
-            // Get date range for queries
-            $startDateTime = $this->startDate . ' 00:00:00';
-            $endDateTime = $this->endDate . ' 23:59:59';
-
-            // Base query for completed tasks
-            $completedTasksQuery = MaintenanceTask::whereBetween('completed_at', [$startDateTime, $endDateTime])
-                ->where('status', 'completed');
-
-            // Base query for all tasks
-            $allTasksQuery = MaintenanceTask::where(function($query) use ($startDateTime, $endDateTime) {
-                    $query->whereBetween('due_date', [$startDateTime, $endDateTime])
-                        ->orWhereBetween('completed_at', [$startDateTime, $endDateTime]);
-                });
-
-            // Apply common filters to both queries
-            if ($this->userId) {
-                $completedTasksQuery->where('assigned_to', $this->userId);
-                $allTasksQuery->where('assigned_to', $this->userId);
-            }
-
-            if ($this->areaId) {
-                $completedTasksQuery->whereHas('equipment', function($query) {
-                    $query->where('area', $this->areaId);
-                });
-
-                $allTasksQuery->whereHas('equipment', function($query) {
-                    $query->where('area', $this->areaId);
-                });
-            }
-
-            if ($this->taskType && $this->taskType !== 'all') {
-                $completedTasksQuery->where('maintenance_type', $this->taskType);
-                $allTasksQuery->where('maintenance_type', $this->taskType);
-            }
-
-            if ($this->searchQuery) {
-                $completedTasksQuery->where(function($query) {
-                    $query->whereHas('equipment', function($q) {
-                            $q->where('name', 'like', '%' . $this->searchQuery . '%');
-                        })
-                        ->orWhereHas('assignedTo', function($q) {
-                            $q->where('name', 'like', '%' . $this->searchQuery . '%');
-                        })
-                        ->orWhere('title', 'like', '%' . $this->searchQuery . '%')
-                        ->orWhere('description', 'like', '%' . $this->searchQuery . '%');
-                });
-
-                $allTasksQuery->where(function($query) {
-                    $query->whereHas('equipment', function($q) {
-                            $q->where('name', 'like', '%' . $this->searchQuery . '%');
-                        })
-                        ->orWhereHas('assignedTo', function($q) {
-                            $q->where('name', 'like', '%' . $this->searchQuery . '%');
-                        })
-                        ->orWhere('title', 'like', '%' . $this->searchQuery . '%')
-                        ->orWhere('description', 'like', '%' . $this->searchQuery . '%');
-                });
-            }
-
-            // Calculate summary metrics
-            $completedTasksCount = $completedTasksQuery->count();
-            $totalTasksCount = $allTasksQuery->count();
-
-            $this->totalCompletedTasks = $completedTasksCount;
-            $this->taskCompletionRate = $totalTasksCount > 0 ? round(($completedTasksCount / $totalTasksCount) * 100, 1) : 0;
-
-            // Average task duration (in hours)
-            $avgDuration = MaintenanceTask::whereBetween('completed_at', [$startDateTime, $endDateTime])
-                ->where('status', 'completed')
-                ->whereNotNull('started_at')
-                ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, started_at, completed_at)) as avg_duration'))
-                ->first();
-
-            $this->avgTaskDuration = $avgDuration ? round($avgDuration->avg_duration / 60, 1) : 0;
-
-            // Get top performer
-            $topPerformerQuery = MaintenanceTask::whereBetween('completed_at', [$startDateTime, $endDateTime])
-                ->where('status', 'completed')
-                ->select('assigned_to')
-                ->selectRaw('COUNT(*) as completed_count')
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, started_at, completed_at)) as avg_duration')
-                ->whereNotNull('assigned_to')
-                ->whereNotNull('started_at')
-                ->groupBy('assigned_to')
-                ->orderByDesc('completed_count')
-                ->limit(1)
-                ->first();
-
-            if ($topPerformerQuery && $topPerformerQuery->assigned_to) {
-                $this->topPerformer = User::find($topPerformerQuery->assigned_to);
-            }
-
-            // Calculate improvement areas
+            // Definir datas para análise
+            $startDateTime = Carbon::parse($this->startDate)->startOfDay();
+            $endDateTime = Carbon::parse($this->endDate)->endOfDay();
+            
+            // Get technicians performance data with metrics
+            $technicianPerformance = $this->getUserPerformanceProperty();
+            
+            // Calculate overall metrics
+            $this->calculateSummaryMetrics($technicianPerformance);
+            
+            // Identify improvement areas
             $this->identifyImprovementAreas($startDateTime, $endDateTime);
-
         } catch (\Exception $e) {
             Log::error('Error loading performance data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Calculate summary metrics from technician data
+     * 
+     * @param \Illuminate\Pagination\LengthAwarePaginator $technicians
+     * @return void
+     */
+    protected function calculateSummaryMetrics($technicians)
+    {
+        try {
+            $totalPlans = 0;
+            $completedPlans = 0;
+            $totalDuration = 0;
+            $durationCount = 0;
+            $topPerformerScore = 0;
+            $topPerformer = null;
+
+            // Process each technician in the collection
+            foreach ($technicians->items() as $technician) {
+                // Add to totals
+                $totalPlans += $technician->total_plans ?? 0;
+                $completedPlans += $technician->completed_plans ?? 0;
+                
+                // Calculate average duration
+                if (isset($technician->avg_duration) && $technician->avg_duration > 0) {
+                    $totalDuration += $technician->avg_duration * ($technician->completed_plans ?? 0);
+                    $durationCount += $technician->completed_plans ?? 0;
+                }
+                
+                // Find top performer
+                if (($technician->completed_plans ?? 0) > $topPerformerScore) {
+                    $topPerformerScore = $technician->completed_plans ?? 0;
+                    $topPerformer = $technician;
+                }
+            }
+            
+            // Set summary metrics
+            $this->totalCompletedTasks = $completedPlans;
+            $this->taskCompletionRate = $totalPlans > 0 ? round(($completedPlans / $totalPlans) * 100, 1) : 0;
+            $this->avgTaskDuration = $durationCount > 0 ? round($totalDuration / $durationCount, 1) : 0;
+            $this->topPerformer = $topPerformer;
+            
+        } catch (\Exception $e) {
+            Log::error('Error calculating summary metrics: ' . $e->getMessage());
             $this->totalCompletedTasks = 0;
             $this->taskCompletionRate = 0;
             $this->avgTaskDuration = 0;
             $this->topPerformer = null;
-            $this->improvementAreas = [];
         }
     }
 
@@ -296,23 +258,30 @@ class TeamPerformance extends Component
             $this->improvementAreas = [];
 
             // Identify areas with low completion rates
-            $areaCompletionRates = MaintenanceTask::join('equipment', 'maintenance_tasks.equipment_id', '=', 'equipment.id')
-                ->whereBetween(DB::raw('COALESCE(maintenance_tasks.completed_at, maintenance_tasks.due_date)'), [$startDateTime, $endDateTime])
-                ->whereNotNull('equipment.area')
-                ->select('equipment.area')
-                ->selectRaw('COUNT(*) as total_tasks')
-                ->selectRaw('SUM(CASE WHEN maintenance_tasks.status = "completed" THEN 1 ELSE 0 END) as completed_tasks')
-                ->groupBy('equipment.area')
-                ->having('total_tasks', '>', 5) // Only consider areas with enough tasks
+            $areaCompletionRates = MaintenancePlan::join('maintenance_notes', 'maintenance_plans.id', '=', 'maintenance_notes.maintenance_plan_id')
+                ->whereBetween(DB::raw('COALESCE(maintenance_plans.scheduled_date, maintenance_plans.scheduled_date)'), [$startDateTime, $endDateTime])
+                ->whereNotNull('maintenance_plans.area_id')
+                ->select('maintenance_plans.area_id')
+                ->selectRaw('COUNT(*) as total_plans')
+                ->selectRaw('SUM(CASE WHEN maintenance_notes.status = "completed" THEN 1 ELSE 0 END) as completed_plans')
+                ->groupBy('maintenance_plans.area_id')
+                ->having('total_plans', '>', 5) // Only consider areas with enough plans
                 ->get();
 
             foreach ($areaCompletionRates as $areaRate) {
-                $completionRate = ($areaRate->completed_tasks / $areaRate->total_tasks) * 100;
+                $completionRate = ($areaRate->completed_plans / $areaRate->total_plans) * 100;
+
+                // Buscar o nome da área, já que agora temos apenas area_id
+                $areaName = 'Unknown Area';
+                $area = \App\Models\MaintenanceArea::find($areaRate->area_id);
+                if ($area) {
+                    $areaName = $area->name;
+                }
 
                 if ($completionRate < 70) {
                     $this->improvementAreas[] = [
                         'type' => 'area',
-                        'name' => $areaRate->area,
+                        'name' => $areaName,
                         'metric' => 'completion_rate',
                         'value' => round($completionRate, 1),
                         'recommendation' => 'Review resource allocation for this area'
@@ -320,27 +289,82 @@ class TeamPerformance extends Component
                 }
             }
 
-            // Identify task types with long durations
-            $taskTypeDurations = MaintenanceTask::whereBetween('completed_at', [$startDateTime, $endDateTime])
-                ->where('status', 'completed')
-                ->whereNotNull('started_at')
-                ->select('maintenance_type')
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, started_at, completed_at)) as avg_duration')
-                ->selectRaw('COUNT(*) as task_count')
-                ->groupBy('maintenance_type')
-                ->having('task_count', '>', 5) // Only consider types with enough tasks
-                ->get();
+            // Identificar tipos de planos com durações longas
+            $planTypeDurations = collect(); // Iniciar com coleção vazia
+            
+            // Verificar se a tabela maintenance_correctives existe
+            if (Schema::hasTable('maintenance_correctives')) {
+                try {
+                    // Usar a tabela maintenance_correctives se existir
+                    // A tabela maintenance_correctives não tem uma coluna maintenance_plan_id
+                    // Vamos usar uma abordagem alternativa para obter informações de desempenho
+                    
+                    // Simplificando a abordagem para evitar colunas inexistentes
+                    // Agrupamos apenas por equipment_id para evitar problemas de estrutura
+                    $equipmentDurations = DB::table('maintenance_correctives')
+                        ->join('maintenance_equipment', 'maintenance_correctives.equipment_id', '=', 'maintenance_equipment.id')
+                        ->whereBetween('maintenance_correctives.created_at', [$startDateTime, $endDateTime])
+                        ->whereNotNull('maintenance_correctives.end_time')
+                        ->select('maintenance_equipment.id', 'maintenance_equipment.name')
+                        ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, maintenance_correctives.created_at, maintenance_correctives.end_time)) as avg_duration')
+                        ->selectRaw('COUNT(*) as maintenance_count')
+                        ->groupBy('maintenance_equipment.id', 'maintenance_equipment.name')
+                        ->having('maintenance_count', '>', 2) // Reduzindo ainda mais o limite
+                        ->get();
+                    
+                    $planTypeDurations = collect();
+                    
+                    // 2. Converter os resultados para um formato compatível com o código existente
+                    foreach ($equipmentDurations as $equipment) {
+                        // Usar diretamente o nome do equipamento como categoria
+                        $equipmentName = $equipment->name ?: 'Equipamento ' . $equipment->id;
+                        $categoryName = $equipmentName;
+                        
+                        // Adicionar à coleção no formato esperado
+                        $typeData = (object)[
+                            'type' => $categoryName,
+                            'avg_duration' => $equipment->avg_duration,
+                            'plan_count' => $equipment->maintenance_count
+                        ];
+                        
+                        $planTypeDurations->push($typeData);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Erro ao consultar duração de planos por tipo: ' . $e->getMessage());
+                }
+            } else {
+                // Alternativa: usar os tempos de execução das notas de manutenção por tipo de plano
+                try {
+                    // Usar notas de manutenção como alternativa, se a tabela maintenance_correctives não existir
+                    // e se houver um campo de duração nas notas
+                    if (Schema::hasColumn('maintenance_notes', 'duration')) {
+                        $planTypeDurations = DB::table('maintenance_notes')
+                            ->join('maintenance_plans', 'maintenance_notes.maintenance_plan_id', '=', 'maintenance_plans.id')
+                            ->where('maintenance_notes.status', 'completed')
+                            ->whereBetween('maintenance_notes.created_at', [$startDateTime, $endDateTime])
+                            ->select('maintenance_plans.type')
+                            ->selectRaw('AVG(maintenance_notes.duration) as avg_duration')
+                            ->selectRaw('COUNT(*) as plan_count')
+                            ->groupBy('maintenance_plans.type')
+                            ->having('plan_count', '>', 5)
+                            ->get();
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Erro ao usar alternativa para duração de planos por tipo: ' . $e->getMessage());
+                }
+            }
+            
+            // Processar os resultados (independente de qual fonte foi usada)
+            foreach ($planTypeDurations as $planType) {
+                $averageDurationHours = round($planType->avg_duration, 1);
 
-            foreach ($taskTypeDurations as $taskType) {
-                $durationHours = $taskType->avg_duration / 60;
-
-                if ($durationHours > 4) { // Tasks taking more than 4 hours on average
+                if ($averageDurationHours > 3) {
                     $this->improvementAreas[] = [
-                        'type' => 'task_type',
-                        'name' => $taskType->maintenance_type,
-                        'metric' => 'duration',
-                        'value' => round($durationHours, 1),
-                        'recommendation' => 'Review procedures for ' . $taskType->maintenance_type . ' tasks'
+                        'type' => 'plan_type',
+                        'name' => ucfirst($planType->type),
+                        'metric' => 'avg_duration',
+                        'value' => $averageDurationHours,
+                        'recommendation' => 'Review procedure to optimize time'
                     ];
                 }
             }
@@ -363,174 +387,171 @@ class TeamPerformance extends Component
     public function getUserPerformanceProperty()
     {
         try {
-            $startDateTime = $this->startDate . ' 00:00:00';
-            $endDateTime = $this->endDate . ' 23:59:59';
+            // Get date range for queries
+            $startDateTime = Carbon::parse($this->startDate)->startOfDay();
+            $endDateTime = Carbon::parse($this->endDate)->endOfDay();
 
-            $query = User::whereHas('tasks', function($query) use ($startDateTime, $endDateTime) {
-                $query->where(function($q) use ($startDateTime, $endDateTime) {
-                    $q->whereBetween('due_date', [$startDateTime, $endDateTime])
-                      ->orWhereBetween('completed_at', [$startDateTime, $endDateTime]);
-                });
+            // Base query for technicians
+            $query = Technician::with(['area', 'line'])->orderBy('name');
 
-                if ($this->areaId) {
-                    $query->whereHas('equipment', function($q) {
-                        $q->where('area', $this->areaId);
-                    });
-                }
-
-                if ($this->taskType && $this->taskType !== 'all') {
-                    $query->where('maintenance_type', $this->taskType);
-                }
-
-                if ($this->searchQuery) {
-                    $query->where(function($q) {
-                        $q->whereHas('equipment', function($eq) {
-                             $eq->where('name', 'like', '%' . $this->searchQuery . '%');
-                          })
-                         ->orWhere('title', 'like', '%' . $this->searchQuery . '%')
-                         ->orWhere('description', 'like', '%' . $this->searchQuery . '%');
-                    });
-                }
-            });
-
+            // Aplicar filtros
             if ($this->userId) {
                 $query->where('id', $this->userId);
+            }
+
+            if ($this->areaId) {
+                $query->where('area_id', $this->areaId);
             }
 
             if ($this->searchQuery) {
                 $query->where(function($q) {
                     $q->where('name', 'like', '%' . $this->searchQuery . '%')
-                      ->orWhere('email', 'like', '%' . $this->searchQuery . '%');
+                      ->orWhereHas('area', function($eq) {
+                         $eq->where('name', 'like', '%' . $this->searchQuery . '%');
+                      })
+                      ->orWhereHas('line', function($eq) {
+                         $eq->where('name', 'like', '%' . $this->searchQuery . '%');
+                      });
                 });
             }
-
-            // Select users with their performance metrics
-            $users = $query->withCount(['tasks as total_tasks' => function($query) use ($startDateTime, $endDateTime) {
-                $query->where(function($q) use ($startDateTime, $endDateTime) {
-                    $q->whereBetween('due_date', [$startDateTime, $endDateTime])
-                      ->orWhereBetween('completed_at', [$startDateTime, $endDateTime]);
-                });
-
-                if ($this->areaId) {
-                    $query->whereHas('equipment', function($q) {
-                        $q->where('area', $this->areaId);
-                    });
-                }
-
-                if ($this->taskType && $this->taskType !== 'all') {
-                    $query->where('maintenance_type', $this->taskType);
-                }
-            }])
-            ->withCount(['tasks as completed_tasks' => function($query) use ($startDateTime, $endDateTime) {
-                $query->whereBetween('completed_at', [$startDateTime, $endDateTime])
-                    ->where('status', 'completed');
-
-                if ($this->areaId) {
-                    $query->whereHas('equipment', function($q) {
-                        $q->where('area', $this->areaId);
-                    });
-                }
-
-                if ($this->taskType && $this->taskType !== 'all') {
-                    $query->where('maintenance_type', $this->taskType);
-                }
-            }])
-            ->withCount(['tasks as overdue_tasks' => function($query) use ($startDateTime, $endDateTime) {
-                $query->whereBetween('due_date', [$startDateTime, $endDateTime])
-                    ->where('status', 'overdue');
-
-                if ($this->areaId) {
-                    $query->whereHas('equipment', function($q) {
-                        $q->where('area', $this->areaId);
-                    });
-                }
-
-                if ($this->taskType && $this->taskType !== 'all') {
-                    $query->where('maintenance_type', $this->taskType);
-                }
-            }]);
-
-            // Add average task duration
-            $users = $users->with(['tasks' => function($query) use ($startDateTime, $endDateTime) {
-                $query->whereBetween('completed_at', [$startDateTime, $endDateTime])
-                    ->where('status', 'completed')
-                    ->whereNotNull('started_at')
-                    ->select('assigned_to',
-                        DB::raw('TIMESTAMPDIFF(MINUTE, started_at, completed_at) as duration_minutes'));
-
-                if ($this->areaId) {
-                    $query->whereHas('equipment', function($q) {
-                        $q->where('area', $this->areaId);
-                    });
-                }
-
-                if ($this->taskType && $this->taskType !== 'all') {
-                    $query->where('maintenance_type', $this->taskType);
-                }
-            }]);
-
-            // Order by the selected sort field
-            switch ($this->sortField) {
-                case 'name':
-                    $users = $users->orderBy('name', $this->sortDirection);
-                    break;
-                case 'completed_tasks':
-                    $users = $users->orderBy('completed_tasks', $this->sortDirection);
-                    break;
-                case 'completion_rate':
-                    // Will be sorted after collection is retrieved
-                    break;
-                case 'avg_duration':
-                    // Will be sorted after collection is retrieved
-                    break;
-                case 'overdue_tasks':
-                    $users = $users->orderBy('overdue_tasks', $this->sortDirection);
-                    break;
-                default:
-                    $users = $users->orderBy('completed_tasks', 'desc');
-            }
-
-            $users = $users->get();
-
-            // Calculate completion rate and average duration for each user
-            $users->map(function($user) {
-                $user->completion_rate = $user->total_tasks > 0
-                    ? round(($user->completed_tasks / $user->total_tasks) * 100, 1)
+            
+            // Obter técnicos com suas métricas de desempenho
+            $technicians = $query->get();
+            
+            // Calcular métricas para cada técnico
+            foreach ($technicians as $technician) {
+                // Contar total de planos atribuídos
+                $technician->total_plans = MaintenancePlan::where('assigned_to', $technician->id)
+                    ->where(function($q) use ($startDateTime, $endDateTime) {
+                        $q->whereBetween('scheduled_date', [$startDateTime, $endDateTime])
+                          ->orWhereHas('notes', function($nq) use ($startDateTime, $endDateTime) {
+                              $nq->whereBetween('created_at', [$startDateTime, $endDateTime]);
+                          });
+                    })
+                    ->count();
+                
+                // Contar planos concluídos
+                $technician->completed_plans = MaintenancePlan::where('assigned_to', $technician->id)
+                    ->whereHas('notes', function($q) use ($startDateTime, $endDateTime) {
+                        $q->where('status', 'completed')
+                          ->whereBetween('created_at', [$startDateTime, $endDateTime]);
+                    })
+                    ->count();
+                
+                // Contar planos em atraso
+                $technician->overdue_plans = MaintenancePlan::where('assigned_to', $technician->id)
+                    ->where('scheduled_date', '<', now())
+                    ->whereDoesntHave('notes', function($q) {
+                        $q->where('status', 'completed');
+                    })
+                    ->count();
+                
+                // Calcular taxa de conclusão
+                $technician->completion_rate = $technician->total_plans > 0 
+                    ? round(($technician->completed_plans / $technician->total_plans) * 100, 1)
                     : 0;
-
-                $totalDuration = 0;
-                $taskCount = 0;
-
-                foreach ($user->tasks as $task) {
-                    if (isset($task->duration_minutes) && $task->duration_minutes > 0) {
-                        $totalDuration += $task->duration_minutes;
-                        $taskCount++;
+                
+                // Verificar se a tabela maintenance_correctives existe antes de consultar
+                $tableExists = Schema::hasTable('maintenance_correctives');
+                
+                // Definir um valor padrão
+                $technician->avg_duration = 0;
+                
+                if ($tableExists) {
+                    try {
+                        // Calcular duração média usando a tabela maintenance_correctives
+                        // Usamos a diferença entre created_at e resolved_at para calcular a duração
+                        $correctives = DB::table('maintenance_correctives')
+                            ->where('resolved_by', $technician->id)
+                            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+                            ->whereNotNull('end_time')
+                            ->select(DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, end_time)) as avg_hours'))
+                            ->first();
+                        
+                        $technician->avg_duration = $correctives && $correctives->avg_hours ? round($correctives->avg_hours, 1) : 0;
+                    } catch (\Exception $e) {
+                        // Silenciosamente falha e mantém o valor padrão
+                        Log::warning('Não foi possível obter a duração média para o técnico ' . $technician->name . ': ' . $e->getMessage());
+                    }
+                } else {
+                    // Usar uma alternativa se a tabela não existir
+                    // Podemos usar as notas de manutenção como uma alternativa
+                    try {
+                        $completedNotes = MaintenanceNote::whereHas('maintenancePlan', function($q) use ($technician, $startDateTime, $endDateTime) {
+                            $q->where('assigned_to', $technician->id)
+                              ->whereBetween('scheduled_date', [$startDateTime, $endDateTime]);
+                        })->where('status', 'completed');
+                        
+                        // Se houver notas, usamos o valor médio de um campo de duração, se existir
+                        if ($completedNotes->count() > 0 && Schema::hasColumn('maintenance_notes', 'duration')) {
+                            $avgDuration = $completedNotes->avg('duration');
+                            $technician->avg_duration = $avgDuration ? round($avgDuration, 1) : 0;
+                        }
+                    } catch (\Exception $e) {
+                        // Silenciosamente falha e mantém o valor padrão
+                        Log::warning('Não foi possível obter a duração alternativa para o técnico ' . $technician->name . ': ' . $e->getMessage());
                     }
                 }
-
-                $user->avg_duration = $taskCount > 0
-                    ? round($totalDuration / $taskCount / 60, 1)
-                    : 0;
-
-                return $user;
-            });
-
-            // Sort by calculated fields if needed
-            if ($this->sortField === 'completion_rate') {
-                $users = $this->sortDirection === 'asc'
-                    ? $users->sortBy('completion_rate')
-                    : $users->sortByDesc('completion_rate');
-            } elseif ($this->sortField === 'avg_duration') {
-                $users = $this->sortDirection === 'asc'
-                    ? $users->sortBy('avg_duration')
-                    : $users->sortByDesc('avg_duration');
             }
 
-            return $users->paginate(10);
+            // Ordenar os técnicos pelo campo selecionado
+            switch ($this->sortField) {
+                case 'name':
+                    $technicians = $this->sortDirection === 'asc'
+                        ? $technicians->sortBy('name')
+                        : $technicians->sortByDesc('name');
+                    break;
+                case 'completed_tasks':
+                case 'completed_plans':
+                    $technicians = $this->sortDirection === 'asc'
+                        ? $technicians->sortBy('completed_plans')
+                        : $technicians->sortByDesc('completed_plans');
+                    break;
+                case 'completion_rate':
+                    $technicians = $this->sortDirection === 'asc'
+                        ? $technicians->sortBy('completion_rate')
+                        : $technicians->sortByDesc('completion_rate');
+                    break;
+                case 'avg_duration':
+                    $technicians = $this->sortDirection === 'asc'
+                        ? $technicians->sortBy('avg_duration')
+                        : $technicians->sortByDesc('avg_duration');
+                    break;
+                case 'overdue_tasks':
+                case 'overdue_plans':
+                    $technicians = $this->sortDirection === 'asc'
+                        ? $technicians->sortBy('overdue_plans')
+                        : $technicians->sortByDesc('overdue_plans');
+                    break;
+                default:
+                    $technicians = $technicians->sortByDesc('completed_plans');
+            }
+
+            // Implementar paginação manual para a coleção
+            $page = request()->get('page', 1);
+            $perPage = 10;
+            
+            $items = $technicians->all();
+            $currentPageItems = array_slice($items, ($page - 1) * $perPage, $perPage);
+            
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                collect($currentPageItems),
+                count($items),
+                $perPage,
+                $page,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
 
         } catch (\Exception $e) {
-            Log::error('Error fetching user performance: ' . $e->getMessage());
-            return collect([])->paginate(10);
+            Log::error('Error fetching technician performance: ' . $e->getMessage());
+            
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                collect([]),
+                0,
+                10,
+                1,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
         }
     }
 

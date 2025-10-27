@@ -20,6 +20,10 @@ class MaintenanceScheduleCalendar extends Component
     public $selectedDateEvents = [];
     public $holidays = [];
 
+    // Propriedades para filtros
+    public $planStatusFilter = 'all'; // all, pending, in-progress, completed, cancelled
+    public $noteStatusFilter = 'all'; // all, pending, in-progress, completed, cancelled
+
     // Array of task colors
     private $taskColors = [
         'bg-blue-100 text-blue-800',
@@ -51,7 +55,15 @@ class MaintenanceScheduleCalendar extends Component
     // Function to convert date to calendar format
     public function formatDate($date)
     {
+        // Para uso interno do calendário, mantemos Y-m-d como formato padrão
+        // Este formato é necessário para compatibilidade com JavaScript e SQL
         return Carbon::parse($date)->format('Y-m-d');
+    }
+    
+    // Function to format date for display
+    public function formatDateForDisplay($date)
+    {
+        return Carbon::parse($date)->format(\App\Models\Setting::getSystemDateFormat());
     }
 
     // Component initialization
@@ -251,6 +263,7 @@ class MaintenanceScheduleCalendar extends Component
                     'id' => $event['id'],
                     'title' => $event['title'],
                     'equipment' => $event['extendedProps']['equipment'] ?? 'Equipment',
+                    'equipment_id' => $event['extendedProps']['equipment_id'] ?? null, // Adicionado equipment_id
                     'status' => $event['extendedProps']['status'] ?? 'pending',
                     'type' => $event['extendedProps']['type'] ?? 'default',
                     'priority' => $event['extendedProps']['priority'] ?? 'medium',
@@ -262,6 +275,20 @@ class MaintenanceScheduleCalendar extends Component
         }
     }
 
+    // Método para atualizar o filtro de status do plano
+    public function updatePlanStatusFilter($status = 'all')
+    {
+        $this->planStatusFilter = $status;
+        $this->loadEvents();
+    }
+    
+    // Método para atualizar o filtro de status das notas
+    public function updateNoteStatusFilter($status = 'all')
+    {
+        $this->noteStatusFilter = $status;
+        $this->loadEvents();
+    }
+    
     // Load events for the current month
     public function loadEvents()
     {
@@ -269,56 +296,138 @@ class MaintenanceScheduleCalendar extends Component
         $startDate = Carbon::createFromDate($this->currentYear, $this->currentMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // Fetch ALL active maintenance events
+        // Fetch maintenance events based on filters
         try {
-            // First load all active maintenance plans
-            $maintenancePlans = MaintenancePlan::with(['equipment', 'task'])
-                ->where('status', '!=', 'cancelled')
-                ->get();
+            // Registrar logs de debug
+            \Log::info('=== INÍCIO loadEvents ===', [
+                'startDate' => $startDate->format('Y-m-d'),
+                'endDate' => $endDate->format('Y-m-d'),
+                'planStatusFilter' => $this->planStatusFilter,
+                'noteStatusFilter' => $this->noteStatusFilter
+            ]);
+            
+            // Carregamos TODOS os planos de manutenção ativos, independente do status
+            // Depois filtramos pelas notas específicas de cada data
+            $query = MaintenancePlan::with(['equipment', 'task']);
+            
+            // Aplicamos o filtro de plano apenas para não mostrar planos totalmente cancelados
+            // mas o status individual de cada dia vem exclusivamente das notas
+            if ($this->planStatusFilter !== 'all') {
+                $query->where('status', $this->planStatusFilter);
+            } else {
+                // Se não estivermos filtrando por status específico, ignoramos apenas planos cancelados
+                $query->where('status', '!=', 'cancelled');
+            }
+            
+            // Obter os planos
+            $maintenancePlans = $query->get();
 
-            // Clear existing events
+            // Limpar eventos existentes
             $this->events = [];
 
+            // Primeiro, vamos buscar todas as notas de manutenção para o período
+            // Isso é mais eficiente que fazer queries separadas para cada data
+            $startStr = $startDate->format('Y-m-d');
+            $endStr = $endDate->format('Y-m-d');
+            
+            // Buscar todas as notas do período e organizá-las por plano e data
+            $allNotes = \App\Models\MaintenanceNote::whereBetween('note_date', [$startStr, $endStr])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->groupBy(function($note) {
+                    // Agrupar por plano_id + data
+                    return $note->maintenance_plan_id . '-' . $note->note_date->format('Y-m-d');
+                });
+                
+            \Log::info('Notas carregadas para o período', [
+                'total_notas' => $allNotes->count()
+            ]);
+
             foreach ($maintenancePlans as $plan) {
-                // Generate occurrences for this plan based on frequency
+                // Gerar ocorrências para este plano com base na frequência
                 $occurrences = $this->generateOccurrences($plan, $startDate, $endDate);
 
-                // Process each occurrence that falls in this month
+                // Processar cada ocorrência que cai neste mês
                 foreach ($occurrences as $date) {
                     $formattedDate = $this->formatDate($date);
-
-                    // Skip if the date is a Sunday or a holiday (rest day)
+                    
+                    // Pular se a data for um domingo ou feriado (dia de descanso)
                     $isRestDay = Carbon::parse($formattedDate)->isSunday() || isset($this->holidays[$formattedDate]);
                     if ($isRestDay) {
                         continue;
                     }
-
-                    // Get color for this task
+                    
+                    // Verificar se existe uma nota para esta combinação de plano+data
+                    $noteKey = $plan->id . '-' . $formattedDate;
+                    $noteForDay = $allNotes->get($noteKey) ? $allNotes->get($noteKey)->first() : null;
+                    
+                    // Determinar o status com base na nota do dia (se existir)
+                    $noteStatus = 'pending'; // Status padrão: pendente
+                    
+                    if ($noteForDay) {
+                        // Se existe uma nota para este dia específico, usar seu status
+                        $noteStatus = str_replace('_', '-', $noteForDay->status);
+                        
+                        \Log::info('Usando status da nota encontrada', [
+                            'date' => $formattedDate,
+                            'planId' => $plan->id,
+                            'noteId' => $noteForDay->id,
+                            'status' => $noteStatus
+                        ]);
+                    }
+                    
+                    // Se temos um filtro de status de nota ativo e este evento não corresponde, pular
+                    if ($this->noteStatusFilter !== 'all' && $noteStatus !== $this->noteStatusFilter) {
+                        \Log::info('Pulando evento por não corresponder ao filtro de status da nota', [
+                            'date' => $formattedDate,
+                            'planId' => $plan->id,
+                            'noteStatus' => $noteStatus,
+                            'filtro' => $this->noteStatusFilter
+                        ]);
+                        continue;
+                    }
+                    
+                    // Obter cor para esta tarefa
                     $colorClass = $this->getEventColor($plan->id, $plan->type);
-
+                    
+                    // Adicionar evento à lista de eventos
+                    // IMPORTANTE: SEMPRE mostramos todos os status, incluindo 'completed'
+                    // para que apareçam no histórico de atividades
                     $this->events[$formattedDate][] = [
                         'id' => $plan->id,
                         'title' => $plan->task ? $plan->task->title : 'Maintenance',
                         'equipment' => $plan->equipment ? $plan->equipment->name : 'Equipment',
-                        'status' => $plan->status,
+                        'equipment_id' => $plan->equipment_id, // ID do equipamento para identificação única
+                        'status' => $noteStatus, // Status da nota para este dia específico
+                        'plan_status' => $plan->status, // Status global do plano (apenas referência visual)
                         'type' => $plan->type,
                         'priority' => $plan->priority,
                         'description' => $plan->description,
                         'frequency' => $plan->frequency_type,
                         'color' => $colorClass,
                     ];
+                    
+                    \Log::info('Evento adicionado ao calendário', [
+                        'date' => $formattedDate,
+                        'planId' => $plan->id,
+                        'noteStatus' => $noteStatus
+                    ]);
                 }
             }
 
-            // Load events for the selected date
+            // Carregar eventos para a data selecionada
             $this->updateSelectedDateEvents();
+            
+            \Log::info('=== FIM loadEvents ===');
 
         } catch (\Exception $e) {
-            // In case of error, log but don't display events
-            // Log::error('Error loading events: ' . $e->getMessage());
+            // Em caso de erro, registrar mas não exibir eventos
+            \Log::error('Erro ao carregar eventos: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
-
+    
     /**
      * Generates all occurrences of a maintenance plan within a period
      * based on the configured frequency type
@@ -332,6 +441,7 @@ class MaintenanceScheduleCalendar extends Component
     {
         $occurrences = [];
         $scheduledDate = Carbon::parse($plan->scheduled_date);
+        $processedDates = []; // Rastreador para evitar duplicações do mesmo equipamento no mesmo dia
 
         // If the scheduled date is outside the period and after the end of the period,
         // we won't have occurrences of this plan this month
@@ -345,13 +455,26 @@ class MaintenanceScheduleCalendar extends Component
             if ($scheduledDate->greaterThanOrEqualTo($startDate) && $scheduledDate->lessThanOrEqualTo($endDate)) {
                 // Check if it's not a rest day
                 $isRestDay = $scheduledDate->isSunday() || isset($this->holidays[$scheduledDate->format('Y-m-d')]);
-                if (!$isRestDay) {
+                $dateStr = $scheduledDate->format('Y-m-d');
+                
+                // Verificar se não tem nota com status completed ou cancelled para este plano nesta data
+                $hasCompleted = $this->hasCompletedOrCancelledNote($plan->id, $dateStr);
+                
+                if (!$isRestDay && !$hasCompleted) {
                     $occurrences[] = $scheduledDate;
-                } else {
+                    $processedDates[$dateStr] = true;
+                } else if (!$hasCompleted) { // Só remarca se não estiver completado
                     // If it's a rest day, find the next valid working day
                     $nextValidDay = $this->findNextValidWorkingDay($scheduledDate);
-                    if ($nextValidDay->lessThanOrEqualTo($endDate)) {
+                    $nextValidDayStr = $nextValidDay->format('Y-m-d');
+                    
+                    // Verificar se já existe alguma ocorrência no mesmo dia para o mesmo equipamento
+                    // e se não tem nota com status completed ou cancelled para este plano na nova data
+                    if ($nextValidDay->lessThanOrEqualTo($endDate) && 
+                        !$this->hasExistingMaintenanceForDate($nextValidDayStr, $plan->equipment_id, $plan->id) &&
+                        !$this->hasCompletedOrCancelledNote($plan->id, $nextValidDayStr)) {
                         $occurrences[] = $nextValidDay;
+                        $processedDates[$nextValidDayStr] = true;
                     }
                 }
             }
@@ -369,32 +492,224 @@ class MaintenanceScheduleCalendar extends Component
 
         // Now add all occurrences within the period
         while ($currentDate->lessThanOrEqualTo($endDate)) {
+            $currentDateStr = $currentDate->format('Y-m-d');
+            
+            // Evitar duplicações: verificar se já processamos esta data
+            if (isset($processedDates[$currentDateStr])) {
+                $currentDate = $this->getNextOccurrence($currentDate, $plan);
+                continue;
+            }
+            
             // Check if it's not a rest day
-            $isRestDay = $currentDate->isSunday() || isset($this->holidays[$currentDate->format('Y-m-d')]);
+            $isRestDay = $currentDate->isSunday() || isset($this->holidays[$currentDateStr]);
             if (!$isRestDay) {
-                $occurrences[] = $currentDate->copy();
+                // Verificar se já existe alguma ocorrência no mesmo dia para o mesmo equipamento
+                // e também verificar se não tem uma nota com status completado ou cancelado para esta data
+                if (!$this->hasExistingMaintenanceForDate($currentDateStr, $plan->equipment_id, $plan->id) &&
+                    !$this->hasCompletedOrCancelledNote($plan->id, $currentDateStr)) {
+                    $occurrences[] = $currentDate->copy();
+                    $processedDates[$currentDateStr] = true;
+                }
             } else {
                 // If it's a rest day, find the next valid working day
                 $nextValidDay = $this->findNextValidWorkingDay($currentDate);
-                if ($nextValidDay->lessThanOrEqualTo($endDate)) {
+                $nextValidDayStr = $nextValidDay->format('Y-m-d');
+                
+                // Verificar se já existe alguma ocorrência no próximo dia válido para o mesmo equipamento
+                // e também verificar se não tem uma nota com status completado ou cancelado para esta data
+                if ($nextValidDay->lessThanOrEqualTo($endDate) && 
+                    !isset($processedDates[$nextValidDayStr]) && 
+                    !$this->hasExistingMaintenanceForDate($nextValidDayStr, $plan->equipment_id, $plan->id) &&
+                    !$this->hasCompletedOrCancelledNote($plan->id, $nextValidDayStr)) {
                     $occurrences[] = $nextValidDay->copy();
+                    $processedDates[$nextValidDayStr] = true;
                 }
             }
+            
             $currentDate = $this->getNextOccurrence($currentDate, $plan);
         }
 
         return $occurrences;
     }
+    
+    /**
+     * Verifica se já existe uma manutenção para o mesmo equipamento na data especificada
+     * Usado para evitar duplicações no calendário
+     * 
+     * @param string $dateStr Data em formato Y-m-d
+     * @param int $equipmentId ID do equipamento
+     * @param int $currentPlanId ID do plano atual (para evitar contar o próprio plano)
+     * @return bool Retorna true se já existe manutenção, false caso contrário
+     */
+    private function hasExistingMaintenanceForDate($dateStr, $equipmentId, $currentPlanId)
+    {
+        // Se não há eventos nesta data, retorna false
+        if (!isset($this->events[$dateStr])) {
+            return false;
+        }
+        
+        // Verificar todos os eventos nesta data
+        foreach ($this->events[$dateStr] as $event) {
+            // Verificar se é o mesmo equipamento e não é o plano atual
+            if (isset($event['equipment_id']) && $event['equipment_id'] == $equipmentId && $event['id'] != $currentPlanId) {
+                return true; // Já existe uma manutenção para este equipamento nesta data
+            }
+        }
+        
+        return false;
+    }
 
     /**
-     * Find the next valid working day (not a Sunday or holiday)
-     *
-     * @param Carbon $date Starting date
-     * @return Carbon Next valid working day
+     * Verifica se já existe uma manutenção para o mesmo equipamento na data especificada
+     * Usado para evitar duplicações no calendário
+     * 
+     * @param string $dateStr Data em formato Y-m-d
+     * @param int $equipmentId ID do equipamento
+     * @param int $currentPlanId ID do plano atual (para evitar contar o próprio plano)
+     * @return bool Retorna true se já existe manutenção, false caso contrário
+     */
+
+/**
+ * Verifica se um evento deve ser filtrado com base no status da nota e no filtro atual
+ *
+ * @param int $planId ID do plano de manutenção
+ * @param string $dateStr Data em formato Y-m-d
+ * @return bool Retorna true se o evento deve ser filtrado (removido), false se deve ser exibido
+ */
+    private function hasCompletedOrCancelledNote($planId, $dateStr)
+{
+    // Log para debug - início do método
+    \Log::info('=== INÍCIO hasCompletedOrCancelledNote ===', [
+        'planId' => $planId,
+        'dateStr' => $dateStr,
+        'noteStatusFilter' => $this->noteStatusFilter
+    ]);
+    
+    try {
+        // Converter a string de data para Carbon para manipulação segura
+        $date = \Carbon\Carbon::parse($dateStr);
+        
+        // Buscar especificamente a nota mais recente para este plano E esta data específica
+        $note = \App\Models\MaintenanceNote::where('maintenance_plan_id', $planId)
+            ->whereDate('note_date', $date->format('Y-m-d'))
+            ->orderBy('created_at', 'desc')
+            ->first();
+            
+        // Log para registro da nota encontrada
+        \Log::info('Nota encontrada para filtragem:', [
+            'encontrou_nota' => $note ? 'sim' : 'não',
+            'note_status' => $note ? $note->status : 'nenhum'
+        ]);
+        
+        // Se não existe nota para esta data específica, verificamos o filtro
+        if (!$note) {
+            // Se estamos filtrando para mostrar apenas completed ou cancelled, não mostramos eventos sem notas
+            if ($this->noteStatusFilter === 'completed' || $this->noteStatusFilter === 'cancelled') {
+                \Log::info('Filtrando evento sem nota porque filtro é completed/cancelled');
+                return true; // Filtrar (remover) o evento
+            }
+            \Log::info('Mantendo evento sem nota');
+            return false; // Manter o evento
+        }
+        
+        // Se o filtro for 'all', mostramos tudo
+        if ($this->noteStatusFilter === 'all') {
+            \Log::info('Filtro é all, mantendo evento');
+            return false; // Mostrar tudo
+        }
+        
+        // Se o filtro for específico, verificamos se corresponde ao status da nota
+        if ($this->noteStatusFilter !== 'all') {
+            // Se o status da nota não corresponder ao filtro, removemos o evento
+            $shouldFilter = ($note->status !== $this->noteStatusFilter);
+            \Log::info('Verificando filtro específico', [
+                'note_status' => $note->status,
+                'filtro' => $this->noteStatusFilter,
+                'resultado' => $shouldFilter ? 'filtrar' : 'manter'
+            ]);
+            return $shouldFilter;
+        }
+        
+        // Não filtramos mais completed ou cancelled por padrão, pois queremos mostrar todas as atividades no histórico
+        // Apenas filtramos se o filtro específico estiver ativado
+        \Log::info('Mantendo evento independente do status da nota');
+        return false; // Mostrar o evento (não filtrar)
+    } catch (\Exception $e) {
+        \Log::error('Erro ao verificar nota para filtragem', [
+            'error' => $e->getMessage()
+        ]);
+        return false; // Em caso de erro, melhor mostrar o evento
+    } finally {
+        \Log::info('=== FIM hasCompletedOrCancelledNote ===');
+    }
+}
+
+private function getMaintenanceNoteStatus($planId, $dateStr, $defaultStatus = 'pending')
+{
+    // Buscar APENAS a nota mais recente para este plano E para esta data específica
+    // Cada dia tem seu próprio status totalmente independente
+    try {
+        // Log para debug - início do método
+        \Log::info('=== INÍCIO getMaintenanceNoteStatus ===', [
+            'planId' => $planId,
+            'dateStr' => $dateStr
+        ]);
+        
+        // Converter a string de data para Carbon para manipulação segura
+        $date = \Carbon\Carbon::parse($dateStr);
+        $formattedDate = $date->format('Y-m-d');
+        
+        // Buscar EXCLUSIVAMENTE notas para a data selecionada
+        // O status do plano global não afeta o status do dia específico
+        $note = \App\Models\MaintenanceNote::where('maintenance_plan_id', $planId)
+            ->whereDate('note_date', $formattedDate)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        // Se encontrou uma nota para esta data específica, retorna o status dela
+        if ($note) {
+            \Log::info('Nota encontrada para a data específica', [
+                'noteId' => $note->id,
+                'status' => $note->status,
+                'date' => $formattedDate,
+                'created_at' => $note->created_at
+            ]);
+            
+            // Garantir formato consistente (usar hífen em vez de underscore)
+            $status = str_replace('_', '-', $note->status);
+            return $status;
+        }
+        
+        // Se não encontrou nota para esta data específica, retorna 'pending' como padrão
+        // IMPORTANTE: Nunca usamos o status do plano como padrão, apenas 'pending'
+        \Log::info('Nenhuma nota encontrada para a data específica', [
+            'date' => $formattedDate,
+            'status_padrao' => 'pending'
+        ]);
+        
+        // Sempre usa 'pending' como padrão, independente do status global do plano
+        return 'pending';
+    } catch (\Exception $e) {
+        // Log de erro caso ocorra alguma exceção
+        \Log::error('Erro ao obter status da nota de manutenção', [
+            'error' => $e->getMessage(),
+            'planId' => $planId,
+            'dateStr' => $dateStr
+        ]);
+        return 'pending';
+    } finally {
+        // Log para debug - fim do método
+        \Log::info('=== FIM getMaintenanceNoteStatus ===');
+    }
+}
+
+/**
+ * Find the next valid working day (not a Sunday or holiday)
+ *
      */
     private function findNextValidWorkingDay($date)
     {
-        $nextDate = $date->copy()->addDay();
+        $nextDate = $date->copy();
 
         while ($nextDate->isSunday() || isset($this->holidays[$nextDate->format('Y-m-d')])) {
             $nextDate->addDay();
@@ -511,10 +826,31 @@ class MaintenanceScheduleCalendar extends Component
     }
 
     // Edit an event
-    public function editEvent($eventId)
+    public function editEvent($eventId, $eventDate = null)
     {
-        // Dispatch event to open the notes modal
-        $this->dispatch('openNotesModal', $eventId);
+        // Atualizar a data selecionada com a data do evento clicado
+        if ($eventDate) {
+            $this->selectedDate = $eventDate;
+        }
+        
+        // Log para debug
+        \Log::info('=== INÍCIO editEvent ===', [
+            'eventId' => $eventId,
+            'eventDate_parameter' => $eventDate,
+            'selectedDate' => $this->selectedDate,
+            'selectedDate_type' => gettype($this->selectedDate),
+            'data_atual' => now()->format('Y-m-d')
+        ]);
+        
+        // Dispatch event to open the notes modal with the selected date
+        $this->dispatch('openNotesModal', $eventId, $eventDate ?? $this->selectedDate);
+        
+        // Log para debug
+        \Log::info('=== FIM editEvent - DISPATCHED ===', [
+            'dispatched_eventId' => $eventId,
+            'dispatched_selectedDate' => $eventDate ?? $this->selectedDate,
+            'selectedDate_original' => $this->selectedDate
+        ]);
     }
 
     // Create a new event on the selected date
@@ -538,5 +874,51 @@ class MaintenanceScheduleCalendar extends Component
     public function render()
     {
         return view('livewire.maintenance-schedule-calendar');
+    }
+    
+    /**
+     * Generate PDF of the maintenance plan calendar
+     */
+    public function generatePdf()
+    {
+        try {
+            // Prepare the data for the PDF
+            $data = [
+                'title' => __('messages.maintenance_plan_calendar'),
+                'month' => $this->calendarTitle,
+                'calendarDays' => $this->calendarDays,
+                'events' => $this->events,
+                'holidays' => $this->holidays,
+                'filters' => [
+                    'planStatus' => $this->planStatusFilter,
+                    'noteStatus' => $this->noteStatusFilter,
+                ],
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ];
+            
+            // Load the PDF view
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('pdf.maintenance-calendar', $data);
+            
+            $filename = 'maintenance_calendar_' . $this->currentYear . '_' . $this->currentMonth . '.pdf';
+            
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: __('messages.pdf_generated_successfully')
+            );
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error generating maintenance calendar PDF: ' . $e->getMessage());
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: __('messages.pdf_generation_failed')
+            );
+            return null;
+        }
     }
 }

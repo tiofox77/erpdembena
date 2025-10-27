@@ -1,5 +1,10 @@
 <div>
-    <h2 class="text-2xl font-semibold mb-6">Dashboard Overview</h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold flex items-center">
+            <i class="fas fa-tachometer-alt text-indigo-600 mr-2"></i> {{ __('messages.dashboard_overview') }}
+        </h2>
+        <x-maintenance-guide-link />
+    </div>
 
     @if (session()->has('message'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -9,10 +14,13 @@
 
     <!-- Filtros -->
     <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <h3 class="text-lg font-semibold mb-3 flex items-center">
+            <i class="fas fa-filter text-indigo-500 mr-2"></i> {{ __('messages.filter_options') }}
+        </h3>
         <div class="flex flex-wrap gap-4 items-center">
             <div>
-                <label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                <select id="filterYear" wire:model.live="filterYear" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.year') }}</label>
+                <select id="filterYear" wire:model="filterYear" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     @for ($year = date('Y') - 2; $year <= date('Y') + 1; $year++)
                         <option value="{{ $year }}">{{ $year }}</option>
                     @endfor
@@ -20,173 +28,186 @@
             </div>
 
             <div>
-                <label for="filterMonth" class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                <select id="filterMonth" wire:model.live="filterMonth" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="all">All</option>
-                    <option value="01">January</option>
-                    <option value="02">February</option>
-                    <option value="03">March</option>
-                    <option value="04">April</option>
-                    <option value="05">May</option>
-                    <option value="06">June</option>
-                    <option value="07">July</option>
-                    <option value="08">August</option>
-                    <option value="09">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
+                <label for="filterMonth" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.month') }}</label>
+                <select id="filterMonth" wire:model="filterMonth" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="all">{{ __('messages.all') }}</option>
+                    <option value="01">{{ __('messages.january') }}</option>
+                    <option value="02">{{ __('messages.february') }}</option>
+                    <option value="03">{{ __('messages.march') }}</option>
+                    <option value="04">{{ __('messages.april') }}</option>
+                    <option value="05">{{ __('messages.may') }}</option>
+                    <option value="06">{{ __('messages.june') }}</option>
+                    <option value="07">{{ __('messages.july') }}</option>
+                    <option value="08">{{ __('messages.august') }}</option>
+                    <option value="09">{{ __('messages.september') }}</option>
+                    <option value="10">{{ __('messages.october') }}</option>
+                    <option value="11">{{ __('messages.november') }}</option>
+                    <option value="12">{{ __('messages.december') }}</option>
                 </select>
             </div>
 
             <div>
-                <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select id="filterStatus" wire:model.live="filterStatus" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.status') }}</label>
+                <select id="filterStatus" wire:model="filterStatus" class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="all">{{ __('messages.all') }}</option>
+                    <option value="pending">{{ __('messages.pending') }}</option>
+                    <option value="in_progress">{{ __('messages.in_progress') }}</option>
+                    <option value="completed">{{ __('messages.completed') }}</option>
+                    <option value="cancelled">{{ __('messages.cancelled') }}</option>
+                    <option value="schedule">{{ __('messages.schedule') }}</option>
                 </select>
             </div>
 
             <div>
-                <label for="filterArea" class="block text-sm font-medium text-gray-700 mb-1">Area</label>
-                <select id="filterArea" wire:model.live="filterArea" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <label for="filterArea" class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.area') }}</label>
+                <select id="filterArea" wire:model="filterArea" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     <option value="all">All</option>
                     <!-- Area options would be generated dynamically -->
                 </select>
             </div>
 
             <div class="self-end">
-                <button type="button" wire:click="loadDashboardData" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <button type="button" wire:click="refreshDashboard" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Update
+                    {{ __('messages.update_filters') }}
                 </button>
             </div>
         </div>
     </div>
 
     <!-- KPI Cards Overview -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="bg-blue-100 p-4 rounded-lg text-center">
-                <h3 class="text-lg font-semibold mb-2">Planned</h3>
-                <p class="text-3xl font-bold">{{ $plannedTasksCount }}</p>
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 dashboard-card">
+        <h3 class="text-xl font-semibold mb-4">{{ __('messages.kpi_overview') }}</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="bg-blue-50 p-4 rounded-lg text-center border border-blue-100 transition-all hover:shadow-md">
+                <div class="flex items-center justify-center mb-2 text-blue-500">
+                    <i class="fas fa-calendar-check text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.planned') }}</h3>
+                <p class="text-3xl font-bold text-blue-700">{{ $plannedTasksCount }}</p>
             </div>
-            <div class="bg-green-100 p-4 rounded-lg text-center">
-                <h3 class="text-lg font-semibold mb-2">Actual</h3>
-                <p class="text-3xl font-bold">{{ $actualTasksCount }}</p>
+            <div class="bg-green-50 p-4 rounded-lg text-center border border-green-100 transition-all hover:shadow-md">
+                <div class="flex items-center justify-center mb-2 text-green-500">
+                    <i class="fas fa-check-circle text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.actual') }}</h3>
+                <p class="text-3xl font-bold text-green-700">{{ $actualTasksCount }}</p>
             </div>
-            <div class="bg-blue-100 p-4 rounded-lg text-center">
-                <h3 class="text-lg font-semibold mb-2">Compliance %</h3>
-                <p class="text-3xl font-bold">{{ $compliancePercentage }}%</p>
+            <div class="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-100 transition-all hover:shadow-md">
+                <div class="flex items-center justify-center mb-2 text-indigo-500">
+                    <i class="fas fa-chart-line text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.compliance_percentage') }}</h3>
+                <p class="text-3xl font-bold text-indigo-700">{{ $compliancePercentage }}%</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-blue-100 p-4 rounded-lg text-center">
-                <h3 class="text-lg font-semibold mb-2">Pending</h3>
-                <p class="text-3xl font-bold">{{ $pendingTasksCount }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-yellow-50 p-4 rounded-lg text-center border border-yellow-100 transition-all hover:shadow-md">
+                <div class="flex items-center justify-center mb-2 text-yellow-500">
+                    <i class="fas fa-clock text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.pending') }}</h3>
+                <p class="text-3xl font-bold text-yellow-700">{{ $pendingTasksCount }}</p>
             </div>
-            <div class="bg-red-100 p-4 rounded-lg text-center">
-                <h3 class="text-lg font-semibold mb-2">Non-Compliance %</h3>
-                <p class="text-3xl font-bold">{{ $nonCompliancePercentage }}%</p>
+            <div class="bg-red-50 p-4 rounded-lg text-center border border-red-100 transition-all hover:shadow-md">
+                <div class="flex items-center justify-center mb-2 text-red-500">
+                    <i class="fas fa-exclamation-triangle text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-1">{{ __('messages.non_compliance_percentage') }}</h3>
+                <p class="text-3xl font-bold text-red-700">{{ $nonCompliancePercentage }}%</p>
             </div>
         </div>
     </div>
 
     <!-- Metrics Overview -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h3 class="text-lg font-medium mb-4">Metrics Overview</h3>
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 dashboard-card">
+        <h3 class="text-xl font-semibold mb-4">{{ __('messages.metrics_overview') }}</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div class="metrics-card">
-                <div class="icon purple">
-                    <i class="fas fa-calendar-alt"></i>
+            <div class="flex flex-col items-center p-4 bg-purple-50 rounded-lg border border-purple-100 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-3 text-purple-600">
+                    <i class="fas fa-calendar-alt text-xl"></i>
                 </div>
-                <div class="number">{{ $scheduledTasks }}</div>
-                <div class="text-sm text-gray-500">Total Maintenance Plans</div>
+                <div class="text-2xl font-bold text-purple-700">{{ $scheduledTasks }}</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.total_maintenance_plans') }}</div>
             </div>
 
-            <div class="metrics-card">
-                <div class="icon red">
-                    <i class="fas fa-exclamation-circle"></i>
+            <div class="flex flex-col items-center p-4 bg-red-50 rounded-lg border border-red-100 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3 text-red-600">
+                    <i class="fas fa-exclamation-circle text-xl"></i>
                 </div>
-                <div class="number">{{ $overdueTasks }}</div>
-                <div class="text-sm text-gray-500">Overdue Tasks</div>
+                <div class="text-2xl font-bold text-red-700">{{ $overdueTasks }}</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.overdue_tasks') }}</div>
             </div>
 
-            <div class="metrics-card">
-                <div class="icon yellow">
-                    <i class="fas fa-tools"></i>
+            <div class="flex flex-col items-center p-4 bg-yellow-50 rounded-lg border border-yellow-100 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-3 text-yellow-600">
+                    <i class="fas fa-tools text-xl"></i>
                 </div>
-                <div class="number">{{ $equipmentInMaintenance }}</div>
-                <div class="text-sm text-gray-500">Equipment in Maintenance</div>
+                <div class="text-2xl font-bold text-yellow-700">{{ $equipmentInMaintenance }}</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.equipment_in_maintenance') }}</div>
             </div>
 
-            <div class="metrics-card">
-                <div class="icon red">
-                    <i class="fas fa-exclamation-triangle"></i>
+            <div class="flex flex-col items-center p-4 bg-red-50 rounded-lg border border-red-100 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
                 </div>
-                <div class="number">{{ $equipmentOutOfService }}</div>
-                <div class="text-sm text-gray-500">Equipment Out of Service</div>
+                <div class="text-2xl font-bold text-red-700">{{ $equipmentOutOfService }}</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.equipment_out_of_service') }}</div>
             </div>
 
-            <div class="metrics-card">
-                <div class="icon blue">
-                    <i class="fas fa-wrench"></i>
+            <div class="flex flex-col items-center p-4 bg-blue-50 rounded-lg border border-blue-100 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3 text-blue-600">
+                    <i class="fas fa-wrench text-xl"></i>
                 </div>
-                <div class="number">{{ $equipmentCount }}</div>
-                <div class="text-sm text-gray-500">Total Equipment</div>
+                <div class="text-2xl font-bold text-blue-700">{{ $equipmentCount }}</div>
+                <div class="text-sm text-gray-600 text-center mt-1">{{ __('messages.total_equipment') }}</div>
             </div>
         </div>
     </div>
 
+    <!-- Widget Planned Dates removido conforme solicitado -->
+
     <!-- Task Status by Department and Category -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Area Wise Task Status</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-project-diagram text-purple-500 mr-2"></i> {{ __('messages.area_wise_task_status') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="deptTaskChart" width="400" height="300"></canvas>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Area Wise Task Compliance %</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-chart-pie text-green-500 mr-2"></i> {{ __('messages.area_wise_compliance') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="deptComplianceChart" width="400" height="300"></canvas>
             </div>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Lines Wise Task Status</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-layer-group text-blue-500 mr-2"></i> {{ __('messages.category_wise_task_status') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="categoryTaskChart" width="400" height="300"></canvas>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Lines Wise Task Compliance %</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-chart-line text-green-500 mr-2"></i> {{ __('messages.category_wise_compliance') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="categoryComplianceChart" width="400" height="300"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Planned Dates Timeline -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h3 class="text-lg font-medium mb-4">Planned Dates</h3>
-        <div class="overflow-x-auto">
-            <div class="flex space-x-2 pb-3">
-                @foreach($plannedDates as $date)
-                <div class="px-3 py-2 bg-blue-100 text-blue-800 rounded-md text-sm whitespace-nowrap">
-                    {{ $date }}
-                </div>
-                @endforeach
             </div>
         </div>
     </div>
@@ -194,17 +215,21 @@
     <!-- Original Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Monthly Distribution Chart -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Monthly Maintenance Distribution</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i> {{ __('messages.monthly_maintenance_distribution') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="monthlyChart" width="400" height="300"></canvas>
             </div>
         </div>
 
         <!-- Status Distribution Chart -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Maintenance Status</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-clipboard-list text-indigo-500 mr-2"></i> {{ __('messages.maintenance_plan_status') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="statusChart" width="400" height="300"></canvas>
             </div>
         </div>
@@ -212,17 +237,21 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Planned Maintenance Chart -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Planned Maintenance Types</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-clipboard-list text-green-500 mr-2"></i> Planned Maintenance Types
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="planningChart" width="400" height="300"></canvas>
             </div>
         </div>
 
         <!-- Corrective Maintenance Chart -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Corrective Maintenance by Cause</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-tools text-red-500 mr-2"></i> Corrective Maintenance by Cause
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="correctiveChart" width="400" height="300"></canvas>
             </div>
         </div>
@@ -230,54 +259,104 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Task Description Status -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Task Description Wise Status</h3>
-            <div class="h-80">
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-tasks text-purple-500 mr-2"></i> {{ __('messages.task_description_wise_status') }}
+            </h3>
+            <div class="h-80 chart-container">
                 <canvas id="taskDescriptionChart" width="400" height="300"></canvas>
             </div>
         </div>
 
         <!-- Maintenance Alerts -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-medium mb-4">Maintenance Alerts</h3>
+        <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+            <h3 class="text-lg font-medium mb-4 flex items-center">
+                <i class="fas fa-bell mr-2 text-yellow-500"></i> Maintenance Alerts
+            </h3>
 
             @forelse($maintenanceAlerts as $alert)
-                <div class="alert-item flex justify-between items-center mb-3">
+                <div class="p-3 mb-3 rounded-lg {{ $alert['status'] === 'overdue' ? 'bg-red-50 border border-red-100' : 'bg-blue-50 border border-blue-100' }} flex justify-between items-center alert-item">
                     <div class="flex-1">
-                        <div class="font-medium">{{ $alert['title'] }}</div>
-                        <div class="text-sm text-gray-500">{{ $alert['equipment'] }}</div>
+                        <div class="font-semibold text-gray-800">{{ $alert['title'] }}</div>
+                        <div class="text-sm text-gray-600 flex items-center mt-1">
+                            <i class="fas fa-cog mr-1"></i> {{ $alert['equipment'] }}
+                        </div>
                         <div class="flex items-center text-xs space-x-2 mt-1">
-                            <span class="text-gray-600">{{ $alert['date'] }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-xs
-                                {{ $alert['status'] === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
+                            <span class="flex items-center text-gray-600">
+                                <i class="far fa-calendar-alt mr-1"></i> {{ $alert['date'] }}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                {{ $alert['status'] === 'overdue' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800' }}">
                                 {{ $alert['days_until'] }}
                             </span>
                         </div>
                     </div>
                     <div class="flex items-center">
                         @if($alert['status'] === 'overdue')
-                            <span class="overdue-badge mr-3">Overdue</span>
+                            <span class="px-2 py-1 rounded bg-red-200 text-red-800 text-xs font-semibold mr-3">Overdue</span>
+                        @else
+                            <span class="px-2 py-1 rounded bg-blue-200 text-blue-800 text-xs font-semibold mr-3">Upcoming</span>
                         @endif
-                        <button wire:click="markAlertAsCompleted({{ $alert['id'] }})" class="text-green-500 hover:text-green-700">
-                            <i class="fas fa-check-circle"></i>
+                        <button wire:click="markAlertAsCompleted({{ $alert['id'] }})" class="w-8 h-8 flex items-center justify-center rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors">
+                            <i class="fas fa-check"></i>
                         </button>
                     </div>
                 </div>
             @empty
-                <div class="text-center text-gray-500 py-4">
-                    No maintenance alerts found
+                <div class="text-center py-6 bg-gray-50 rounded-lg border border-gray-100">
+                    <div class="text-gray-500 flex flex-col items-center">
+                        <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                        <p>No maintenance alerts found</p>
+                    </div>
                 </div>
             @endforelse
         </div>
     </div>
 
     <!-- New Maintenance Plan Status Section -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h3 class="text-lg font-medium mb-4">Equipment Maintenance Status</h3>
-        <div class="h-96">
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 dashboard-card">
+        <h3 class="text-lg font-semibold mb-4">Equipment Maintenance Status</h3>
+        <div class="h-96 chart-container">
             <canvas id="planStatusChart" width="400" height="350"></canvas>
         </div>
     </div>
+
+    <!-- Add some custom CSS for dashboard styling -->
+    <style>
+        .chart-container {
+            position: relative;
+            height: 80%;
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-2px);
+        }
+        
+        .dashboard-card {
+            transition: all 0.2s ease;
+            border: 1px solid #f3f4f6;
+        }
+        
+        .dashboard-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .alert-item {
+            transition: all 0.2s;
+        }
+        
+        .alert-item:hover {
+            transform: translateX(2px);
+        }
+        
+        @media (max-width: 640px) {
+            .flex.flex-wrap.gap-4 {
+                gap: 0.5rem;
+            }
+        }
+    </style>
 
     <script>
         // Armazenar os dados para os gráficos em variáveis JavaScript
@@ -1128,5 +1207,25 @@
                 initializeAllCharts();
             }
         }, 2000);
+    </script>
+
+    <script>
+        // Aplicar classe dashboard-card a todos os cards do dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.bg-white.rounded-lg.shadow-sm');
+            cards.forEach(card => {
+                card.classList.add('dashboard-card');
+            });
+            
+            const chartContainers = document.querySelectorAll('.h-80');
+            chartContainers.forEach(container => {
+                container.classList.add('chart-container');
+            });
+            
+            const alertItems = document.querySelectorAll('.p-3.mb-3.rounded-lg');
+            alertItems.forEach(item => {
+                item.classList.add('alert-item');
+            });
+        });
     </script>
 </div>
