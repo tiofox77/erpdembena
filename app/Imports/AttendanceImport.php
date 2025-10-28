@@ -35,6 +35,7 @@ class AttendanceImport implements
     protected $notFoundEmployees = []; // Track employees not found in system
     protected $pendingRecords = []; // Para agrupar check-ins e check-outs do ZKTime
     protected $isZKTimeFormat = false; // Detecta se é formato ZKTime
+    protected $incompleteRecords = []; // Registros com apenas 1 horário (precisam confirmação)
 
     public function model(array $row): ?Attendance
     {
@@ -263,6 +264,16 @@ class AttendanceImport implements
     public function getIsZKTimeFormat(): bool
     {
         return $this->isZKTimeFormat;
+    }
+
+    public function getIncompleteRecords(): array
+    {
+        return $this->incompleteRecords;
+    }
+
+    public function hasIncompleteRecords(): bool
+    {
+        return !empty($this->incompleteRecords);
     }
 
     /**
@@ -497,6 +508,20 @@ class AttendanceImport implements
                 }
 
                 $totalRecords = count($record['check_ins']) + count($record['check_outs']);
+                
+                // Se houver apenas 1 registro, adicionar aos incompletos para confirmação
+                if ($totalRecords === 1) {
+                    $this->incompleteRecords[] = [
+                        'employee_id' => $record['employee_id'],
+                        'employee_name' => $record['employee_name'],
+                        'emp_id' => $record['emp_id'],
+                        'date' => $record['date'],
+                        'time' => !empty($record['check_ins']) ? $record['check_ins'][0] : $record['check_outs'][0],
+                        'type' => !empty($record['check_ins']) ? 'check_in' : 'check_out',
+                    ];
+                    $this->skippedCount++;
+                    continue;
+                }
                 
                 // Só mostrar conflito se houver 3 ou mais registros
                 if ($totalRecords >= 3) {

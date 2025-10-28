@@ -74,6 +74,8 @@ class Attendance extends Component
     public $showTimeConflictsModal = false;
     public array $timeConflicts = [];
     public array $selectedTimes = [];
+    public $showIncompleteModal = false;
+    public array $incompleteRecords = [];
     
     // Listeners
     protected $listeners = [
@@ -1219,6 +1221,66 @@ class Attendance extends Component
             );
             $this->closeTimeConflictsModal();
             $this->dispatch('attendanceUpdated');
+    }
+
+    /**
+     * Process confirmation of incomplete records
+     */
+    public function confirmIncompleteRecords()
+    {
+        \Log::info('Confirming incomplete records', [
+            'count' => count($this->incompleteRecords)
+        ]);
+
+        $created = 0;
+        $updated = 0;
+
+        foreach ($this->incompleteRecords as $record) {
+            $employee = \App\Models\HR\Employee::find($record['employee_id']);
+            if (!$employee) {
+                continue;
+            }
+
+            // Calcular hourly rate
+            $baseSalary = $employee->base_salary ?? 0;
+            $weeklyHours = (float) \App\Models\HR\HRSetting::get('working_hours_per_week', 44);
+            $monthlyHours = $weeklyHours * 4.33;
+            $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+
+            // Verificar se já existe
+            $existingAttendance = \App\Models\HR\Attendance::where('employee_id', $record['employee_id'])
+                ->whereDate('date', $record['date'])
+                ->first();
+
+            // Preparar dados
+            $attendanceData = [
+                'time_in' => $record['type'] === 'check_in' ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['time']) : null,
+                'time_out' => $record['type'] === 'check_out' ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['time']) : null,
+                'status' => 'present',
+                'hourly_rate' => $hourlyRate,
+                'affects_payroll' => true,
+                'remarks' => 'Importado do ZKTime (registo incompleto confirmado)',
+            ];
+
+            if ($existingAttendance) {
+                $existingAttendance->update($attendanceData);
+                $updated++;
+            } else {
+                $attendanceData['employee_id'] = $record['employee_id'];
+                $attendanceData['date'] = $record['date'];
+                \App\Models\HR\Attendance::create($attendanceData);
+                $created++;
+            }
+        }
+
+        $this->dispatch('notify', 
+            type: 'success', 
+            message: "✅ {$created} registros criados, {$updated} atualizados com apenas 1 horário"
+        );
+        
+        $this->showIncompleteModal = false;
+        $this->incompleteRecords = [];
+        $this->dispatch('attendanceUpdated');
             
         } catch (\Exception $e) {
             \Log::error('Conflict resolution error:', [
@@ -1302,8 +1364,22 @@ class Attendance extends Component
             $skippedCount = $import->getSkippedCount();
             $errors = $import->getErrors();
             $timeConflicts = $import->getTimeConflicts();
+            $incompleteRecords = $import->getIncompleteRecords();
             $notFoundEmployees = $import->getNotFoundEmployees();
             $notFoundCount = $import->getNotFoundCount();
+            
+            // Check if there are incomplete records that need user confirmation
+            if (!empty($incompleteRecords)) {
+                $this->incompleteRecords = $incompleteRecords;
+                $this->closeImportModal();
+                $this->showIncompleteModal = true;
+                
+                $this->dispatch('notify', 
+                    type: 'warning', 
+                    message: 'Encontrados ' . count($incompleteRecords) . ' registros com apenas 1 horário. Por favor, confirme.'
+                );
+                return;
+            }
             
             // Check if there are time conflicts that need user confirmation
             if (!empty($timeConflicts)) {
