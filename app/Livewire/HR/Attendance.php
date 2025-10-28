@@ -1241,9 +1241,41 @@ class Attendance extends Component
         \Log::info('DEBUG: importFile value:', ['file' => $this->importFile]);
         
         try {
-            $this->validate([
-                'importFile' => 'required|mimes:xlsx,xls,csv|max:10240', // Max 10MB
-            ]);
+            // Validação manual mais permissiva para arquivos Excel antigos
+            if ($this->importFile) {
+                $extension = strtolower($this->importFile->getClientOriginalExtension());
+                $allowedExtensions = ['xlsx', 'xls', 'csv'];
+                
+                \Log::info('DEBUG: File info', [
+                    'mime' => $this->importFile->getMimeType(),
+                    'extension' => $extension,
+                    'name' => $this->importFile->getClientOriginalName(),
+                    'size' => $this->importFile->getSize()
+                ]);
+                
+                if (!in_array($extension, $allowedExtensions)) {
+                    $this->dispatch('notify', 
+                        type: 'error', 
+                        message: 'Formato de arquivo inválido. Use: .xlsx, .xls ou .csv'
+                    );
+                    return;
+                }
+                
+                if ($this->importFile->getSize() > 10240 * 1024) { // 10MB em bytes
+                    $this->dispatch('notify', 
+                        type: 'error', 
+                        message: 'Arquivo muito grande. Máximo: 10MB'
+                    );
+                    return;
+                }
+            } else {
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: 'Selecione um arquivo para importar'
+                );
+                return;
+            }
+            
             \Log::info('DEBUG: Validation passed');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
