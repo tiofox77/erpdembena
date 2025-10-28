@@ -203,10 +203,11 @@ class AttendanceImport implements
 
     public function rules(): array
     {
-        return [
-            'emp_id' => 'required',
-            'date' => 'required',
-        ];
+        // Não aplicar validação aqui porque:
+        // 1. Formato ZKTime não tem coluna 'date' (tem 'time')
+        // 2. Formato tradicional tem 'date'
+        // 3. Validação é feita manualmente no método model()
+        return [];
     }
 
     public function batchSize(): int
@@ -495,8 +496,10 @@ class AttendanceImport implements
                     continue;
                 }
 
-                // Se houver múltiplos check-ins ou check-outs, criar conflito
-                if (count($record['check_ins']) > 1 || count($record['check_outs']) > 1) {
+                $totalRecords = count($record['check_ins']) + count($record['check_outs']);
+                
+                // Só mostrar conflito se houver 3 ou mais registros
+                if ($totalRecords >= 3) {
                     $this->timeConflicts[] = [
                         'employee_id' => $record['employee_id'],
                         'employee_name' => $record['employee_name'],
@@ -509,9 +512,60 @@ class AttendanceImport implements
                     continue;
                 }
 
-                // Pegar primeiro (e único) check-in e check-out
-                $checkIn = $record['check_ins'][0] ?? null;
-                $checkOut = $record['check_outs'][0] ?? null;
+                // Se tiver exatamente 2 registros, usar lógica inteligente baseada no shift
+                if ($totalRecords == 2 && (empty($record['check_ins']) || empty($record['check_outs']))) {
+                    // Todos os registros estão como check-in ou check-out
+                    // Precisamos determinar qual é entrada e qual é saída baseado no shift
+                    $allTimes = array_merge($record['check_ins'], $record['check_outs']);
+                    sort($allTimes);
+                    
+                    // Buscar shift do funcionário
+                    $employeeShift = \App\Models\HR\ShiftAssignment::where('employee_id', $employee->id)
+                        ->whereDate('start_date', '<=', $record['date'])
+                        ->where(function($q) use ($record) {
+                            $q->whereNull('end_date')
+                              ->orWhereDate('end_date', '>=', $record['date']);
+                        })
+                        ->with('shift')
+                        ->first();
+                    
+                    if ($employeeShift && $employeeShift->shift) {
+                        $shiftStartTime = $employeeShift->shift->start_time->format('H:i');
+                        
+                        // Comparar qual horário está mais próximo do início do turno
+                        $time1 = Carbon::parse($allTimes[0]);
+                        $time2 = Carbon::parse($allTimes[1]);
+                        $shiftStart = Carbon::parse($shiftStartTime);
+                        
+                        $diff1 = abs($time1->diffInMinutes($shiftStart));
+                        $diff2 = abs($time2->diffInMinutes($shiftStart));
+                        
+                        // O horário mais próximo do início do turno é a entrada
+                        if ($diff1 < $diff2) {
+                            $checkIn = $allTimes[0];
+                            $checkOut = $allTimes[1];
+                        } else {
+                            $checkIn = $allTimes[1];
+                            $checkOut = $allTimes[0];
+                        }
+                        
+                        \Log::info('Smart time assignment based on shift', [
+                            'employee' => $record['employee_name'],
+                            'shift_start' => $shiftStartTime,
+                            'times' => $allTimes,
+                            'assigned_in' => $checkIn,
+                            'assigned_out' => $checkOut
+                        ]);
+                    } else {
+                        // Sem shift, usar ordem cronológica
+                        $checkIn = $allTimes[0];
+                        $checkOut = $allTimes[1];
+                    }
+                } else {
+                    // Caso normal: 1 check-in e 1 check-out, ou apenas 1 registro
+                    $checkIn = $record['check_ins'][0] ?? null;
+                    $checkOut = $record['check_outs'][0] ?? null;
+                }
 
                 // Calcular hourly rate
                 $baseSalary = $employee->base_salary ?? 0;
