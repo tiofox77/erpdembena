@@ -1221,6 +1221,17 @@ class Attendance extends Component
             );
             $this->closeTimeConflictsModal();
             $this->dispatch('attendanceUpdated');
+            
+        } catch (\Exception $e) {
+            \Log::error('Conflict resolution error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: '❌ Erro ao processar conflitos: ' . $e->getMessage()
+            );
+        }
     }
 
     /**
@@ -1281,17 +1292,6 @@ class Attendance extends Component
         $this->showIncompleteModal = false;
         $this->incompleteRecords = [];
         $this->dispatch('attendanceUpdated');
-            
-        } catch (\Exception $e) {
-            \Log::error('Conflict resolution error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            $this->dispatch('notify', 
-                type: 'error', 
-                message: '❌ Erro ao processar conflitos: ' . $e->getMessage()
-            );
-        }
     }
 
     /**
