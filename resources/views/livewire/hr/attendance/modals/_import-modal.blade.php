@@ -83,38 +83,59 @@
 
                     {{-- Expected Format Info --}}
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h5 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <h5 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                             <i class="fas fa-table text-gray-600 mr-2"></i>
                             {{ __('messages.expected_excel_format') }}
                         </h5>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-xs">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Emp ID</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Name</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Date</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Absence</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Check-In</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Check-Out</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white">
-                                    <tr class="border-t border-gray-200">
-                                        <td class="px-3 py-2 text-gray-600">10</td>
-                                        <td class="px-3 py-2 text-gray-600">Abel Francisco</td>
-                                        <td class="px-3 py-2 text-gray-600">11/09/2025</td>
-                                        <td class="px-3 py-2 text-gray-600">0:00</td>
-                                        <td class="px-3 py-2 text-gray-600">06:57</td>
-                                        <td class="px-3 py-2 text-gray-600">18:24</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        
+                        {{-- Formato ZKTime (Atual) --}}
+                        <div>
+                            <div class="flex items-center mb-3">
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-semibold bg-green-100 text-green-800">
+                                    <i class="fas fa-file-excel mr-2"></i> Formato ZKTime
+                                </span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-xs border border-gray-200 rounded">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="px-2 py-1 text-left font-medium text-gray-700 border-r">Emp ID</th>
+                                            <th class="px-2 py-1 text-left font-medium text-gray-700 border-r">Name</th>
+                                            <th class="px-2 py-1 text-left font-medium text-gray-700 border-r">Time</th>
+                                            <th class="px-2 py-1 text-left font-medium text-gray-700 border-r">Work Code</th>
+                                            <th class="px-2 py-1 text-left font-medium text-gray-700 border-r">Attendance State</th>
+                                            <th class="px-2 py-1 text-left font-medium text-gray-700">Device Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white">
+                                        <tr class="border-t border-gray-200">
+                                            <td class="px-2 py-1 text-gray-600 border-r">5</td>
+                                            <td class="px-2 py-1 text-gray-600 border-r">Delfina.Paulo</td>
+                                            <td class="px-2 py-1 text-gray-600 border-r">28/10/2025 08:14:54</td>
+                                            <td class="px-2 py-1 text-gray-600 border-r"></td>
+                                            <td class="px-2 py-1 text-gray-600 border-r font-semibold text-green-600">Check In</td>
+                                            <td class="px-2 py-1 text-gray-600">escritorio</td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="px-2 py-1 text-gray-600 border-r">5</td>
+                                            <td class="px-2 py-1 text-gray-600 border-r">Delfina.Paulo</td>
+                                            <td class="px-2 py-1 text-gray-600 border-r">28/10/2025 16:25:29</td>
+                                            <td class="px-2 py-1 text-gray-600 border-r"></td>
+                                            <td class="px-2 py-1 text-gray-600 border-r font-semibold text-red-600">Check Out</td>
+                                            <td class="px-2 py-1 text-gray-600">escritorio</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 italic">
+                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                                Cada Check-In e Check-Out numa linha separada
+                            </p>
+                            <p class="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                                <i class="fas fa-fingerprint text-indigo-500 mr-1"></i>
+                                <strong>Emp ID</strong> {{ __('messages.must_match_biometric_id') }}
+                            </p>
                         </div>
-                        <p class="text-xs text-gray-600 mt-2">
-                            <i class="fas fa-fingerprint text-indigo-500 mr-1"></i>
-                            <strong>Emp ID</strong> {{ __('messages.must_match_biometric_id') }}
-                        </p>
                     </div>
                 </div>
             </div>

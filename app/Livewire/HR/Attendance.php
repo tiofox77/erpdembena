@@ -76,6 +76,8 @@ class Attendance extends Component
     public array $selectedTimes = [];
     public $showIncompleteModal = false;
     public array $incompleteRecords = [];
+    public $showShiftMismatchModal = false;
+    public array $shiftMismatches = [];
     
     // Listeners
     protected $listeners = [
@@ -1295,6 +1297,66 @@ class Attendance extends Component
     }
 
     /**
+     * Confirm and import shift mismatches anyway
+     */
+    public function confirmShiftMismatches()
+    {
+        \Log::info('Confirming shift mismatches', [
+            'count' => count($this->shiftMismatches)
+        ]);
+
+        $created = 0;
+        $updated = 0;
+
+        foreach ($this->shiftMismatches as $record) {
+            $employee = \App\Models\HR\Employee::find($record['employee_id']);
+            if (!$employee) {
+                continue;
+            }
+
+            // Calcular hourly rate
+            $baseSalary = $employee->base_salary ?? 0;
+            $weeklyHours = (float) \App\Models\HR\HRSetting::get('working_hours_per_week', 44);
+            $monthlyHours = $weeklyHours * 4.33;
+            $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+
+            // Verificar se já existe
+            $existingAttendance = \App\Models\HR\Attendance::where('employee_id', $record['employee_id'])
+                ->whereDate('date', $record['date'])
+                ->first();
+
+            // Preparar dados
+            $attendanceData = [
+                'time_in' => $record['check_in'] ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['check_in']) : null,
+                'time_out' => $record['check_out'] ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['check_out']) : null,
+                'status' => 'present',
+                'hourly_rate' => $hourlyRate,
+                'affects_payroll' => true,
+                'remarks' => 'Importado do ZKTime (horário incompatível com turno: ' . $record['shift_name'] . ' confirmado manualmente)',
+            ];
+
+            if ($existingAttendance) {
+                $existingAttendance->update($attendanceData);
+                $updated++;
+            } else {
+                $attendanceData['employee_id'] = $record['employee_id'];
+                $attendanceData['date'] = $record['date'];
+                \App\Models\HR\Attendance::create($attendanceData);
+                $created++;
+            }
+        }
+
+        $this->dispatch('notify', 
+            type: 'success', 
+            message: "✅ {$created} registros criados, {$updated} atualizados (incompatibilidade de turno confirmada)"
+        );
+        
+        $this->showShiftMismatchModal = false;
+        $this->shiftMismatches = [];
+        $this->dispatch('attendanceUpdated');
+    }
+
+    /**
      * Import attendance from Excel file
      */
     public function importFromExcel()
@@ -1365,8 +1427,22 @@ class Attendance extends Component
             $errors = $import->getErrors();
             $timeConflicts = $import->getTimeConflicts();
             $incompleteRecords = $import->getIncompleteRecords();
+            $shiftMismatches = $import->getShiftMismatches();
             $notFoundEmployees = $import->getNotFoundEmployees();
             $notFoundCount = $import->getNotFoundCount();
+            
+            // Check if there are shift mismatches that need user attention
+            if (!empty($shiftMismatches)) {
+                $this->shiftMismatches = $shiftMismatches;
+                $this->closeImportModal();
+                $this->showShiftMismatchModal = true;
+                
+                $this->dispatch('notify', 
+                    type: 'warning', 
+                    message: '⚠️ Encontrados ' . count($shiftMismatches) . ' registros com horário incompatível com o turno. Por favor, revise.'
+                );
+                return;
+            }
             
             // Check if there are incomplete records that need user confirmation
             if (!empty($incompleteRecords)) {
