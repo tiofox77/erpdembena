@@ -1259,6 +1259,10 @@ class Attendance extends Component
             \Log::info('DEBUG: Starting import process');
             $import = new AttendanceImport();
             Excel::import($import, $this->importFile->getRealPath());
+            
+            // Finalizar registos pendentes do ZKTime (se houver)
+            $import->finalizePendingRecords();
+            
             \Log::info('DEBUG: Import completed successfully');
             
             $importedCount = $import->getImportedCount();

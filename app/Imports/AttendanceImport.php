@@ -33,10 +33,18 @@ class AttendanceImport implements
     protected $processedEmployeeDates = []; // Track processed employee+date combinations
     protected $timeConflicts = []; // Store time conflicts for user confirmation
     protected $notFoundEmployees = []; // Track employees not found in system
+    protected $pendingRecords = []; // Para agrupar check-ins e check-outs do ZKTime
+    protected $isZKTimeFormat = false; // Detecta se é formato ZKTime
 
     public function model(array $row): ?Attendance
     {
         \Log::info('Processing row', ['row' => $row]);
+        
+        // Detecta formato ZKTime (tem coluna "Time" e "Attendance State")
+        if ($this->hasZKTimeColumns($row)) {
+            $this->isZKTimeFormat = true;
+            return $this->processZKTimeRow($row);
+        }
         
         // Skip empty rows
         $empId = $this->getRowValue($row, ['emp_id', 'empid', 'employee_id']);
@@ -251,6 +259,11 @@ class AttendanceImport implements
         return count($this->notFoundEmployees);
     }
 
+    public function getIsZKTimeFormat(): bool
+    {
+        return $this->isZKTimeFormat;
+    }
+
     /**
      * Parse multiple times from a string (e.g., "12:09 17:10" -> ["12:09", "17:10"])
      */
@@ -367,5 +380,186 @@ class AttendanceImport implements
         }
         
         return null;
+    }
+
+    /**
+     * Verifica se o arquivo tem colunas no formato ZKTime
+     */
+    private function hasZKTimeColumns(array $row): bool
+    {
+        $hasTime = $this->getRowValue($row, ['time', 'tempo', 'hora']) !== null;
+        $hasAttendanceState = $this->getRowValue($row, ['attendance_state', 'attendancestate', 'estado', 'state']) !== null;
+        
+        return $hasTime && $hasAttendanceState;
+    }
+
+    /**
+     * Processa uma linha no formato ZKTime
+     * Formato: cada check-in/out é uma linha separada
+     */
+    private function processZKTimeRow(array $row): ?Attendance
+    {
+        $empId = $this->getRowValue($row, ['emp_id', 'empid', 'employee_id']);
+        if (empty($empId)) {
+            $this->skippedCount++;
+            return null;
+        }
+
+        // Find employee
+        $employee = Employee::where('biometric_id', (string)$empId)->first();
+        if (!$employee) {
+            if (!in_array($empId, $this->notFoundEmployees)) {
+                $this->notFoundEmployees[] = $empId;
+            }
+            $this->errors[] = "Funcionário não encontrado (Emp ID: {$empId})";
+            $this->skippedCount++;
+            return null;
+        }
+
+        // Parse date and time from "Time" column (e.g., "28/10/2025 08:14:54")
+        $timeValue = $this->getRowValue($row, ['time', 'tempo', 'hora']);
+        if (!$timeValue) {
+            $this->errors[] = "Tempo inválido para Emp ID: {$empId}";
+            $this->skippedCount++;
+            return null;
+        }
+
+        // Parse datetime
+        try {
+            $datetime = Carbon::createFromFormat('d/m/Y H:i:s', $timeValue);
+            if (!$datetime) {
+                // Try other formats
+                $datetime = Carbon::parse($timeValue);
+            }
+        } catch (\Exception $e) {
+            $this->errors[] = "Formato de data/hora inválido para Emp ID: {$empId} - {$timeValue}";
+            $this->skippedCount++;
+            return null;
+        }
+
+        $date = $datetime->format('Y-m-d');
+        $time = $datetime->format('H:i');
+
+        // Get attendance state (Check In or Check Out)
+        $attendanceState = $this->getRowValue($row, ['attendance_state', 'attendancestate', 'estado', 'state']);
+        $isCheckIn = stripos($attendanceState, 'check in') !== false || stripos($attendanceState, 'entrada') !== false;
+
+        // Create key for grouping
+        $key = $employee->id . '_' . $date;
+
+        // Store in pending records
+        if (!isset($this->pendingRecords[$key])) {
+            $this->pendingRecords[$key] = [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->full_name,
+                'emp_id' => $empId,
+                'date' => $date,
+                'check_ins' => [],
+                'check_outs' => [],
+            ];
+        }
+
+        if ($isCheckIn) {
+            $this->pendingRecords[$key]['check_ins'][] = $time;
+        } else {
+            $this->pendingRecords[$key]['check_outs'][] = $time;
+        }
+
+        \Log::info('ZKTime row added to pending', [
+            'emp_id' => $empId,
+            'date' => $date,
+            'time' => $time,
+            'type' => $isCheckIn ? 'check_in' : 'check_out'
+        ]);
+
+        // Don't create attendance yet, will be processed in finalizePendingRecords()
+        return null;
+    }
+
+    /**
+     * Finaliza o processamento dos registos pendentes do ZKTime
+     * Deve ser chamado após todas as linhas serem processadas
+     */
+    public function finalizePendingRecords(): void
+    {
+        if (empty($this->pendingRecords)) {
+            return;
+        }
+
+        \Log::info('Finalizing pending ZKTime records', ['count' => count($this->pendingRecords)]);
+
+        foreach ($this->pendingRecords as $key => $record) {
+            try {
+                $employee = Employee::find($record['employee_id']);
+                if (!$employee) {
+                    continue;
+                }
+
+                // Se houver múltiplos check-ins ou check-outs, criar conflito
+                if (count($record['check_ins']) > 1 || count($record['check_outs']) > 1) {
+                    $this->timeConflicts[] = [
+                        'employee_id' => $record['employee_id'],
+                        'employee_name' => $record['employee_name'],
+                        'emp_id' => $record['emp_id'],
+                        'date' => $record['date'],
+                        'check_in_options' => $record['check_ins'],
+                        'check_out_options' => $record['check_outs'],
+                    ];
+                    $this->skippedCount++;
+                    continue;
+                }
+
+                // Pegar primeiro (e único) check-in e check-out
+                $checkIn = $record['check_ins'][0] ?? null;
+                $checkOut = $record['check_outs'][0] ?? null;
+
+                // Calcular hourly rate
+                $baseSalary = $employee->base_salary ?? 0;
+                $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
+                $monthlyHours = $weeklyHours * 4.33;
+                $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+
+                // Verificar se já existe
+                $existingAttendance = Attendance::where('employee_id', $record['employee_id'])
+                    ->whereDate('date', $record['date'])
+                    ->first();
+
+                $attendanceData = [
+                    'employee_id' => $record['employee_id'],
+                    'date' => $record['date'],
+                    'time_in' => $checkIn ? Carbon::parse($record['date'] . ' ' . $checkIn) : null,
+                    'time_out' => $checkOut ? Carbon::parse($record['date'] . ' ' . $checkOut) : null,
+                    'status' => ($checkIn || $checkOut) ? 'present' : 'absent',
+                    'hourly_rate' => $hourlyRate,
+                    'affects_payroll' => true,
+                    'remarks' => 'Importado do ZKTime',
+                ];
+
+                if ($existingAttendance) {
+                    $existingAttendance->update($attendanceData);
+                    $this->updatedCount++;
+                } else {
+                    Attendance::create($attendanceData);
+                    $this->importedCount++;
+                }
+
+                \Log::info('ZKTime attendance created/updated', [
+                    'employee' => $record['employee_name'],
+                    'date' => $record['date'],
+                    'check_in' => $checkIn,
+                    'check_out' => $checkOut
+                ]);
+
+            } catch (\Exception $e) {
+                \Log::error('Error finalizing ZKTime record', [
+                    'error' => $e->getMessage(),
+                    'record' => $record
+                ]);
+                $this->errors[] = "Erro ao processar {$record['employee_name']} em {$record['date']}: " . $e->getMessage();
+            }
+        }
+
+        // Limpar registos pendentes
+        $this->pendingRecords = [];
     }
 }
