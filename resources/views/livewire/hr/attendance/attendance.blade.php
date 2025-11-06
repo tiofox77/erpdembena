@@ -658,7 +658,7 @@
                                     <div class="flex items-center">
                                         @if(method_exists($attendances, 'links'))
                                             <div class="pagination-wrapper">
-                                                {{ $attendances->links('pagination::tailwind') }}
+                                                {{ $attendances->links('livewire::tailwind') }}
                                             </div>
                                         @endif
                                     </div>

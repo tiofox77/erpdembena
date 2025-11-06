@@ -21,6 +21,7 @@ class DailyAttendanceImport implements ToCollection
     protected $errors = [];
     protected $notFoundEmployees = [];
     protected $summary = [];
+    protected $shiftMismatches = [];
     protected $filePath = null;
 
     public function __construct($filePath = null)
@@ -118,6 +119,77 @@ class DailyAttendanceImport implements ToCollection
                 // Parse horários
                 $timeIn = $this->parseTime($checkIn, $date);
                 $timeOut = $this->parseTime($checkOut, $date);
+
+                // Validar compatibilidade com turno do funcionário
+                if ($timeIn) {
+                    $employeeShiftCheck = \App\Models\HR\ShiftAssignment::where('employee_id', $employee->id)
+                        ->whereDate('start_date', '<=', $date)
+                        ->where(function($q) use ($date) {
+                            $q->whereNull('end_date')
+                              ->orWhereDate('end_date', '>=', $date);
+                        })
+                        ->with('shift')
+                        ->first();
+
+                    if ($employeeShiftCheck && $employeeShiftCheck->shift) {
+                        $shiftStart = Carbon::parse($employeeShiftCheck->shift->start_time->format('H:i'));
+                        $shiftEnd = Carbon::parse($employeeShiftCheck->shift->end_time->format('H:i'));
+                        $checkInCarbon = Carbon::parse($timeIn);
+                        
+                        // Detectar turno noturno (atravessa meia-noite)
+                        $isNightShift = $shiftStart->gt($shiftEnd);
+                        
+                        $isCompatible = false;
+                        
+                        if ($isNightShift) {
+                            // Turno noturno: verificar se está dentro do período com tolerância de 1 hora
+                            $shiftStartWithTolerance = $shiftStart->copy()->subHours(1);
+                            $shiftEndWithTolerance = $shiftEnd->copy()->addHours(1);
+                            
+                            if ($checkInCarbon->gte($shiftStartWithTolerance) || 
+                                $checkInCarbon->lte($shiftEndWithTolerance)) {
+                                $isCompatible = true;
+                            }
+                        } else {
+                            // Turno normal: verificar com tolerância de 1 hora
+                            $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
+                            $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
+                            
+                            if ($diffFromStart <= 60 || $diffFromEnd <= 60) {
+                                $isCompatible = true;
+                            }
+                        }
+                        
+                        // Se NÃO é compatível, adicionar aos mismatches e pular
+                        if (!$isCompatible) {
+                            $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
+                            $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
+                            $minDiff = min($diffFromStart, $diffFromEnd);
+                            
+                            $this->shiftMismatches[] = [
+                                'employee_id' => $employee->id,
+                                'employee_name' => $employee->first_name . ' ' . $employee->last_name,
+                                'emp_id' => $employee->biometric_id,
+                                'date' => $date,
+                                'check_in' => $checkIn,
+                                'check_out' => $checkOut,
+                                'shift_name' => $employeeShiftCheck->shift->name,
+                                'shift_start' => $employeeShiftCheck->shift->start_time->format('H:i'),
+                                'shift_end' => $employeeShiftCheck->shift->end_time->format('H:i'),
+                                'time_difference_minutes' => $minDiff,
+                            ];
+                            $this->skippedCount++;
+                            $sheetSkipped++;
+                            \Log::warning('Daily import: Shift mismatch detected', [
+                                'employee' => $employee->first_name . ' ' . $employee->last_name,
+                                'check_in' => $checkIn,
+                                'shift' => $employeeShiftCheck->shift->name,
+                                'sheet' => $sheetName
+                            ]);
+                            continue;
+                        }
+                    }
+                }
 
                 // Calcular hourly rate
                 $baseSalary = $employee->base_salary ?? 0;
@@ -263,6 +335,11 @@ class DailyAttendanceImport implements ToCollection
     public function getSummary(): array
     {
         return $this->summary;
+    }
+
+    public function getShiftMismatches(): array
+    {
+        return $this->shiftMismatches;
     }
 
     /**

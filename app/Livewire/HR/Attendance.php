@@ -21,6 +21,8 @@ class Attendance extends Component
 {
     use WithPagination, WithFileUploads;
 
+    protected $paginationTheme = 'tailwind';
+
     public $search = '';
     public $perPage = 10;
     public $sortField = 'date';
@@ -534,6 +536,30 @@ class Attendance extends Component
         if ($this->selectedShift) {
             $this->loadEmployeesForSelectedShift();
         }
+    }
+
+    /**
+     * Reset pagination when search changes
+     */
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Reset pagination when perPage changes
+     */
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Reset pagination when filters change
+     */
+    public function updatedFilters()
+    {
+        $this->resetPage();
     }
     
     /**
@@ -1164,14 +1190,29 @@ class Attendance extends Component
             $errors = $import->getErrors();
             $notFoundEmployees = $import->getNotFoundEmployees();
             $summary = $import->getSummary();
+            $shiftMismatches = $import->getShiftMismatches();
 
             \Log::info('Daily import completed', [
                 'imported' => $importedCount,
                 'updated' => $updatedCount,
                 'skipped' => $skippedCount,
                 'errors' => count($errors),
-                'not_found' => count($notFoundEmployees)
+                'not_found' => count($notFoundEmployees),
+                'shift_mismatches' => count($shiftMismatches)
             ]);
+
+            // Check if there are shift mismatches that need user attention
+            if (!empty($shiftMismatches)) {
+                $this->shiftMismatches = $shiftMismatches;
+                $this->closeDailyImportModal();
+                $this->showShiftMismatchModal = true;
+                
+                $this->dispatch('notify', 
+                    type: 'warning', 
+                    message: '⚠️ Encontrados ' . count($shiftMismatches) . ' registros com horário incompatível com o turno. Por favor, revise.'
+                );
+                return;
+            }
 
             // Montar mensagem de sucesso
             $message = "✅ Importação concluída!\n";
