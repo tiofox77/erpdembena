@@ -79,6 +79,12 @@ class Attendance extends Component
     public $showShiftMismatchModal = false;
     public array $shiftMismatches = [];
     
+    // Daily Import properties
+    public $dailyImportFile = null;
+    public $showDailyImportModal = false;
+    public array $dailyImportPreview = [];
+    public $showDailyImportPreview = false;
+    
     // Listeners
     protected $listeners = [
         'refreshAttendance' => '$refresh',
@@ -1073,6 +1079,141 @@ class Attendance extends Component
     {
         $this->showImportModal = false;
         $this->reset(['importFile', 'importResults']);
+    }
+
+    /**
+     * Open daily import modal
+     */
+    public function openDailyImportModal()
+    {
+        $this->reset(['dailyImportFile']);
+        $this->showDailyImportModal = true;
+    }
+
+    /**
+     * Close daily import modal
+     */
+    public function closeDailyImportModal()
+    {
+        $this->showDailyImportModal = false;
+        $this->reset(['dailyImportFile']);
+    }
+
+    /**
+     * Generate preview for daily import
+     */
+    public function generateDailyImportPreview()
+    {
+        try {
+            // Validação
+            if ($this->dailyImportFile) {
+                $extension = strtolower($this->dailyImportFile->getClientOriginalExtension());
+                $allowedExtensions = ['xlsx', 'xls'];
+                
+                if (!in_array($extension, $allowedExtensions)) {
+                    $this->dispatch('notify', 
+                        type: 'error', 
+                        message: 'Formato de arquivo inválido. Use: .xlsx ou .xls'
+                    );
+                    return;
+                }
+            } else {
+                $this->dispatch('notify', 
+                    type: 'error', 
+                    message: 'Selecione um arquivo para importar'
+                );
+                return;
+            }
+
+            \Log::info('Generating daily attendance preview');
+
+            // Save file temporarily
+            $path = $this->dailyImportFile->getRealPath();
+            
+            // Generate preview
+            $this->dailyImportPreview = \App\Imports\DailyAttendanceImport::generatePreview($path);
+            $this->showDailyImportPreview = true;
+
+        } catch (\Exception $e) {
+            \Log::error('Preview generation failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: 'Erro ao gerar preview: ' . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Import daily attendance from Excel (multi-sheet format)
+     */
+    public function confirmDailyImport()
+    {
+        try {
+            \Log::info('Starting daily attendance import');
+
+            $path = $this->dailyImportFile->getRealPath();
+            $import = new \App\Imports\DailyAttendanceImport();
+            $import->processFile($path);
+
+            $importedCount = $import->getImportedCount();
+            $updatedCount = $import->getUpdatedCount();
+            $skippedCount = $import->getSkippedCount();
+            $errors = $import->getErrors();
+            $notFoundEmployees = $import->getNotFoundEmployees();
+            $summary = $import->getSummary();
+
+            \Log::info('Daily import completed', [
+                'imported' => $importedCount,
+                'updated' => $updatedCount,
+                'skipped' => $skippedCount,
+                'errors' => count($errors),
+                'not_found' => count($notFoundEmployees)
+            ]);
+
+            // Montar mensagem de sucesso
+            $message = "✅ Importação concluída!\n";
+            $message .= "• {$importedCount} registros criados\n";
+            $message .= "• {$updatedCount} registros atualizados\n";
+            
+            if ($skippedCount > 0) {
+                $message .= "• {$skippedCount} registros ignorados\n";
+            }
+            
+            if (!empty($notFoundEmployees)) {
+                $message .= "\n⚠️ " . count($notFoundEmployees) . " funcionários não encontrados";
+            }
+
+            $this->dispatch('notify', 
+                type: 'success', 
+                message: $message
+            );
+
+            $this->closeDailyImportModal();
+            $this->dispatch('attendanceUpdated');
+
+        } catch (\Exception $e) {
+            \Log::error('Daily import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $this->dispatch('notify', 
+                type: 'error', 
+                message: 'Erro ao importar: ' . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Back to file selection from preview
+     */
+    public function backToDailyFileSelection()
+    {
+        $this->showDailyImportPreview = false;
+        $this->dailyImportPreview = [];
     }
 
     /**
