@@ -60,6 +60,8 @@ class Employees extends Component
     public $food_benefit;
     public $transport_benefit;
     public $bonus_amount;
+    public $position_subsidy;
+    public $performance_subsidy;
 
     // Document management
     public $newDocumentType = '';
@@ -122,6 +124,8 @@ class Employees extends Component
             'food_benefit' => 'nullable|numeric|min:0',
             'transport_benefit' => 'nullable|numeric|min:0',
             'bonus_amount' => 'nullable|numeric|min:0',
+            'position_subsidy' => 'nullable|numeric|min:0',
+            'performance_subsidy' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -152,7 +156,7 @@ class Employees extends Component
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_id', 'bank_name', 'bank_account', 'bank_iban', 'position_id', 'department_id', 'hire_date',
             'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
-            'transport_benefit', 'bonus_amount'
+            'transport_benefit', 'bonus_amount', 'position_subsidy', 'performance_subsidy'
         ]);
         $this->isEditing = false;
         $this->showModal = true;
@@ -186,6 +190,8 @@ class Employees extends Component
         $this->food_benefit = $employee->food_benefit;
         $this->transport_benefit = $employee->transport_benefit;
         $this->bonus_amount = $employee->bonus_amount;
+        $this->position_subsidy = $employee->position_subsidy;
+        $this->performance_subsidy = $employee->performance_subsidy;
 
         // Load employee documents if available
         $this->employeeDocuments = $employee->documents()->latest()->get();
@@ -206,11 +212,11 @@ class Employees extends Component
         
         // Check salary permissions - remove salary fields if user doesn't have permission
         if (!auth()->user()->can('hr.employees.salary.edit')) {
-            unset($validatedData['base_salary'], $validatedData['food_benefit'], $validatedData['transport_benefit'], $validatedData['bonus_amount']);
+            unset($validatedData['base_salary'], $validatedData['food_benefit'], $validatedData['transport_benefit'], $validatedData['bonus_amount'], $validatedData['position_subsidy'], $validatedData['performance_subsidy']);
         }
         
         // Ensure numeric fields have default values instead of null
-        $numericFields = ['dependents', 'base_salary', 'food_benefit', 'transport_benefit', 'bonus_amount'];
+        $numericFields = ['dependents', 'base_salary', 'food_benefit', 'transport_benefit', 'bonus_amount', 'position_subsidy', 'performance_subsidy'];
         foreach ($numericFields as $field) {
             if (isset($validatedData[$field]) && (is_null($validatedData[$field]) || $validatedData[$field] === '')) {
                 $validatedData[$field] = 0;
@@ -281,7 +287,7 @@ class Employees extends Component
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_name', 'bank_account', 'position_id', 'department_id', 'hire_date',
             'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
-            'transport_benefit', 'bonus_amount'
+            'transport_benefit', 'bonus_amount', 'position_subsidy', 'performance_subsidy'
         ]);
     }
 

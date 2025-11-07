@@ -340,6 +340,14 @@ class PayrollCalculationService
         $this->profileBonus = (float) ($this->employee->bonus_amount ?? 0.0);
         $gross += $this->profileBonus;
 
+        // Add position subsidy from employee record
+        $positionSubsidy = (float) ($this->employee->position_subsidy ?? 0.0);
+        $gross += $positionSubsidy;
+
+        // Add performance subsidy from employee record
+        $performanceSubsidy = (float) ($this->employee->performance_subsidy ?? 0.0);
+        $gross += $performanceSubsidy;
+
         // Add additional bonus (ensure never null)
         $this->additionalBonus = (float) ($this->additionalBonus ?? 0.0);
         $gross += $this->additionalBonus;
@@ -444,10 +452,12 @@ class PayrollCalculationService
             'transport_allowance' => $this->transportAllowance,
             'food_benefit' => $this->foodBenefit,
             'profile_bonus' => $this->profileBonus,
+            'position_subsidy' => (float) ($this->employee->position_subsidy ?? 0.0),
+            'performance_subsidy' => (float) ($this->employee->performance_subsidy ?? 0.0),
             'additional_bonus' => $this->additionalBonus,
             'overtime_amount' => $this->overtimeAmount,
             'allowances' => $this->transportAllowance + $this->foodBenefit,
-            'bonuses' => $this->profileBonus + $this->additionalBonus + $this->christmasSubsidy + $this->vacationSubsidy,
+            'bonuses' => $this->profileBonus + (float) ($this->employee->position_subsidy ?? 0.0) + (float) ($this->employee->performance_subsidy ?? 0.0) + $this->additionalBonus + $this->christmasSubsidy + $this->vacationSubsidy,
             'overtime' => $this->overtimeAmount,
             'gross_salary' => $this->grossSalary,
             'main_salary' => $this->basicSalary + $this->foodBenefit + $this->transportAllowance + $this->overtimeAmount,

@@ -481,7 +481,7 @@
                                                         </div>
                                                     @endif
                                                     @php
-                                                        $totalBenefits = ($employee->food_benefit ?? 0) + ($employee->transport_benefit ?? 0) + ($employee->bonus_amount ?? 0);
+                                                        $totalBenefits = ($employee->food_benefit ?? 0) + ($employee->transport_benefit ?? 0) + ($employee->bonus_amount ?? 0) + ($employee->position_subsidy ?? 0) + ($employee->performance_subsidy ?? 0);
                                                     @endphp
                                                     @if($totalBenefits > 0)
                                                         <div class="flex items-center text-xs text-gray-600">
@@ -1410,7 +1410,7 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                 <!-- Food Benefit -->
                                 <div class="space-y-2">
                                     <label for="food_benefit" class="flex items-center text-sm font-medium text-gray-700">
@@ -1492,6 +1492,68 @@
                                         @enderror
                                     </div>
                                     @error('bonus_amount')
+                                        <p class="flex items-center text-sm text-red-600">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            {{ $message }}
+                                        </p>
+                                    @else
+                                        <p class="text-xs text-gray-500">{{ __('messages.optional_benefit') }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Position Subsidy -->
+                                <div class="space-y-2">
+                                    <label for="position_subsidy" class="flex items-center text-sm font-medium text-gray-700">
+                                        <i class="fas fa-briefcase text-indigo-500 mr-2"></i>
+                                        {{ __('messages.position_subsidy') }}
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 text-sm font-medium">AOA</span>
+                                        </div>
+                                        <input type="number" step="0.01" min="0" id="position_subsidy"
+                                            class="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 @error('position_subsidy') border-red-500 bg-red-50 @enderror"
+                                            wire:model.live="position_subsidy" 
+                                            placeholder="0.00">
+                                        @error('position_subsidy')
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            </div>
+                                        @enderror
+                                    </div>
+                                    @error('position_subsidy')
+                                        <p class="flex items-center text-sm text-red-600">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            {{ $message }}
+                                        </p>
+                                    @else
+                                        <p class="text-xs text-gray-500">{{ __('messages.optional_benefit') }}</p>
+                                    @enderror
+                                </div>
+
+                                <!-- Performance Subsidy -->
+                                <div class="space-y-2">
+                                    <label for="performance_subsidy" class="flex items-center text-sm font-medium text-gray-700">
+                                        <i class="fas fa-chart-line text-green-500 mr-2"></i>
+                                        {{ __('messages.performance_subsidy') }}
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 text-sm font-medium">AOA</span>
+                                        </div>
+                                        <input type="number" step="0.01" min="0" id="performance_subsidy"
+                                            class="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 @error('performance_subsidy') border-red-500 bg-red-50 @enderror"
+                                            wire:model.live="performance_subsidy" 
+                                            placeholder="0.00">
+                                        @error('performance_subsidy')
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                            </div>
+                                        @enderror
+                                    </div>
+                                    @error('performance_subsidy')
                                         <p class="flex items-center text-sm text-red-600">
                                             <i class="fas fa-info-circle mr-1"></i>
                                             {{ $message }}
@@ -1895,7 +1957,7 @@
                         <i class="fas fa-hand-holding-usd mr-2 text-green-500"></i>
                         {{ __('messages.benefits') }}
                     </h4>
-                    <div class="grid grid-cols-3 gap-4 text-sm">
+                    <div class="grid grid-cols-3 gap-4 text-sm mb-4">
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <p class="text-gray-600 flex items-center mb-1">
                                 <i class="fas fa-utensils text-green-400 mr-2"></i>{{ __('messages.food_benefit') }}:
@@ -1927,6 +1989,32 @@
                             <p class="font-medium pl-6">
                                 @if($bonus_amount)
                                     AOA {{ number_format($bonus_amount, 2, ',', '.') }}
+                                @else
+                                    <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-gray-600 flex items-center mb-1">
+                                <i class="fas fa-briefcase text-indigo-400 mr-2"></i>{{ __('messages.position_subsidy') }}:
+                            </p>
+                            <p class="font-medium pl-6">
+                                @if($position_subsidy)
+                                    AOA {{ number_format($position_subsidy, 2, ',', '.') }}
+                                @else
+                                    <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-gray-600 flex items-center mb-1">
+                                <i class="fas fa-chart-line text-green-400 mr-2"></i>{{ __('messages.performance_subsidy') }}:
+                            </p>
+                            <p class="font-medium pl-6">
+                                @if($performance_subsidy)
+                                    AOA {{ number_format($performance_subsidy, 2, ',', '.') }}
                                 @else
                                     <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
                                 @endif

@@ -34,6 +34,8 @@ class Employee extends Model
         'food_benefit',
         'transport_benefit',
         'bonus_amount',
+        'position_subsidy',
+        'performance_subsidy',
         'employment_status',
         'inss_number',
         'base_salary',

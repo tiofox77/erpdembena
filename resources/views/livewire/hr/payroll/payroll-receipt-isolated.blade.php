@@ -120,6 +120,12 @@
             <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($profileBonus ?? 10000, 3, '.', ' ') }}</td></tr>
+            @if(isset($positionSubsidy) && $positionSubsidy > 0)
+            <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($positionSubsidy, 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(isset($performanceSubsidy) && $performanceSubsidy > 0)
+            <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($performanceSubsidy, 3, '.', ' ') }}</td></tr>
+            @endif
             <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($payrollBonus ?? 6000, 3, '.', ' ') }}</td></tr>
             <tr><td>Horas Extras</td><td class="amount">{{ number_format($overtimeHours ?? 2734.38, 3, '.', ' ') }}</td></tr>
           </tbody>
@@ -237,6 +243,12 @@
             <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($profileBonus ?? 10000, 3, '.', ' ') }}</td></tr>
+            @if(isset($positionSubsidy) && $positionSubsidy > 0)
+            <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($positionSubsidy, 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(isset($performanceSubsidy) && $performanceSubsidy > 0)
+            <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($performanceSubsidy, 3, '.', ' ') }}</td></tr>
+            @endif
             <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($payrollBonus ?? 6000, 3, '.', ' ') }}</td></tr>
             <tr><td>Horas Extras</td><td class="amount">{{ number_format($overtimeHours ?? 2734.38, 3, '.', ' ') }}</td></tr>
           </tbody>

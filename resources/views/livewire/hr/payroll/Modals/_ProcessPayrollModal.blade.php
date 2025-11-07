@@ -655,6 +655,28 @@
                                         </div>
                                     </div>
                                     
+                                    {{-- Warning if no attendance records --}}
+                                    @if(($present_days ?? 0) == 0)
+                                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <p class="text-sm text-yellow-700">
+                                                    <strong>Atenção:</strong> Não foram encontrados registros de presença para este funcionário no período selecionado.
+                                                </p>
+                                                <p class="text-xs text-yellow-600 mt-1">
+                                                    Verifique se:
+                                                    <br>• As datas do período estão corretas
+                                                    <br>• Os registros de ponto foram importados
+                                                    <br>• O funcionário estava ativo no período
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+                                    
                                     {{-- Total Hours Summary --}}
                                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                                         <div class="bg-white/60 p-3 rounded-lg text-center">
@@ -1010,6 +1032,28 @@
                                                 {{ __('payroll.employee_profile_bonus') }}
                                             </span>
                                             <span class="font-bold text-blue-800 text-sm lg:text-lg">+{{ number_format($bonus_amount, 2) }} AOA</span>
+                                        </div>
+                                        @endif
+
+                                        {{-- Position Subsidy --}}
+                                        @if($selectedEmployee && $selectedEmployee->position_subsidy > 0)
+                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-indigo-50 rounded-xl">
+                                            <span class="font-medium text-indigo-700 text-sm lg:text-base">
+                                                <i class="fas fa-briefcase text-indigo-600 mr-1"></i>
+                                                {{ __('messages.position_subsidy') }}
+                                            </span>
+                                            <span class="font-bold text-indigo-800 text-sm lg:text-lg">+{{ number_format($selectedEmployee->position_subsidy, 2) }} AOA</span>
+                                        </div>
+                                        @endif
+
+                                        {{-- Performance Subsidy --}}
+                                        @if($selectedEmployee && $selectedEmployee->performance_subsidy > 0)
+                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-green-50 rounded-xl">
+                                            <span class="font-medium text-green-700 text-sm lg:text-base">
+                                                <i class="fas fa-chart-line text-green-600 mr-1"></i>
+                                                {{ __('messages.performance_subsidy') }}
+                                            </span>
+                                            <span class="font-bold text-green-800 text-sm lg:text-lg">+{{ number_format($selectedEmployee->performance_subsidy, 2) }} AOA</span>
                                         </div>
                                         @endif
 

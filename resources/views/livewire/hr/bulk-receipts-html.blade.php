@@ -222,6 +222,12 @@
             <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($receiptData[$index]['christmasSubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($receiptData[$index]['holidaySubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($receiptData[$index]['profileBonus'] ?? 10000, 3, '.', ' ') }}</td></tr>
+            @if(isset($receiptData[$index]['positionSubsidy']) && $receiptData[$index]['positionSubsidy'] > 0)
+            <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['positionSubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(isset($receiptData[$index]['performanceSubsidy']) && $receiptData[$index]['performanceSubsidy'] > 0)
+            <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['performanceSubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
             <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($receiptData[$index]['payrollBonus'] ?? 6000, 3, '.', ' ') }}</td></tr>
             <tr><td>Horas Extras</td><td class="amount">{{ number_format($receiptData[$index]['overtimeHours'] ?? 2734.38, 3, '.', ' ') }}</td></tr>
           </tbody>
@@ -339,6 +345,12 @@
             <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($receiptData[$index]['christmasSubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($receiptData[$index]['holidaySubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($receiptData[$index]['profileBonus'] ?? 10000, 3, '.', ' ') }}</td></tr>
+            @if(isset($receiptData[$index]['positionSubsidy']) && $receiptData[$index]['positionSubsidy'] > 0)
+            <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['positionSubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(isset($receiptData[$index]['performanceSubsidy']) && $receiptData[$index]['performanceSubsidy'] > 0)
+            <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['performanceSubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
             <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($receiptData[$index]['payrollBonus'] ?? 6000, 3, '.', ' ') }}</td></tr>
             <tr><td>Horas Extras</td><td class="amount">{{ number_format($receiptData[$index]['overtimeHours'] ?? 2734.38, 3, '.', ' ') }}</td></tr>
           </tbody>

@@ -371,11 +371,23 @@ class Payroll extends Component
     public function loadEmployeePayrollDataForPeriod(): void
     {
         if (!$this->selectedEmployee || !$this->selectedPayrollPeriod) {
+            \Log::warning('⚠️ loadEmployeePayrollDataForPeriod: Missing employee or period', [
+                'has_employee' => !empty($this->selectedEmployee),
+                'has_period' => !empty($this->selectedPayrollPeriod),
+            ]);
             return;
         }
 
         $startDate = Carbon::parse($this->selectedPayrollPeriod->start_date);
         $endDate = Carbon::parse($this->selectedPayrollPeriod->end_date);
+        
+        \Log::info('📅 Loading Payroll Data for Period', [
+            'employee' => $this->selectedEmployee['full_name'] ?? $this->selectedEmployee['first_name'],
+            'employee_id' => $this->selectedEmployee['id'],
+            'period_name' => $this->selectedPayrollPeriod->name,
+            'period_start' => $startDate->format('Y-m-d'),
+            'period_end' => $endDate->format('Y-m-d'),
+        ]);
 
         $this->loadAttendanceData($startDate, $endDate);
         $this->loadOvertimeData($startDate, $endDate);
@@ -423,11 +435,33 @@ class Payroll extends Component
      */
     private function loadAttendanceData(Carbon $startDate, Carbon $endDate): void
     {
+        // Log para debug
+        \Log::info('🔍 Loading Attendance Data', [
+            'employee_id' => $this->employee_id,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+        ]);
+        
         // Load ALL attendance records for the period (not just certain statuses)
         $attendances = \App\Models\HR\Attendance::where('employee_id', $this->employee_id)
             ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('date', 'asc')
             ->get();
+        
+        // Log resultados
+        \Log::info('📊 Attendance Results', [
+            'total_records' => $attendances->count(),
+            'employee_id' => $this->employee_id,
+            'period' => $startDate->format('Y-m-d') . ' até ' . $endDate->format('Y-m-d'),
+            'records' => $attendances->map(function($a) {
+                return [
+                    'date' => $a->date,
+                    'status' => $a->status,
+                    'time_in' => $a->time_in,
+                    'time_out' => $a->time_out,
+                ];
+            })->toArray()
+        ]);
 
         // Get working days from HR settings or calculate from period
         $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
