@@ -109,6 +109,28 @@
             </div>
             @endif
 
+            {{-- Position Subsidy --}}
+            @if(($calculatedData['position_subsidy'] ?? 0) > 0)
+            <div class="flex justify-between items-center p-3 lg:p-4 bg-indigo-50 rounded-xl">
+                <span class="font-medium text-indigo-700 text-sm lg:text-base">
+                    <i class="fas fa-briefcase text-indigo-600 mr-1"></i>
+                    {{ __('messages.position_subsidy') }}
+                </span>
+                <span class="font-bold text-indigo-800 text-sm lg:text-lg">+{{ number_format($calculatedData['position_subsidy'], 2) }} AOA</span>
+            </div>
+            @endif
+
+            {{-- Performance Subsidy --}}
+            @if(($calculatedData['performance_subsidy'] ?? 0) > 0)
+            <div class="flex justify-between items-center p-3 lg:p-4 bg-green-50 rounded-xl">
+                <span class="font-medium text-green-700 text-sm lg:text-base">
+                    <i class="fas fa-chart-line text-green-600 mr-1"></i>
+                    {{ __('messages.performance_subsidy') }}
+                </span>
+                <span class="font-bold text-green-800 text-sm lg:text-lg">+{{ number_format($calculatedData['performance_subsidy'], 2) }} AOA</span>
+            </div>
+            @endif
+
             {{-- Additional Payroll Bonus --}}
             @if($calculatedData['additional_bonus_amount'] > 0)
             <div class="flex justify-between items-center p-3 lg:p-4 bg-purple-50 rounded-xl">
@@ -178,6 +200,18 @@
                         <div class="flex justify-between">
                             <span class="text-blue-700">{{ __('messages.bonus_amount') }}:</span>
                             <span class="font-medium text-blue-800">{{ number_format($calculatedData['bonus_amount'] ?? 0, 2) }} AOA</span>
+                        </div>
+                        @endif
+                        @if(($calculatedData['position_subsidy'] ?? 0) > 0)
+                        <div class="flex justify-between">
+                            <span class="text-blue-700">{{ __('messages.position_subsidy') }}:</span>
+                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['position_subsidy'] ?? 0, 2) }} AOA</span>
+                        </div>
+                        @endif
+                        @if(($calculatedData['performance_subsidy'] ?? 0) > 0)
+                        <div class="flex justify-between">
+                            <span class="text-blue-700">{{ __('messages.performance_subsidy') }}:</span>
+                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['performance_subsidy'] ?? 0, 2) }} AOA</span>
                         </div>
                         @endif
                         @if($calculatedData['additional_bonus_amount'] > 0)

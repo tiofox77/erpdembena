@@ -616,24 +616,18 @@ class PayrollBatch extends Component
             $this->salaryAdvances = \App\Models\HR\SalaryAdvance::where('employee_id', $employee->id)
                 ->where('status', 'approved')
                 ->where(function($query) use ($period) {
-                    $query->whereBetween('date', [$period->start_date, $period->end_date])
-                          ->orWhere('remaining_amount', '>', 0);
+                    $query->whereBetween('request_date', [$period->start_date, $period->end_date])
+                          ->orWhere('remaining_installments', '>', 0);
                 })
                 ->get()
                 ->toArray();
             
-            // Carregar salary discounts do período
+            // Carregar salary discounts do período (similar a advances)
             $this->salaryDiscounts = \App\Models\HR\SalaryDiscount::where('employee_id', $employee->id)
-                ->where('status', 'active')
+                ->where('status', 'approved')
                 ->where(function($query) use ($period) {
-                    $query->whereBetween('start_date', [$period->start_date, $period->end_date])
-                          ->orWhere(function($q) use ($period) {
-                              $q->where('start_date', '<=', $period->end_date)
-                                ->where(function($q2) use ($period) {
-                                    $q2->whereNull('end_date')
-                                       ->orWhere('end_date', '>=', $period->start_date);
-                                });
-                          });
+                    $query->whereBetween('request_date', [$period->start_date, $period->end_date])
+                          ->orWhere('remaining_installments', '>', 0);
                 })
                 ->get()
                 ->toArray();
@@ -656,8 +650,9 @@ class PayrollBatch extends Component
                     'item_id' => $itemId,
                     'employee_id' => $this->editingItem->employee_id,
                 ]);
-                session()->flash('error', 'Erro ao calcular dados do payroll. Verifique os logs.');
-                $this->showEditItemModal = true; // Mostra modal com loading
+                session()->flash('warning', 'Os dados do payroll estão sendo calculados. Aguarde...');
+                // Mostra modal mesmo com calculatedData vazio - a modal vai mostrar mensagem de loading
+                $this->showEditItemModal = true;
                 return;
             }
             
@@ -914,17 +909,30 @@ class PayrollBatch extends Component
     public function recalculateEditingItem(): void
     {
         if (!$this->editingItem) {
+            Log::warning('⚠️ recalculateEditingItem: editingItem está vazio');
             return;
         }
         
         try {
+            Log::info('🔄 Iniciando recalculateEditingItem', [
+                'item_id' => $this->editingItem->id,
+                'employee_id' => $this->editingItem->employee_id,
+            ]);
+            
             $employee = $this->editingItem->employee;
             $period = $this->editingItem->payrollBatch->payrollPeriod;
+            
+            Log::info('📅 Dados do período', [
+                'period_name' => $period->name,
+                'start_date' => $period->start_date,
+                'end_date' => $period->end_date,
+            ]);
             
             $startDate = Carbon::parse($period->start_date);
             $endDate = Carbon::parse($period->end_date);
             
             // Criar calculator
+            Log::info('🧮 Criando PayrollCalculatorHelper...');
             $calculator = new PayrollCalculatorHelper($employee, $startDate, $endDate);
             
             // Carregar dados
@@ -942,27 +950,34 @@ class PayrollBatch extends Component
             $calculator->setFoodInKind($isFoodInKind);
             
             // Calcular
+            Log::info('💰 Executando cálculo...');
             $this->calculatedData = $calculator->calculate();
             
+            Log::info('✅ Cálculo concluído', [
+                'calculatedData_keys' => !empty($this->calculatedData) ? array_keys($this->calculatedData) : 'VAZIO',
+                'gross_salary' => $this->calculatedData['gross_salary'] ?? 'N/A',
+                'net_salary' => $this->calculatedData['net_salary'] ?? 'N/A',
+            ]);
+            
             // Atualizar propriedades de exibição
-            $this->edit_gross_salary = $this->calculatedData['gross_salary'];
-            $this->edit_net_salary = $this->calculatedData['net_salary'];
-            $this->edit_total_deductions = $this->calculatedData['total_deductions'];
+            $this->edit_gross_salary = $this->calculatedData['gross_salary'] ?? 0;
+            $this->edit_net_salary = $this->calculatedData['net_salary'] ?? 0;
+            $this->edit_total_deductions = $this->calculatedData['total_deductions'] ?? 0;
             
             Log::info('Item recalculado em edição - DETALHADO', [
                 'employee_id' => $employee->id,
                 'employee_name' => $employee->full_name,
                 'period' => $period->name,
-                'basic_salary' => $this->calculatedData['basic_salary'],
-                'absent_days' => $this->calculatedData['absent_days'],
-                'present_days' => $this->calculatedData['present_days'],
-                'absence_deduction' => $this->calculatedData['absence_deduction'],
-                'late_deduction' => $this->calculatedData['late_deduction'],
-                'inss_3_percent' => $this->calculatedData['inss_3_percent'],
-                'irt' => $this->calculatedData['irt'],
-                'total_deductions' => $this->calculatedData['total_deductions'],
-                'gross_salary' => $this->calculatedData['gross_salary'],
-                'net_salary' => $this->calculatedData['net_salary'],
+                'basic_salary' => $this->calculatedData['basic_salary'] ?? 'N/A',
+                'absent_days' => $this->calculatedData['absent_days'] ?? 'N/A',
+                'present_days' => $this->calculatedData['present_days'] ?? 'N/A',
+                'absence_deduction' => $this->calculatedData['absence_deduction'] ?? 'N/A',
+                'late_deduction' => $this->calculatedData['late_deduction'] ?? 'N/A',
+                'inss_3_percent' => $this->calculatedData['inss_3_percent'] ?? 'N/A',
+                'irt' => $this->calculatedData['irt'] ?? 'N/A',
+                'total_deductions' => $this->calculatedData['total_deductions'] ?? 'N/A',
+                'gross_salary' => $this->calculatedData['gross_salary'] ?? 'N/A',
+                'net_salary' => $this->calculatedData['net_salary'] ?? 'N/A',
             ]);
             
         } catch (\Exception $e) {

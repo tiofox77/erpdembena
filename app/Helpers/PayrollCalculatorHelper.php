@@ -825,6 +825,8 @@ class PayrollCalculatorHelper
             
             // Bônus e subsídios
             'bonus_amount' => $this->bonusAmount,
+            'position_subsidy' => (float) ($this->employee->position_subsidy ?? 0),
+            'performance_subsidy' => (float) ($this->employee->performance_subsidy ?? 0),
             'additional_bonus_amount' => $this->additionalBonusAmount,
             'christmas_subsidy' => $this->christmasSubsidy,
             'christmas_subsidy_amount' => $this->getChristmasSubsidyAmount(),

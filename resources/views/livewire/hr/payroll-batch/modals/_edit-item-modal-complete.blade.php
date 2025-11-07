@@ -1,5 +1,5 @@
 {{-- Complete Edit Batch Item Modal - Similar to Individual Payroll Processing --}}
-@if($showEditItemModal && $editingItem && !empty($calculatedData))
+@if($showEditItemModal && $editingItem)
 <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" wire:key="edit-item-modal-complete">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[98vw] max-h-[95vh] overflow-y-auto flex flex-col">
         
@@ -32,6 +32,25 @@
                 </button>
             </div>
         </div>
+
+        {{-- Error/Loading Section --}}
+        @if(empty($calculatedData))
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 m-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Aguarde...</strong> Calculando dados do payroll...
+                    </p>
+                    <p class="text-xs text-yellow-600 mt-1">
+                        Se esta mensagem persistir, verifique os logs do sistema.
+                    </p>
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Editable Fields Section --}}
         <div class="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-200 p-4 flex-shrink-0">
