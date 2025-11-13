@@ -154,7 +154,7 @@ class Payroll extends Component
     public float $profile_bonus = 0.0;
     public float $custom_bonus = 0.0;
     public string $custom_bonus_description = '';
-    public float $bonus_amount = 0.0;
+    public float $family_allowance = 0.0;
     public float $additional_bonus_amount = 0.0; // Separate from employee record bonus
     
     /**
@@ -164,7 +164,7 @@ class Payroll extends Component
     {
         // Ensure bonus fields are never null
         $bonusFields = [
-            'bonus_amount',
+            'family_allowance',
             'additional_bonus_amount',
             'profile_bonus',
             'custom_bonus',
@@ -210,6 +210,9 @@ class Payroll extends Component
     public float $gross_salary = 0.0;
     public float $total_deductions = 0.0;
     public float $net_salary = 0.0;
+    
+    // Calculated data from PayrollCalculatorHelper (igual modal batch)
+    public array $calculatedData = [];
     
     // New calculated properties for consistent payroll calculations
     public float $main_salary = 0.0;
@@ -421,8 +424,8 @@ class Payroll extends Component
         $this->transport_allowance = $this->calculateProportionalTransportAllowance();
         $this->meal_allowance = (float) ($this->selectedEmployee->food_benefit ?? 0); // Loaded but excluded from gross salary
         
-        // Load bonus amount from employee record
-        $this->bonus_amount = (float) ($this->selectedEmployee->bonus_amount ?? 0);
+        // Load family allowance from employee record
+        $this->family_allowance = (float) ($this->selectedEmployee->family_allowance ?? 0);
         
         // Initialize other allowances (these might come from other sources)
         $this->housing_allowance = $this->housing_allowance ?? 0.0;
@@ -1150,7 +1153,7 @@ class Payroll extends Component
             // Food in kind apenas para exibição - food SEMPRE é deduzido (regra de negócio)
             $calculator->setFoodInKind($this->is_food_in_kind ?? false);
             
-            \Log::info('🔄 Chamando $calculator->calculate()...');
+            \Log::info('🔄 Chamando $calculator->calculate()... [MODAL INDIVIDUAL]');
             
             // Calcular tudo
             $results = $calculator->calculate();
@@ -1168,7 +1171,7 @@ class Payroll extends Component
             $this->daily_rate = $results['daily_rate'];
             $this->transport_allowance = $results['transport_allowance'];
             $this->meal_allowance = $results['food_benefit'];
-            $this->bonus_amount = $results['bonus_amount'];
+            $this->family_allowance = $results['family_allowance'];
             
             // Dados de presença
             $this->total_working_days = $results['total_working_days'];
@@ -1226,13 +1229,26 @@ class Payroll extends Component
             $this->calculated_net_salary = $results['net_salary'];
             $this->net_salary = $results['net_salary'];
             
+            // Salvar calculatedData igual modal batch para usar na view
+            $this->calculatedData = $results;
+            
             // Detalhes de IRT para exibição
             $this->irtCalculationDetails = $results['irt_details'];
             
-            Log::info('✅✅✅ Payroll calculado com sucesso (FINAL)', [
+            Log::info('✅✅✅ Payroll calculado com sucesso (FINAL) - MODAL INDIVIDUAL', [
                 'employee_id' => $this->selectedEmployee->id,
+                'employee_name' => $this->selectedEmployee->full_name,
                 'gross_salary' => $this->gross_salary,
-                'net_salary' => $this->net_salary,
+                'net_salary_property' => $this->net_salary,
+                'net_salary_calculatedData' => $results['net_salary'],
+                'total_deductions' => $results['total_deductions'],
+                'food_benefit' => $results['food_benefit'],
+                'absence_deduction' => $results['absence_deduction'],
+                'late_deduction' => $results['late_deduction'],
+                'advance_deduction' => $results['advance_deduction'],
+                'total_salary_discounts' => $results['total_salary_discounts'],
+                'inss_3_percent' => $results['inss_3_percent'],
+                'irt' => $results['irt'],
                 'christmas_subsidy' => $this->christmas_subsidy,
                 'vacation_subsidy' => $this->vacation_subsidy,
             ]);
@@ -1288,9 +1304,9 @@ class Payroll extends Component
             $grossAmount += $this->additional_bonus_amount;
         }
         
-        // Add employee record bonus (from employee profile) - fully taxable, not affected by absences
-        if ($this->bonus_amount > 0) {
-            $grossAmount += $this->bonus_amount;
+        // Add employee record family allowance (from employee profile) - fully taxable, not affected by absences
+        if ($this->family_allowance > 0) {
+            $grossAmount += $this->family_allowance;
         }
 
         // Add allowances with tax-exempt limits (Angola tax rules)
@@ -1371,10 +1387,14 @@ class Payroll extends Component
         $this->absence_deduction_amount = (float)($this->absence_deduction ?? 0);
         $this->total_deductions_calculated = $deductions;
         
-        // Subtrair subsídio de alimentação do net salary
+        // Adicionar subsídio de alimentação às deduções (não pago)
         $foodBenefit = (float) ($this->selectedEmployee->food_benefit ?? $this->meal_allowance ?? 0);
+        if ($foodBenefit > 0) {
+            $deductions += $foodBenefit;
+            $this->total_deductions = $deductions;
+        }
         
-        $this->net_salary = max(0, $this->gross_salary - $this->total_deductions - $foodBenefit);
+        $this->net_salary = max(0, $this->gross_salary - $this->total_deductions);
     }
 
     // ✅ REMOVIDO: getChristmasSubsidyAmountProperty() - Valor já calculado pelo helper em $this->christmas_subsidy_amount
@@ -1473,9 +1493,9 @@ class Payroll extends Component
     /**
      * Get bonus amount from employee record
      */
-    public function getBonusAmount(): float
+    public function getFamilyAllowance(): float
     {
-        return (float) ($this->selectedEmployee->bonus_amount ?? 0);
+        return (float) ($this->selectedEmployee->family_allowance ?? 0);
     }
 
     /**
@@ -1740,6 +1760,11 @@ class Payroll extends Component
                 $this->showEmployeeSearch = false;
                 $this->showProcessModal = true;
                 
+                // Clear search filters to prevent modal distortion
+                $this->employeeSearch = '';
+                $this->departmentFilter = '';
+                $this->statusFilter = '';
+                
                 // Log estado dos checkboxes ao abrir modal
                 \Log::info('Modal Aberta', [
                     'employee' => $this->selectedEmployee->full_name,
@@ -1794,6 +1819,7 @@ class Payroll extends Component
         $this->gross_salary = 0.0;
         $this->total_deductions = 0.0;
         $this->net_salary = 0.0;
+        $this->calculatedData = [];
     }
 
     // Updated properties for search functionality
@@ -2416,7 +2442,7 @@ class Payroll extends Component
         $this->reset([
             'payroll_id', 'employee_id', 'payroll_period_id', 'basic_salary',
             'transport_allowance', 'meal_allowance', 'housing_allowance',
-            'total_overtime_amount', 'performance_bonus', 'custom_bonus', 'bonus_amount', 'additional_bonus_amount',
+            'total_overtime_amount', 'performance_bonus', 'custom_bonus', 'family_allowance', 'additional_bonus_amount',
             'income_tax', 'social_security', 'total_deductions', 'net_salary', 'gross_salary',
             'payment_method', 'bank_account', 'payment_date', 'status', 'remarks', 'payrollItems',
             'total_attendance_hours', 'regular_hours_pay', 'hourly_rate',
@@ -2893,7 +2919,7 @@ class Payroll extends Component
                 
                 // Overtime and bonuses
                 'overtime' => $this->total_overtime_amount,
-                'bonuses' => $this->performance_bonus + $this->custom_bonus + $this->bonus_amount + 
+                'bonuses' => $this->performance_bonus + $this->custom_bonus + $this->family_allowance + 
                            $this->additional_bonus_amount +
                            ($this->christmas_subsidy ? ($this->basic_salary * 0.5) : 0) +
                            ($this->vacation_subsidy ? ($this->basic_salary * 0.5) : 0),
@@ -3030,7 +3056,7 @@ class Payroll extends Component
                 'transport_allowance',
                 'meal_allowance',
                 'housing_allowance',
-                'bonus_amount',
+                'family_allowance',
                 'total_overtime_amount',
                 'income_tax',
                 'social_security',
@@ -3072,7 +3098,7 @@ class Payroll extends Component
     {
         $numericFields = [
             'basic_salary',
-            'bonus_amount',
+            'family_allowance',
             'additional_bonus_amount',
             'profile_bonus',
             'custom_bonus',
@@ -3292,14 +3318,14 @@ class Payroll extends Component
             ];
         }
         
-        // Bonuses
-        if ($this->bonus_amount > 0) {
+        // Family Allowance
+        if ($this->family_allowance > 0) {
             $items[] = [
                 'payroll_id' => $payroll->id,
-                'type' => 'bonus',
-                'name' => 'Bónus',
-                'description' => 'Bónus de performance e outros',
-                'amount' => $this->bonus_amount,
+                'type' => 'allowance',
+                'name' => 'Ajuda Familiar',
+                'description' => 'Subsídio de ajuda familiar',
+                'amount' => $this->family_allowance,
                 'is_taxable' => true,
             ];
         }

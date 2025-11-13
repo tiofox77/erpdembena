@@ -15,9 +15,24 @@
                         <p class="text-blue-100">{{ $currentBatch->payrollPeriod->name ?? 'N/A' }} • {{ $currentBatch->formatted_batch_date }}</p>
                     </div>
                 </div>
-                <button wire:click="closeViewModal" class="text-white/80 hover:text-white p-2">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+                <div class="flex items-center space-x-2">
+                    @if(in_array($currentBatch->status, ['draft', 'ready_to_process', 'processed', 'partially_processed']))
+                    <button 
+                        wire:click="processBatchWithHelper({{ $currentBatch->id }})" 
+                        wire:loading.attr="disabled"
+                        class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Recalcular todos os itens do batch com os subsídios atualizados">
+                        <i class="fas fa-sync-alt" wire:loading.class="fa-spin" wire:target="processBatchWithHelper"></i>
+                        <span class="text-sm font-medium">
+                            <span wire:loading.remove wire:target="processBatchWithHelper">Recalcular Batch</span>
+                            <span wire:loading wire:target="processBatchWithHelper">Recalculando...</span>
+                        </span>
+                    </button>
+                    @endif
+                    <button wire:click="closeViewModal" class="text-white/80 hover:text-white p-2">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
             </div>
         </div>
 

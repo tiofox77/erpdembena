@@ -38,7 +38,7 @@ class SetupIRTTaxBrackets extends Command
             ],
             [
                 'bracket_number' => 2,
-                'min_income' => 100000.01,
+                'min_income' => 100001.00,
                 'max_income' => 150000.00,
                 'fixed_amount' => 0.00,
                 'tax_rate' => 13.00,
@@ -47,92 +47,92 @@ class SetupIRTTaxBrackets extends Command
             ],
             [
                 'bracket_number' => 3,
-                'min_income' => 150000.01,
+                'min_income' => 150001.00,
                 'max_income' => 200000.00,
-                'fixed_amount' => 6500.00,
+                'fixed_amount' => 12500.00,
                 'tax_rate' => 16.00,
-                'description' => 'Escalão 3: 150.001 - 200.000 AKZ - 6.500 AKZ + 16% sobre excedente',
+                'description' => 'Escalão 3: 150.001 - 200.000 AKZ - 12.500 AKZ + 16% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 4,
-                'min_income' => 200000.01,
+                'min_income' => 200001.00,
                 'max_income' => 300000.00,
-                'fixed_amount' => 14500.00,
+                'fixed_amount' => 31250.00,
                 'tax_rate' => 18.00,
-                'description' => 'Escalão 4: 200.001 - 300.000 AKZ - 14.500 AKZ + 18% sobre excedente',
+                'description' => 'Escalão 4: 200.001 - 300.000 AKZ - 31.250 AKZ + 18% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 5,
-                'min_income' => 300000.01,
+                'min_income' => 300001.00,
                 'max_income' => 500000.00,
-                'fixed_amount' => 32500.00,
+                'fixed_amount' => 49259.00,
                 'tax_rate' => 19.00,
-                'description' => 'Escalão 5: 300.001 - 500.000 AKZ - 32.500 AKZ + 19% sobre excedente',
+                'description' => 'Escalão 5: 300.001 - 500.000 AKZ - 49.259 AKZ + 19% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 6,
-                'min_income' => 500000.01,
+                'min_income' => 500001.00,
                 'max_income' => 1000000.00,
-                'fixed_amount' => 70500.00,
+                'fixed_amount' => 87250.00,
                 'tax_rate' => 20.00,
-                'description' => 'Escalão 6: 500.001 - 1.000.000 AKZ - 70.500 AKZ + 20% sobre excedente',
+                'description' => 'Escalão 6: 500.001 - 1.000.000 AKZ - 87.250 AKZ + 20% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 7,
-                'min_income' => 1000000.01,
+                'min_income' => 1000001.00,
                 'max_income' => 1500000.00,
-                'fixed_amount' => 170500.00,
+                'fixed_amount' => 187249.00,
                 'tax_rate' => 21.00,
-                'description' => 'Escalão 7: 1.000.001 - 1.500.000 AKZ - 170.500 AKZ + 21% sobre excedente',
+                'description' => 'Escalão 7: 1.000.001 - 1.500.000 AKZ - 187.249 AKZ + 21% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 8,
-                'min_income' => 1500000.01,
+                'min_income' => 1500001.00,
                 'max_income' => 2000000.00,
-                'fixed_amount' => 275500.00,
+                'fixed_amount' => 292249.00,
                 'tax_rate' => 22.00,
-                'description' => 'Escalão 8: 1.500.001 - 2.000.000 AKZ - 275.500 AKZ + 22% sobre excedente',
+                'description' => 'Escalão 8: 1.500.001 - 2.000.000 AKZ - 292.249 AKZ + 22% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 9,
-                'min_income' => 2000000.01,
+                'min_income' => 2000001.00,
                 'max_income' => 2500000.00,
-                'fixed_amount' => 385500.00,
+                'fixed_amount' => 402249.00,
                 'tax_rate' => 23.00,
-                'description' => 'Escalão 9: 2.000.001 - 2.500.000 AKZ - 385.500 AKZ + 23% sobre excedente',
+                'description' => 'Escalão 9: 2.000.001 - 2.500.000 AKZ - 402.249 AKZ + 23% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 10,
-                'min_income' => 2500000.01,
+                'min_income' => 2500001.00,
                 'max_income' => 5000000.00,
-                'fixed_amount' => 500500.00,
+                'fixed_amount' => 517249.00,
                 'tax_rate' => 24.00,
-                'description' => 'Escalão 10: 2.500.001 - 5.000.000 AKZ - 500.500 AKZ + 24% sobre excedente',
+                'description' => 'Escalão 10: 2.500.001 - 5.000.000 AKZ - 517.249 AKZ + 24% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 11,
-                'min_income' => 5000000.01,
+                'min_income' => 5000001.00,
                 'max_income' => 10000000.00,
-                'fixed_amount' => 1100500.00,
+                'fixed_amount' => 1117249.00,
                 'tax_rate' => 24.50,
-                'description' => 'Escalão 11: 5.000.001 - 10.000.000 AKZ - 1.100.500 AKZ + 24,5% sobre excedente',
+                'description' => 'Escalão 11: 5.000.001 - 10.000.000 AKZ - 1.117.249 AKZ + 24,5% sobre excedente',
                 'is_active' => true
             ],
             [
                 'bracket_number' => 12,
-                'min_income' => 10000000.01,
+                'min_income' => 10000001.00,
                 'max_income' => null, // No upper limit
-                'fixed_amount' => 2325500.00,
+                'fixed_amount' => 2342248.00,
                 'tax_rate' => 25.00,
-                'description' => 'Escalão 12: acima de 10.000.000 AKZ - 2.325.500 AKZ + 25% sobre excedente',
+                'description' => 'Escalão 12: acima de 10.000.000 AKZ - 2.342.248 AKZ + 25% sobre excedente',
                 'is_active' => true
             ]
         ];

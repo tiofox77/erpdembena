@@ -1,421 +1,344 @@
-{{-- Payroll Summary - Replica estrutura da modal individual usando dados do helper --}}
+{{-- Payroll Summary - Estrutura baseada em payr.html (3 colunas organizadas) --}}
 @if(!empty($calculatedData))
 {{-- Left Panel - Payroll Summary (LADO ESQUERDO) --}}
 <div class="w-full xl:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 overflow-y-auto flex-1 p-4 lg:p-6 order-1">
     
-    {{-- Payroll Summary Card --}}
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
-        <h3 class="text-lg lg:text-xl font-bold text-gray-800 mb-4 lg:mb-6 flex items-center">
-            <i class="fas fa-chart-pie text-green-500 mr-2"></i>
-            Resumo da Folha de Pagamento
-        </h3>
+    <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+        <i class="fas fa-file-invoice-dollar text-blue-600 mr-3"></i>
+        Folha de Salário - Resumo Detalhado
+    </h3>
+
+    {{-- GRID 3 COLUNAS --}}
+    <div class="grid grid-cols-1 gap-4">
         
-        <div class="space-y-3 lg:space-y-4">
-            {{-- Base Salary --}}
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-blue-50 rounded-xl">
-                <span class="font-medium text-blue-700 text-sm lg:text-base">Salário Base</span>
-                <span class="font-bold text-blue-800 text-sm lg:text-lg">{{ number_format($calculatedData['basic_salary'], 2) }} AOA</span>
-            </div>
+        {{-- COLUNA 1 - ENTRADAS (AOA) --}}
+        <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+            <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-500">
+                <i class="fas fa-plus-circle text-blue-600 mr-2"></i>
+                Entradas (AOA)
+            </h4>
+            <div class="text-sm text-gray-600 mb-4">Componentes que somam ao salário. <strong>Absence</strong> é subtraída.</div>
 
-            {{-- Food Allowance - SEMPRE MOSTRAR --}}
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-teal-50 rounded-xl">
-                <div>
-                    <span class="font-medium text-teal-700 text-sm lg:text-base">
-                        <i class="fas fa-utensils mr-1 text-teal-600"></i>
-                        Subsídio de Alimentação
-                    </span>
-                    @if(!($calculatedData['is_food_in_kind'] ?? false))
-                    <div class="text-xs text-teal-600 mt-1">
-                        <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Não tributável</span>
-                    </div>
-                    @endif
-                </div>
-                <span class="font-bold text-teal-800 text-sm lg:text-lg">{{ number_format($calculatedData['food_benefit'] ?? 0, 2) }} AOA</span>
-            </div>
-
-            {{-- Christmas Subsidy --}}
-            @if($calculatedData['christmas_subsidy_amount'] > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-emerald-50 rounded-xl">
-                <span class="font-medium text-emerald-700 text-sm lg:text-base">
-                    <i class="fas fa-gift mr-1 text-emerald-600"></i>
-                    Subsídio de Natal
-                </span>
-                <span class="font-bold text-emerald-800 text-sm lg:text-lg">+{{ number_format($calculatedData['christmas_subsidy_amount'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Vacation Subsidy --}}
-            @if($calculatedData['vacation_subsidy_amount'] > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-emerald-50 rounded-xl">
-                <span class="font-medium text-emerald-700 text-sm lg:text-base">
-                    <i class="fas fa-umbrella-beach mr-1 text-emerald-600"></i>
-                    Subsídio de Férias
-                </span>
-                <span class="font-bold text-emerald-800 text-sm lg:text-lg">+{{ number_format($calculatedData['vacation_subsidy_amount'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Transport Allowance - SEMPRE MOSTRAR --}}
-            <div class="p-2 lg:p-3 bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg border border-green-200">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-medium text-gray-700 text-xs lg:text-sm">Subsídio de Transporte</span>
-                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">Proporcional</span>
-                    </div>
-                    <span class="font-bold text-gray-800 text-xs lg:text-sm">{{ number_format($calculatedData['transport_allowance'], 2) }} AOA</span>
-                </div>
-                
-                <div class="space-y-1 text-xs bg-white/50 p-2 rounded">
-                    <div class="flex justify-between">
-                        <span class="text-blue-600 font-medium">• Total do Benefício:</span>
-                        <span class="text-blue-700 font-semibold">{{ number_format($calculatedData['transport_benefit_full'], 2) }} AOA</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">• Dias Presentes:</span>
-                        <span class="text-gray-700">{{ $calculatedData['present_days'] }}/{{ $calculatedData['total_working_days'] }} dias</span>
-                    </div>
-                    @if($calculatedData['transport_discount'] > 0)
-                    <div class="flex justify-between border-t pt-1">
-                        <span class="text-red-600">• Desconto por Faltas:</span>
-                        <span class="text-red-700 font-medium">-{{ number_format($calculatedData['transport_discount'], 2) }} AOA</span>
-                    </div>
-                    @endif
-                    <div class="flex justify-between border-t pt-1 font-semibold">
-                        <span class="text-green-600">• Valor a Pagar:</span>
-                        <span class="text-green-700">{{ number_format($calculatedData['transport_allowance'], 2) }} AOA</span>
-                    </div>
-                </div>
-                
-                <div class="space-y-1 text-xs mt-2">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">• Isento (até 30k):</span>
-                        <span class="text-gray-700 font-medium">{{ number_format($calculatedData['exempt_transport'], 2) }} AOA</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-green-600">• Tributável:</span>
-                        <span class="text-green-700 font-medium">{{ number_format($calculatedData['taxable_transport'], 2) }} AOA</span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Employee Profile Bonus --}}
-            @if($calculatedData['bonus_amount'] > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-blue-50 rounded-xl">
-                <span class="font-medium text-blue-700 text-sm lg:text-base">
-                    <i class="fas fa-user-tag text-blue-600 mr-1"></i>
-                    Bónus do Perfil do Funcionário
-                </span>
-                <span class="font-bold text-blue-800 text-sm lg:text-lg">+{{ number_format($calculatedData['bonus_amount'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Position Subsidy --}}
-            @if(($calculatedData['position_subsidy'] ?? 0) > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-indigo-50 rounded-xl">
-                <span class="font-medium text-indigo-700 text-sm lg:text-base">
-                    <i class="fas fa-briefcase text-indigo-600 mr-1"></i>
-                    {{ __('messages.position_subsidy') }}
-                </span>
-                <span class="font-bold text-indigo-800 text-sm lg:text-lg">+{{ number_format($calculatedData['position_subsidy'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Performance Subsidy --}}
-            @if(($calculatedData['performance_subsidy'] ?? 0) > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-green-50 rounded-xl">
-                <span class="font-medium text-green-700 text-sm lg:text-base">
-                    <i class="fas fa-chart-line text-green-600 mr-1"></i>
-                    {{ __('messages.performance_subsidy') }}
-                </span>
-                <span class="font-bold text-green-800 text-sm lg:text-lg">+{{ number_format($calculatedData['performance_subsidy'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Additional Payroll Bonus --}}
-            @if($calculatedData['additional_bonus_amount'] > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-purple-50 rounded-xl">
-                <span class="font-medium text-purple-700 text-sm lg:text-base">
-                    <i class="fas fa-plus-circle text-purple-600 mr-1"></i>
-                    Bónus Adicional do Payroll
-                </span>
-                <span class="font-bold text-purple-800 text-sm lg:text-lg">+{{ number_format($calculatedData['additional_bonus_amount'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Overtime --}}
-            @if($calculatedData['total_overtime_amount'] > 0)
-            <div class="flex justify-between items-center p-3 lg:p-4 bg-orange-50 rounded-xl">
-                <span class="font-medium text-orange-700 text-sm lg:text-base">
-                    <i class="fas fa-clock text-orange-600 mr-1"></i>
-                    Horas Extras
-                </span>
-                <span class="font-bold text-orange-800 text-sm lg:text-lg">+{{ number_format($calculatedData['total_overtime_amount'], 2) }} AOA</span>
-            </div>
-            @endif
-
-            {{-- Divider --}}
-            <hr class="border-gray-200">
-
-            {{-- Main Salary (Base Salary + All Benefits including Food & Transport) - CÓPIA EXATA DA MODAL INDIVIDUAL --}}
-            <div class="bg-blue-50 rounded-xl border border-blue-200 p-2 lg:p-3" x-data="{ showMainSalaryDetails: false }">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-semibold text-blue-700 text-sm lg:text-base">{{ __('messages.gross_salary') }}</span>
-                        <!-- Help Icon for Main Salary Details -->
-                        <button @click="showMainSalaryDetails = !showMainSalaryDetails" 
-                                class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                                type="button"
-                                title="{{ __('payroll.view_main_salary_details') }}">
-                            ?
-                        </button>
-                    </div>
-                    <span class="text-lg lg:text-xl font-bold text-blue-800">
-                        {{ number_format($calculatedData['gross_salary'], 2) }} AOA
-                    </span>
-                </div>
-                
-                <!-- Main Salary Details Breakdown -->
-                <div x-show="showMainSalaryDetails" x-transition class="mt-3 p-3 bg-blue-100/50 rounded-lg border border-blue-200">
-                    <h5 class="text-xs font-semibold text-blue-800 mb-2">{{ __('messages.main_salary_breakdown') }}:</h5>
-                    <div class="space-y-1 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.basic_salary') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['basic_salary'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.food_benefit') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['food_benefit'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.transport_benefit') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['transport_allowance'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @if($calculatedData['total_overtime_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.overtime') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['total_overtime_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['bonus_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.bonus_amount') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['bonus_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if(($calculatedData['position_subsidy'] ?? 0) > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.position_subsidy') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['position_subsidy'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if(($calculatedData['performance_subsidy'] ?? 0) > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.performance_subsidy') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['performance_subsidy'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['additional_bonus_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.additional_bonus') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['additional_bonus_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['christmas_subsidy_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.christmas_subsidy') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['christmas_subsidy_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['vacation_subsidy_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-blue-700">{{ __('messages.vacation_subsidy') }}:</span>
-                            <span class="font-medium text-blue-800">{{ number_format($calculatedData['vacation_subsidy_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        <div class="border-t border-blue-300 pt-1 mt-1">
-                            <div class="flex justify-between font-semibold">
-                                <span class="text-blue-800">{{ __('messages.total') }}:</span>
-                                <span class="text-blue-900">{{ number_format($calculatedData['gross_salary'], 2) }} AOA</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Base IRT Taxable Amount - CÓPIA EXATA DA MODAL INDIVIDUAL --}}
-            <div class="bg-green-50 rounded-xl border border-green-200 p-2 lg:p-3" x-data="{ showGrossSalaryDetails: false }">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-semibold text-green-700 text-sm lg:text-base">{{ __('messages.baseIRT_taxable_amount') }}</span>
-                        <!-- Help Icon for Gross Salary Details -->
-                        <button @click="showGrossSalaryDetails = !showGrossSalaryDetails" 
-                                class="w-4 h-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-green-600 transition-colors"
-                                type="button"
-                                title="{{ __('payroll.view_gross_salary_details') }}">
-                            ?
-                        </button>
-                    </div>
-                    <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format($calculatedData['irt_base'], 2) }} AOA</span>
-                </div>
-                
-                <!-- Gross Salary Details Breakdown -->
-                <div x-show="showGrossSalaryDetails" x-transition class="mt-3 p-3 bg-green-100/50 rounded-lg border border-green-200">
-                    <h5 class="text-xs font-semibold text-green-800 mb-2">{{ __('messages.gross_salary_breakdown') }}:</h5>
-                    <div class="space-y-1 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.basic_salary') }}:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['basic_salary'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @if($calculatedData['taxable_transport'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.transport_benefit') }} <span class="text-xs text-gray-500">(excesso tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['taxable_transport'], 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['bonus_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.bonus_amount') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['bonus_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['additional_bonus_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.additional_bonus') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['additional_bonus_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['christmas_subsidy_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.christmas_subsidy') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['christmas_subsidy_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['vacation_subsidy_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.vacation_subsidy') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['vacation_subsidy_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['total_overtime_amount'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.overtime_amount') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['total_overtime_amount'] ?? 0, 2) }} AOA</span>
-                        </div>
-                        @endif
-                        @if($calculatedData['taxable_food'] > 0)
-                        <div class="flex justify-between">
-                            <span class="text-green-700">{{ __('messages.food_benefit') }} <span class="text-xs text-gray-500">(excesso tributável)</span>:</span>
-                            <span class="font-medium text-green-800">{{ number_format($calculatedData['taxable_food'], 2) }} AOA</span>
-                        </div>
-                        @endif
-                        <div class="flex justify-between border-t border-green-300 pt-1 mt-1">
-                            <span class="text-green-700 font-medium">INSS (3%):</span>
-                            <span class="font-medium text-red-600">-{{ number_format($calculatedData['inss_3_percent'], 2) }} AOA</span>
-                        </div>
-                        <div class="border-t border-green-300 pt-1 mt-1">
-                            <div class="flex justify-between font-semibold">
-                                <span class="text-green-800">{{ __('messages.total') }}:</span>
-                                <span class="text-green-900">{{ number_format($calculatedData['irt_base'], 2) }} AOA</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Deductions Section - CÓPIA EXATA DA MODAL INDIVIDUAL --}}
-            <div class="space-y-2">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ __('messages.deductions') }}:</h4>
-                
-                {{-- IRT --}}
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                    <div>
-                        <span class="font-medium text-red-700 text-xs lg:text-sm">IRT ({{ __('messages.income_tax') }})</span>
-                        <div class="text-xs text-red-600 mt-1">{{ __('payroll.calculated_from') }}: {{ number_format($calculatedData['irt_base'] ?? 0, 2) }} AOA</div>
-                    </div>
-                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($calculatedData['irt'] ?? 0, 2) }} AOA</span>
+            <div class="space-y-2.5">
+                {{-- Basic Salary --}}
+                <div class="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Basic Salary</span>
+                    <span class="text-blue-800 font-bold tabular-nums">{{ number_format($calculatedData['basic_salary'], 2) }}</span>
                 </div>
 
-                {{-- INSS 3% --}}
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                    <span class="font-medium text-red-700 text-xs lg:text-sm">INSS (3%)</span>
-                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($calculatedData['inss_3_percent'] ?? 0, 2) }} AOA</span>
+                {{-- Transport --}}
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Transport</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['transport_allowance'], 2) }}</span>
                 </div>
 
-                {{-- INSS 8% Illustrative --}}
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg border border-orange-200">
-                    <div>
-                        <span class="font-medium text-orange-700 text-xs lg:text-sm">INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
-                        <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_gross_salary') }}</div>
-                    </div>
-                    <span class="font-bold text-orange-800 text-xs lg:text-sm">{{ number_format($calculatedData['inss_8_percent'] ?? 0, 2) }} AOA</span>
+                {{-- Food allowance --}}
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Food allowance</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['food_benefit'] ?? 0, 2) }}</span>
                 </div>
 
-                {{-- Salary Advances --}}
-                @if(($calculatedData['advance_deduction'] ?? 0) > 0)
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                    <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('messages.salary_advances') }}</span>
-                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($calculatedData['advance_deduction'] ?? 0, 2) }} AOA</span>
+                {{-- Night Allowance --}}
+                @if(($calculatedData['night_allowance'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Night Allowance</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['night_allowance'] ?? 0, 2) }}</span>
                 </div>
                 @endif
 
-                {{-- Salary Discounts --}}
-                @if(($calculatedData['total_salary_discounts'] ?? 0) > 0)
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                    <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('messages.salary_discounts') }}</span>
-                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($calculatedData['total_salary_discounts'] ?? 0, 2) }} AOA</span>
+                {{-- Total Over Time --}}
+                @if(($calculatedData['total_overtime_amount'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Total Over Time</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['total_overtime_amount'], 2) }}</span>
                 </div>
                 @endif
 
-                {{-- Late Arrival Deductions --}}
-                @if(($calculatedData['late_deduction'] ?? 0) > 0)
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-yellow-50 rounded-lg">
-                    <span class="font-medium text-yellow-700 text-xs lg:text-sm">
-                        <i class="fas fa-clock mr-1"></i>
-                        {{ __('payroll.late_arrival_discount') }} ({{ $calculatedData['late_arrivals'] ?? 0 }} {{ __('payroll.days') }})
-                    </span>
-                    <span class="font-bold text-yellow-800 text-xs lg:text-sm">-{{ number_format($calculatedData['late_deduction'], 2) }} AOA</span>
+                {{-- Natal Allowance --}}
+                @if(($calculatedData['christmas_subsidy_amount'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Natal Allowance</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['christmas_subsidy_amount'], 2) }}</span>
                 </div>
                 @endif
-                
-                {{-- Absence Deductions --}}
-                <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg">
-                    <span class="font-medium text-orange-700 text-xs lg:text-sm">
-                        <i class="fas fa-calendar-times mr-1"></i>
-                        {{ __('payroll.absence_discount') }} ({{ $calculatedData['absent_days'] ?? 0 }} {{ __('payroll.days') }})
-                    </span>
-                    <span class="font-bold text-orange-800 text-xs lg:text-sm">-{{ number_format($calculatedData['absence_deduction'] ?? 0, 2) }} AOA</span>
-                </div>
 
-                {{-- Main Salary - CÓPIA EXATA DA MODAL INDIVIDUAL --}}
-                <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-2 lg:p-3 mt-4">
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold text-yellow-700 text-sm lg:text-base">{{ __('messages.main_salary') }}</span>
-                        <span class="text-lg lg:text-xl font-bold text-yellow-800">{{ number_format($calculatedData['main_salary'], 2) }} AOA</span>
-                    </div>
+                {{-- Leave Allowance --}}
+                @if(($calculatedData['vacation_subsidy_amount'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Leave Allowance</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['vacation_subsidy_amount'], 2) }}</span>
                 </div>
+                @endif
 
-                {{-- Total Deductions --}}
-                <div class="flex justify-between items-center p-3 lg:p-4 bg-red-50 rounded-xl border border-red-200">
-                    <span class="font-semibold text-red-700 text-sm lg:text-base">{{ __('messages.total_deductions') }}</span>
-                    <span class="text-lg lg:text-xl font-bold text-red-800">-{{ number_format($calculatedData['total_deductions'], 2) }} AOA</span>
+                {{-- Additional Bonus (batch) --}}
+                @if(($calculatedData['additional_bonus_amount'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Additional Bonus</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['additional_bonus_amount'], 2) }}</span>
                 </div>
+                @endif
 
-                {{-- Net Salary --}}
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm p-2 lg:p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-blue-700 text-base lg:text-lg flex items-center">
-                            <i class="fas fa-wallet text-blue-600 mr-2"></i>
-                            {{ __('messages.net_salary') }}
+                {{-- Ajuda Familiar --}}
+                @if(($calculatedData['family_allowance'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Ajuda Familiar</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['family_allowance'] ?? 0, 2) }}</span>
+                </div>
+                @endif
+
+                {{-- Subsídio de cargo --}}
+                @if(($calculatedData['position_subsidy'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Subsídio de cargo</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['position_subsidy'], 2) }}</span>
+                </div>
+                @endif
+
+                {{-- Subsídio de desempenho --}}
+                @if(($calculatedData['performance_subsidy'] ?? 0) > 0)
+                <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700 font-medium">Subsídio de desempenho</span>
+                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['performance_subsidy'], 2) }}</span>
+                </div>
+                @endif
+
+                {{-- Absence (dedução) com detalhes - sempre mostrar --}}
+                <div class="p-3 {{ ($calculatedData['absence_deduction'] ?? 0) > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200' }} rounded-lg border">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="{{ ($calculatedData['absence_deduction'] ?? 0) > 0 ? 'text-red-700' : 'text-gray-600' }} font-bold flex items-center">
+                            <i class="fas fa-calendar-times mr-2"></i>
+                            Deduções por Faltas
                         </span>
-                        <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($calculatedData['net_salary'], 2) }} AOA</span>
+                        <span class="{{ ($calculatedData['absence_deduction'] ?? 0) > 0 ? 'text-red-800' : 'text-gray-700' }} font-bold text-lg tabular-nums">
+                            {{ ($calculatedData['absence_deduction'] ?? 0) > 0 ? '-' : '' }}{{ number_format($calculatedData['absence_deduction'] ?? 0, 2) }}
+                        </span>
+                    </div>
+                    <div class="text-xs {{ ($calculatedData['absence_deduction'] ?? 0) > 0 ? 'text-red-600' : 'text-gray-600' }} space-y-1 pl-6">
+                        <div class="flex justify-between">
+                            <span>• Dias de falta:</span>
+                            <span class="font-semibold">{{ $calculatedData['absent_days'] ?? 0 }} dias</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>• Salário diário:</span>
+                            <span class="font-semibold">{{ number_format(($calculatedData['daily_rate'] ?? 0), 2) }} AOA</span>
+                        </div>
+                        @if(($calculatedData['absent_days'] ?? 0) > 0)
+                        <div class="flex justify-between pt-1 border-t {{ ($calculatedData['absence_deduction'] ?? 0) > 0 ? 'border-red-200' : 'border-gray-200' }}">
+                            <span>• Cálculo:</span>
+                            <span class="font-semibold">{{ $calculatedData['absent_days'] }} × {{ number_format(($calculatedData['daily_rate'] ?? 0), 2) }}</span>
+                        </div>
+                        @endif
                     </div>
                 </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t-2 border-gray-300">
+                <div class="text-xs text-gray-600 mb-2">
+                    Alimentação e Transporte: isentos até <strong>30.000 AOA</strong> cada (tributa apenas o excesso).
+                </div>
+            </div>
+        </section>
+
+        {{-- COLUNA 2 - BASE IRT & DEDUÇÕES --}}
+        <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+            <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-green-500">
+                <i class="fas fa-calculator text-green-600 mr-2"></i>
+                Base IRT & Deduções
+            </h4>
+
+            <table class="w-full text-sm">
+                <tbody class="space-y-1.5">
+                    <tr class="border-b border-gray-200 bg-gray-50">
+                        <td class="py-2 text-gray-700 font-bold">Gross Salary</td>
+                        <td class="py-2 text-right font-bold tabular-nums text-gray-900">{{ number_format($calculatedData['gross_salary'], 2) }}</td>
+                    </tr>
+                    @if(($calculatedData['absence_deduction'] ?? 0) > 0 || ($calculatedData['late_deduction'] ?? 0) > 0)
+                    <tr class="border-b border-gray-100">
+                        <td class="py-1 text-xs text-gray-500 italic pl-4">
+                            ↳ Já inclui deduções de presença
+                            @if(($calculatedData['absence_deduction'] ?? 0) > 0)
+                                (Faltas: -{{ number_format($calculatedData['absence_deduction'], 2) }})
+                            @endif
+                            @if(($calculatedData['late_deduction'] ?? 0) > 0)
+                                (Atrasos: -{{ number_format($calculatedData['late_deduction'], 2) }})
+                            @endif
+                        </td>
+                        <td class="py-1"></td>
+                    </tr>
+                    @endif
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-gray-600 text-xs">Food Payment &gt; 30.000 (excesso)</td>
+                        <td class="py-2 text-right tabular-nums text-gray-700">{{ number_format($calculatedData['taxable_food'] ?? 0, 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-gray-600 text-xs">Transport &gt; 30.000 (excesso)</td>
+                        <td class="py-2 text-right tabular-nums text-gray-700">{{ number_format($calculatedData['taxable_transport'] ?? 0, 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-gray-600 text-xs">Food exemption (até 30k)</td>
+                        <td class="py-2 text-right tabular-nums text-green-700 font-medium">-{{ number_format($calculatedData['exempt_food'] ?? 0, 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-gray-600 text-xs">Transport exemption (até 30k)</td>
+                        <td class="py-2 text-right tabular-nums text-green-700 font-medium">-{{ number_format($calculatedData['exempt_transport'] ?? 0, 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2 text-gray-700">INSS rate</td>
+                        <td class="py-2 text-right tabular-nums text-gray-900">3.00%</td>
+                    </tr>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2 text-gray-700">INSS amount</td>
+                        <td class="py-2 text-right font-medium tabular-nums text-red-700">-{{ number_format($calculatedData['inss_3_percent'], 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-200 bg-blue-50">
+                        <td class="py-2 text-blue-800 font-bold">Base IRT antes do INSS</td>
+                        <td class="py-2 text-right font-bold tabular-nums text-blue-900">{{ number_format(($calculatedData['gross_salary'] - ($calculatedData['exempt_food'] ?? 0) - ($calculatedData['exempt_transport'] ?? 0)), 2) }}</td>
+                    </tr>
+                    <tr class="bg-green-50">
+                        <td class="py-3 text-green-800 font-bold">Base IRT (após INSS)</td>
+                        <td class="py-3 text-right font-bold text-lg tabular-nums text-green-900">{{ number_format($calculatedData['irt_base'], 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        {{-- COLUNA 3 - IRT & LÍQUIDO --}}
+        <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+            <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-purple-500">
+                <i class="fas fa-coins text-purple-600 mr-2"></i>
+                IRT &amp; Líquido
+            </h4>
+
+            <table class="w-full text-sm">
+                <tbody>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2 text-gray-700">Base IRT</td>
+                        <td class="py-2 text-right font-medium tabular-nums text-gray-900">{{ number_format($calculatedData['irt_base'], 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-gray-600">Gross Salary</td>
+                        <td class="py-2 text-right tabular-nums text-gray-800">{{ number_format($calculatedData['gross_salary'], 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-gray-600">INSS 3%</td>
+                        <td class="py-2 text-right tabular-nums text-red-700">-{{ number_format($calculatedData['inss_3_percent'], 2) }}</td>
+                    </tr>
+                    <tr class="border-b border-gray-200 bg-red-50">
+                        <td class="py-2 text-red-800 font-bold">IRT (PF + taxa × excesso)</td>
+                        <td class="py-2 text-right font-bold tabular-nums text-red-900">-{{ number_format($calculatedData['irt'], 2) }}</td>
+                    </tr>
+                    {{-- Salary Advances --}}
+                    @if(!empty($salaryAdvances))
+                        @foreach($salaryAdvances as $advance)
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 text-xs">
+                                <span class="text-orange-600"><i class="fas fa-hand-holding-usd mr-1"></i>Salary Advance</span>
+                                <span class="text-gray-500">({{ $advance['reason'] ?? 'Adiantamento' }})</span>
+                            </td>
+                            <td class="py-2 text-right tabular-nums text-orange-700">-{{ number_format($advance['installment_amount'] ?? 0, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    @endif
+                    
+                    {{-- Salary Discounts --}}
+                    @if(!empty($salaryDiscounts))
+                        @foreach($salaryDiscounts as $discount)
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 text-xs">
+                                @if($discount['discount_type'] === 'union')
+                                    <span class="text-blue-600"><i class="fas fa-users mr-1"></i>Union Discount</span>
+                                @elseif($discount['discount_type'] === 'quixiquila')
+                                    <span class="text-purple-600"><i class="fas fa-hand-holding-usd mr-1"></i>Quixiquila</span>
+                                @else
+                                    <span class="text-gray-600"><i class="fas fa-minus-circle mr-1"></i>Other Discount</span>
+                                @endif
+                                <span class="text-gray-500">({{ $discount['reason'] ?? '' }})</span>
+                            </td>
+                            <td class="py-2 text-right tabular-nums text-gray-700">-{{ number_format($discount['installment_amount'] ?? 0, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    @endif
+                    {{-- Absence Deduction --}}
+                    @if(($calculatedData['absence_deduction'] ?? 0) > 0)
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-xs">
+                            <span class="text-red-600"><i class="fas fa-calendar-times mr-1"></i>Absence Deduction</span>
+                            <span class="text-gray-500">(Deduções por faltas)</span>
+                        </td>
+                        <td class="py-2 text-right tabular-nums text-red-700">-{{ number_format($calculatedData['absence_deduction'], 2) }}</td>
+                    </tr>
+                    @endif
+                    {{-- Late Deduction --}}
+                    @if(($calculatedData['late_deduction'] ?? 0) > 0)
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-xs">
+                            <span class="text-orange-600"><i class="fas fa-clock mr-1"></i>Late Deduction</span>
+                            <span class="text-gray-500">(Deduções por atrasos)</span>
+                        </td>
+                        <td class="py-2 text-right tabular-nums text-orange-700">-{{ number_format($calculatedData['late_deduction'], 2) }}</td>
+                    </tr>
+                    @endif
+                    @if(($calculatedData['food_benefit'] ?? 0) > 0)
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 text-red-600">Food allowance (não pago)</td>
+                        <td class="py-2 text-right tabular-nums text-red-700">-{{ number_format($calculatedData['food_benefit'], 2) }}</td>
+                    </tr>
+                    @endif
+                    <tr class="bg-green-100 border-t-2 border-green-500">
+                        <td class="py-3 text-green-900 font-bold text-base">NET TOTAL</td>
+                        <td class="py-3 text-right font-bold text-xl tabular-nums text-green-900">{{ number_format($calculatedData['net_salary'], 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            @if(isset($calculatedData['irt_calculation_details']['bracket']))
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-700">
+                <strong>Cálculo do IRT:</strong>
+                <div class="mt-1 font-mono">
+                    PF {{ number_format($calculatedData['irt_calculation_details']['fixed_amount'], 2) }} 
+                    + {{ number_format($calculatedData['irt_calculation_details']['bracket']->tax_rate * 100, 2) }}% 
+                    × (Base {{ number_format($calculatedData['irt_base'], 2) }} 
+                    − Excess over {{ number_format($calculatedData['irt_calculation_details']['bracket']->min_income, 0) }})
+                </div>
+            </div>
+            @endif
+        </section>
+
+    </div>
+
+    {{-- RESUMO DE PRESENÇA --}}
+    <div class="mt-6 bg-white rounded-xl shadow-md border border-gray-200 p-5">
+        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-calendar-check text-blue-600 mr-2"></i>
+            Resumo de Presença
+        </h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
+                <div class="text-2xl font-bold text-green-700">{{ $calculatedData['present_days'] }}</div>
+                <div class="text-xs text-gray-600 mt-1">Dias Presentes</div>
+            </div>
+            <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-center">
+                <div class="text-2xl font-bold text-red-700">{{ $calculatedData['absent_days'] }}</div>
+                <div class="text-xs text-gray-600 mt-1">Faltas</div>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
+                <div class="text-2xl font-bold text-blue-700">{{ $calculatedData['total_working_days'] }}</div>
+                <div class="text-xs text-gray-600 mt-1">Dias Úteis</div>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg border border-purple-200 text-center">
+                <div class="text-2xl font-bold text-purple-700">{{ number_format($calculatedData['total_overtime_hours'], 1) }}h</div>
+                <div class="text-xs text-gray-600 mt-1">Horas Extra</div>
             </div>
         </div>
     </div>
+
+    <div class="mt-4 text-sm text-gray-600">
+        ⚠️ <strong>Notas:</strong> Ausência subtrai; INSS incide no bruto; isenções de 30k p/ alimentação e transporte antes do IRT.
+    </div>
+
 </div>
 
-{{-- Right Panel - Employee Data (LADO DIREITO) --}}
+{{-- Right Panel - Employee Data (LADO DIREITO) - mantido do original --}}
 <div class="w-full xl:w-1/2 bg-white overflow-y-auto flex-1 p-4 lg:p-6 order-2">
     
     {{-- Employee Basic Info Card --}}

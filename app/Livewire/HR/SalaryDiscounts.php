@@ -208,9 +208,9 @@ class SalaryDiscounts extends Component
         $this->discount_id = $discount->id;
         $this->employee_id = $discount->employee_id;
         $this->request_date = $discount->request_date->format('Y-m-d');
-        $this->amount = $discount->amount;
+        $this->amount = (float) $discount->amount;
         $this->installments = $discount->installments;
-        $this->installment_amount = $discount->installment_amount;
+        $this->installment_amount = (float) $discount->installment_amount;
         $this->first_deduction_date = $discount->first_deduction_date->format('Y-m-d');
         $this->reason = $discount->reason;
         $this->discount_type = $discount->discount_type;

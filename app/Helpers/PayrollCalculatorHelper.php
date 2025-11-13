@@ -16,7 +16,9 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * PayrollCalculatorHelper
+ * =====================================================
+ * PayrollCalculatorHelper - ESTRUTURA DE CÁLCULOS
+ * =====================================================
  * 
  * Helper centralizado para cálculos de folha de pagamento (payroll)
  * Contém toda a lógica de cálculo extraída da modal ProcessPayrollModal e componente Livewire
@@ -25,6 +27,41 @@ use Illuminate\Support\Facades\Log;
  * - Pagamento individual de salário
  * - Pagamento em lote (batch)
  * - Processamento de payroll
+ * 
+ * =====================================================
+ * ESTRUTURA DE CÁLCULOS (3 Colunas da Especificação)
+ * =====================================================
+ * 
+ * COLUNA 1: GROSS SALARY
+ * ----------------------
+ *   + Basic Salary
+ *   + Transport
+ *   + Food allowance
+ *   + Nigth Allowance
+ *   + Total Over Time
+ *   + Natal Allowance
+ *   + Leave Allowance
+ *   + Bonus
+ *   - Absence
+ * 
+ * COLUNA 2: IRT TAXABLE AMOUNT
+ * -----------------------------
+ *   = Gross Salary
+ *   - Food Payment >30
+ *   - Transport >30
+ *   - INSS 3%
+ * 
+ * COLUNA 3: NET AMOUNT
+ * --------------------
+ *   = Gross Salary
+ *   - INSS 3%
+ *   - IRT
+ *   - Advance
+ *   - Fund union
+ *   - other Payments
+ *   - Food allowance
+ * 
+ * =====================================================
  */
 class PayrollCalculatorHelper
 {
@@ -67,7 +104,7 @@ class PayrollCalculatorHelper
     protected float $hourlyRate = 0.0;
     protected float $transportAllowance = 0.0;
     protected float $mealAllowance = 0.0;
-    protected float $bonusAmount = 0.0;
+    protected float $familyAllowance = 0.0;
     protected float $additionalBonusAmount = 0.0;
     protected bool $christmasSubsidy = false;
     protected bool $vacationSubsidy = false;
@@ -90,7 +127,7 @@ class PayrollCalculatorHelper
         // Usar base_salary DIRETO (coluna correta do banco)
         $this->basicSalary = (float) ($employee->base_salary ?? 0);
         $this->mealAllowance = (float) ($employee->food_benefit ?? 0);
-        $this->bonusAmount = (float) ($employee->bonus_amount ?? 0);
+        $this->familyAllowance = (float) ($employee->family_allowance ?? 0);
         
         \Log::info('💰 PayrollCalculatorHelper - Constructor', [
             'employee_id' => $employee->id,
@@ -172,8 +209,17 @@ class PayrollCalculatorHelper
         // Dias efetivamente trabalhados (EXCLUINDO férias) para subsídio de transporte
         $this->daysWorkedEffectively = $attendances->whereIn('status', ['present', 'late', 'half_day'])->count();
         
-        $this->absentDays = $this->totalWorkingDays - $this->presentDays;
+        // Calcular faltas: se trabalhou mais que o esperado, não há faltas
+        $this->absentDays = max(0, $this->totalWorkingDays - $this->presentDays);
         $this->lateArrivals = $attendances->where('status', 'late')->count();
+        
+        \Log::info('📊 Cálculo de Presença', [
+            'employee' => $this->employee->full_name,
+            'total_working_days' => $this->totalWorkingDays,
+            'present_days' => $this->presentDays,
+            'absent_days' => $this->absentDays,
+            'days_worked_effectively' => $this->daysWorkedEffectively,
+        ]);
         
         $this->totalAttendanceHours = 0;
         $standardWorkDay = 8;
@@ -487,81 +533,128 @@ class PayrollCalculatorHelper
     }
     
     /**
-     * Calcular Salário Bruto (Main Salary)
-     * Inclui: salário base + alimentação + transporte + horas extras + bônus
+     * ==========================================
+     * GROSS SALARY (Coluna 1 da Especificação)
+     * ==========================================
+     * Fórmula:
+     *   + Basic Salary
+     *   + Transport
+     *   + Food allowance
+     *   + Nigth Allowance
+     *   + Total Over Time
+     *   + Natal Allowance
+     *   + Leave Allowance
+     *   + Bonus
+     *   - Absence
      */
     public function calculateGrossSalary(): float
     {
-        $basic = $this->basicSalary;
-        $food = $this->mealAllowance;
-        $transport = $this->transportAllowance;
-        $overtime = $this->totalOvertimeAmount;
-        $bonus = $this->bonusAmount;
-        $additionalBonus = $this->additionalBonusAmount;
-        $christmasAmount = $this->getChristmasSubsidyAmount();
-        $vacationAmount = $this->getVacationSubsidyAmount();
+        // ADIÇÕES (+)
+        $basicSalary      = $this->basicSalary;                              // Basic Salary
+        $transport        = $this->transportAllowance;                       // Transport
+        $foodAllowance    = $this->mealAllowance;                           // Food allowance
+        $nightAllowance   = 0.0;                                            // Nigth Allowance (não implementado)
+        $totalOverTime    = $this->totalOvertimeAmount;                     // Total Over Time
+        $natalAllowance   = $this->getChristmasSubsidyAmount();            // Natal Allowance
+        $leaveAllowance   = $this->getVacationSubsidyAmount();             // Leave Allowance
+        $familyAllowance  = $this->familyAllowance;                         // Family Allowance (Ajuda Familiar)
+        $positionSubsidy  = (float) ($this->employee->position_subsidy ?? 0);   // Position Subsidy
+        $performanceSubsidy = (float) ($this->employee->performance_subsidy ?? 0); // Performance Subsidy
+        $additionalBonus  = $this->additionalBonusAmount;                   // Additional Bonus (batch)
         
-        return $basic + $food + $transport + $overtime + $bonus + $additionalBonus + $christmasAmount + $vacationAmount;
+        // DEDUÇÕES (-)
+        $absence          = $this->absenceDeduction;                        // Absence
+        
+        $gross = $basicSalary 
+             + $transport 
+             + $foodAllowance 
+             + $nightAllowance
+             + $totalOverTime 
+             + $natalAllowance 
+             + $leaveAllowance 
+             + $familyAllowance 
+             + $positionSubsidy
+             + $performanceSubsidy
+             + $additionalBonus
+             - $absence;
+             
+        \Log::info('📊 Gross Salary Calculation', [
+            'basicSalary' => $basicSalary,
+            'transport' => $transport,
+            'foodAllowance' => $foodAllowance,
+            'totalOverTime' => $totalOverTime,
+            'familyAllowance' => $familyAllowance,
+            'additionalBonus' => $additionalBonus,
+            'absence_deduction' => $absence,
+            'gross_before_absence' => $basicSalary + $transport + $foodAllowance + $totalOverTime + $familyAllowance + $additionalBonus,
+            'gross_final' => $gross,
+        ]);
+        
+        return $gross;
     }
     
     /**
-     * Calcular Salário Principal (Main Salary) - MATCH COM MODAL INDIVIDUAL
-     * Base Salary + Food + Transport + Overtime + Bonus + Subsidies - ABSENCE
+     * ALIAS: Main Salary = Gross Salary (para compatibilidade com código existente)
      * 
-     * IMPORTANTE: Ausências SÃO deduzidas do Main Salary (igual modal individual)
+     * NOTA: Mantido apenas para não quebrar código que usa calculateMainSalary()
+     *       A especificação usa apenas GROSS SALARY
      */
     public function calculateMainSalary(): float
     {
-        $basic = $this->basicSalary;
-        $food = $this->mealAllowance;
-        $transport = $this->transportAllowance;
-        $overtime = $this->totalOvertimeAmount;
-        $bonus = $this->bonusAmount;
-        $additionalBonus = $this->additionalBonusAmount;
-        $christmasAmount = $this->getChristmasSubsidyAmount();
-        $vacationAmount = $this->getVacationSubsidyAmount();
-        
-        // Deduzir ausências do main salary (igual modal individual)
-        $absence = $this->absenceDeduction;
-        
-        return max(0.0, $basic + $food + $transport + $overtime + $bonus + $additionalBonus + $christmasAmount + $vacationAmount - $absence);
+        return $this->calculateGrossSalary();
     }
     
     /**
-     * Calcular Base Tributável para IRT (Matéria Coletável - MC)
-     * Gross Salary - INSS - Isenções (30k transporte + 30k alimentação)
+     * ===============================================
+     * IRT TAXABLE AMOUNT (Coluna 2 da Especificação)
+     * ===============================================
+     * FÓRMULA OFICIAL (NOVA LÓGICA):
+     * 
+     * 1. Base IRT ANTES do INSS = Gross Salary - Isenções (2 × 30.000)
+     * 2. Base IRT APÓS o INSS = Base Antes INSS - INSS 3%
+     * 
+     * ISENÇÕES (até 30.000 AOA cada, baseado no VALOR REAL):
+     * - Alimentação: isento = min(valor_real, 30.000)
+     * - Transporte: isento = min(valor_real, 30.000)
+     * 
+     * Exemplo: Se Transport = 0, isenção = 0 (não 30k fixo)
      */
     public function calculateIRTBase(): float
     {
-        $grossSalary = $this->calculateGrossSalary();
+        // BASE
+        $grossSalary = $this->calculateGrossSalary();                       // Gross Salary
         
-        // Calcular INSS 3%
-        $inss = $this->calculateINSS();
+        // ISENÇÕES (até 30.000 AOA cada, baseado no valor REAL)
+        // Se Food = 50k, isento = min(50k, 30k) = 30k
+        // Se Transport = 0, isento = min(0, 30k) = 0
+        $foodExemption = min($this->mealAllowance, 30000);           // Isenção alimentação (até 30k)
+        $transportExemption = min($this->transportAllowance, 30000); // Isenção transporte (até 30k)
         
-        // Isenções: até 30k de transporte e 30k de alimentação
-        $exemptTransport = $this->getExemptTransportAllowance();
-        $exemptFood = $this->getExemptFoodAllowance();
+        // Base IRT ANTES do INSS
+        $baseBeforeINSS = $grossSalary - $foodExemption - $transportExemption;
         
-        // MC = Gross - INSS - Isenções
-        $mc = $grossSalary - $inss - $exemptTransport - $exemptFood;
+        // INSS 3%
+        $inss3Percent = $this->calculateINSS();
         
-        return max(0.0, $mc);
+        // Base IRT APÓS o INSS (esta é a base tributável final)
+        $irtBase = $baseBeforeINSS - $inss3Percent;
+        
+        return max(0.0, $irtBase);
     }
     
     /**
-     * Calcular base do INSS - MATCH COM MODAL INDIVIDUAL
+     * Calcular base do INSS
      * 
-     * Base = Basic + Transport + Food + Overtime (SEM deduzir ausências)
-     * Ausências NÃO afetam a base do INSS
+     * CONFORME ESPECIFICAÇÃO DA IMAGEM:
+     * Base INSS = Gross Salary (JÁ COM Absence deduzida)
+     * 
+     * IMPORTANTE: Na especificação de Angola, a base do INSS é o Gross Salary
+     * que já tem a ausência deduzida.
      */
     public function calculateINSSBase(): float
     {
-        $basic = $this->basicSalary;
-        $transport = $this->transportAllowance;
-        $food = $this->mealAllowance;
-        $overtime = $this->totalOvertimeAmount;
-        
-        return $basic + $transport + $food + $overtime;
+        // Base INSS = Gross Salary (COM Absence já deduzida)
+        return $this->calculateGrossSalary();
     }
     
     /**
@@ -665,24 +758,21 @@ class PayrollCalculatorHelper
     }
     
     /**
-     * Calcular total de deduções PARA CÁLCULO INTERNO
-     * 
-     * IMPORTANTE: Ausências NÃO entram aqui (já foram deduzidas no Main Salary)
+     * Calcular total de deduções (para cálculo interno do Net)
      * Food NÃO entra aqui (deduzido separadamente no Net Salary)
-     * Apenas: INSS + IRT + Advances + Discounts + Late
+     * Inclui: INSS + IRT + Advances + Discounts
+     * 
+     * NOTA: Late e Absence JÁ foram deduzidos no Gross Salary, não entram aqui
      */
     public function calculateTotalDeductions(): float
     {
-        $inss = $this->calculateINSS();
-        $irt = $this->calculateIRT();
-        $advances = $this->advanceDeduction;
-        $discounts = $this->totalSalaryDiscounts;
-        $late = $this->lateDeduction;
+        $inss3Percent  = $this->calculateINSS();           // INSS 3%
+        $irt           = $this->calculateIRT();            // IRT
+        $advance       = $this->advanceDeduction;          // Advance
+        $fundUnion     = 0.0;                              // Fund union (não implementado)
+        $otherPayments = $this->totalSalaryDiscounts;     // other Payments
         
-        // ❌ NÃO incluir $absence aqui (já deduzido no Main Salary)
-        // ❌ NÃO incluir $food aqui (deduzido separadamente no Net Salary)
-        
-        return $inss + $irt + $advances + $discounts + $late;
+        return $inss3Percent + $irt + $advance + $fundUnion + $otherPayments;
     }
     
     /**
@@ -690,6 +780,8 @@ class PayrollCalculatorHelper
      * 
      * Inclui FOOD para mostrar o valor total deduzido na tela
      * Este é o valor que aparece como "Total Deductions" nas modals
+     * 
+     * IMPORTANTE: Absence foi deduzida do Gross, MAS precisa aparecer na lista visual
      */
     public function calculateTotalDeductionsForDisplay(): float
     {
@@ -697,31 +789,70 @@ class PayrollCalculatorHelper
         $irt = $this->calculateIRT();
         $advances = $this->advanceDeduction;
         $discounts = $this->totalSalaryDiscounts;
-        $late = $this->lateDeduction;
+        $absence = $this->absenceDeduction;  // Mostrar na lista mesmo tendo sido deduzida do Gross
         
         // ✅ Incluir FOOD para exibição (igual modal individual)
         $food = $this->mealAllowance;
         
-        return $inss + $irt + $advances + $discounts + $late + $food;
+        return $inss + $irt + $advances + $discounts + $absence + $food;
     }
     
     /**
-     * Calcular salário líquido - MATCH COM MODAL INDIVIDUAL
+     * ==========================================
+     * NET AMOUNT (Coluna 3 da Especificação)
+     * ==========================================
+     * Fórmula:
+     *   = Gross Salary (já tem absence/late descontado)
+     *   - INSS 3%
+     *   - IRT
+     *   - Advance
+     *   - Fund union
+     *   - other Payments
+     *   - Food allowance
      * 
-     * FÓRMULA: Main Salary (já tem absence deduzida) - Total Deductions - Food
-     * 
-     * REGRA DE NEGÓCIO: Food benefit NUNCA é pago ao funcionário (apenas ilustrativo)
+     * NOTA: Absence e Late JÁ foram deduzidos no Gross Salary
      */
     public function calculateNetSalary(): float
     {
-        // Usar Main Salary que JÁ tem ausências deduzidas
-        $mainSalary = $this->calculateMainSalary();
-        $totalDeductions = $this->calculateTotalDeductions();
+        // BASE
+        $grossSalary = $this->calculateGrossSalary();                       // Gross Salary (já inclui deduções de presença)
         
-        // REGRA: Food SEMPRE é deduzido (não é pago ao funcionário)
-        $foodDeduction = $this->mealAllowance;
+        // DEDUÇÕES (-)
+        $inss3Percent    = $this->calculateINSS();                          // INSS 3%
+        $irt             = $this->calculateIRT();                           // IRT
+        $advance         = $this->advanceDeduction;                         // Advance
+        $fundUnion       = 0.0;                                             // Fund union (não implementado)
+        $otherPayments   = $this->totalSalaryDiscounts;                    // other Payments (salary discounts)
         
-        return max(0.0, $mainSalary - $totalDeductions - $foodDeduction);
+        // IMPORTANTE: Food allowance está no Gross (para cálculo de impostos)
+        // MAS não é pago em dinheiro ao funcionário, então deve ser DEDUZIDO do NET
+        $foodAllowance   = $this->mealAllowance;                           // Food allowance (não pago em dinheiro)
+        
+        $net = max(0.0, $grossSalary 
+                      - $inss3Percent 
+                      - $irt 
+                      - $advance 
+                      - $fundUnion
+                      - $otherPayments
+                      - $foodAllowance);
+        
+        \Log::info('💰 Net Salary Calculation', [
+            'employee_id' => $this->employee->id,
+            'employee_name' => $this->employee->full_name,
+            'grossSalary' => $grossSalary,
+            'inss3Percent' => $inss3Percent,
+            'irt' => $irt,
+            'advance' => $advance,
+            'otherPayments' => $otherPayments,
+            'foodAllowance' => $foodAllowance,
+            'absence_deduction' => $this->absenceDeduction,
+            'late_deduction' => $this->lateDeduction,
+            'totalDeductions' => $inss3Percent + $irt + $advance + $otherPayments + $foodAllowance,
+            'net_salary' => $net,
+            'FORMULA' => "Gross({$grossSalary}) - INSS({$inss3Percent}) - IRT({$irt}) - Advance({$advance}) - Discounts({$otherPayments}) - Food({$foodAllowance}) = {$net}",
+        ]);
+        
+        return $net;
     }
     
     /**
@@ -824,7 +955,7 @@ class PayrollCalculatorHelper
             'exempt_food' => $this->getExemptFoodAllowance(),
             
             // Bônus e subsídios
-            'bonus_amount' => $this->bonusAmount,
+            'family_allowance' => $this->familyAllowance,
             'position_subsidy' => (float) ($this->employee->position_subsidy ?? 0),
             'performance_subsidy' => (float) ($this->employee->performance_subsidy ?? 0),
             'additional_bonus_amount' => $this->additionalBonusAmount,
@@ -878,7 +1009,7 @@ class PayrollCalculatorHelper
             'net_salary' => $netSalary,
             'absence_deduction_amount' => $this->absenceDeduction, // Alias para compatibilidade
             'late_days' => $this->lateArrivals, // Alias para compatibilidade
-            'profile_bonus' => $this->bonusAmount, // Alias para compatibilidade
+            'profile_bonus' => $this->familyAllowance, // Alias para compatibilidade (antigo bonus_amount)
             'overtime_amount' => $this->totalOvertimeAmount, // Alias para compatibilidade
             
             // Dedução de alimentação (SEMPRE deduzido - regra de negócio)

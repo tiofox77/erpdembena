@@ -481,7 +481,7 @@
                                                         </div>
                                                     @endif
                                                     @php
-                                                        $totalBenefits = ($employee->food_benefit ?? 0) + ($employee->transport_benefit ?? 0) + ($employee->bonus_amount ?? 0) + ($employee->position_subsidy ?? 0) + ($employee->performance_subsidy ?? 0);
+                                                        $totalBenefits = ($employee->food_benefit ?? 0) + ($employee->transport_benefit ?? 0) + ($employee->family_allowance ?? 0) + ($employee->position_subsidy ?? 0) + ($employee->performance_subsidy ?? 0);
                                                     @endphp
                                                     @if($totalBenefits > 0)
                                                         <div class="flex items-center text-xs text-gray-600">
@@ -1473,25 +1473,25 @@
 
                                 <!-- Bonus Amount -->
                                 <div class="space-y-2">
-                                    <label for="bonus_amount" class="flex items-center text-sm font-medium text-gray-700">
+                                    <label for="family_allowance" class="flex items-center text-sm font-medium text-gray-700">
                                         <i class="fas fa-gift text-purple-500 mr-2"></i>
-                                        {{ __('messages.bonus_amount') }}
+                                        {{ __('messages.family_allowance') }}
                                     </label>
                                     <div class="relative">
                                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <span class="text-gray-500 text-sm font-medium">AOA</span>
                                         </div>
-                                        <input type="number" step="0.01" min="0" id="bonus_amount"
-                                            class="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 @error('bonus_amount') border-red-500 bg-red-50 @enderror"
-                                            wire:model.live="bonus_amount" 
+                                        <input type="number" step="0.01" min="0" id="family_allowance"
+                                            class="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 @error('family_allowance') border-red-500 bg-red-50 @enderror"
+                                            wire:model.live="family_allowance" 
                                             placeholder="0.00">
-                                        @error('bonus_amount')
+                                        @error('family_allowance')
                                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-exclamation-circle text-red-500"></i>
                                             </div>
                                         @enderror
                                     </div>
-                                    @error('bonus_amount')
+                                    @error('family_allowance')
                                         <p class="flex items-center text-sm text-red-600">
                                             <i class="fas fa-info-circle mr-1"></i>
                                             {{ $message }}
@@ -1984,11 +1984,11 @@
                         </div>
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <p class="text-gray-600 flex items-center mb-1">
-                                <i class="fas fa-gift text-green-400 mr-2"></i>{{ __('messages.bonus_amount') }}:
+                                <i class="fas fa-gift text-green-400 mr-2"></i>{{ __('messages.family_allowance') }}:
                             </p>
                             <p class="font-medium pl-6">
-                                @if($bonus_amount)
-                                    AOA {{ number_format($bonus_amount, 2, ',', '.') }}
+                                @if($family_allowance)
+                                    AOA {{ number_format($family_allowance, 2, ',', '.') }}
                                 @else
                                     <span class="text-gray-500 italic">{{ __('messages.not_applicable') }}</span>
                                 @endif

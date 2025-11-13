@@ -60,7 +60,7 @@
             </h3>
             
             {{-- Primeira Linha: Valores Monetários --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-3 mb-3">
                 
                 {{-- Additional Bonus --}}
                 <div>
@@ -80,46 +80,6 @@
                         <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">AOA</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1">Bónus extra para este pagamento</p>
-                </div>
-
-                {{-- Overtime Amount --}}
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-clock text-orange-600 mr-1"></i>
-                        Horas Extras
-                    </label>
-                    <div class="relative">
-                        <input 
-                            type="number" 
-                            step="0.01"
-                            min="0"
-                            wire:model.live="edit_overtime_amount"
-                            class="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-                            placeholder="0.00 AOA"
-                        >
-                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">AOA</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Valor adicional de horas extras</p>
-                </div>
-
-                {{-- Advance Deduction --}}
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-hand-holding-usd text-red-600 mr-1"></i>
-                        Adiantamento
-                    </label>
-                    <div class="relative">
-                        <input 
-                            type="number" 
-                            step="0.01"
-                            min="0"
-                            wire:model.live="edit_advance_deduction"
-                            class="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
-                            placeholder="0.00 AOA"
-                        >
-                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">AOA</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Dedução de adiantamento salarial</p>
                 </div>
 
             </div>
@@ -246,10 +206,10 @@
                     <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-orange-200 space-y-1">
                         @forelse($salaryAdvances as $advance)
                             <div class="text-[10px] bg-white p-1 rounded">
-                                <span class="font-semibold">{{ \Carbon\Carbon::parse($advance['date'])->format('d/m/Y') }}</span>: 
+                                <span class="font-semibold">{{ \Carbon\Carbon::parse($advance['request_date'] ?? $advance['first_deduction_date'])->format('d/m/Y') }}</span>: 
                                 {{ number_format($advance['amount'] ?? 0, 0) }} AOA
-                                @if(($advance['remaining_amount'] ?? 0) > 0)
-                                    <span class="text-orange-600">(Restante: {{ number_format($advance['remaining_amount'], 0) }})</span>
+                                @if(($advance['remaining_installments'] ?? 0) > 0)
+                                    <span class="text-orange-600">(Restante: {{ $advance['remaining_installments'] }} parcelas)</span>
                                 @endif
                             </div>
                         @empty
@@ -283,11 +243,12 @@
                     <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-red-200 space-y-1">
                         @forelse($salaryDiscounts as $discount)
                             <div class="text-[10px] bg-white p-1 rounded">
-                                <span class="font-semibold">{{ $discount['description'] ?? 'Desconto' }}</span>: 
-                                {{ number_format($discount['amount'] ?? 0, 0) }} AOA
-                                @if($discount['type'] === 'recurring')
-                                    <span class="text-red-600">(Recorrente)</span>
+                                <span class="font-semibold">{{ $discount['reason'] ?? 'Desconto' }}</span>: 
+                                {{ number_format($discount['installment_amount'] ?? $discount['amount'] ?? 0, 0) }} AOA
+                                @if(($discount['remaining_installments'] ?? 0) > 1)
+                                    <span class="text-red-600">({{ $discount['remaining_installments'] }} parcelas)</span>
                                 @endif
+                                <span class="text-gray-600">[{{ ucfirst($discount['discount_type'] ?? 'others') }}]</span>
                             </div>
                         @empty
                             <p class="text-[10px] text-red-600">Sem descontos</p>

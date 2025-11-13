@@ -49,9 +49,9 @@ class PayrollBatchReportService
         $vacationPay = $items->sum('vacation_subsidy_amount');
         $foodAllow = $items->sum('food_allowance');
         $christmasOffer = $items->sum('christmas_subsidy_amount');
-        $bonus = $items->sum('bonus_amount');
+        $familyAllowance = $items->sum('family_allowance');
         
-        $grossTotal = $basicSalary + $transport + $overtime + $vacationPay + $foodAllow + $christmasOffer + $bonus;
+        $grossTotal = $basicSalary + $transport + $overtime + $vacationPay + $foodAllow + $christmasOffer + $familyAllowance;
         
         // Deductions
         $inss = $items->sum('inss_deduction');

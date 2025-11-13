@@ -33,7 +33,7 @@ class Employee extends Model
         'hire_date',
         'food_benefit',
         'transport_benefit',
-        'bonus_amount',
+        'family_allowance',
         'position_subsidy',
         'performance_subsidy',
         'employment_status',

@@ -473,14 +473,37 @@ class PayrollBatch extends Component
      */
     public function viewBatch(int $batchId): void
     {
-        $this->currentBatch = PayrollBatchModel::with([
-            'payrollPeriod', 
-            'department', 
-            'creator', 
-            'approver',
-            'batchItems.employee',
-            'batchItems.payroll'
-        ])->find($batchId);
+        // SEMPRE buscar dados frescos do banco (não usar cache)
+        // Limpar qualquer modelo em cache primeiro
+        if ($this->currentBatch && $this->currentBatch->id == $batchId) {
+            $this->currentBatch->refresh();
+            $this->currentBatch->load([
+                'payrollPeriod', 
+                'department', 
+                'creator', 
+                'approver',
+                'batchItems.employee.department',
+                'batchItems.payroll'
+            ]);
+        } else {
+            $this->currentBatch = PayrollBatchModel::with([
+                'payrollPeriod', 
+                'department', 
+                'creator', 
+                'approver',
+                'batchItems.employee.department',
+                'batchItems.payroll'
+            ])->find($batchId);
+        }
+        
+        // Log para debug
+        Log::info('viewBatch carregado', [
+            'batch_id' => $batchId,
+            'items_count' => $this->currentBatch->batchItems->count(),
+            'first_item_gross' => $this->currentBatch->batchItems->first()->gross_salary ?? 'N/A',
+            'first_item_deductions' => $this->currentBatch->batchItems->first()->total_deductions ?? 'N/A',
+            'first_item_net' => $this->currentBatch->batchItems->first()->net_salary ?? 'N/A',
+        ]);
         
         $this->showViewModal = true;
     }
@@ -593,10 +616,8 @@ class PayrollBatch extends Component
                 'batch_id' => $this->editingItem->payroll_batch_id,
             ]);
             
-            // Carregar valores atuais do item ou usar defaults
+            // Carregar valores editáveis do item
             $this->edit_additional_bonus = $this->editingItem->additional_bonus ?? 0;
-            $this->edit_overtime_amount = $this->editingItem->overtime_amount ?? 0;
-            $this->edit_advance_deduction = $this->editingItem->advance_deduction ?? 0;
             $this->edit_christmas_subsidy = $this->editingItem->christmas_subsidy ?? false;
             $this->edit_vacation_subsidy = $this->editingItem->vacation_subsidy ?? false;
             $this->edit_notes = $this->editingItem->notes ?? '';
@@ -605,22 +626,30 @@ class PayrollBatch extends Component
             $period = $this->editingItem->payrollBatch->payrollPeriod;
             $employee = $this->editingItem->employee;
             
-            // Carregar overtime records do período
-            $this->overtimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $employee->id)
+            // Carregar overtime records do período e calcular total
+            $overtimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $employee->id)
                 ->whereBetween('date', [$period->start_date, $period->end_date])
                 ->where('status', 'approved')
-                ->get()
-                ->toArray();
+                ->get();
             
-            // Carregar salary advances do período
-            $this->salaryAdvances = \App\Models\HR\SalaryAdvance::where('employee_id', $employee->id)
+            $this->overtimeRecords = $overtimeRecords->toArray();
+            
+            // Sempre usar valor do banco para overtime (não editável)
+            $this->edit_overtime_amount = $overtimeRecords->sum('amount');
+            
+            // Carregar salary advances do período e calcular dedução total
+            $salaryAdvances = \App\Models\HR\SalaryAdvance::where('employee_id', $employee->id)
                 ->where('status', 'approved')
                 ->where(function($query) use ($period) {
                     $query->whereBetween('request_date', [$period->start_date, $period->end_date])
                           ->orWhere('remaining_installments', '>', 0);
                 })
-                ->get()
-                ->toArray();
+                ->get();
+            
+            $this->salaryAdvances = $salaryAdvances->toArray();
+            
+            // Sempre usar valor do banco para advance deduction (não editável)
+            $this->edit_advance_deduction = $salaryAdvances->sum('installment_amount');
             
             // Carregar salary discounts do período (similar a advances)
             $this->salaryDiscounts = \App\Models\HR\SalaryDiscount::where('employee_id', $employee->id)
@@ -632,12 +661,15 @@ class PayrollBatch extends Component
                 ->get()
                 ->toArray();
             
-            Log::info('Valores carregados', [
+            Log::info('Valores carregados do banco', [
                 'additional_bonus' => $this->edit_additional_bonus,
-                'overtime_amount' => $this->edit_overtime_amount,
-                'advance_deduction' => $this->edit_advance_deduction,
+                'overtime_amount_from_db' => $this->edit_overtime_amount,
+                'advance_deduction_from_db' => $this->edit_advance_deduction,
                 'christmas' => $this->edit_christmas_subsidy,
                 'vacation' => $this->edit_vacation_subsidy,
+                'overtime_records' => count($this->overtimeRecords),
+                'salary_advances' => count($this->salaryAdvances),
+                'salary_discounts' => count($this->salaryDiscounts),
             ]);
             
             // Calcular usando o helper (popula $calculatedData)
@@ -711,7 +743,7 @@ class PayrollBatch extends Component
                 'transport_allowance' => $this->calculatedData['transport_allowance'],
                 'food_allowance' => $this->calculatedData['food_benefit'],
                 'overtime_amount' => $this->calculatedData['total_overtime_amount'],
-                'bonus_amount' => $this->calculatedData['bonus_amount'],
+                'family_allowance' => $this->calculatedData['family_allowance'],
                 'gross_salary' => $this->calculatedData['gross_salary'],
                 'inss_deduction' => $this->calculatedData['inss_3_percent'],
                 'irt_deduction' => $this->calculatedData['irt'],
@@ -858,7 +890,7 @@ class PayrollBatch extends Component
                 'transport_allowance' => $results['transport_allowance'],
                 'food_allowance' => $results['food_benefit'],
                 'overtime_amount' => $results['total_overtime_amount'],
-                'bonus_amount' => $results['bonus_amount'],
+                'family_allowance' => $results['family_allowance'],
                 'christmas_subsidy_amount' => $results['christmas_subsidy_amount'],
                 'vacation_subsidy_amount' => $results['vacation_subsidy_amount'],
                 'gross_salary' => $results['gross_salary'],
@@ -950,7 +982,7 @@ class PayrollBatch extends Component
             $calculator->setFoodInKind($isFoodInKind);
             
             // Calcular
-            Log::info('💰 Executando cálculo...');
+            Log::info('💰 Executando cálculo... [MODAL BATCH EDIT]');
             $this->calculatedData = $calculator->calculate();
             
             Log::info('✅ Cálculo concluído', [
@@ -1040,10 +1072,15 @@ class PayrollBatch extends Component
                 'processed_at' => now(),
             ]);
             
-            // Atualizar totais
+            // Atualizar totais do batch
             $this->updateBatchTotals($batchId);
             
-            session()->flash('success', "Batch processado: {$totalProcessed} itens calculados, {$totalErrors} erros");
+            session()->flash('success', "Batch recalculado com sucesso! {$totalProcessed} funcionários atualizados" . ($totalErrors > 0 ? ", {$totalErrors} erros" : ""));
+            
+            // Recarregar modal se estiver aberta (viewBatch já faz refresh automático)
+            if ($this->showViewModal && $this->currentBatch && $this->currentBatch->id == $batchId) {
+                $this->viewBatch($batchId);
+            }
             
             Log::info('Batch processado com helper', [
                 'batch_id' => $batchId,

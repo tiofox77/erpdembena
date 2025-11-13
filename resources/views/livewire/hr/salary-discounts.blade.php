@@ -44,7 +44,7 @@
                 
                 <!-- Filtro de status -->
                 <div>
-                    <select wire:model="statusFilter" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
+                    <select wire:model.live="statusFilter" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                         <option value="">{{ __('messages.all_statuses') }}</option>
                         <option value="pending">{{ __('messages.pending') }}</option>
                         <option value="approved">{{ __('messages.approved') }}</option>
@@ -65,14 +65,14 @@
                 
                 <!-- Data de -->
                 <div>
-                    <input type="date" wire:model="dateFrom" 
+                    <input type="date" wire:model.live="dateFrom" 
                            placeholder="{{ __('messages.date_from') }}"
                            class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                 </div>
                 
                 <!-- Data até -->
                 <div>
-                    <input type="date" wire:model="dateTo" 
+                    <input type="date" wire:model.live="dateTo" 
                            placeholder="{{ __('messages.date_to') }}"
                            class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all duration-200">
                 </div>
@@ -208,6 +208,11 @@
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                                         <i class="fas fa-users mr-1"></i>
                                         {{ __('messages.union_discount') }}
+                                    </span>
+                                @elseif($discount->discount_type === 'quixiquila')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                                        <i class="fas fa-hand-holding-usd mr-1"></i>
+                                        Quixiquila
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">

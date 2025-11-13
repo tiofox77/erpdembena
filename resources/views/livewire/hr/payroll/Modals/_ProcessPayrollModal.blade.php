@@ -10,407 +10,6 @@
     }
 </style>
 
-@if($selectedEmployee)
-<div x-data="{ open: @entangle('showProcessModal') }" 
-     x-show="open" 
-     x-cloak 
-     class="fixed inset-0 z-50 overflow-hidden" 
-     role="dialog" 
-     aria-modal="true" 
-     aria-labelledby="modal-title"
-     x-transition:enter="transition ease-out duration-300" 
-     x-transition:enter-start="opacity-0" 
-     x-transition:enter-end="opacity-100" 
-     x-transition:leave="transition ease-in duration-200" 
-     x-transition:leave-start="opacity-100" 
-     x-transition:leave-end="opacity-0">
-
-    {{-- Background Overlay --}}
-    <div class="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-blue-900/70 to-gray-900/90 backdrop-blur-sm"></div>
-
-    {{-- Modal Container --}}
-    <div class="relative flex items-start justify-center min-h-screen p-2 sm:p-4 lg:p-6">
-        <div class="w-full max-w-7xl bg-white rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out my-2 sm:my-4 lg:my-8 flex flex-col h-[90vh] max-h-screen" 
-             x-transition:enter="transition ease-out duration-300" 
-             x-transition:enter-start="transform opacity-0 scale-95" 
-             x-transition:enter-end="transform opacity-100 scale-100" 
-             x-transition:leave="transition ease-in duration-200" 
-             x-transition:leave-start="transform opacity-100 scale-100" 
-             x-transition:leave-end="transform opacity-0 scale-95">
-            
-            {{-- Header --}}
-            <div class="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-700 p-4 lg:p-6 text-white flex-shrink-0 rounded-t-2xl">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex items-center space-x-3 lg:space-x-4">
-                        <div class="bg-white/20 p-2 lg:p-3 rounded-lg">
-                            <i class="fas fa-calculator text-lg lg:text-2xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-lg lg:text-2xl font-bold">{{ __('messages.process_payroll') }}</h2>
-                            <p class="text-green-100 text-sm lg:text-base">{{ $selectedEmployee->full_name }} - {{ $selected_month }}/{{ $selected_year }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2 lg:space-x-3">
-                        <button
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {{-- Search Input --}}
-                        <div class="lg:col-span-2">
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    wire:model.live.debounce.300ms="employeeSearch"
-                                    placeholder="{{ __('messages.search_employee_by_name_id_email_phone') }}"
-                                    class="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                    autofocus
-                                >
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas fa-search text-gray-400 text-lg"></i>
-                                </div>
-                                @if($employeeSearch)
-                                    <button 
-                                        wire:click="$set('employeeSearch', '')"
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
-                                    >
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                        
-                        {{-- Reset Filters Button --}}
-                        <div class="flex items-end">
-                            <button
-                                wire:click="resetEmployeeSearchFilters"
-                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
-                            >
-                                <i class="fas fa-undo text-gray-500"></i>
-                                <span>{{ __('messages.reset_filters') }}</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {{-- Advanced Filters Row --}}
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                        {{-- Department Filter --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-building text-blue-500 mr-1"></i>
-                                {{ __('messages.department') }}
-                            </label>
-                            <select 
-                                wire:model.live="departmentFilter"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">{{ __('messages.all_departments') }}</option>
-                                @foreach(\App\Models\HR\Department::all() as $dept)
-                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        
-                        {{-- Status Filter --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-user-check text-green-500 mr-1"></i>
-                                {{ __('messages.status') }}
-                            </label>
-                            <select 
-                                wire:model.live="statusFilter"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">{{ __('messages.all_statuses') }}</option>
-                                <option value="active">{{ __('messages.active') }}</option>
-                                <option value="inactive">{{ __('messages.inactive') }}</option>
-                                <option value="terminated">{{ __('messages.terminated') }}</option>
-                                <option value="suspended">{{ __('messages.suspended') }}</option>
-                            </select>
-                        </div>
-                        
-                        {{-- Sort By --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-sort text-purple-500 mr-1"></i>
-                                {{ __('messages.sort_by') }}
-                            </label>
-                            <select 
-                                wire:model.live="employeeSortField"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="full_name">{{ __('messages.name') }}</option>
-                                <option value="id_card">{{ __('messages.id_card') }}</option>
-                                <option value="hire_date">{{ __('messages.hire_date') }}</option>
-                                @if($this->canViewSalaryDetails())
-                                <option value="base_salary">{{ __('messages.base_salary') }}</option>
-                                @endif
-                            </select>
-                        </div>
-                        
-                        {{-- Sort Order --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-arrow-up-down text-orange-500 mr-1"></i>
-                                {{ __('messages.order') }}
-                            </label>
-                            <select 
-                                wire:model.live="employeeSortDirection"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="asc">{{ __('messages.ascending') }}</option>
-                                <option value="desc">{{ __('messages.descending') }}</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Selected Period Information --}}
-                @if($selectedPayrollPeriod)
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-8">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-calendar-check text-blue-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-gray-900">{{ __('payroll.selected_period') }}</h4>
-                                <div class="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                                    <span class="font-medium text-blue-700">{{ $selectedPayrollPeriod->name }}</span>
-                                    <span class="text-gray-400">•</span>
-                                    <span>{{ \Carbon\Carbon::parse($selectedPayrollPeriod->start_date)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($selectedPayrollPeriod->end_date)->format('d/m/Y') }}</span>
-                                    @if($selectedPayrollPeriod->payment_date)
-                                        <span class="text-gray-400">•</span>
-                                        <span>{{ __('payroll.payment') }}: {{ \Carbon\Carbon::parse($selectedPayrollPeriod->payment_date)->format('d/m/Y') }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0">
-                                @if($selectedPayrollPeriod->status === 'open')
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <div class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></div>
-                                        {{ __('payroll.status_open') }}
-                                    </span>
-                                @elseif($selectedPayrollPeriod->status === 'processing')
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        <div class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5"></div>
-                                        {{ __('payroll.status_processing') }}
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        <i class="fas fa-lock text-xs mr-1.5"></i>
-                                        {{ __('payroll.status_closed') }}
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Search Results --}}
-                @if(count($searchResults) > 0)
-                    <div class="space-y-6">
-                        {{-- Results Header with Pagination Info --}}
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                                <i class="fas fa-users text-blue-500 mr-2"></i>
-                                {{ __('messages.employees') }} 
-                                <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                    {{ $totalResults }} {{ __('messages.total') }}
-                                </span>
-                            </h3>
-                            
-                            {{-- Results per page selector --}}
-                            <div class="flex items-center space-x-3">
-                                <label class="text-sm text-gray-600">{{ __('messages.per_page') }}:</label>
-                                <select 
-                                    wire:model.live="resultsPerPage"
-                                    class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="10">10</option>
-                                    <option value="20">20</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        {{-- Employee Grid with Enhanced Cards --}}
-                        <div class="grid gap-4 max-h-96 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #3B82F6 #E5E7EB;">
-                            @foreach($searchResults as $employee)
-                                <div 
-                                    wire:click="selectEmployee({{ $employee['id'] }})"
-                                    class="bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg p-6 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.01]"
-                                >
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-4">
-                                            {{-- Employee Avatar --}}
-                                            <div class="relative">
-                                                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl">
-                                                    {{ substr($employee['full_name'], 0, 1) }}
-                                                </div>
-                                                {{-- Status indicator --}}
-                                                <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white
-                                                    {{ $employee['employment_status'] === 'active' ? 'bg-green-500' : 
-                                                       ($employee['employment_status'] === 'inactive' ? 'bg-yellow-500' : 'bg-red-500') }}">
-                                                </div>
-                                            </div>
-                                            
-                                            {{-- Employee Info --}}
-                                            <div class="flex-1">
-                                                <div class="flex items-center space-x-2 mb-1">
-                                                    <h4 class="text-lg font-semibold text-gray-900">{{ $employee['full_name'] }}</h4>
-                                                    <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                                        {{ $employee['employment_status'] === 'active' ? 'bg-green-100 text-green-800' : 
-                                                           ($employee['employment_status'] === 'inactive' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                                        {{ __("messages.{$employee['employment_status']}") }}
-                                                    </span>
-                                                </div>
-                                                
-                                                {{-- Employee Details Grid --}}
-                                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-gray-600">
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-id-badge text-blue-500 mr-1.5 w-4"></i>
-                                                        {{ $employee['id_card'] }}
-                                                    </span>
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-building text-green-500 mr-1.5 w-4"></i>
-                                                        {{ Str::limit($employee['department_name'], 15) ?? 'N/A' }}
-                                                    </span>
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-briefcase text-purple-500 mr-1.5 w-4"></i>
-                                                        {{ Str::limit($employee['position_name'], 15) ?? 'N/A' }}
-                                                    </span>
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-calendar text-orange-500 mr-1.5 w-4"></i>
-                                                        {{ $employee['hire_date'] }}
-                                                    </span>
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-envelope text-blue-500 mr-1.5 w-4"></i>
-                                                        {{ Str::limit($employee['email'], 20) ?? 'N/A' }}
-                                                    </span>
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-phone text-green-500 mr-1.5 w-4"></i>
-                                                        {{ $employee['phone'] ?? 'N/A' }}
-                                                    </span>
-                                                    @if($this->canViewSalaryDetails())
-                                                    <span class="flex items-center font-medium">
-                                                        <i class="fas fa-money-bill text-green-600 mr-1.5 w-4"></i>
-                                                        {{ number_format($employee['base_salary'], 0, ',', '.') }} AOA
-                                                    </span>
-                                                    @else
-                                                    <span class="flex items-center font-medium">
-                                                        <i class="fas fa-eye-slash text-gray-400 mr-1.5 w-4"></i>
-                                                        <span class="text-gray-500">{{ __('payroll.salary_hidden') }}</span>
-                                                    </span>
-                                                    @endif
-                                                    <span class="flex items-center justify-end">
-                                                        <i class="fas fa-chevron-right text-blue-500 text-lg"></i>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        
-                        {{-- Pagination --}}
-                        @if($totalPages > 1)
-                            <div class="flex items-center justify-between border-t border-gray-200 pt-6">
-                                <div class="flex items-center text-sm text-gray-600">
-                                    {{ __('messages.showing') }} 
-                                    <span class="font-medium mx-1">
-                                        {{ (($currentPage - 1) * $resultsPerPage) + 1 }}
-                                    </span>
-                                    {{ __('messages.to') }}
-                                    <span class="font-medium mx-1">
-                                        {{ min($currentPage * $resultsPerPage, $totalResults) }}
-                                    </span>
-                                    {{ __('messages.of') }}
-                                    <span class="font-medium mx-1">{{ $totalResults }}</span>
-                                    {{ __('messages.results') }}
-                                </div>
-                                
-                                <div class="flex items-center space-x-2">
-                                    {{-- Previous Page --}}
-                                    <button 
-                                        wire:click="previousPage"
-                                        @if($currentPage <= 1) disabled @endif
-                                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <i class="fas fa-chevron-left mr-1"></i>
-                                        {{ __('messages.previous') }}
-                                    </button>
-                                    
-                                    {{-- Page Numbers --}}
-                                    @for($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++)
-                                        <button 
-                                            wire:click="goToPage({{ $i }})"
-                                            class="px-3 py-2 text-sm font-medium border rounded-lg transition-colors
-                                                {{ $i === $currentPage 
-                                                    ? 'bg-blue-500 text-white border-blue-500' 
-                                                    : 'text-gray-500 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-700' }}"
-                                        >
-                                            {{ $i }}
-                                        </button>
-                                    @endfor
-                                    
-                                    {{-- Next Page --}}
-                                    <button 
-                                        wire:click="nextPage"
-                                        @if($currentPage >= $totalPages) disabled @endif
-                                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        {{ __('messages.next') }}
-                                        <i class="fas fa-chevron-right ml-1"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                @elseif(strlen($employeeSearch) >= 2)
-                    <div class="text-center py-12">
-                        <div class="text-gray-400 mb-4">
-                            <i class="fas fa-search text-4xl"></i>
-                        </div>
-                        <p class="text-gray-600 text-lg">{{ __('messages.no_employees_found') }}</p>
-                        <p class="text-gray-500 text-sm">{{ __('messages.try_different_search_terms') }}</p>
-                        <div class="mt-4">
-                            <button 
-                                wire:click="resetEmployeeSearchFilters"
-                                class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <i class="fas fa-undo mr-1"></i>
-                                {{ __('messages.reset_and_show_all') }}
-                            </button>
-                        </div>
-                    </div>
-                @elseif($totalResults === 0 && empty($employeeSearch))
-                    <div class="text-center py-16">
-                        <div class="text-gray-400 mb-4">
-                            <i class="fas fa-users text-5xl"></i>
-                        </div>
-                        <h4 class="text-xl font-semibold text-gray-700 mb-2">{{ __('messages.no_employees_in_filters') }}</h4>
-                        <p class="text-gray-500 mb-6">{{ __('messages.try_adjusting_filters') }}</p>
-                        <button 
-                            wire:click="resetEmployeeSearchFilters"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center mx-auto space-x-2"
-                        >
-                            <i class="fas fa-undo"></i>
-                            <span>{{ __('messages.reset_all_filters') }}</span>
-                        </button>
-                    </div>
-                @else
-                    <div class="text-center py-12">
-                        <div class="text-blue-400 mb-4">
-                            <i class="fas fa-search text-4xl"></i>
-                        </div>
-                        <p class="text-gray-600 text-lg">{{ __('messages.search_or_browse_employees') }}</p>
-                        <p class="text-gray-500 text-sm">{{ __('messages.use_filters_or_search_above') }}</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-@endif
-
 {{-- Payroll Processing Modal --}}
 @if($selectedEmployee)
 <div x-data="{ open: @entangle('showProcessModal') }" 
@@ -527,10 +126,10 @@
                                             <p class="text-sm lg:text-base text-orange-700 font-semibold">{{ number_format($inss_8_percent, 2) }} {{ __('messages.currency_aoa') }}</p>
                                             <p class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_from_main_salary') }}</p>
                                         </div>
-                                        @if(isset($bonus_amount) && $bonus_amount > 0)
+                                        @if(isset($family_allowance) && $family_allowance > 0)
                                             <div class="bg-white/60 p-3 rounded-lg">
-                                                <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">{{ __('messages.bonus_amount') }}</p>
-                                                <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($bonus_amount, 2) }} {{ __('messages.currency_aoa') }}</p>
+                                                <p class="text-xs lg:text-sm text-blue-600 font-medium mb-1">{{ __('messages.family_allowance') }}</p>
+                                                <p class="text-sm lg:text-base text-blue-800 font-semibold">{{ number_format($family_allowance, 2) }} {{ __('messages.currency_aoa') }}</p>
                                             </div>
                                         @endif
                                     </div>
@@ -888,684 +487,14 @@
                                             <p class="text-teal-800 font-semibold">{{ number_format($transport_allowance ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
                                         </div>
                                         <div>
-                                            <p class="text-sm text-teal-600 font-medium">{{ __('messages.bonus_amount') }}
+                                            <p class="text-sm text-teal-600 font-medium">{{ __('messages.family_allowance') }}
                                                 <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full ml-1">{{ __('payroll.taxable') }}</span>
                                             </p>
-                                            <p class="text-teal-800 font-semibold">{{ number_format($bonus_amount ?? 0, 2) }} AOA</p>
+                                            <p class="text-teal-800 font-semibold">{{ number_format($family_allowance ?? 0, 2) }} AOA</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-teal-600 font-medium">{{ __('messages.taxable_benefits') }}</p>
-                                            <p class="text-teal-800 font-semibold">{{ number_format(($transport_allowance ?? 0) + ($bonus_amount ?? 0), 2) }} AOA</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        {{-- Right Panel - Payroll Summary --}}
-                        <div class="w-full xl:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 overflow-y-auto flex-1">
-                            <div class="p-4 lg:p-6">
-                                @if($this->canViewSalaryDetails())
-                                {{-- Payroll Summary --}}
-                                <div class="bg-white rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
-                                    <h3 class="text-lg lg:text-xl font-bold text-gray-800 mb-4 lg:mb-6 flex items-center">
-                                        <i class="fas fa-chart-pie text-green-500 mr-2"></i>
-                                        {{ __('messages.payroll_summary') }}
-                                    </h3>
-                                @else
-                                {{-- Limited View for Payroll Processors --}}
-                                <div class="bg-white rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
-                                    <h3 class="text-lg lg:text-xl font-bold text-gray-800 mb-4 lg:mb-6 flex items-center">
-                                        <i class="fas fa-eye-slash text-gray-500 mr-2"></i>
-                                        {{ __('payroll.processing_summary') }}
-                                    </h3>
-                                    
-                                    <div class="text-center py-8">
-                                        <div class="bg-gray-100 rounded-lg p-6">
-                                            <i class="fas fa-lock text-4xl text-gray-400 mb-4"></i>
-                                            <h4 class="text-lg font-semibold text-gray-600 mb-2">{{ __('payroll.salary_hidden') }}</h4>
-                                            <p class="text-gray-500 text-sm">{{ __('payroll.processing_only_description') }}</p>
-                                            <div class="mt-4 text-xs text-gray-400">
-                                                <p>{{ __('payroll.can_process_based_on_attendance') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                    
-                                    <div class="space-y-3 lg:space-y-4">
-                                        {{-- Base Salary --}}
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-blue-50 rounded-xl">
-                                            <span class="font-medium text-blue-700 text-sm lg:text-base">{{ __('messages.basic_salary') }}</span>
-                                            <span class="font-bold text-blue-800 text-sm lg:text-lg">{{ number_format($basic_salary ?? 0, 2) }} AOA</span>
-                                        </div>
-
-                                        {{-- Christmas Subsidy --}}
-                                        <div class="flex justify-between items-center p-3 lg:p-4 rounded-xl transition-all duration-200" 
-                                             :class="{'bg-emerald-50 opacity-100': $wire.christmas_subsidy, 'bg-gray-50 opacity-60': !$wire.christmas_subsidy}">
-                                            <span class="font-medium text-sm lg:text-base" 
-                                                  :class="{'text-emerald-700': $wire.christmas_subsidy, 'text-gray-500': !$wire.christmas_subsidy}">
-                                                <i class="fas fa-gift mr-1" :class="{'text-emerald-600': $wire.christmas_subsidy, 'text-gray-400': !$wire.christmas_subsidy}"></i>
-                                                {{ __('messages.christmas_subsidy') }}
-                                            </span>
-                                            <span class="font-bold text-sm lg:text-lg" 
-                                                  :class="{'text-emerald-800': $wire.christmas_subsidy, 'text-gray-500': !$wire.christmas_subsidy}">
-                                                <span x-show="$wire.christmas_subsidy" x-transition>
-                                                    +{{ number_format($this->christmasSubsidyAmount, 2) }} {{ __('messages.currency_aoa') }}
-                                                </span>
-                                                <span x-show="!$wire.christmas_subsidy" x-transition>
-                                                    0.00 {{ __('messages.currency_aoa') }}
-                                                </span>
-                                            </span>
-                                        </div>
-
-                                        {{-- Vacation Subsidy --}}
-                                        <div class="flex justify-between items-center p-3 lg:p-4 rounded-xl transition-all duration-200" 
-                                             :class="{'bg-emerald-50 opacity-100': $wire.vacation_subsidy, 'bg-gray-50 opacity-60': !$wire.vacation_subsidy}">
-                                            <span class="font-medium text-sm lg:text-base" 
-                                                  :class="{'text-emerald-700': $wire.vacation_subsidy, 'text-gray-500': !$wire.vacation_subsidy}">
-                                                <i class="fas fa-umbrella-beach mr-1" :class="{'text-emerald-600': $wire.vacation_subsidy, 'text-gray-400': !$wire.vacation_subsidy}"></i>
-                                                {{ __('messages.vacation_subsidy') }}
-                                            </span>
-                                            <span class="font-bold text-sm lg:text-lg" 
-                                                  :class="{'text-emerald-800': $wire.vacation_subsidy, 'text-gray-500': !$wire.vacation_subsidy}">
-                                                <span x-show="$wire.vacation_subsidy" x-transition>
-                                                    +{{ number_format($this->vacationSubsidyAmount, 2) }} {{ __('messages.currency_aoa') }}
-                                                </span>
-                                                <span x-show="!$wire.vacation_subsidy" x-transition>
-                                                    0.00 {{ __('messages.currency_aoa') }}
-                                                </span>
-                                            </span>
-                                        </div>
-
-                                        {{-- Transport Allowance --}}
-                                        @if($transport_allowance > 0 || ($this->selectedEmployee && $this->selectedEmployee->transport_benefit > 0))
-                                            <div class="p-2 lg:p-3 bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg border border-green-200">
-                                                <div class="flex justify-between items-center mb-2">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="font-medium text-gray-700 text-xs lg:text-sm">{{ __('messages.transport_allowance') }}</span>
-                                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{{ __('payroll.proportional') }}</span>
-                                                    </div>
-                                                    <span class="font-bold text-gray-800 text-xs lg:text-sm">{{ number_format($transport_allowance, 2) }} AOA</span>
-                                                </div>
-                                                
-                                                
-                                                <div class="space-y-1 text-xs bg-white/50 p-2 rounded">
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-600 font-medium">• {{ __('payroll.total_allowance') }}:</span>
-                                                        <span class="text-blue-700 font-semibold">{{ number_format($this->getFullTransportBenefit(), 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span class="text-gray-600">• {{ __('payroll.present_days') }}:</span>
-                                                        <span class="text-gray-700">{{ $this->present_days }}/{{ \App\Models\HR\HRSetting::get('monthly_working_days', 22) }} {{ __('payroll.days') }}</span>
-                                                    </div>
-                                                    @if($this->getTransportDiscountAmount() > 0)
-                                                    <div class="flex justify-between border-t pt-1">
-                                                        <span class="text-red-600">• {{ __('payroll.discount_for_absences') }}:</span>
-                                                        <span class="text-red-700 font-medium">-{{ number_format($this->getTransportDiscountAmount(), 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    <div class="flex justify-between border-t pt-1 font-semibold">
-                                                        <span class="text-green-600">• {{ __('payroll.amount_to_pay') }}:</span>
-                                                        <span class="text-green-700">{{ number_format($this->getProportionalTransportOnly(), 2) }} AOA</span>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="space-y-1 text-xs mt-2">
-                                                    <div class="flex justify-between">
-                                                        <span class="text-gray-600">• {{ __('payroll.exempt_up_to') }}:</span>
-                                                        <span class="text-gray-700 font-medium">{{ number_format($this->getExemptTransportAllowance(), 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-600">• {{ __('payroll.taxable') }}:</span>
-                                                        <span class="text-green-700 font-medium">{{ number_format($this->getTaxableTransportAllowance(), 2) }} AOA</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endif
-
-                                        {{-- Employee Profile Bonus --}}
-                                        @if($bonus_amount > 0)
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-blue-50 rounded-xl">
-                                            <span class="font-medium text-blue-700 text-sm lg:text-base">
-                                                <i class="fas fa-user-tag text-blue-600 mr-1"></i>
-                                                {{ __('payroll.employee_profile_bonus') }}
-                                            </span>
-                                            <span class="font-bold text-blue-800 text-sm lg:text-lg">+{{ number_format($bonus_amount, 2) }} AOA</span>
-                                        </div>
-                                        @endif
-
-                                        {{-- Position Subsidy --}}
-                                        @if($selectedEmployee && $selectedEmployee->position_subsidy > 0)
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-indigo-50 rounded-xl">
-                                            <span class="font-medium text-indigo-700 text-sm lg:text-base">
-                                                <i class="fas fa-briefcase text-indigo-600 mr-1"></i>
-                                                {{ __('messages.position_subsidy') }}
-                                            </span>
-                                            <span class="font-bold text-indigo-800 text-sm lg:text-lg">+{{ number_format($selectedEmployee->position_subsidy, 2) }} AOA</span>
-                                        </div>
-                                        @endif
-
-                                        {{-- Performance Subsidy --}}
-                                        @if($selectedEmployee && $selectedEmployee->performance_subsidy > 0)
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-green-50 rounded-xl">
-                                            <span class="font-medium text-green-700 text-sm lg:text-base">
-                                                <i class="fas fa-chart-line text-green-600 mr-1"></i>
-                                                {{ __('messages.performance_subsidy') }}
-                                            </span>
-                                            <span class="font-bold text-green-800 text-sm lg:text-lg">+{{ number_format($selectedEmployee->performance_subsidy, 2) }} AOA</span>
-                                        </div>
-                                        @endif
-
-                                        {{-- Additional Payroll Bonus --}}
-                                        @if($additional_bonus_amount > 0)
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-purple-50 rounded-xl">
-                                            <span class="font-medium text-purple-700 text-sm lg:text-base">
-                                                <i class="fas fa-plus-circle text-purple-600 mr-1"></i>
-                                                {{ __('payroll.additional_payroll_bonus') }}
-                                            </span>
-                                            <span class="font-bold text-purple-800 text-sm lg:text-lg">+{{ number_format($additional_bonus_amount, 2) }} AOA</span>
-                                        </div>
-                                        @endif
-
-                                        {{-- Overtime --}}
-                                        @if($total_overtime_amount > 0)
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-orange-50 rounded-xl">
-                                            <span class="font-medium text-orange-700 text-sm lg:text-base">
-                                                <i class="fas fa-clock text-orange-600 mr-1"></i>
-                                                {{ __('messages.overtime_amount') }}
-                                            </span>
-                                            <span class="font-bold text-orange-800 text-sm lg:text-lg">+{{ number_format($total_overtime_amount, 2) }} AOA</span>
-                                        </div>
-                                        @endif
-
-                                        {{-- Divider --}}
-                                        <hr class="border-gray-200">
-
-                                        {{-- Main Salary (Base Salary + All Benefits including Food & Transport) --}}
-                                        <div class="bg-blue-50 rounded-xl border border-blue-200 p-2 lg:p-3" x-data="{ showMainSalaryDetails: false }">
-                                            <div class="flex justify-between items-center">
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="font-semibold text-blue-700 text-sm lg:text-base">{{ __('messages.gross_salary') }}</span>
-                                                    <!-- Help Icon for Main Salary Details -->
-                                                    <button @click="showMainSalaryDetails = !showMainSalaryDetails" 
-                                                            class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                                                            type="button"
-                                                            title="{{ __('payroll.view_main_salary_details') }}">
-                                                        ?
-                                                    </button>
-                                                </div>
-                                                <span class="text-lg lg:text-xl font-bold text-blue-800">
-                                                    {{ number_format($gross_salary, 2) }} AOA
-                                                </span>
-                                            </div>
-                                            
-                                            <!-- Main Salary Details Breakdown -->
-                                            <div x-show="showMainSalaryDetails" x-transition class="mt-3 p-3 bg-blue-100/50 rounded-lg border border-blue-200">
-                                                <h5 class="text-xs font-semibold text-blue-800 mb-2">{{ __('messages.main_salary_breakdown') }}:</h5>
-                                                <div class="space-y-1 text-xs">
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.basic_salary') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($basic_salary ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.food_benefit') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($selectedEmployee->food_benefit ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.transport_benefit') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($transport_allowance ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @if($total_overtime_amount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.overtime') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($total_overtime_amount ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($bonus_amount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.bonus_amount') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($bonus_amount ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($additional_bonus_amount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.additional_bonus') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($additional_bonus_amount ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->christmasSubsidyAmount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.christmas_subsidy') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($this->christmasSubsidyAmount, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->vacationSubsidyAmount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.vacation_subsidy') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($this->vacationSubsidyAmount, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    <div class="border-t border-blue-300 pt-1 mt-1">
-                                                        <div class="flex justify-between font-semibold">
-                                                            <span class="text-blue-800">{{ __('messages.total') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format($gross_salary, 2) }} AOA</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {{-- Gross Salary --}}
-                                        <div class="bg-green-50 rounded-xl border border-green-200 p-2 lg:p-3" x-data="{ showGrossSalaryDetails: false }">
-                                            <div class="flex justify-between items-center">
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="font-semibold text-green-700 text-sm lg:text-base">{{ __('messages.baseIRT_taxable_amount') }}</span>
-                                                    <!-- Help Icon for Gross Salary Details -->
-                                                    <button @click="showGrossSalaryDetails = !showGrossSalaryDetails" 
-                                                            class="w-4 h-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-green-600 transition-colors"
-                                                            type="button"
-                                                            title="{{ __('payroll.view_gross_salary_details') }}">
-                                                        ?
-                                                    </button>
-                                                </div>
-                                                <span class="text-lg lg:text-xl font-bold text-green-800">{{ number_format($base_irt_taxable_amount, 2) }} AOA</span>
-                                            </div>
-                                            
-                                            <!-- Gross Salary Details Breakdown -->
-                                            <div x-show="showGrossSalaryDetails" x-transition class="mt-3 p-3 bg-green-100/50 rounded-lg border border-green-200">
-                                                <h5 class="text-xs font-semibold text-green-800 mb-2">{{ __('messages.gross_salary_breakdown') }}:</h5>
-                                                <div class="space-y-1 text-xs">
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.basic_salary') }}:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($basic_salary ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @if(isset($taxable_transport) && $taxable_transport > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.transport_benefit') }} <span class="text-xs text-gray-500">(excesso tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($taxable_transport, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($bonus_amount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.bonus_amount') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($bonus_amount ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($additional_bonus_amount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.additional_bonus') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($additional_bonus_amount ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->christmasSubsidyAmount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.christmas_subsidy') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($this->christmasSubsidyAmount, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->vacationSubsidyAmount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.vacation_subsidy') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($this->vacationSubsidyAmount, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($total_overtime_amount > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.overtime_amount') }} <span class="text-xs text-gray-500">(tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($total_overtime_amount ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if(isset($taxable_food) && $taxable_food > 0)
-                                                    <div class="flex justify-between">
-                                                        <span class="text-green-700">{{ __('messages.food_benefit') }} <span class="text-xs text-gray-500">(excesso tributável)</span>:</span>
-                                                        <span class="font-medium text-green-800">{{ number_format($taxable_food, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    <div class="mt-2 pt-1 border-t border-green-300">
-                                                        <div class="text-xs text-green-600 mb-1">
-                                                            <span class="font-medium">{{ __('messages.excluded_from_gross') }}:</span>
-                                                        </div>
-                                                        <div class="flex justify-between text-gray-600">
-                                                            <span class="text-xs">{{ __('messages.food_benefit') }} <span class="text-xs">(até 30k não tributável)</span>:</span>
-                                                            <span class="text-xs line-through">{{ number_format($exempt_food ?? 0, 2) }} AOA</span>
-                                                        </div>
-                                                        <div class="flex justify-between text-gray-600">
-                                                            <span class="text-xs">{{ __('messages.transport_benefit') }} <span class="text-xs">(até 30k não tributável)</span>:</span>
-                                                            <span class="text-xs line-through">{{ number_format($exempt_transport ?? 0, 2) }} AOA</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="border-t border-green-300 pt-1 mt-1">
-                                                        <div class="flex justify-between font-semibold">
-                                                            <span class="text-green-800">{{ __('messages.total') }} (Gross Salary):</span>
-                                                            <span class="text-green-900">{{ number_format($base_irt_taxable_amount, 2) }} AOA</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {{-- Deductions Section --}}
-                                        <div class="space-y-2">
-                                            <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ __('messages.deductions') }}:</h4>
-                                            
-                                            {{-- IRT --}}
-                                            <div class="bg-red-50 rounded-lg p-2 lg:p-3" x-data="{ showIrtDetails: false }">
-                                                <div class="flex justify-between items-center">
-                                                    <div class="flex items-center space-x-2">
-                                                        <div>
-                                                            <span class="font-medium text-red-700 text-xs lg:text-sm">IRT</span>
-                                                            @if($this->irtBracketDescription)
-                                                                <div class="text-xs text-red-600 mt-1">{{ $this->irtBracketDescription }}</div>
-                                                            @endif
-                                                        </div>
-                                                        <!-- Help Icon for IRT Details -->
-                                                        <button @click="showIrtDetails = !showIrtDetails" 
-                                                                class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                                                                type="button"
-                                                                title="Ver detalhes do cálculo de IRT">
-                                                            ?
-                                                        </button>
-                                                    </div>
-                                                    <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($this->irtCalculationDetails['total_irt'] ?? 0, 2) }} AOA</span>
-                                                </div>
-                                                
-                                                <!-- IRT Calculation Details Popup -->
-                                                <div x-show="showIrtDetails" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="mt-3 p-3 bg-white rounded-lg border border-red-200 shadow-sm text-xs">
-                                                    <h5 class="font-semibold text-gray-800 mb-2 flex items-center">
-                                                        <svg class="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9c2.93 0 5.67-1.33 7.5-3.5C21.67 15.67 23 13.93 23 11c0-4.97-4.03-9-9-9z"></path>
-                                                        </svg>
-                                                        {{ __('payroll.irt_calculation_details') }}
-                                                    </h5>
-                                                    
-                                                    
-                                                    <div class="space-y-2">
-                                                     
-                                                        <div class="flex justify-between border-t pt-2">
-                                                            <span class="text-gray-700 font-medium">{{ __('payroll.mc_taxable_matter') }}:</span>
-                                                            <span class="font-bold">{{ number_format($this->irtCalculationDetails['mc'] ?? 0, 2) }} AOA</span>
-                                                        </div>
-                                                        
-                                                        @if(isset($this->irtCalculationDetails['bracket']) && $this->irtCalculationDetails['bracket'])
-                                                            <div class="border-t pt-2 space-y-1">
-                                                                <div class="flex justify-between">
-                                                                    <span class="text-blue-600">{{ __('payroll.bracket') }} {{ $this->irtCalculationDetails['bracket']->bracket_number }}:</span>
-                                                                    <span class="text-sm">{{ number_format($this->irtCalculationDetails['bracket']->min) }} - {{ $this->irtCalculationDetails['bracket']->max > 0 ? number_format($this->irtCalculationDetails['bracket']->max) : '+∞' }} AOA</span>
-                                                                </div>
-                                                                <div class="flex justify-between">
-                                                                    <span class="text-gray-600">{{ __('payroll.fixed_amount') }}:</span>
-                                                                    <span class="font-medium">{{ number_format($this->irtCalculationDetails['fixed_amount'], 2) }} AOA</span>
-                                                                </div>
-                                                                <div class="flex justify-between">
-                                                                    <span class="text-gray-600">{{ __('payroll.excess') }} ({{ number_format($this->irtCalculationDetails['excess'], 2) }} × {{ $this->irtCalculationDetails['bracket']->tax_rate }}%):</span>
-                                                                    <span class="font-medium">{{ number_format($this->irtCalculationDetails['tax_on_excess'], 2) }} AOA</span>
-                                                                </div>
-                                                                <div class="flex justify-between border-t pt-1 font-bold">
-                                                                    <span class="text-red-700">{{ __('payroll.total_irt') }}:</span>
-                                                                    <span class="text-red-800">{{ number_format($this->irtCalculationDetails['total_irt'], 2) }} AOA</span>
-                                                                </div>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- INSS --}}
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                                                <span class="font-medium text-red-700 text-xs lg:text-sm">INSS (3%)</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($inss_3_percent, 2) }} AOA</span>
-                                            </div>
-                                            
-                                            {{-- INSS 8% Illustrative --}}
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg border border-orange-200">
-                                                <div>
-                                                    <span class="font-medium text-orange-700 text-xs lg:text-sm">INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
-                                                    <div class="text-xs text-orange-500 mt-1">{{ __('payroll.calculated_gross_salary') }}</div>
-                                                </div>
-                                                <span class="font-bold text-orange-800 text-xs lg:text-sm">{{ number_format($inss_8_percent, 2) }} AOA</span>
-                                            </div>
-
-                                            {{-- Salary Advances --}}
-                                            @if($advance_deduction > 0)
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                                                <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('messages.salary_advances') }}</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($advance_deduction ?? 0, 2) }} AOA</span>
-                                            </div>
-                                            @endif
-
-                                            {{-- Salary Discounts --}}
-                                            @if($total_salary_discounts > 0)
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                                                <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('messages.salary_discounts') }}</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($total_salary_discounts ?? 0, 2) }} AOA</span>
-                                            </div>
-                                            @endif
-
-                                            {{-- Absence Deduction --}}
-                                            @if($absence_deduction > 0)
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-red-50 rounded-lg">
-                                                <span class="font-medium text-red-700 text-xs lg:text-sm">{{ __('payroll.absence_deductions') }} ({{ $absent_days ?? 0 }} {{ __('payroll.days') }})</span>
-                                                <span class="font-bold text-red-800 text-xs lg:text-sm">-{{ number_format($absence_deduction ?? 0, 2) }} AOA</span>
-                                            </div>
-                                            @endif
-
-                                            {{-- Late Arrival Deductions --}}
-                                            @if($late_deduction > 0)
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-yellow-50 rounded-lg">
-                                                <span class="font-medium text-yellow-700 text-xs lg:text-sm">
-                                                    <i class="fas fa-clock mr-1"></i>
-                                                    {{ __('payroll.late_arrival_discount') }} ({{ $late_arrivals ?? 0 }} {{ __('payroll.days') }})
-                                                </span>
-                                                <span class="font-bold text-yellow-800 text-xs lg:text-sm">-{{ number_format($late_deduction, 2) }} AOA</span>
-                                            </div>
-                                            @endif
-                                            
-                                            {{-- Absence Deductions --}}
-                                            @if($absence_deduction > 0)
-                                            <div class="flex justify-between items-center p-2 lg:p-3 bg-orange-50 rounded-lg">
-                                                <span class="font-medium text-orange-700 text-xs lg:text-sm">
-                                                    <i class="fas fa-calendar-times mr-1"></i>
-                                                    {{ __('payroll.absence_discount') }} ({{ $absent_days ?? 0 }} {{ __('payroll.days') }})
-                                                </span>
-                                                <span class="font-bold text-orange-800 text-xs lg:text-sm">-{{ number_format($absence_deduction, 2) }} AOA</span>
-                                            </div>
-                                            @endif
-
-                                            {{-- Main Salary --}}
-                                        <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-2 lg:p-3">
-                                            <div class="flex justify-between items-center">
-                                                <span class="font-semibold text-yellow-700 text-sm lg:text-base">{{ __('messages.main_salary') }}</span>
-                                                <span class="text-lg lg:text-xl font-bold text-yellow-800">{{ number_format($main_salary ?? 0, 2) }} AOA</span>
-                                            </div>
-                                        </div>
-
-                                        {{-- Total Deductions --}}
-                                        <div class="flex justify-between items-center p-3 lg:p-4 bg-red-50 rounded-xl border border-red-200">
-                                            <span class="font-semibold text-red-700 text-sm lg:text-base">{{ __('messages.total_deductions') }}</span>
-                                            <span class="text-lg lg:text-xl font-bold text-red-800">{{ number_format($total_deductions ?? 0, 2) }} AOA</span>
-                                        </div>
-
-                                        {{-- Net Salary --}}
-                                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm p-2 lg:p-3" x-data="{ showNetSalaryDetails: false }">
-                                            <div class="flex justify-between items-center">
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="font-bold text-blue-700 text-base lg:text-lg flex items-center">
-                                                        <i class="fas fa-wallet text-blue-600 mr-2"></i>
-                                                        {{ __('messages.net_salary') }}
-                                                    </span>
-                                                    <!-- Help Icon for Net Salary Details -->
-                                                    <button @click="showNetSalaryDetails = !showNetSalaryDetails" 
-                                                            class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                                                            type="button"
-                                                            title="{{ __('payroll.view_net_salary_details') }}">
-                                                        ?
-                                                    </button>
-                                                </div>
-                                                <span class="text-xl lg:text-2xl font-bold text-blue-800">{{ number_format($net_salary ?? 0, 2) }} AOA</span>
-                                            </div>
-                                            
-                                            <!-- Net Salary Details Breakdown -->
-                                            <div x-show="showNetSalaryDetails" x-transition class="mt-3 p-3 bg-blue-100/50 rounded-lg border border-blue-200">
-                                                <h5 class="text-xs font-semibold text-blue-800 mb-2">{{ __('messages.net_salary_breakdown') }}:</h5>
-                                                <div class="space-y-1 text-xs">
-                                                    <div class="flex justify-between">
-                                                        <span class="text-blue-700">{{ __('messages.gross_salary') }}:</span>
-                                                        <span class="font-medium text-blue-800">{{ number_format($gross_salary ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>IRT ({{ __('messages.income_tax') }}):</span>
-                                                        <span class="font-medium">-{{ number_format($income_tax ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>INSS (3%):</span>
-                                                        <span class="font-medium">-{{ number_format($inss_3_percent ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    <div class="flex justify-between text-orange-600 bg-orange-50 p-2 rounded border border-orange-200 mt-1">
-                                                        <div>
-                                                            <span>INSS (8%) - {{ __('payroll.illustrative_only') }}</span>
-                                                            <div class="text-xs text-orange-500">{{ __('payroll.calculated_gross_salary') }}</div>
-                                                        </div>
-                                                        <span class="font-medium">{{ number_format($inss_8_percent ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @if($this->advance_deduction > 0)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.salary_advances') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->advance_deduction, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->total_salary_discounts > 0)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.salary_discounts') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->total_salary_discounts, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->union_deduction > 0)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.union_deduction') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->union_deduction, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->u_fund_ded > 0)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.u_fund_deduction') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->u_fund_ded, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->loan_installments > 0)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.loan_installments') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->loan_installments, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && $this->is_food_in_kind)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.food_in_kind') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->selectedEmployee->food_benefit, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    @if($this->absence_deduction > 0)
-                                                    <div class="flex justify-between text-red-700">
-                                                        <span>{{ __('messages.absence_deductions') }} ({{ $this->absent_days ?? 0 }} dias):</span>
-                                                        <span class="font-medium">{{ __('messages.already_deducted_from_main') }}</span>
-                                                    </div>
-                                                    @endif
-                                                    <!-- Breakdown detalhado dos componentes do Main Salary -->
-                                                    <div class="bg-green-50 p-2 rounded border border-green-200 mt-2">
-                                                        <h6 class="text-xs font-semibold text-green-800 mb-1">{{ __('messages.gross_salary_components') }}:</h6>
-                                                        <div class="space-y-1 text-xs">
-                                                            <div class="flex justify-between">
-                                                                <span class="text-green-700">{{ __('messages.basic_salary') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->basic_salary, 2) }} AOA</span>
-                                                            </div>
-                                                            @if($this->transport_allowance > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-green-700">{{ __('messages.transport_allowance') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->transport_allowance, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && !$this->is_food_in_kind)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-green-700">{{ __('messages.food_allowance_cash') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->selectedEmployee->food_benefit, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if($this->total_overtime_amount > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-green-700">{{ __('messages.overtime') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->total_overtime_amount, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if($this->night_shift_bonus > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-green-700">{{ __('messages.night_shift') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->night_shift_bonus, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if($this->other_allowances > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-green-700">{{ __('messages.other_allowances') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->other_allowances, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if($this->absence_deduction > 0)
-                                                            <div class="flex justify-between text-red-600">
-                                                                <span>{{ __('messages.absence_deductions') }}:</span>
-                                                                <span class="font-medium">-{{ number_format($this->absence_deduction, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            <div class="flex justify-between font-semibold border-t border-green-300 pt-1 mt-1">
-                                                                <span class="text-green-800">{{ __('messages.main_salary_total') }}:</span>
-                                                                <span class="text-green-900">{{ number_format($main_salary ?? 0, 2) }} AOA</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Subsídios adicionais -->
-                                                    @if($this->vacation_subsidy || $this->christmas_subsidy || ($this->bonus_amount + $this->additional_bonus_amount) > 0)
-                                                    <div class="bg-purple-50 p-2 rounded border border-purple-200 mt-2">
-                                                        <h6 class="text-xs font-semibold text-purple-800 mb-1">{{ __('messages.additional_benefits') }}:</h6>
-                                                        <div class="space-y-1 text-xs">
-                                                            @if($this->vacation_subsidy_amount > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-purple-700">{{ __('messages.vacation_subsidy') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->vacation_subsidy_amount, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if($this->christmas_subsidy_amount > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-purple-700">{{ __('messages.christmas_subsidy') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->christmas_subsidy_amount, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                            @if(($this->bonus_amount + $this->additional_bonus_amount) > 0)
-                                                            <div class="flex justify-between">
-                                                                <span class="text-purple-700">{{ __('messages.bonus_total') }}:</span>
-                                                                <span class="font-medium">{{ number_format($this->bonus_amount + $this->additional_bonus_amount, 2) }} AOA</span>
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                    @endif
-
-                                                    <div class="flex justify-between text-gray-600 text-xs mt-2 pt-1 border-t border-gray-200">
-                                                        <span>{{ __('messages.total_deductions') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($total_deductions ?? 0, 2) }} AOA</span>
-                                                    </div>
-                                                    @if($this->selectedEmployee && $this->selectedEmployee->food_benefit > 0 && !$this->is_food_in_kind)
-                                                    <div class="flex justify-between text-red-700 text-xs">
-                                                        <span>{{ __('messages.food_allowance_cash') }}:</span>
-                                                        <span class="font-medium">-{{ number_format($this->selectedEmployee->food_benefit, 2) }} AOA</span>
-                                                    </div>
-                                                    @endif
-                                                    <div class="border-t border-blue-300 pt-1 mt-1">
-                                                        <div class="flex justify-between font-semibold">
-                                                            <span class="text-blue-800">{{ __('messages.net_salary_final') }}:</span>
-                                                            <span class="text-blue-900">{{ number_format($net_salary ?? 0, 2) }} AOA</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <p class="text-teal-800 font-semibold">{{ number_format(($transport_allowance ?? 0) + ($family_allowance ?? 0), 2) }} AOA</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1599,6 +528,308 @@
                                         <span>{{ __('messages.cancel') }}</span>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        {{-- Right Panel - Payroll Summary --}}
+                        <div class="w-full xl:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 overflow-y-auto flex-1">
+                            <div class="p-4 lg:p-6">
+                                
+                                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                                    <i class="fas fa-file-invoice-dollar text-blue-600 mr-3"></i>
+                                    Folha de Salário - Resumo Detalhado
+                                </h3>
+
+                                {{-- GRID 3 COLUNAS --}}
+                                <div class="grid grid-cols-1 gap-4">
+                                    
+                                    {{-- COLUNA 1 - ENTRADAS (AOA) --}}
+                                    <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+                                        <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-500">
+                                            <i class="fas fa-plus-circle text-blue-600 mr-2"></i>
+                                            Entradas (AOA)
+                                        </h4>
+                                        <div class="text-sm text-gray-600 mb-4">Componentes que somam ao salário. <strong>Absence</strong> é subtraída.</div>
+
+                                        <div class="space-y-2.5">
+                                            {{-- Basic Salary --}}
+                                            <div class="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Basic Salary</span>
+                                                <span class="text-blue-800 font-bold tabular-nums">{{ number_format($basic_salary, 2) }}</span>
+                                            </div>
+
+                                            {{-- Transport --}}
+                                            @if($transport_allowance > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Transport</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($transport_allowance, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Food allowance --}}
+                                            @if($selectedEmployee && $selectedEmployee->food_benefit > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Food allowance</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($selectedEmployee->food_benefit, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Total Over Time --}}
+                                            @if($total_overtime_amount > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Total Over Time</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($total_overtime_amount, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Natal Allowance --}}
+                                            @if($this->christmasSubsidyAmount > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Natal Allowance</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($this->christmasSubsidyAmount, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Leave Allowance --}}
+                                            @if($this->vacationSubsidyAmount > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Leave Allowance</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($this->vacationSubsidyAmount, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Additional Bonus --}}
+                                            @if($additional_bonus_amount > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Additional Bonus</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($additional_bonus_amount, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Ajuda Familiar --}}
+                                            @if($family_allowance > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Ajuda Familiar</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($family_allowance, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Subsídio de cargo --}}
+                                            @if($selectedEmployee && $selectedEmployee->position_subsidy > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Subsídio de cargo</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($selectedEmployee->position_subsidy, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Subsídio de desempenho --}}
+                                            @if($selectedEmployee && $selectedEmployee->performance_subsidy > 0)
+                                            <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
+                                                <span class="text-gray-700 font-medium">Subsídio de desempenho</span>
+                                                <span class="text-gray-800 font-bold tabular-nums">{{ number_format($selectedEmployee->performance_subsidy, 2) }}</span>
+                                            </div>
+                                            @endif
+
+                                            {{-- Absence (dedução) com detalhes - sempre mostrar --}}
+                                            <div class="p-3 {{ ($absence_deduction ?? 0) > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200' }} rounded-lg border">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <span class="{{ ($absence_deduction ?? 0) > 0 ? 'text-red-700' : 'text-gray-600' }} font-bold flex items-center">
+                                                        <i class="fas fa-calendar-times mr-2"></i>
+                                                        Deduções por Faltas
+                                                    </span>
+                                                    <span class="{{ ($absence_deduction ?? 0) > 0 ? 'text-red-800' : 'text-gray-700' }} font-bold text-lg tabular-nums">
+                                                        {{ ($absence_deduction ?? 0) > 0 ? '-' : '' }}{{ number_format($absence_deduction ?? 0, 2) }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-xs {{ ($absence_deduction ?? 0) > 0 ? 'text-red-600' : 'text-gray-600' }} space-y-1 pl-6">
+                                                    <div class="flex justify-between">
+                                                        <span>• Dias de falta:</span>
+                                                        <span class="font-semibold">{{ $absent_days ?? 0 }} dias</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>• Salário diário:</span>
+                                                        <span class="font-semibold">{{ number_format(($daily_rate ?? 0), 2) }} AOA</span>
+                                                    </div>
+                                                    @if(($absent_days ?? 0) > 0)
+                                                    <div class="flex justify-between pt-1 border-t {{ ($absence_deduction ?? 0) > 0 ? 'border-red-200' : 'border-gray-200' }}">
+                                                        <span>• Cálculo:</span>
+                                                        <span class="font-semibold">{{ $absent_days }} × {{ number_format(($daily_rate ?? 0), 2) }}</span>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 pt-3 border-t-2 border-gray-300">
+                                            <div class="text-xs text-gray-600 mb-2">
+                                                Alimentação e Transporte: isentos até <strong>30.000 AOA</strong> cada (tributa apenas o excesso).
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    {{-- COLUNA 2 - BASE IRT & DEDUÇÕES --}}
+                                    <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+                                        <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-green-500">
+                                            <i class="fas fa-calculator text-green-600 mr-2"></i>
+                                            Base IRT & Deduções
+                                        </h4>
+
+                                        <table class="w-full text-sm">
+                                            <tbody class="space-y-1.5">
+                                                <tr class="border-b border-gray-200">
+                                                    <td class="py-2 text-gray-700">Gross Salary</td>
+                                                    <td class="py-2 text-right font-bold tabular-nums text-gray-900">{{ number_format($gross_salary, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-gray-600 text-xs">Food Payment &gt; 30.000 (excesso)</td>
+                                                    <td class="py-2 text-right tabular-nums text-gray-700">{{ number_format($taxable_food ?? 0, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-gray-600 text-xs">Transport &gt; 30.000 (excesso)</td>
+                                                    <td class="py-2 text-right tabular-nums text-gray-700">{{ number_format($taxable_transport ?? 0, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-gray-600 text-xs">Food exemption (até 30k)</td>
+                                                    <td class="py-2 text-right tabular-nums text-green-700 font-medium">-{{ number_format($exempt_food ?? 0, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-gray-600 text-xs">Transport exemption (até 30k)</td>
+                                                    <td class="py-2 text-right tabular-nums text-green-700 font-medium">-{{ number_format($exempt_transport ?? 0, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-200">
+                                                    <td class="py-2 text-gray-700">INSS rate</td>
+                                                    <td class="py-2 text-right tabular-nums text-gray-900">3.00%</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-200">
+                                                    <td class="py-2 text-gray-700">INSS amount</td>
+                                                    <td class="py-2 text-right font-medium tabular-nums text-red-700">-{{ number_format($inss_3_percent, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-200 bg-blue-50">
+                                                    <td class="py-2 text-blue-800 font-bold">Base IRT antes do INSS</td>
+                                                    <td class="py-2 text-right font-bold tabular-nums text-blue-900">{{ number_format(($gross_salary - ($exempt_food ?? 0) - ($exempt_transport ?? 0)), 2) }}</td>
+                                                </tr>
+                                                <tr class="bg-green-50">
+                                                    <td class="py-3 text-green-800 font-bold">Base IRT (após INSS)</td>
+                                                    <td class="py-3 text-right font-bold text-lg tabular-nums text-green-900">{{ number_format($irt_base ?? $base_irt_taxable_amount, 2) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </section>
+
+                                    {{-- COLUNA 3 - IRT & LÍQUIDO --}}
+                                    <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+                                        <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-purple-500">
+                                            <i class="fas fa-coins text-purple-600 mr-2"></i>
+                                            IRT &amp; Líquido
+                                        </h4>
+
+                                        <table class="w-full text-sm">
+                                            <tbody>
+                                                <tr class="border-b border-gray-200">
+                                                    <td class="py-2 text-gray-700">Base IRT</td>
+                                                    <td class="py-2 text-right font-medium tabular-nums text-gray-900">{{ number_format($irt_base ?? $base_irt_taxable_amount, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-gray-600">Gross Salary</td>
+                                                    <td class="py-2 text-right tabular-nums text-gray-800">{{ number_format($gross_salary, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-gray-600">INSS 3%</td>
+                                                    <td class="py-2 text-right tabular-nums text-red-700">-{{ number_format($inss_3_percent ?? 0, 2) }}</td>
+                                                </tr>
+                                                <tr class="border-b border-gray-200 bg-red-50">
+                                                    <td class="py-2 text-red-800 font-bold">IRT (PF + taxa × excesso)</td>
+                                                    <td class="py-2 text-right font-bold tabular-nums text-red-900">-{{ number_format($income_tax ?? 0, 2) }}</td>
+                                                </tr>
+                                                {{-- Salary Advances --}}
+                                                @if(!empty($salaryAdvances))
+                                                    @foreach($salaryAdvances as $advance)
+                                                    <tr class="border-b border-gray-100">
+                                                        <td class="py-2 text-xs">
+                                                            <span class="text-orange-600"><i class="fas fa-hand-holding-usd mr-1"></i>Salary Advance</span>
+                                                            <span class="text-gray-500">({{ $advance['reason'] ?? 'Adiantamento' }})</span>
+                                                        </td>
+                                                        <td class="py-2 text-right tabular-nums text-orange-700">-{{ number_format($advance['installment_amount'] ?? 0, 2) }}</td>
+                                                    </tr>
+                                                    @endforeach
+                                                @endif
+                                                
+                                                {{-- Salary Discounts --}}
+                                                @if(!empty($salaryDiscounts))
+                                                    @foreach($salaryDiscounts as $discount)
+                                                    <tr class="border-b border-gray-100">
+                                                        <td class="py-2 text-xs">
+                                                            @if($discount['discount_type'] === 'union')
+                                                                <span class="text-blue-600"><i class="fas fa-users mr-1"></i>Union Discount</span>
+                                                            @elseif($discount['discount_type'] === 'quixiquila')
+                                                                <span class="text-purple-600"><i class="fas fa-hand-holding-usd mr-1"></i>Quixiquila</span>
+                                                            @else
+                                                                <span class="text-gray-600"><i class="fas fa-minus-circle mr-1"></i>Other Discount</span>
+                                                            @endif
+                                                            <span class="text-gray-500">({{ $discount['reason'] ?? '' }})</span>
+                                                        </td>
+                                                        <td class="py-2 text-right tabular-nums text-gray-700">-{{ number_format($discount['installment_amount'] ?? 0, 2) }}</td>
+                                                    </tr>
+                                                    @endforeach
+                                                @endif
+                                                @if($selectedEmployee && $selectedEmployee->food_benefit > 0)
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-2 text-red-600">Food allowance (não pago)</td>
+                                                    <td class="py-2 text-right tabular-nums text-red-700">-{{ number_format($selectedEmployee->food_benefit, 2) }}</td>
+                                                </tr>
+                                                @endif
+                                                <tr class="bg-green-100 border-t-2 border-green-500">
+                                                    <td class="py-3 text-green-900 font-bold text-base">NET TOTAL</td>
+                                                    <td class="py-3 text-right font-bold text-xl tabular-nums text-green-900">{{ number_format($calculatedData['net_salary'] ?? $net_salary ?? 0, 2) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        @if(isset($irtCalculationDetails['bracket']))
+                                        <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-700">
+                                            <strong>Cálculo do IRT:</strong>
+                                            <div class="mt-1 font-mono">
+                                                PF {{ number_format($irtCalculationDetails['fixed_amount'] ?? 0, 2) }} 
+                                                + {{ number_format(($irtCalculationDetails['bracket']->tax_rate ?? 0) * 100, 2) }}% 
+                                                × (Base {{ number_format($irt_base ?? $base_irt_taxable_amount, 2) }} 
+                                                − Excess over {{ number_format($irtCalculationDetails['bracket']->min_income ?? 0, 0) }})
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </section>
+
+                                </div>
+
+                                {{-- RESUMO DE PRESENÇA --}}
+                                <div class="mt-6 bg-white rounded-xl shadow-md border border-gray-200 p-5">
+                                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                        <i class="fas fa-calendar-check text-blue-600 mr-2"></i>
+                                        Resumo de Presença
+                                    </h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div class="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
+                                            <div class="text-2xl font-bold text-green-700">{{ $present_days ?? 0 }}</div>
+                                            <div class="text-xs text-gray-600 mt-1">Dias Presentes</div>
+                                        </div>
+                                        <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-center">
+                                            <div class="text-2xl font-bold text-red-700">{{ $absent_days ?? 0 }}</div>
+                                            <div class="text-xs text-gray-600 mt-1">Faltas</div>
+                                        </div>
+                                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
+                                            <div class="text-2xl font-bold text-blue-700">{{ $total_working_days ?? 0 }}</div>
+                                            <div class="text-xs text-gray-600 mt-1">Dias Úteis</div>
+                                        </div>
+                                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200 text-center">
+                                            <div class="text-2xl font-bold text-purple-700">{{ number_format($total_overtime_hours ?? 0, 1) }}h</div>
+                                            <div class="text-xs text-gray-600 mt-1">Horas Extra</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 text-sm text-gray-600">
+                                    ⚠️ <strong>Notas:</strong> Ausência subtrai; INSS incide no bruto; isenções de 30k p/ alimentação e transporte antes do IRT.
+                                </div>
+
                             </div>
                         </div>
                     </div>

@@ -28,7 +28,7 @@ class SalaryDiscount extends Model
         'first_deduction_date',
         'remaining_installments',
         'reason',
-        'discount_type', // 'union' or 'others'
+        'discount_type', // 'union', 'others', or 'quixiquila'
         'status',
         'approved_by',
         'approved_at',
