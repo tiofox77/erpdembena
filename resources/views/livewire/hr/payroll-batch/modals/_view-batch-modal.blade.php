@@ -1,7 +1,31 @@
 {{-- View Batch Modal --}}
 @if($showViewModal && $currentBatch)
 <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl mx-4 max-h-[95vh] overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl mx-4 max-h-[95vh] overflow-hidden relative">
+        
+        {{-- Loading Overlay for processBatchWithHelper --}}
+        <div wire:loading.flex wire:target="processBatchWithHelper" 
+             class="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-50 rounded-2xl">
+            <div class="text-center">
+                <div class="relative inline-block">
+                    {{-- Animated spinner with pulse effect --}}
+                    <div class="w-20 h-20 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="fas fa-sync-alt text-green-600 text-2xl animate-pulse"></i>
+                    </div>
+                </div>
+                <div class="mt-5 space-y-2">
+                    <p class="text-xl font-bold text-gray-800">Recalculando lote...</p>
+                    <p class="text-sm text-gray-600">Atualizando {{ $currentBatch->total_employees ?? 0 }} funcionários</p>
+                    <div class="flex items-center justify-center space-x-1 mt-4">
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" style="animation-delay: 0ms;"></div>
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" style="animation-delay: 200ms;"></div>
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" style="animation-delay: 400ms;"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3 italic">Por favor, aguarde...</p>
+                </div>
+            </div>
+        </div>
         
         {{-- Header --}}
         <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
@@ -425,10 +449,14 @@
                         @if($currentBatch->canBeProcessed())
                             <button
                                 wire:click="processBatch({{ $currentBatch->id }})"
-                                class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
+                                wire:loading.attr="disabled"
+                                wire:target="processBatch"
+                                class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <i class="fas fa-play"></i>
-                                <span>{{ $currentBatch->status === 'failed' ? 'Reprocessar Lote' : __('payroll.process_batch_button') }}</span>
+                                <i class="fas fa-play" wire:loading.remove wire:target="processBatch"></i>
+                                <i class="fas fa-spinner fa-spin" wire:loading wire:target="processBatch"></i>
+                                <span wire:loading.remove wire:target="processBatch">{{ $currentBatch->status === 'failed' ? 'Reprocessar Lote' : __('payroll.process_batch_button') }}</span>
+                                <span wire:loading wire:target="processBatch">Processando...</span>
                             </button>
                         @endif
                         

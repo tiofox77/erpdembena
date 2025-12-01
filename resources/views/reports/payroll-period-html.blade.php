@@ -340,61 +340,16 @@
             <table style="width: 100%;">
                 <tr>
                     <td style="padding: 5px;"><strong style="color: #2563eb;" data-i18n="total_employees">Total de Funcionários</strong>: {{ $totals['total_employees'] }}</td>
-                    <td style="padding: 5px;"><strong style="color: #2563eb;" data-i18n="batch_payments">Batches Processados</strong>: {{ $totals['batch_count'] }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 5px;"><strong style="color: #2563eb;" data-i18n="individual_payments">Pagamentos Individuais</strong>: {{ $totals['individual_count'] }}</td>
                     <td style="padding: 5px;"><strong style="color: #2563eb;">Data de Geração</strong>: {{ $generatedAt }}</td>
                 </tr>
             </table>
         </div>
         
-        {{-- Seção de Batches --}}
-        @if($batches->count() > 0)
-        <div class="batch-section details-section" id="batchDetails" style="display: none;">
+        {{-- Seção de Pagamentos --}}
+        @if($payrolls->count() > 0)
+        <div class="payroll-section details-section" id="payrollDetails" style="display: none;">
             <div class="section-title">
-                📦 <span data-i18n="batch_details">PAGAMENTOS EM BATCH</span> ({{ $batches->count() }} lote(s))
-            </div>
-            
-            <table class="detail-table">
-                <thead>
-                    <tr>
-                        <th data-i18n="batch_name">Nome do Batch</th>
-                        <th data-i18n="department">Departamento</th>
-                        <th class="text-center" data-i18n="employees">Funcionários</th>
-                        <th class="text-right" data-i18n="gross_amount">Salário Bruto</th>
-                        <th class="text-right" data-i18n="deductions">Deduções</th>
-                        <th class="text-right" data-i18n="net_amount">Salário Líquido</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($batches as $batch)
-                    <tr>
-                        <td class="font-bold">{{ $batch->name }}</td>
-                        <td>{{ $batch->department->name ?? 'Todos' }}</td>
-                        <td class="text-center">{{ $batch->total_employees }}</td>
-                        <td class="text-right text-green font-bold">{{ number_format($batch->total_gross_amount, 2, ',', '.') }} AOA</td>
-                        <td class="text-right text-red font-bold">{{ number_format($batch->total_deductions, 2, ',', '.') }} AOA</td>
-                        <td class="text-right text-blue font-bold">{{ number_format($batch->total_net_amount, 2, ',', '.') }} AOA</td>
-                    </tr>
-                    @endforeach
-                    <tr style="background-color: #e5e7eb; font-weight: bold;">
-                        <td colspan="2" data-i18n="total">SUBTOTAL BATCHES</td>
-                        <td class="text-center">{{ $totals['batch_employees'] }}</td>
-                        <td class="text-right text-green">{{ number_format($totals['batch_gross'], 2, ',', '.') }} AOA</td>
-                        <td class="text-right text-red">{{ number_format($totals['batch_deductions'], 2, ',', '.') }} AOA</td>
-                        <td class="text-right text-blue">{{ number_format($totals['batch_net'], 2, ',', '.') }} AOA</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        @endif
-        
-        {{-- Seção de Individuais --}}
-        @if($individualPayrolls->count() > 0)
-        <div class="individual-section details-section" id="individualDetails" style="display: none;">
-            <div class="section-title">
-                👤 <span data-i18n="individual_details">PAGAMENTOS INDIVIDUAIS</span> ({{ $individualPayrolls->count() }} funcionário(s))
+                💰 <span data-i18n="payroll_details">DETALHES DOS PAGAMENTOS</span> ({{ $payrolls->count() }} funcionário(s))
             </div>
             
             <table class="detail-table">
@@ -408,7 +363,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($individualPayrolls as $payroll)
+                    @foreach($payrolls as $payroll)
                     <tr>
                         <td>{{ $payroll->employee->full_name ?? 'N/A' }}</td>
                         <td>{{ $payroll->employee->department->name ?? 'N/A' }}</td>
@@ -417,12 +372,6 @@
                         <td class="text-right text-blue">{{ number_format($payroll->net_salary, 2, ',', '.') }} AOA</td>
                     </tr>
                     @endforeach
-                    <tr style="background-color: #e5e7eb; font-weight: bold;">
-                        <td colspan="2" data-i18n="total">SUBTOTAL INDIVIDUAIS</td>
-                        <td class="text-right text-green">{{ number_format($totals['individual_gross'], 2, ',', '.') }} AOA</td>
-                        <td class="text-right text-red">{{ number_format($totals['individual_deductions'], 2, ',', '.') }} AOA</td>
-                        <td class="text-right text-blue">{{ number_format($totals['individual_net'], 2, ',', '.') }} AOA</td>
-                    </tr>
                 </tbody>
             </table>
         </div>
@@ -543,20 +492,17 @@
         function toggleDetails() {
             detailsVisible = !detailsVisible;
             
-            const batchDetails = document.getElementById('batchDetails');
-            const individualDetails = document.getElementById('individualDetails');
+            const payrollDetails = document.getElementById('payrollDetails');
             const button = document.querySelector('.detail-btn');
             
             if (detailsVisible) {
-                if (batchDetails) batchDetails.style.display = 'block';
-                if (individualDetails) individualDetails.style.display = 'block';
+                if (payrollDetails) payrollDetails.style.display = 'block';
                 const span = button.querySelector('[data-i18n]');
                 span.setAttribute('data-i18n', 'hide_details');
                 span.textContent = translations[currentLang]['hide_details'];
                 button.classList.add('active');
             } else {
-                if (batchDetails) batchDetails.style.display = 'none';
-                if (individualDetails) individualDetails.style.display = 'none';
+                if (payrollDetails) payrollDetails.style.display = 'none';
                 const span = button.querySelector('[data-i18n]');
                 span.setAttribute('data-i18n', 'toggle_details');
                 span.textContent = translations[currentLang]['toggle_details'];

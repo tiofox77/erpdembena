@@ -25,7 +25,32 @@ class PayrollBatchItem extends Model
         'processing_order',
         'processed_at',
         'error_message',
-        'notes'
+        'notes',
+        // Editable subsidies
+        'christmas_subsidy',
+        'vacation_subsidy',
+        'additional_bonus',
+        // Calculated amounts
+        'christmas_subsidy_amount',
+        'vacation_subsidy_amount',
+        // Detailed breakdown
+        'basic_salary',
+        'transport_allowance',
+        'food_allowance',
+        'family_allowance',
+        'overtime_amount',
+        // Deductions
+        'inss_deduction',
+        'irt_deduction',
+        'advance_deduction',
+        'discount_deduction',
+        'late_deduction',
+        'absence_deduction',
+        // Attendance
+        'present_days',
+        'absent_days',
+        'late_days',
+        'total_working_days',
     ];
 
     protected $casts = [
@@ -34,6 +59,30 @@ class PayrollBatchItem extends Model
         'total_deductions' => 'decimal:2',
         'processing_order' => 'integer',
         'processed_at' => 'datetime',
+        // Subsidies
+        'christmas_subsidy' => 'boolean',
+        'vacation_subsidy' => 'boolean',
+        'additional_bonus' => 'decimal:2',
+        'christmas_subsidy_amount' => 'decimal:2',
+        'vacation_subsidy_amount' => 'decimal:2',
+        // Breakdown
+        'basic_salary' => 'decimal:2',
+        'transport_allowance' => 'decimal:2',
+        'food_allowance' => 'decimal:2',
+        'family_allowance' => 'decimal:2',
+        'overtime_amount' => 'decimal:2',
+        // Deductions
+        'inss_deduction' => 'decimal:2',
+        'irt_deduction' => 'decimal:2',
+        'advance_deduction' => 'decimal:2',
+        'discount_deduction' => 'decimal:2',
+        'late_deduction' => 'decimal:2',
+        'absence_deduction' => 'decimal:2',
+        // Attendance
+        'present_days' => 'integer',
+        'absent_days' => 'integer',
+        'late_days' => 'integer',
+        'total_working_days' => 'integer',
     ];
 
     protected $dates = [

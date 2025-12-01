@@ -149,17 +149,25 @@
         <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-end space-x-3">
             <button
                 wire:click="closeEditItemModal"
-                class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
+                wire:loading.attr="disabled"
+                wire:target="saveEditedItem"
+                class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                <i class="fas fa-times mr-2"></i>
-                Cancelar
+                <i class="fas fa-times mr-2" wire:loading.remove wire:target="saveEditedItem"></i>
+                <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="saveEditedItem"></i>
+                <span wire:loading.remove wire:target="saveEditedItem">Cancelar</span>
+                <span wire:loading wire:target="saveEditedItem">Aguarde...</span>
             </button>
             <button
                 wire:click="saveEditedItem"
-                class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+                wire:loading.attr="disabled"
+                wire:target="saveEditedItem"
+                class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                <i class="fas fa-save mr-2"></i>
-                Salvar Alterações
+                <i class="fas fa-save mr-2" wire:loading.remove wire:target="saveEditedItem"></i>
+                <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="saveEditedItem"></i>
+                <span wire:loading.remove wire:target="saveEditedItem">Salvar Alterações</span>
+                <span wire:loading wire:target="saveEditedItem">Salvando...</span>
             </button>
         </div>
 

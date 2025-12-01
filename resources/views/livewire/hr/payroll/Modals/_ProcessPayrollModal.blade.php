@@ -547,9 +547,9 @@
                                     <section class="bg-white rounded-xl shadow-md border border-gray-200 p-5">
                                         <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-500">
                                             <i class="fas fa-plus-circle text-blue-600 mr-2"></i>
-                                            Entradas (AOA)
+                                            {{ __('messages.salary_gross') }}
                                         </h4>
-                                        <div class="text-sm text-gray-600 mb-4">Componentes que somam ao salário. <strong>Absence</strong> é subtraída.</div>
+                                        <div class="text-sm text-gray-600 mb-4">{{ __('messages.gross_salary_components') }}</div>
 
                                         <div class="space-y-2.5">
                                             {{-- Basic Salary --}}
@@ -625,7 +625,7 @@
                                             {{-- Subsídio de desempenho --}}
                                             @if($selectedEmployee && $selectedEmployee->performance_subsidy > 0)
                                             <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
-                                                <span class="text-gray-700 font-medium">Subsídio de desempenho</span>
+                                                <span class="text-gray-700 font-medium">{{ __('messages.performance_subsidy') }}</span>
                                                 <span class="text-gray-800 font-bold tabular-nums">{{ number_format($selectedEmployee->performance_subsidy, 2) }}</span>
                                             </div>
                                             @endif
@@ -635,7 +635,7 @@
                                                 <div class="flex justify-between items-center mb-2">
                                                     <span class="{{ ($absence_deduction ?? 0) > 0 ? 'text-red-700' : 'text-gray-600' }} font-bold flex items-center">
                                                         <i class="fas fa-calendar-times mr-2"></i>
-                                                        Deduções por Faltas
+                                                        {{ __('messages.absence_deductions') }}
                                                     </span>
                                                     <span class="{{ ($absence_deduction ?? 0) > 0 ? 'text-red-800' : 'text-gray-700' }} font-bold text-lg tabular-nums">
                                                         {{ ($absence_deduction ?? 0) > 0 ? '-' : '' }}{{ number_format($absence_deduction ?? 0, 2) }}
@@ -643,16 +643,16 @@
                                                 </div>
                                                 <div class="text-xs {{ ($absence_deduction ?? 0) > 0 ? 'text-red-600' : 'text-gray-600' }} space-y-1 pl-6">
                                                     <div class="flex justify-between">
-                                                        <span>• Dias de falta:</span>
-                                                        <span class="font-semibold">{{ $absent_days ?? 0 }} dias</span>
+                                                        <span>• {{ __('messages.absent_days') }}:</span>
+                                                        <span class="font-semibold">{{ $absent_days ?? 0 }} {{ __('messages.days') }}</span>
                                                     </div>
                                                     <div class="flex justify-between">
-                                                        <span>• Salário diário:</span>
+                                                        <span>• {{ __('messages.daily_rate') }}:</span>
                                                         <span class="font-semibold">{{ number_format(($daily_rate ?? 0), 2) }} AOA</span>
                                                     </div>
                                                     @if(($absent_days ?? 0) > 0)
                                                     <div class="flex justify-between pt-1 border-t {{ ($absence_deduction ?? 0) > 0 ? 'border-red-200' : 'border-gray-200' }}">
-                                                        <span>• Cálculo:</span>
+                                                        <span>• {{ __('messages.calculation') }}:</span>
                                                         <span class="font-semibold">{{ $absent_days }} × {{ number_format(($daily_rate ?? 0), 2) }}</span>
                                                     </div>
                                                     @endif

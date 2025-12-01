@@ -1,5 +1,35 @@
 {{-- Payroll Batch Management Interface --}}
 <div class="min-h-screen bg-gray-50">
+    {{-- Global Loading Overlay (wire:loading automático) --}}
+    <div wire:loading.flex wire:target="viewBatch" class="fixed inset-0 bg-black/70 backdrop-blur-sm items-center justify-center z-[9999]" style="display: none;">
+        <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="relative inline-block mb-6">
+                    {{-- Large animated spinner --}}
+                    <div class="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="fas fa-database text-blue-600 text-2xl animate-pulse"></i>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="text-2xl font-bold text-gray-800">Carregando lote...</h3>
+                    <p class="text-gray-600">Buscando e recalculando dados</p>
+                    <div class="flex items-center justify-center space-x-2 mt-4">
+                        <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0ms;"></div>
+                        <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 150ms;"></div>
+                        <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 300ms;"></div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <div class="inline-block h-1.5 w-48 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-pulse"></div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3 italic">Aguarde enquanto preparamos os dados...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="w-full h-full">
         <div class="flex flex-col min-h-screen">
             

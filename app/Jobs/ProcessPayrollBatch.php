@@ -84,27 +84,57 @@ class ProcessPayrollBatch implements ShouldQueue
                         // Update item status to processing
                         $item->update(['status' => PayrollBatchItem::STATUS_PROCESSING]);
 
-                        // Process individual payroll
-                        $payrollData = $this->processEmployeePayroll($item->employee, $this->batch);
+                        // Process individual payroll with batch item data
+                        $payrollData = $this->processEmployeePayroll($item, $this->batch);
 
                         if ($payrollData) {
-                            // Create payroll record
-                            $payroll = Payroll::create($payrollData);
+                            try {
+                                // Create payroll record
+                                $payroll = Payroll::create($payrollData);
+                            } catch (\Exception $createError) {
+                                Log::error('Error creating payroll record', [
+                                    'batch_id' => $this->batch->id,
+                                    'employee_id' => $item->employee_id,
+                                    'error' => $createError->getMessage(),
+                                    'payroll_data_keys' => array_keys($payrollData),
+                                    'trace' => $createError->getTraceAsString(),
+                                ]);
+                                
+                                // Mark item as failed
+                                $item->update([
+                                    'status' => PayrollBatchItem::STATUS_FAILED,
+                                    'error_message' => 'Erro ao criar payroll: ' . $createError->getMessage(),
+                                ]);
+                                
+                                continue;
+                            }
 
-                            // Update batch item
+                            // Update batch item with all calculated values
                             $item->update([
                                 'status' => PayrollBatchItem::STATUS_COMPLETED,
                                 'payroll_id' => $payroll->id,
-                                'gross_salary' => $payroll->gross_salary,
-                                'net_salary' => $payroll->net_salary,
-                                'total_deductions' => $payroll->total_deductions,
+                                'basic_salary' => $payroll->basic_salary ?? 0,
+                                'gross_salary' => $payroll->gross_salary ?? 0,
+                                'net_salary' => $payroll->net_salary ?? 0,
+                                'total_deductions' => $payroll->deductions ?? 0,
+                                'inss_deduction' => $payroll->inss_3_percent ?? 0,
+                                'irt_deduction' => $payroll->tax ?? 0,
+                                'advance_deduction' => $payroll->advance_deduction ?? 0,
+                                'discount_deduction' => $payroll->total_salary_discounts ?? 0,
+                                'late_deduction' => $payroll->late_deduction ?? 0,
+                                'absence_deduction' => $payroll->absence_deduction ?? 0,
+                                'christmas_subsidy_amount' => $payroll->christmas_subsidy_amount ?? 0,
+                                'vacation_subsidy_amount' => $payroll->vacation_subsidy_amount ?? 0,
+                                'transport_allowance' => $payroll->transport_allowance ?? 0,
+                                'food_allowance' => $payroll->food_allowance ?? 0,
+                                'overtime_amount' => $payroll->overtime_amount ?? 0,
                                 'processed_at' => now(),
                             ]);
 
                             // Accumulate totals
-                            $totalGross += $payroll->gross_salary;
-                            $totalNet += $payroll->net_salary;
-                            $totalDeductions += $payroll->total_deductions;
+                            $totalGross += $payroll->gross_salary ?? 0;
+                            $totalNet += $payroll->net_salary ?? 0;
+                            $totalDeductions += $payroll->deductions ?? 0;
                             $processedCount++;
 
                             Log::info('Employee payroll processed successfully', [
@@ -180,24 +210,54 @@ class ProcessPayrollBatch implements ShouldQueue
     /**
      * Process payroll for individual employee using centralized calculation service
      */
-    protected function processEmployeePayroll(Employee $employee, PayrollBatch $batch): ?array
+    protected function processEmployeePayroll(PayrollBatchItem $item, PayrollBatch $batch): ?array
     {
         try {
+            $employee = $item->employee;
+            
+            if (!$employee) {
+                Log::error('Employee not found for batch item', [
+                    'batch_item_id' => $item->id,
+                    'employee_id' => $item->employee_id,
+                ]);
+                return null;
+            }
+            
             Log::info('Processing employee payroll', [
                 'batch_id' => $batch->id,
+                'batch_item_id' => $item->id,
                 'employee_id' => $employee->id,
                 'employee_name' => $employee->full_name,
+                'christmas_subsidy' => $item->christmas_subsidy ?? false,
+                'vacation_subsidy' => $item->vacation_subsidy ?? false,
+                'additional_bonus' => $item->additional_bonus ?? 0,
             ]);
 
             // Use centralized PayrollCalculationService
             $calculator = new PayrollCalculationService($employee, $batch->payrollPeriod);
             
-            // Set subsidies if needed (could be configured per batch or employee)
-            // For now, not applying subsidies automatically in batch processing
-            // $calculator->setSubsidies(christmas: false, vacation: false);
+            // Apply subsidies and bonuses from batch item if configured
+            $calculator->setSubsidies(
+                christmas: (bool) ($item->christmas_subsidy ?? false),
+                vacation: (bool) ($item->vacation_subsidy ?? false)
+            );
+            
+            if ($item->additional_bonus > 0) {
+                $calculator->setAdditionalBonus((float) $item->additional_bonus);
+            }
             
             // Calculate all payroll components
             $result = $calculator->calculate();
+            
+            // Validate calculation result
+            if (!isset($result['gross_salary']) || !isset($result['net_salary'])) {
+                Log::error('Invalid calculation result - missing required fields', [
+                    'employee_id' => $employee->id,
+                    'batch_item_id' => $item->id,
+                    'result_keys' => array_keys($result),
+                ]);
+                return null;
+            }
             
             // Build payroll data array with ALL fields from calculation service
             $payrollData = [
@@ -206,35 +266,35 @@ class ProcessPayrollBatch implements ShouldQueue
                 'payroll_batch_id' => $batch->id,
                 
                 // Basic salary
-                'basic_salary' => $result['basic_salary'],
+                'basic_salary' => $result['basic_salary'] ?? 0,
                 
                 // Earnings
-                'allowances' => $result['allowances'],
-                'overtime' => $result['overtime'],
-                'bonuses' => $result['bonuses'],
-                'profile_bonus' => $result['profile_bonus'],
-                'overtime_amount' => $result['overtime_amount'],
-                'gross_salary' => $result['gross_salary'],
-                'main_salary' => $result['main_salary'],
+                'allowances' => $result['allowances'] ?? 0,
+                'overtime' => $result['overtime'] ?? 0,
+                'bonuses' => $result['bonuses'] ?? 0,
+                'profile_bonus' => $result['profile_bonus'] ?? 0,
+                'overtime_amount' => $result['overtime_amount'] ?? 0,
+                'gross_salary' => $result['gross_salary'] ?? 0,
+                'main_salary' => $result['main_salary'] ?? 0,
                 
                 // Tax base
-                'base_irt_taxable_amount' => $result['base_irt_taxable_amount'],
+                'base_irt_taxable_amount' => $result['base_irt_taxable_amount'] ?? 0,
                 
                 // Deductions
-                'tax' => $result['tax'],
-                'deductions_irt' => $result['deductions_irt'],
-                'social_security' => $result['social_security'],
-                'inss_3_percent' => $result['inss_3_percent'],
-                'inss_8_percent' => $result['inss_8_percent'],
-                'absence_deduction_amount' => $result['absence_deduction_amount'],
-                'deductions' => $result['deductions'],
-                'total_deductions_calculated' => $result['total_deductions_calculated'],
+                'tax' => $result['tax'] ?? 0,
+                'deductions_irt' => $result['deductions_irt'] ?? 0,
+                'social_security' => $result['social_security'] ?? 0,
+                'inss_3_percent' => $result['inss_3_percent'] ?? 0,
+                'inss_8_percent' => $result['inss_8_percent'] ?? 0,
+                'absence_deduction_amount' => $result['absence_deduction_amount'] ?? 0,
+                'deductions' => $result['deductions'] ?? 0,
+                'total_deductions_calculated' => $result['total_deductions_calculated'] ?? 0,
                 
                 // Net salary
-                'net_salary' => $result['net_salary'],
+                'net_salary' => $result['net_salary'] ?? 0,
                 
                 // Attendance
-                'attendance_hours' => $result['attendance_hours'],
+                'attendance_hours' => $result['attendance_hours'] ?? 0,
                 'leave_days' => 0, // Can be added later
                 'maternity_days' => 0,
                 'special_leave_days' => 0,
@@ -249,10 +309,37 @@ class ProcessPayrollBatch implements ShouldQueue
                 'remarks' => $this->generateRemarks($employee, $result, $batch),
                 'generated_by' => null, // Batch processing
                 'approved_by' => null,
+                
+                // Detailed components for receipts
+                'transport_allowance' => $result['transport_allowance'] ?? 0,
+                'food_allowance' => $result['food_allowance'] ?? $result['food_benefit'] ?? 0,
+                'family_allowance' => $result['family_allowance'] ?? 0,
+                'position_subsidy' => $result['position_subsidy'] ?? 0,
+                'performance_subsidy' => $result['performance_subsidy'] ?? 0,
+                'additional_bonus' => $result['additional_bonus_amount'] ?? 0,
+                'christmas_subsidy_amount' => $result['christmas_subsidy_amount'] ?? 0,
+                'vacation_subsidy_amount' => $result['vacation_subsidy_amount'] ?? 0,
+                'advance_deduction' => $result['advance_deduction'] ?? 0,
+                'late_deduction' => $result['late_deduction'] ?? 0,
+                'absence_deduction' => $result['absence_deduction'] ?? 0,
+                'total_salary_discounts' => $result['total_salary_discounts'] ?? 0,
+                'present_days' => $result['present_days'] ?? 0,
+                'absent_days' => $result['absent_days'] ?? 0,
+                'late_arrivals' => $result['late_arrivals'] ?? $result['late_days'] ?? 0,
+                'total_overtime_hours' => $result['total_overtime_hours'] ?? 0,
+                // IRT calculation fields
+                'food_exemption' => $result['exempt_food'] ?? min($result['food_allowance'] ?? $result['food_benefit'] ?? 0, 30000),
+                'transport_exemption' => $result['exempt_transport'] ?? min($result['transport_allowance'] ?? 0, 30000),
+                'food_taxable' => $result['taxable_food'] ?? max(0, ($result['food_allowance'] ?? $result['food_benefit'] ?? 0) - 30000),
+                'transport_taxable' => $result['taxable_transport'] ?? max(0, ($result['transport_allowance'] ?? 0) - 30000),
+                'irt_base_before_inss' => ($result['base_irt_taxable_amount'] ?? 0) + ($result['inss_3_percent'] ?? 0),
             ];
 
             Log::info('Employee payroll calculated successfully', [
                 'employee_id' => $employee->id,
+                'christmas_subsidy_amount' => $result['christmas_subsidy_amount'] ?? 0,
+                'vacation_subsidy_amount' => $result['vacation_subsidy_amount'] ?? 0,
+                'additional_bonus' => $result['additional_bonus_amount'] ?? 0,
                 'gross_salary' => $result['gross_salary'],
                 'net_salary' => $result['net_salary'],
                 'total_deductions' => $result['deductions'],

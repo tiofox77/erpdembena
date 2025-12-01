@@ -469,35 +469,22 @@ class PayrollBatch extends Component
     }
 
     /**
-     * View batch details
+     * View batch details - APENAS dados da BD, sem recálculo
      */
     public function viewBatch(int $batchId): void
     {
-        // SEMPRE buscar dados frescos do banco (não usar cache)
-        // Limpar qualquer modelo em cache primeiro
-        if ($this->currentBatch && $this->currentBatch->id == $batchId) {
-            $this->currentBatch->refresh();
-            $this->currentBatch->load([
-                'payrollPeriod', 
-                'department', 
-                'creator', 
-                'approver',
-                'batchItems.employee.department',
-                'batchItems.payroll'
-            ]);
-        } else {
-            $this->currentBatch = PayrollBatchModel::with([
-                'payrollPeriod', 
-                'department', 
-                'creator', 
-                'approver',
-                'batchItems.employee.department',
-                'batchItems.payroll'
-            ])->find($batchId);
-        }
+        // Buscar dados frescos do banco (sem recalcular)
+        $this->currentBatch = PayrollBatchModel::with([
+            'payrollPeriod', 
+            'department', 
+            'creator', 
+            'approver',
+            'batchItems.employee.department',
+            'batchItems.payroll'
+        ])->find($batchId);
         
-        // Log para debug
-        Log::info('viewBatch carregado', [
+        // Log para debug - mostrando dados da BD
+        Log::info('viewBatch carregado (APENAS BD, sem recálculo)', [
             'batch_id' => $batchId,
             'items_count' => $this->currentBatch->batchItems->count(),
             'first_item_gross' => $this->currentBatch->batchItems->first()->gross_salary ?? 'N/A',
@@ -505,6 +492,7 @@ class PayrollBatch extends Component
             'first_item_net' => $this->currentBatch->batchItems->first()->net_salary ?? 'N/A',
         ]);
         
+        // Abrir a modal
         $this->showViewModal = true;
     }
 
@@ -617,10 +605,18 @@ class PayrollBatch extends Component
             ]);
             
             // Carregar valores editáveis do item
-            $this->edit_additional_bonus = $this->editingItem->additional_bonus ?? 0;
-            $this->edit_christmas_subsidy = $this->editingItem->christmas_subsidy ?? false;
-            $this->edit_vacation_subsidy = $this->editingItem->vacation_subsidy ?? false;
-            $this->edit_notes = $this->editingItem->notes ?? '';
+            // Se existe payroll, carregar de lá (valores já editados/salvos)
+            // Caso contrário, carregar do batch item (valores iniciais)
+            if ($this->editingItem->payroll) {
+                $this->edit_additional_bonus = (float) ($this->editingItem->payroll->additional_bonus ?? $this->editingItem->additional_bonus ?? 0);
+                $this->edit_christmas_subsidy = $this->editingItem->payroll->christmas_subsidy_amount > 0 || $this->editingItem->christmas_subsidy ?? false;
+                $this->edit_vacation_subsidy = $this->editingItem->payroll->vacation_subsidy_amount > 0 || $this->editingItem->vacation_subsidy ?? false;
+            } else {
+                $this->edit_additional_bonus = (float) ($this->editingItem->additional_bonus ?? 0);
+                $this->edit_christmas_subsidy = (bool) ($this->editingItem->christmas_subsidy ?? false);
+                $this->edit_vacation_subsidy = (bool) ($this->editingItem->vacation_subsidy ?? false);
+            }
+            $this->edit_notes = (string) ($this->editingItem->notes ?? '');
             
             // Carregar dados relacionados do período (como no payroll individual)
             $period = $this->editingItem->payrollBatch->payrollPeriod;
@@ -635,7 +631,7 @@ class PayrollBatch extends Component
             $this->overtimeRecords = $overtimeRecords->toArray();
             
             // Sempre usar valor do banco para overtime (não editável)
-            $this->edit_overtime_amount = $overtimeRecords->sum('amount');
+            $this->edit_overtime_amount = (float) $overtimeRecords->sum('amount');
             
             // Carregar salary advances do período e calcular dedução total
             $salaryAdvances = \App\Models\HR\SalaryAdvance::where('employee_id', $employee->id)
@@ -649,7 +645,7 @@ class PayrollBatch extends Component
             $this->salaryAdvances = $salaryAdvances->toArray();
             
             // Sempre usar valor do banco para advance deduction (não editável)
-            $this->edit_advance_deduction = $salaryAdvances->sum('installment_amount');
+            $this->edit_advance_deduction = (float) $salaryAdvances->sum('installment_amount');
             
             // Carregar salary discounts do período (similar a advances)
             $this->salaryDiscounts = \App\Models\HR\SalaryDiscount::where('employee_id', $employee->id)
@@ -732,47 +728,120 @@ class PayrollBatch extends Component
         }
         
         try {
+            Log::info('=== SALVANDO ITEM EDITADO ===', [
+                'batch_item_id' => $this->editingItem->id,
+                'employee_id' => $this->editingItem->employee_id,
+                'edit_additional_bonus' => $this->edit_additional_bonus,
+                'edit_christmas_subsidy' => $this->edit_christmas_subsidy,
+                'edit_vacation_subsidy' => $this->edit_vacation_subsidy,
+                'calculated_gross' => $this->calculatedData['gross_salary'] ?? null,
+                'calculated_net' => $this->calculatedData['net_salary'] ?? null,
+                'calculated_deductions' => $this->calculatedData['total_deductions'] ?? null,
+            ]);
+            
             // Atualizar item com valores calculados pelo helper
             $this->editingItem->update([
-                'additional_bonus' => $this->edit_additional_bonus,
-                'christmas_subsidy' => $this->edit_christmas_subsidy,
-                'vacation_subsidy' => $this->edit_vacation_subsidy,
-                'christmas_subsidy_amount' => $this->calculatedData['christmas_subsidy_amount'],
-                'vacation_subsidy_amount' => $this->calculatedData['vacation_subsidy_amount'],
-                'basic_salary' => $this->calculatedData['basic_salary'],
-                'transport_allowance' => $this->calculatedData['transport_allowance'],
-                'food_allowance' => $this->calculatedData['food_benefit'],
-                'overtime_amount' => $this->calculatedData['total_overtime_amount'],
-                'family_allowance' => $this->calculatedData['family_allowance'],
-                'gross_salary' => $this->calculatedData['gross_salary'],
-                'inss_deduction' => $this->calculatedData['inss_3_percent'],
-                'irt_deduction' => $this->calculatedData['irt'],
-                'advance_deduction' => $this->calculatedData['advance_deduction'],
-                'discount_deduction' => $this->calculatedData['total_salary_discounts'],
-                'late_deduction' => $this->calculatedData['late_deduction'],
-                'absence_deduction' => $this->calculatedData['absence_deduction'],
-                'total_deductions' => $this->calculatedData['total_deductions'],
-                'net_salary' => $this->calculatedData['net_salary'],
-                'present_days' => $this->calculatedData['present_days'],
-                'absent_days' => $this->calculatedData['absent_days'],
-                'late_days' => $this->calculatedData['late_arrivals'],
+                'additional_bonus' => (float) ($this->edit_additional_bonus ?? 0),
+                'christmas_subsidy' => (bool) ($this->edit_christmas_subsidy ?? false),
+                'vacation_subsidy' => (bool) ($this->edit_vacation_subsidy ?? false),
+                'christmas_subsidy_amount' => (float) ($this->calculatedData['christmas_subsidy_amount'] ?? 0),
+                'vacation_subsidy_amount' => (float) ($this->calculatedData['vacation_subsidy_amount'] ?? 0),
+                'basic_salary' => (float) ($this->calculatedData['basic_salary'] ?? 0),
+                'transport_allowance' => (float) ($this->calculatedData['transport_allowance'] ?? 0),
+                'food_allowance' => (float) ($this->calculatedData['food_benefit'] ?? 0),
+                'overtime_amount' => (float) ($this->calculatedData['total_overtime_amount'] ?? 0),
+                'family_allowance' => (float) ($this->calculatedData['family_allowance'] ?? 0),
+                'position_subsidy' => (float) ($this->calculatedData['position_subsidy'] ?? 0),
+                'performance_subsidy' => (float) ($this->calculatedData['performance_subsidy'] ?? 0),
+                'gross_salary' => (float) ($this->calculatedData['gross_salary'] ?? 0),
+                'inss_deduction' => (float) ($this->calculatedData['inss_3_percent'] ?? 0),
+                'irt_deduction' => (float) ($this->calculatedData['irt'] ?? 0),
+                'advance_deduction' => (float) ($this->calculatedData['advance_deduction'] ?? 0),
+                'discount_deduction' => (float) ($this->calculatedData['total_salary_discounts'] ?? 0),
+                'late_deduction' => (float) ($this->calculatedData['late_deduction'] ?? 0),
+                'absence_deduction' => (float) ($this->calculatedData['absence_deduction'] ?? 0),
+                'total_deductions' => (float) ($this->calculatedData['total_deductions'] ?? 0),
+                'net_salary' => (float) ($this->calculatedData['net_salary'] ?? 0),
+                'present_days' => (int) ($this->calculatedData['present_days'] ?? 0),
+                'absent_days' => (int) ($this->calculatedData['absent_days'] ?? 0),
+                'late_days' => (int) ($this->calculatedData['late_arrivals'] ?? 0),
                 'notes' => $this->edit_notes,
             ]);
             
-            // If payroll exists, update it too
+            // If payroll exists, update it with ALL detailed fields
             if ($this->editingItem->payroll_id) {
                 $payroll = Payroll::find($this->editingItem->payroll_id);
                 if ($payroll) {
                     $payroll->update([
-                        'gross_salary' => $this->calculatedData['gross_salary'],
-                        'net_salary' => $this->calculatedData['net_salary'],
-                        'total_deductions' => $this->calculatedData['total_deductions'],
+                        // Basic salary and main components
+                        'basic_salary' => $this->calculatedData['basic_salary'] ?? 0,
+                        'main_salary' => $this->calculatedData['main_salary'] ?? 0,
+                        'allowances' => $this->calculatedData['allowances'] ?? 0,
+                        'overtime' => $this->calculatedData['overtime'] ?? 0,
+                        'bonuses' => $this->calculatedData['bonuses'] ?? 0,
+                        'profile_bonus' => $this->calculatedData['profile_bonus'] ?? 0,
+                        
+                        // Totals
+                        'gross_salary' => $this->calculatedData['gross_salary'] ?? 0,
+                        'net_salary' => $this->calculatedData['net_salary'] ?? 0,
+                        'deductions' => $this->calculatedData['total_deductions'] ?? 0,
+                        'total_deductions_calculated' => $this->calculatedData['total_deductions'] ?? 0,
+                        
+                        // Detailed components for receipts
+                        'transport_allowance' => $this->calculatedData['transport_allowance'] ?? 0,
+                        'food_allowance' => $this->calculatedData['food_benefit'] ?? 0,
+                        'family_allowance' => $this->calculatedData['family_allowance'] ?? 0,
+                        'position_subsidy' => $this->calculatedData['position_subsidy'] ?? 0,
+                        'performance_subsidy' => $this->calculatedData['performance_subsidy'] ?? 0,
+                        'additional_bonus' => $this->edit_additional_bonus ?? 0,
+                        'christmas_subsidy_amount' => $this->calculatedData['christmas_subsidy_amount'] ?? 0,
+                        'vacation_subsidy_amount' => $this->calculatedData['vacation_subsidy_amount'] ?? 0,
+                        
+                        // Deductions
+                        'advance_deduction' => $this->calculatedData['advance_deduction'] ?? 0,
+                        'late_deduction' => $this->calculatedData['late_deduction'] ?? 0,
+                        'absence_deduction' => $this->calculatedData['absence_deduction'] ?? 0,
+                        'absence_deduction_amount' => $this->calculatedData['absence_deduction_amount'] ?? 0,
+                        'total_salary_discounts' => $this->calculatedData['total_salary_discounts'] ?? 0,
+                        
+                        // Attendance
+                        'present_days' => $this->calculatedData['present_days'] ?? 0,
+                        'absent_days' => $this->calculatedData['absent_days'] ?? 0,
+                        'late_arrivals' => $this->calculatedData['late_arrivals'] ?? 0,
+                        
+                        // Overtime
+                        'total_overtime_hours' => $this->calculatedData['total_overtime_hours'] ?? 0,
+                        'overtime_amount' => $this->calculatedData['total_overtime_amount'] ?? 0,
+                        
+                        // IRT calculation fields
+                        'food_exemption' => $this->calculatedData['exempt_food'] ?? min($this->calculatedData['food_benefit'] ?? 0, 30000),
+                        'transport_exemption' => $this->calculatedData['exempt_transport'] ?? min($this->calculatedData['transport_allowance'] ?? 0, 30000),
+                        'food_taxable' => $this->calculatedData['taxable_food'] ?? max(0, ($this->calculatedData['food_benefit'] ?? 0) - 30000),
+                        'transport_taxable' => $this->calculatedData['taxable_transport'] ?? max(0, ($this->calculatedData['transport_allowance'] ?? 0) - 30000),
+                        'irt_base_before_inss' => ($this->calculatedData['base_irt_taxable_amount'] ?? 0) + ($this->calculatedData['inss_3_percent'] ?? 0),
+                        
+                        // Tax and INSS
+                        'tax' => $this->calculatedData['irt'] ?? 0,
+                        'deductions_irt' => $this->calculatedData['deductions_irt'] ?? $this->calculatedData['irt'] ?? 0,
+                        'social_security' => $this->calculatedData['social_security'] ?? $this->calculatedData['inss_3_percent'] ?? 0,
+                        'inss_3_percent' => $this->calculatedData['inss_3_percent'] ?? 0,
+                        'inss_8_percent' => $this->calculatedData['inss_8_percent'] ?? 0,
+                        'base_irt_taxable_amount' => $this->calculatedData['base_irt_taxable_amount'] ?? 0,
                     ]);
                 }
             }
             
             // Atualizar totais do batch
             $this->updateBatchTotals((int) $this->editingItem->payroll_batch_id);
+            
+            Log::info('=== ITEM EDITADO SALVO COM SUCESSO ===', [
+                'batch_item_id' => $this->editingItem->id,
+                'saved_gross' => $this->editingItem->gross_salary,
+                'saved_net' => $this->editingItem->net_salary,
+                'saved_deductions' => $this->editingItem->total_deductions,
+                'saved_christmas_amount' => $this->editingItem->christmas_subsidy_amount,
+                'saved_vacation_amount' => $this->editingItem->vacation_subsidy_amount,
+            ]);
             
             $this->showEditItemModal = false;
             $this->editingItem = null;
@@ -840,6 +909,74 @@ class PayrollBatch extends Component
             'total_deductions' => $totals->total_deductions ?? 0,
         ]);
     }
+    
+    /**
+     * Recalculate all batch items to ensure values are up-to-date
+     */
+    private function recalculateAllBatchItems(int $batchId): void
+    {
+        $batch = PayrollBatchModel::with(['payrollPeriod', 'batchItems.employee'])->findOrFail($batchId);
+        
+        $startDate = Carbon::parse($batch->payrollPeriod->start_date);
+        $endDate = Carbon::parse($batch->payrollPeriod->end_date);
+        
+        foreach ($batch->batchItems as $item) {
+            try {
+                $employee = $item->employee;
+                if (!$employee) continue;
+                
+                // Recalculate using PayrollCalculatorHelper
+                $calculator = new PayrollCalculatorHelper($employee, $startDate, $endDate);
+                $calculator->loadAllEmployeeData();
+                
+                // Apply saved bonuses if any (usar campos booleanos, não amounts)
+                $calculator->setChristmasSubsidy((bool) ($item->christmas_subsidy ?? false));
+                $calculator->setVacationSubsidy((bool) ($item->vacation_subsidy ?? false));
+                $calculator->setAdditionalBonus((float) ($item->additional_bonus ?? 0));
+                
+                $results = $calculator->calculate();
+                
+                // Update item with recalculated values
+                $item->update([
+                    'gross_salary' => $results['gross_salary'],
+                    'net_salary' => $results['net_salary'],
+                    'total_deductions' => $results['total_deductions'],
+                    'inss_deduction' => $results['inss_3_percent'],
+                    'irt_deduction' => $results['irt'],
+                    'advance_deduction' => $results['advance_deduction'],
+                    'discount_deduction' => $results['total_salary_discounts'],
+                    'late_deduction' => $results['late_deduction'],
+                    'absence_deduction' => $results['absence_deduction'],
+                    'present_days' => $results['present_days'],
+                    'absent_days' => $results['absent_days'],
+                    'late_days' => $results['late_arrivals'],
+                    'overtime_amount' => $results['total_overtime_amount'],
+                ]);
+                
+                Log::info('Item recalculado', [
+                    'item_id' => $item->id,
+                    'employee' => $employee->full_name,
+                    'gross' => $results['gross_salary'],
+                    'net' => $results['net_salary'],
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error('Erro ao recalcular item', [
+                    'item_id' => $item->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        // Update batch totals after recalculating all items
+        $this->updateBatchTotals($batchId);
+        
+        // Refresh current batch to get updated values
+        if ($this->currentBatch) {
+            $this->currentBatch->refresh();
+            $this->currentBatch->load(['batchItems.employee']);
+        }
+    }
 
     /**
      * Debug method to test functionality
@@ -876,10 +1013,10 @@ class PayrollBatch extends Component
             // Carregar todos os dados
             $calculator->loadAllEmployeeData();
             
-            // Configurar subsídios do item
-            $calculator->setChristmasSubsidy($item->christmas_subsidy ?? false);
-            $calculator->setVacationSubsidy($item->vacation_subsidy ?? false);
-            $calculator->setAdditionalBonus($item->additional_bonus ?? 0);
+            // Configurar subsídios do item (com cast explícito)
+            $calculator->setChristmasSubsidy((bool) ($item->christmas_subsidy ?? false));
+            $calculator->setVacationSubsidy((bool) ($item->vacation_subsidy ?? false));
+            $calculator->setAdditionalBonus((float) ($item->additional_bonus ?? 0));
             
             // Calcular
             $results = $calculator->calculate();

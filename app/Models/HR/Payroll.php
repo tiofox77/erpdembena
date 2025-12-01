@@ -49,6 +49,28 @@ class Payroll extends Model
         'absence_deduction_amount',
         'main_salary',
         'total_deductions_calculated',
+        // Detailed components for receipts
+        'transport_allowance',
+        'food_allowance',
+        'family_allowance',
+        'position_subsidy',
+        'performance_subsidy',
+        'additional_bonus',
+        'christmas_subsidy_amount',
+        'vacation_subsidy_amount',
+        'advance_deduction',
+        'late_deduction',
+        'total_salary_discounts',
+        'present_days',
+        'absent_days',
+        'late_arrivals',
+        'total_overtime_hours',
+        // IRT calculation fields
+        'food_exemption',
+        'transport_exemption',
+        'food_taxable',
+        'transport_taxable',
+        'irt_base_before_inss',
     ];
 
     protected $casts = [
@@ -76,6 +98,28 @@ class Payroll extends Model
         'absence_deduction_amount' => 'decimal:2',
         'main_salary' => 'decimal:2',
         'total_deductions_calculated' => 'decimal:2',
+        // Detailed components casts
+        'transport_allowance' => 'decimal:2',
+        'food_allowance' => 'decimal:2',
+        'family_allowance' => 'decimal:2',
+        'position_subsidy' => 'decimal:2',
+        'performance_subsidy' => 'decimal:2',
+        'additional_bonus' => 'decimal:2',
+        'christmas_subsidy_amount' => 'decimal:2',
+        'vacation_subsidy_amount' => 'decimal:2',
+        'advance_deduction' => 'decimal:2',
+        'late_deduction' => 'decimal:2',
+        'total_salary_discounts' => 'decimal:2',
+        'total_overtime_hours' => 'decimal:2',
+        'present_days' => 'integer',
+        'absent_days' => 'integer',
+        'late_arrivals' => 'integer',
+        // IRT calculation casts
+        'food_exemption' => 'decimal:2',
+        'transport_exemption' => 'decimal:2',
+        'food_taxable' => 'decimal:2',
+        'transport_taxable' => 'decimal:2',
+        'irt_base_before_inss' => 'decimal:2',
     ];
 
     /**

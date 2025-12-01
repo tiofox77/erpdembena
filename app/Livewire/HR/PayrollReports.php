@@ -153,7 +153,7 @@ class PayrollReports extends Component
     }
     
     /**
-     * Obter períodos com totais consolidados (batch + individual)
+     * Obter períodos com totais consolidados SOMENTE da tabela payrolls
      */
     public function getPeriodsWithTotalsProperty()
     {
@@ -174,23 +174,7 @@ class PayrollReports extends Component
         
         $periodData = [];
         foreach ($periods as $period) {
-            // Calcular totais de batches (completed, approved ou paid)
-            $batchQuery = PayrollBatch::where('payroll_period_id', $period->id)
-                ->whereIn('status', ['completed', 'approved', 'paid']);
-            
-            if ($this->selectedDepartment) {
-                $batchQuery->where('department_id', $this->selectedDepartment);
-            }
-            
-            $batchTotals = $batchQuery->selectRaw('
-                SUM(COALESCE(total_gross_amount, 0)) as total_gross,
-                SUM(COALESCE(total_net_amount, 0)) as total_net,
-                SUM(COALESCE(total_deductions, 0)) as total_deductions,
-                COUNT(*) as batch_count,
-                SUM(COALESCE(total_employees, 0)) as employee_count
-            ')->first();
-            
-            // Calcular totais de payrolls individuais (paid ou approved)
+            // Calcular totais SOMENTE da tabela payrolls (approved ou paid)
             $payrollQuery = Payroll::where('payroll_period_id', $period->id)
                 ->whereIn('status', ['paid', 'approved']);
             
@@ -200,30 +184,25 @@ class PayrollReports extends Component
                 });
             }
             
-            $individualTotals = $payrollQuery->selectRaw('
+            $payrollTotals = $payrollQuery->selectRaw('
                 SUM(COALESCE(gross_salary, 0)) as total_gross,
                 SUM(COALESCE(net_salary, 0)) as total_net,
                 SUM(COALESCE(deductions, 0)) as total_deductions,
-                COUNT(*) as payroll_count
+                COUNT(DISTINCT employee_id) as employee_count
             ')->first();
             
-            $grossTotal = floatval($batchTotals->total_gross ?? 0) + floatval($individualTotals->total_gross ?? 0);
-            $netTotal = floatval($batchTotals->total_net ?? 0) + floatval($individualTotals->total_net ?? 0);
-            $deductionsTotal = floatval($batchTotals->total_deductions ?? 0) + floatval($individualTotals->total_deductions ?? 0);
-            $totalEmployees = intval($batchTotals->employee_count ?? 0) + intval($individualTotals->payroll_count ?? 0);
+            $grossTotal = floatval($payrollTotals->total_gross ?? 0);
+            $netTotal = floatval($payrollTotals->total_net ?? 0);
+            $deductionsTotal = floatval($payrollTotals->total_deductions ?? 0);
+            $totalEmployees = intval($payrollTotals->employee_count ?? 0);
             
             // Log para debug
-            \Log::info('Period Totals', [
+            \Log::info('Period Totals (SOMENTE Payrolls)', [
                 'period' => $period->name,
-                'batch_gross' => $batchTotals->total_gross ?? 0,
-                'batch_net' => $batchTotals->total_net ?? 0,
-                'batch_deductions' => $batchTotals->total_deductions ?? 0,
-                'individual_gross' => $individualTotals->total_gross ?? 0,
-                'individual_net' => $individualTotals->total_net ?? 0,
-                'individual_deductions' => $individualTotals->total_deductions ?? 0,
                 'gross_total' => $grossTotal,
                 'net_total' => $netTotal,
                 'deductions_total' => $deductionsTotal,
+                'employee_count' => $totalEmployees,
             ]);
             
             // Só incluir períodos com pagamentos
@@ -233,8 +212,6 @@ class PayrollReports extends Component
                     'gross_total' => $grossTotal,
                     'net_total' => $netTotal,
                     'deductions_total' => $deductionsTotal,
-                    'batch_count' => intval($batchTotals->batch_count ?? 0),
-                    'individual_count' => intval($individualTotals->payroll_count ?? 0),
                     'total_employees' => $totalEmployees,
                 ];
             }

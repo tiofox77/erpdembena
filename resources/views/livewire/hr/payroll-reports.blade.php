@@ -119,18 +119,8 @@
                                         <div class="mt-3 flex items-center space-x-2">
                                             <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
                                                 <i class="fas fa-users mr-1"></i>
-                                                {{ $periodData['total_employees'] }} func.
+                                                {{ $periodData['total_employees'] }} {{ __("messages.employees") }}
                                             </span>
-                                            @if($periodData['batch_count'] > 0)
-                                                <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                                                    <i class="fas fa-layer-group mr-1"></i>{{ $periodData['batch_count'] }} batch
-                                                </span>
-                                            @endif
-                                            @if($periodData['individual_count'] > 0)
-                                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                                                    <i class="fas fa-user mr-1"></i>{{ $periodData['individual_count'] }} ind.
-                                                </span>
-                                            @endif
                                         </div>
                                     </div>
                                     
@@ -159,25 +149,37 @@
                                     </div>
                                     
                                     <div class="flex flex-col items-center justify-center space-y-2">
-                                        <span class="px-4 py-2 {{ $periodData['period']->status === 'closed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }} rounded-lg text-sm font-semibold">
-                                            {{ $periodData['period']->status === 'closed' ? '✓ ' . __("messages.closed") : '○ ' . __("messages.open") }}
+                                        @php
+                                            $hasPayments = $periodData['total_employees'] > 0;
+                                            $isClosed = $periodData['period']->status === 'closed';
+                                        @endphp
+                                        <span class="px-4 py-2 {{ $hasPayments ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }} rounded-lg text-sm font-semibold">
+                                            @if($isClosed)
+                                                ✓ Fechado
+                                            @elseif($hasPayments)
+                                                ✓ Processado
+                                            @else
+                                                ○ Aberto
+                                            @endif
                                         </span>
+                                        
+                                        {{-- Relatório Consolidado do Período --}}
                                         <button 
                                             wire:click="generatePeriodReport({{ $periodData['period']->id }})"
                                             class="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md flex items-center justify-center"
                                         >
                                             <i class="fas fa-chart-bar mr-2"></i>
-                                            {{ __("messages.view_summary_report") }}
+                                            Relatório Consolidado
                                         </button>
-                                        @if($periodData['batch_count'] > 0)
+                                        
+                                        {{-- Relatório Detalhado do Batch --}}
                                         <button 
                                             wire:click="generateBatchReportForPeriod({{ $periodData['period']->id }})"
                                             class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md flex items-center justify-center"
                                         >
                                             <i class="fas fa-file-invoice-dollar mr-2"></i>
-                                            {{ __("messages.view_detailed_report") }}
+                                            Relatório Detalhado
                                         </button>
-                                        @endif
                                     </div>
                                 </div>
                             </div>

@@ -13,49 +13,52 @@ use Illuminate\Support\Facades\Log;
 class PayrollBatchReportController extends Controller
 {
     /**
-     * Gerar relatório HTML consolidado do período (a partir de um batch)
+     * Gerar relatório HTML de um batch específico USANDO SOMENTE TABELA PAYROLLS
      */
     public function show($batchId)
     {
         try {
-            Log::info('PayrollBatchReportController: Gerando relatório consolidado do período', ['batch_id' => $batchId]);
+            Log::info('PayrollBatchReportController: Gerando relatório do batch específico', ['batch_id' => $batchId]);
             
-            // Buscar batch para identificar o período
-            $batch = PayrollBatch::with('payrollPeriod')->findOrFail($batchId);
+            // Buscar apenas o batch específico solicitado
+            $batch = PayrollBatch::with(['payrollPeriod', 'department', 'creator'])->findOrFail($batchId);
             $period = $batch->payrollPeriod;
             
             if (!$period) {
                 return back()->with('error', 'Período não encontrado para este batch.');
             }
             
-            // Buscar TODOS os batches do período
-            $batches = PayrollBatch::where('payroll_period_id', $period->id)
-                ->whereIn('status', ['completed', 'approved', 'paid'])
-                ->with(['batchItems', 'department', 'creator'])
-                ->get();
-            
-            // Buscar TODOS os payrolls individuais do período
-            $individualPayrolls = Payroll::where('payroll_period_id', $period->id)
-                ->whereIn('status', ['paid', 'approved'])
+            // Buscar TODOS os payrolls da tabela payrolls que pertencem a este batch (sem filtro de status)
+            $payrolls = Payroll::where('payroll_batch_id', $batch->id)
                 ->with(['employee.department'])
                 ->get();
             
-            // Calcular totais consolidados do período
-            $totals = $this->calculatePeriodTotals($batches, $individualPayrolls);
+            // Calcular totais DIRETAMENTE dos campos da BD (não recalcular)
+            $totals = $this->calculateBatchTotalsFromDB($payrolls);
             
-            // Preparar dados para a view (formato antigo do batch)
+            // Preparar dados para a view
             $data = [
-                'batchName' => $period->name,
-                'batchDate' => $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y'),
+                'batchName' => $batch->name ?? $period->name,
+                'batchDate' => $batch->batch_date ? $batch->batch_date->format('d/m/Y') : ($period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y')),
                 'periodName' => $period->name,
-                'departmentName' => 'Consolidado - Todos os Departamentos',
+                'departmentName' => $batch->department->name ?? 'Todos os Departamentos',
                 'creatorName' => $batch->creator->name ?? auth()->user()->name ?? 'Sistema',
                 'totalEmployees' => $totals['total_employees'],
                 'generatedAt' => now()->format('d/m/Y H:i:s'),
                 'totals' => $totals,
+                'payrolls' => $payrolls, // Passar payrolls para a view
             ];
             
-            Log::info('PayrollBatchReportController: Totais calculados', $totals);
+            Log::info('PayrollBatchReportController: Totais calculados do batch (SOMENTE Payrolls)', [
+                'batch_id' => $batch->id,
+                'batch_name' => $batch->name,
+                'total_payrolls' => $payrolls->count(),
+                'grand_total' => $totals['grand_total'],
+                'total_deductions' => $totals['total_deductions'],
+                'net_total' => $totals['net_total'],
+                'earnings' => $totals['earnings'],
+                'deductions' => $totals['deductions'],
+            ]);
             
             // Retornar view HTML para impressão
             return view('reports.payroll-batch-html', $data);
@@ -72,7 +75,75 @@ class PayrollBatchReportController extends Controller
     }
     
     /**
-     * Calcular totais consolidados do período (batches + individuais)
+     * Calcular totais do batch DIRETAMENTE DA BD (sem recalcular)
+     * Usa gross_salary, net_salary e deductions já salvos na tabela payrolls
+     */
+    protected function calculateBatchTotalsFromDB($payrolls): array
+    {
+        // TOTAIS PRINCIPAIS - Diretamente da BD (já calculados e salvos)
+        $grandTotal = $payrolls->sum('gross_salary');
+        $netTotal = $payrolls->sum('net_salary');
+        $totalDeductions = $payrolls->sum('deductions');
+        $totalEmployees = $payrolls->unique('employee_id')->count();
+        
+        // EARNINGS - Somar campos individuais da BD
+        $earnings = [
+            'basic_salary' => $payrolls->sum('basic_salary'),
+            'transport' => $payrolls->sum('transport_allowance'),
+            'overtime' => $payrolls->sum('overtime_amount'),
+            'vacation_pay' => $payrolls->sum('vacation_subsidy_amount'),
+            'food_allow' => $payrolls->sum('food_allowance'),
+            'christmas_offer' => $payrolls->sum('christmas_subsidy_amount'),
+            'bonus' => $payrolls->sum('additional_bonus'),
+            'family_allowance' => $payrolls->sum('family_allowance'),
+            'position_subsidy' => $payrolls->sum('position_subsidy'),
+            'performance_subsidy' => $payrolls->sum('performance_subsidy'),
+        ];
+        
+        // DEDUCTIONS - Somar campos individuais da BD
+        $deductions = [
+            'inss_3_percent' => $payrolls->sum('inss_3_percent'),
+            'inss_8_percent' => $payrolls->sum('inss_8_percent'),
+            'irt' => $payrolls->sum('tax'),
+            'staff_advance' => $payrolls->sum('advance_deduction'),
+            'absent' => $payrolls->sum('absence_deduction'),
+            'other_deduction' => $payrolls->sum('total_salary_discounts') + $payrolls->sum('late_deduction'),
+            'food_allow_deduction' => 0,
+            'union_fund' => 0,
+            'union_deduction' => 0,
+        ];
+        
+        Log::info('calculateBatchTotalsFromDB - Valores da BD', [
+            'total_payrolls' => $payrolls->count(),
+            'grand_total_from_db' => $grandTotal,
+            'net_total_from_db' => $netTotal,
+            'deductions_from_db' => $totalDeductions,
+        ]);
+        
+        return [
+            'grand_total' => $grandTotal,
+            'net_before_deductions' => $grandTotal,
+            'net_total' => $netTotal,
+            'total_deductions' => $totalDeductions,
+            'total' => $netTotal,
+            'total_employees' => $totalEmployees,
+            'earnings' => $earnings,
+            'deductions' => $deductions,
+        ];
+    }
+    
+    /**
+     * MÉTODO ANTIGO - Calcular totais recalculando (mantido para compatibilidade)
+     */
+    protected function calculateBatchTotals($payrolls): array
+    {
+        // Usar o novo método que busca da BD
+        return $this->calculateBatchTotalsFromDB($payrolls);
+    }
+    
+    /**
+     * MÉTODO ANTIGO - Calcular totais do(s) batch(es) especificado(s)
+     * Mantido para compatibilidade se necessário
      */
     protected function calculatePeriodTotals($batches, $individualPayrolls): array
     {
@@ -85,6 +156,9 @@ class PayrollBatchReportController extends Controller
             'food_allow' => 0,
             'christmas_offer' => 0,
             'bonus' => 0,
+            'family_allowance' => 0,
+            'position_subsidy' => 0,
+            'performance_subsidy' => 0,
             'inss_3_percent' => 0,
             'irt' => 0,
             'staff_advance' => 0,
@@ -101,12 +175,15 @@ class PayrollBatchReportController extends Controller
             $batchTotals['overtime'] += $items->sum('overtime_amount');
             $batchTotals['vacation_pay'] += $items->sum('vacation_subsidy_amount');
             $batchTotals['food_allow'] += $items->sum('food_allowance');
-            $batchTotals['christmas_offer'] += $items->sum('christmas_bonus_amount');
-            $batchTotals['bonus'] += $items->sum('profile_bonus_amount') + $items->sum('production_bonus_amount');
-            $batchTotals['inss_3_percent'] += $items->sum('inss_3_percent');
-            $batchTotals['irt'] += $items->sum('deductions_irt');
+            $batchTotals['christmas_offer'] += $items->sum('christmas_subsidy_amount');
+            $batchTotals['bonus'] += $items->sum('additional_bonus');
+            $batchTotals['family_allowance'] += $items->sum('family_allowance');
+            $batchTotals['position_subsidy'] += $items->sum('position_subsidy');
+            $batchTotals['performance_subsidy'] += $items->sum('performance_subsidy');
+            $batchTotals['inss_3_percent'] += $items->sum('inss_deduction');
+            $batchTotals['irt'] += $items->sum('irt_deduction');
             $batchTotals['staff_advance'] += $items->sum('advance_deduction');
-            $batchTotals['absent_deduction'] += $items->sum('absence_deduction_amount');
+            $batchTotals['absent_deduction'] += $items->sum('absence_deduction');
             $batchTotals['other_deduction'] += $items->sum('discount_deduction') + $items->sum('late_deduction');
             $batchTotals['employees'] += $items->count();
         }
@@ -114,17 +191,20 @@ class PayrollBatchReportController extends Controller
         // Totais dos payrolls individuais
         $individualTotals = [
             'basic_salary' => $individualPayrolls->sum('basic_salary'),
-            'transport' => $individualPayrolls->sum('allowances'),
+            'transport' => $individualPayrolls->sum('transport_allowance'),
             'overtime' => $individualPayrolls->sum('overtime_amount'),
-            'vacation_pay' => 0, // não há campo específico
-            'food_allow' => 0, // não há campo específico
-            'christmas_offer' => 0, // não há campo específico
-            'bonus' => $individualPayrolls->sum('bonuses'),
+            'vacation_pay' => $individualPayrolls->sum('vacation_subsidy_amount'),
+            'food_allow' => $individualPayrolls->sum('food_allowance'),
+            'christmas_offer' => $individualPayrolls->sum('christmas_subsidy_amount'),
+            'bonus' => $individualPayrolls->sum('additional_bonus'),
+            'family_allowance' => $individualPayrolls->sum('family_allowance'),
+            'position_subsidy' => $individualPayrolls->sum('position_subsidy'),
+            'performance_subsidy' => $individualPayrolls->sum('performance_subsidy'),
             'inss_3_percent' => $individualPayrolls->sum('inss_3_percent'),
-            'irt' => $individualPayrolls->sum('deductions_irt'),
-            'staff_advance' => 0, // não há campo específico
-            'absent_deduction' => $individualPayrolls->sum('absence_deduction_amount'),
-            'other_deduction' => $individualPayrolls->sum('deductions'),
+            'irt' => $individualPayrolls->sum('tax'),
+            'staff_advance' => $individualPayrolls->sum('advance_deduction'),
+            'absent_deduction' => $individualPayrolls->sum('absence_deduction'),
+            'other_deduction' => $individualPayrolls->sum('total_salary_discounts') + $individualPayrolls->sum('late_deduction'),
             'employees' => $individualPayrolls->count(),
         ];
         
@@ -135,7 +215,10 @@ class PayrollBatchReportController extends Controller
                       $batchTotals['vacation_pay'] + $individualTotals['vacation_pay'] +
                       $batchTotals['food_allow'] + $individualTotals['food_allow'] +
                       $batchTotals['christmas_offer'] + $individualTotals['christmas_offer'] +
-                      $batchTotals['bonus'] + $individualTotals['bonus'];
+                      $batchTotals['bonus'] + $individualTotals['bonus'] +
+                      $batchTotals['family_allowance'] + $individualTotals['family_allowance'] +
+                      $batchTotals['position_subsidy'] + $individualTotals['position_subsidy'] +
+                      $batchTotals['performance_subsidy'] + $individualTotals['performance_subsidy'];
         
         $totalDeductions = $batchTotals['inss_3_percent'] + $individualTotals['inss_3_percent'] +
                           $batchTotals['irt'] + $individualTotals['irt'] +
@@ -162,6 +245,9 @@ class PayrollBatchReportController extends Controller
                 'food_allow' => $batchTotals['food_allow'] + $individualTotals['food_allow'],
                 'christmas_offer' => $batchTotals['christmas_offer'] + $individualTotals['christmas_offer'],
                 'bonus' => $batchTotals['bonus'] + $individualTotals['bonus'],
+                'family_allowance' => $batchTotals['family_allowance'] + $individualTotals['family_allowance'],
+                'position_subsidy' => $batchTotals['position_subsidy'] + $individualTotals['position_subsidy'],
+                'performance_subsidy' => $batchTotals['performance_subsidy'] + $individualTotals['performance_subsidy'],
             ],
             
             // Deductions (estrutura esperada pela view)

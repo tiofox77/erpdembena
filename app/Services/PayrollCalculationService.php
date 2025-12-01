@@ -448,14 +448,20 @@ class PayrollCalculationService
             
             // Earnings
             'christmas_subsidy' => $this->christmasSubsidy,
+            'christmas_subsidy_amount' => $this->christmasSubsidy, // Alias for receipts
             'vacation_subsidy' => $this->vacationSubsidy,
+            'vacation_subsidy_amount' => $this->vacationSubsidy, // Alias for receipts
             'transport_allowance' => $this->transportAllowance,
             'food_benefit' => $this->foodBenefit,
+            'food_allowance' => $this->foodBenefit, // Alias for receipts
+            'family_allowance' => (float) ($this->employee->family_allowance ?? 0.0),
             'profile_bonus' => $this->profileBonus,
             'position_subsidy' => (float) ($this->employee->position_subsidy ?? 0.0),
             'performance_subsidy' => (float) ($this->employee->performance_subsidy ?? 0.0),
             'additional_bonus' => $this->additionalBonus,
+            'additional_bonus_amount' => $this->additionalBonus, // Alias for receipts
             'overtime_amount' => $this->overtimeAmount,
+            'total_overtime_hours' => $this->overtimeRecords->sum('hours'),
             'allowances' => $this->transportAllowance + $this->foodBenefit,
             'bonuses' => $this->profileBonus + (float) ($this->employee->position_subsidy ?? 0.0) + (float) ($this->employee->performance_subsidy ?? 0.0) + $this->additionalBonus + $this->christmasSubsidy + $this->vacationSubsidy,
             'overtime' => $this->overtimeAmount,
@@ -469,12 +475,21 @@ class PayrollCalculationService
             'inss_3_percent' => $this->inss3Percent,
             'inss_8_percent' => $this->inss8Percent,
             'absence_deduction_amount' => $this->absenceDeduction,
+            'absence_deduction' => $this->absenceDeduction, // Alias for receipts
             'late_deduction' => $this->lateDeduction,
+            'late_arrivals' => $this->lateDays, // Alias for receipts
             'advance_deduction' => $this->advanceDeduction,
             'total_salary_discounts' => $this->discountDeduction,
             'deductions' => $this->totalDeductions,
             'total_deductions_calculated' => $this->totalDeductions,
             'base_irt_taxable_amount' => $this->baseIrtTaxableAmount,
+            
+            // IRT calculation details
+            'exempt_food' => min($this->foodBenefit, 30000),
+            'exempt_transport' => min($this->transportAllowance, 30000),
+            'taxable_food' => max(0, $this->foodBenefit - 30000),
+            'taxable_transport' => max(0, $this->transportAllowance - 30000),
+            'irt_base_before_inss' => $this->baseIrtTaxableAmount + $this->inss3Percent,
             
             // Totals
             'net_salary' => $this->netSalary,

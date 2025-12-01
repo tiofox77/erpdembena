@@ -37,11 +37,13 @@ class PayrollReceiptController extends Controller
     public function showReceiptByPayrollId(int $payrollId): View
     {
         try {
-            // Buscar payroll com relacionamentos
+            // Buscar payroll com relacionamentos e itens detalhados
             $payroll = \App\Models\HR\Payroll::with([
                 'employee.department',
                 'employee.position',
-                'payrollPeriod'
+                'employee.bank',
+                'payrollPeriod',
+                'payrollItems'
             ])->findOrFail($payrollId);
 
             // Gerar dados do recibo
@@ -201,7 +203,7 @@ class PayrollReceiptController extends Controller
         $finalMonth = !empty($filters['month']) ? (int)$filters['month'] : $month;
         $finalYear = !empty($filters['year']) ? (int)$filters['year'] : $year;
         
-        $query = \App\Models\HR\Payroll::with(['employee.department', 'employee.position', 'payrollPeriod'])
+        $query = \App\Models\HR\Payroll::with(['employee.department', 'employee.position', 'employee.bank', 'payrollPeriod', 'payrollItems'])
             ->when(!empty($filters['search'] ?? null), function ($q, $search) {
                 $q->whereHas('employee', function ($subQuery) use ($search) {
                     $subQuery->where('full_name', 'like', '%' . $search . '%')
@@ -248,7 +250,7 @@ class PayrollReceiptController extends Controller
         if ($results->count() === 0 && ($finalMonth > 0 || $finalYear > 0)) {
             \Log::info('Nenhum resultado com filtros de data, tentando sem filtros de data...');
             
-            $queryWithoutDate = \App\Models\HR\Payroll::with(['employee.department', 'employee.position', 'payrollPeriod'])
+            $queryWithoutDate = \App\Models\HR\Payroll::with(['employee.department', 'employee.position', 'employee.bank', 'payrollPeriod', 'payrollItems'])
                 ->when(!empty($filters['search'] ?? null), function ($q, $search) {
                     $q->whereHas('employee', function ($subQuery) use ($search) {
                         $subQuery->where('full_name', 'like', '%' . $search . '%')
@@ -371,92 +373,104 @@ class PayrollReceiptController extends Controller
                 'payroll_id' => $payroll->id,
                 'employee_id' => $payroll->employee_id,
                 'employee_name' => $payroll->employee->full_name ?? 'N/A',
-                'payroll_period' => $payroll->payrollPeriod ? [
-                    'start_date' => $payroll->payrollPeriod->start_date,
-                    'end_date' => $payroll->payrollPeriod->end_date,
-                    'name' => $payroll->payrollPeriod->name
-                ] : null
+                'payroll_data' => [
+                    'basic_salary' => $payroll->basic_salary,
+                    'christmas_subsidy_amount' => $payroll->christmas_subsidy_amount,
+                    'vacation_subsidy_amount' => $payroll->vacation_subsidy_amount,
+                    'additional_bonus' => $payroll->additional_bonus,
+                    'performance_subsidy' => $payroll->performance_subsidy,
+                    'gross_salary' => $payroll->gross_salary,
+                    'net_salary' => $payroll->net_salary,
+                ]
             ]);
 
             $employee = $payroll->employee;
             $period = $payroll->payrollPeriod;
             
-            // Calcular totais dinâmicos
-            $totalEarnings = ($payroll->basic_salary ?? 0) + 
-                           ($payroll->allowances ?? 0) + 
-                           ($payroll->overtime ?? 0) + 
-                           ($payroll->bonuses ?? 0);
-                           
-            $totalDeductions = ($payroll->tax ?? 0) + 
-                             ($payroll->social_security ?? 0) + 
-                             ($payroll->deductions ?? 0);
+            // Determinar o mês de pagamento
+            $paymentDate = $payroll->payment_date ?? now();
+            $paymentMonth = \Carbon\Carbon::parse($paymentDate);
+            $monthNames = [
+                1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+                5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+                9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+            ];
+            $monthName = $monthNames[$paymentMonth->month];
+            $monthDisplay = $monthName . ' ' . $paymentMonth->year . ' • Data de referência: ' . $paymentMonth->format('d/m/Y');
             
-            \Log::info("Cálculos dinâmicos", [
-                'basic_salary' => $payroll->basic_salary,
-                'allowances' => $payroll->allowances,
-                'overtime' => $payroll->overtime,
-                'bonuses' => $payroll->bonuses,
-                'total_earnings_calculated' => $totalEarnings,
-                'tax' => $payroll->tax,
-                'social_security' => $payroll->social_security,
-                'deductions' => $payroll->deductions,
-                'total_deductions_calculated' => $totalDeductions,
-                'net_salary_from_db' => $payroll->net_salary,
-                'net_salary_calculated' => $totalEarnings - $totalDeductions
-            ]);
-
-            // Distribuir allowances entre subsídios (baseado na estrutura comum)
-            $allowancesTotal = $payroll->allowances ?? 0;
-            $transportSubsidy = round($allowancesTotal * 0.46, 2); // ~30k de 65k
-            $foodSubsidy = round($allowancesTotal * 0.18, 2); // ~12k de 65k  
-            $christmasSubsidy = round($payroll->bonuses * 0.45, 2) ?? 0; // Parte dos bonuses
-            $holidaySubsidy = round($payroll->bonuses * 0.45, 2) ?? 0; // Parte dos bonuses
-            $profileBonus = round($payroll->bonuses * 0.05, 2) ?? 0; // Pequena parte
-            $payrollBonus = round($payroll->bonuses * 0.05, 2) ?? 0; // Pequena parte
-
-            // Distribuir deductions entre tipos específicos
-            $deductionsTotal = $payroll->deductions ?? 0;
-            $foodSubsidyDeduction = round($foodSubsidy * 0.10, 2); // 10% do subsídio alimentação
-            $salaryAdvances = round($deductionsTotal * 0.12, 2); // ~12% das deduções
-            $absenceDeduction = round($deductionsTotal * 0.88, 2); // Maior parte das deduções
-            $lateDeduction = round($deductionsTotal * 0.01, 2); // Pequena parte
-            $faultDeduction = round($deductionsTotal * 0.04, 2); // Pequena parte
+            // REMUNERAÇÕES - usar campos diretos do payroll (agora salvos)
+            $baseSalary = (float) ($payroll->basic_salary ?? 0);
+            $transportSubsidy = (float) ($payroll->transport_allowance ?? 0);
+            $foodSubsidy = (float) ($payroll->food_allowance ?? 0);
+            $christmasSubsidy = (float) ($payroll->christmas_subsidy_amount ?? 0);
+            $holidaySubsidy = (float) ($payroll->vacation_subsidy_amount ?? 0);
+            $profileBonus = (float) ($payroll->profile_bonus ?? 0);
+            $additionalBonus = (float) ($payroll->additional_bonus ?? 0);
+            $overtimeAmount = (float) ($payroll->overtime_amount ?? 0);
+            $familyAllowance = (float) ($payroll->family_allowance ?? 0);
+            $positionSubsidy = (float) ($payroll->position_subsidy ?? 0);
+            $performanceSubsidy = (float) ($payroll->performance_subsidy ?? 0);
+            
+            // Total de remunerações = gross_salary
+            $totalEarnings = $payroll->gross_salary ?? 0;
+            
+            // DEDUÇÕES - usar campos diretos do payroll (agora salvos)
+            $inssDeduction = (float) ($payroll->social_security ?? $payroll->inss_3_percent ?? 0);
+            $irtDeduction = (float) ($payroll->tax ?? 0);
+            $advanceDeduction = (float) ($payroll->advance_deduction ?? 0);
+            $discountDeduction = (float) ($payroll->total_salary_discounts ?? 0);
+            $lateDeduction = (float) ($payroll->late_deduction ?? 0);
+            $absenceDeduction = (float) ($payroll->absence_deduction ?? 0);
+            
+            // Total de deduções
+            $totalDeductions = $payroll->deductions ?? 0;
+            
+            // NET SALARY
+            $netSalary = $payroll->net_salary ?? 0;
+            
+            // Dados de presença - agora salvos no payroll
+            $workedDays = $payroll->present_days ?? 22;
+            $absences = $payroll->absent_days ?? 0;
+            $extraHours = $payroll->total_overtime_hours ?? 0;
 
             $receiptData = [
                 'companyName' => 'Dembena Indústria e Comércio Lda',
                 'employeeName' => $employee->full_name . " (Id: {$employee->employee_id})",
                 'employeeId' => $employee->employee_id ?? $employee->id,
-                'month' => $period ? $period->name . ' • Data de referência: ' . $period->end_date->format('d/m/Y') : 'N/A',
+                'month' => $monthDisplay,
                 'category' => $employee->position->title ?? 'N/A',
                 'referencePeriod' => $period ? $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y') : 'N/A',
-                'workedDays' => $payroll->days_worked ?? 22,
-                'absences' => $payroll->absence_days ?? 0,
-                'extraHours' => $payroll->extra_hours_quantity ?? round($payroll->overtime / 150, 2),
+                'workedDays' => $workedDays,
+                'absences' => $absences,
+                'extraHours' => $extraHours,
                 
-                // Remunerações dinâmicas distribuídas
-                'baseSalary' => $payroll->basic_salary ?? 0,
+                // Remunerações - valores corretos da BD
+                'baseSalary' => $baseSalary,
                 'transportSubsidy' => $transportSubsidy,
                 'foodSubsidy' => $foodSubsidy,
-                'overtimeHours' => $payroll->overtime ?? 0,
+                'overtimeHours' => $overtimeAmount,
                 'profileBonus' => $profileBonus,
-                'payrollBonus' => $payrollBonus, 
+                'payrollBonus' => $additionalBonus, 
                 'christmasSubsidy' => $christmasSubsidy,
                 'holidaySubsidy' => $holidaySubsidy,
+                'familyAllowance' => $familyAllowance,
+                'positionSubsidy' => $positionSubsidy,
+                'performanceSubsidy' => $performanceSubsidy,
                 'totalEarnings' => $totalEarnings,
                 
-                // Descontos dinâmicos distribuídos
-                'incomeTax' => $payroll->tax ?? 0,
-                'socialSecurity' => $payroll->social_security ?? 0,
-                'foodSubsidyDeduction' => $foodSubsidyDeduction,
-                'salaryAdvances' => $salaryAdvances,
+                // Descontos - valores corretos da BD
+                'incomeTax' => $irtDeduction,
+                'socialSecurity' => $inssDeduction,
+                'foodSubsidyDeduction' => round($foodSubsidy * 0.10, 2), // 10% do subsídio alimentação (regra de negócio)
+                'salaryAdvances' => $advanceDeduction,
                 'absenceDeduction' => $absenceDeduction,
                 'lateDeduction' => $lateDeduction,
-                'faultDeduction' => $faultDeduction,
-                'salaryDiscounts' => round($deductionsTotal - $salaryAdvances - $absenceDeduction - $lateDeduction - $faultDeduction, 2),
+                'faultDeduction' => 0, // Não tem item separado, está em absence
+                'salaryDiscounts' => $discountDeduction,
                 'totalDeductions' => $totalDeductions,
                 
-                'netSalary' => $payroll->net_salary ?? ($totalEarnings - $totalDeductions),
-                'bankName' => $employee->bank_name ?? 'N/A',
+                'netSalary' => $netSalary,
+                'bankName' => $employee->bank->name ?? $employee->bank_name ?? 'N/A',
                 'accountNumber' => $employee->bank_account ?? 'N/A', 
                 'paymentMethod' => $payroll->payment_method === 'bank_transfer' ? 'TRANSFERÊNCIA' : strtoupper($payroll->payment_method ?? 'CASH'),
                 'receiptNumber' => $period ? $period->name : 'N/A'
@@ -480,8 +494,8 @@ class PayrollReceiptController extends Controller
                 'employeeId' => $payroll->employee_id ?? 'N/A',
                 'netSalary' => $payroll->net_salary ?? 0,
                 'baseSalary' => $payroll->basic_salary ?? 0,
-                'totalEarnings' => ($payroll->basic_salary ?? 0) + ($payroll->allowances ?? 0),
-                'totalDeductions' => ($payroll->tax ?? 0) + ($payroll->social_security ?? 0)
+                'totalEarnings' => $payroll->gross_salary ?? 0,
+                'totalDeductions' => $payroll->total_deductions_calculated ?? 0
             ];
         }
     }
@@ -638,7 +652,9 @@ class PayrollReceiptController extends Controller
             $payroll = \App\Models\HR\Payroll::with([
                 'employee.department',
                 'employee.position',
-                'payrollPeriod'
+                'employee.bank',
+                'payrollPeriod',
+                'payrollItems'
             ])
             ->where('employee_id', $employeeId)
             ->latest('created_at')

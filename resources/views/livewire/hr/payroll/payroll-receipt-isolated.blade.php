@@ -119,7 +119,6 @@
             <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($foodSubsidy ?? 12000, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($profileBonus ?? 10000, 3, '.', ' ') }}</td></tr>
             @if(isset($positionSubsidy) && $positionSubsidy > 0)
             <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($positionSubsidy, 3, '.', ' ') }}</td></tr>
             @endif
@@ -242,7 +241,6 @@
             <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($foodSubsidy ?? 12000, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
             <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($profileBonus ?? 10000, 3, '.', ' ') }}</td></tr>
             @if(isset($positionSubsidy) && $positionSubsidy > 0)
             <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($positionSubsidy, 3, '.', ' ') }}</td></tr>
             @endif

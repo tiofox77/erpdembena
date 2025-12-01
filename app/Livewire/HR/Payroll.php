@@ -2969,6 +2969,29 @@ class Payroll extends Component
                 'status' => PayrollModel::STATUS_DRAFT,
                 'remarks' => $this->generatePayrollRemarks(),
                 'generated_by' => null, // Campo aponta para employees, não users
+                
+                // Detailed components for receipts
+                'transport_allowance' => $this->transport_allowance,
+                'food_allowance' => $this->meal_allowance,
+                'family_allowance' => $this->family_allowance,
+                'position_subsidy' => (float) ($this->selectedEmployee->position_subsidy ?? 0),
+                'performance_subsidy' => (float) ($this->selectedEmployee->performance_subsidy ?? 0),
+                'additional_bonus' => $this->additional_bonus_amount,
+                'christmas_subsidy_amount' => $this->christmas_subsidy ? ($this->basic_salary * 0.5) : 0,
+                'vacation_subsidy_amount' => $this->vacation_subsidy ? ($this->basic_salary * 0.5) : 0,
+                'advance_deduction' => $this->advance_deduction ?? 0,
+                'late_deduction' => $this->late_deduction,
+                'total_salary_discounts' => $this->total_salary_discounts,
+                'present_days' => $this->present_days,
+                'absent_days' => $this->absent_days,
+                'late_arrivals' => $this->late_arrivals,
+                'total_overtime_hours' => $this->total_overtime_hours,
+                // IRT calculation fields
+                'food_exemption' => min($this->meal_allowance, 30000),
+                'transport_exemption' => min($this->transport_allowance, 30000),
+                'food_taxable' => max(0, $this->meal_allowance - 30000),
+                'transport_taxable' => max(0, $this->transport_allowance - 30000),
+                'irt_base_before_inss' => $this->base_irt_taxable_amount + $this->inss_3_percent,
             ];
 
             \Log::info('PAYROLL SAVE: Dados preparados', [

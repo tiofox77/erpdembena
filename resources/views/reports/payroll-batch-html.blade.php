@@ -547,6 +547,12 @@
                 </tr>
                 
                 <tr>
+                    <td colspan="2" class="section-header" data-i18n="social_security_8">SEGURANÇA SOCIAL 8%</td>
+                    <td class="code">INSS 8%</td>
+                    <td class="amount">{{ number_format($totals['deductions']['inss_8_percent'] ?? 0, 2, ',', '.') }}</td>
+                </tr>
+                
+                <tr>
                     <td colspan="2" class="section-header" data-i18n="irt">IRT</td>
                     <td class="code" data-i18n="irt">IRT</td>
                     <td class="amount">{{ number_format($totals['deductions']['irt'], 2, ',', '.') }}</td>

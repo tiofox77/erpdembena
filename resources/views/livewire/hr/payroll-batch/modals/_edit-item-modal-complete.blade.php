@@ -274,17 +274,25 @@
                 <div class="flex space-x-3">
                     <button
                         wire:click="closeEditItemModal"
-                        class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors"
+                        wire:loading.attr="disabled"
+                        wire:target="saveEditedItem"
+                        class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <i class="fas fa-times mr-2"></i>
-                        Cancelar
+                        <i class="fas fa-times mr-2" wire:loading.remove wire:target="saveEditedItem"></i>
+                        <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="saveEditedItem"></i>
+                        <span wire:loading.remove wire:target="saveEditedItem">Cancelar</span>
+                        <span wire:loading wire:target="saveEditedItem">Aguarde...</span>
                     </button>
                     <button
                         wire:click="saveEditedItem"
-                        class="px-8 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                        wire:loading.attr="disabled"
+                        wire:target="saveEditedItem"
+                        class="px-8 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        <i class="fas fa-save mr-2"></i>
-                        Salvar Alterações
+                        <i class="fas fa-save mr-2" wire:loading.remove wire:target="saveEditedItem"></i>
+                        <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="saveEditedItem"></i>
+                        <span wire:loading.remove wire:target="saveEditedItem">Salvar Alterações</span>
+                        <span wire:loading wire:target="saveEditedItem">Salvando...</span>
                     </button>
                 </div>
             </div>
