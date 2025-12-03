@@ -86,6 +86,12 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(['auth', 'verified'])
         ->name('hr.performance-evaluations');
     
+    // Performance Evaluation Print
+    Route::get('/hr/performance-evaluations/{id}/print', function($id) {
+        $evaluation = \App\Models\HR\PerformanceEvaluation::with(['employee.department', 'employee.position', 'supervisor', 'department', 'createdByUser'])->findOrFail($id);
+        return view('livewire.hr.performance-evaluations.print-evaluation', compact('evaluation'));
+    })->middleware(['auth', 'verified'])->name('hr.performance-evaluations.print');
+    
     // Trainings
     Route::get('/hr/trainings', \App\Livewire\HR\Trainings\Trainings::class)
         ->middleware(['auth', 'verified'])

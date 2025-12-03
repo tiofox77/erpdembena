@@ -6,7 +6,7 @@
   <title>Recibo de Salário</title>
   <style>
     :root {
-      --gap: 6px;
+      --gap: 3px;
       --border: 1px solid #222;
       --muted: #555;
       --heading: #000;
@@ -15,55 +15,61 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body { margin: 0; padding: 0; background: #f5f5f5; color: #111; font-family: var(--font); }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body { background: #f5f5f5; color: #111; font-family: var(--font); font-size: 8px; }
 
-    @page { size: A4; margin: 10mm 8mm 12mm 8mm; }
+    @page { size: A4; margin: 5mm 5mm 5mm 5mm; }
 
     .page {
-      width: 210mm; min-height: 297mm; margin: auto; background: #fff; padding: 4mm; box-shadow: 0 2px 12px rgba(0,0,0,.08);
-      display: flex; flex-direction: column; justify-content: flex-start;
+      width: 210mm; height: 297mm; margin: auto; background: #fff; padding: 3mm;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      display: flex; flex-direction: column; justify-content: space-between;
     }
 
     .receipt {
-      border: var(--border); border-radius: 4px; padding: 4px; page-break-inside: avoid; font-size: 10px; margin-bottom: 3mm;
+      border: var(--border); border-radius: 3px; padding: 3px; 
+      page-break-inside: avoid; font-size: 8px; flex: 1;
+      display: flex; flex-direction: column;
     }
 
-    .title { text-align: center; font-weight: 800; letter-spacing: .04em; color: var(--heading); font-size: 13px; }
-    .company { text-align: center; margin-top: 2px; font-weight: 600; font-size: 11px; }
+    .title { text-align: center; font-weight: 800; letter-spacing: .04em; color: var(--heading); font-size: 11px; margin: 0; }
+    .company { text-align: center; margin-top: 1px; font-weight: 600; font-size: 9px; }
 
-    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 6px; font-size: 10px; }
-    .meta .cell { border: 1px dashed #bbb; padding: 4px; border-radius: 4px; }
-    .label { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
-    .value { margin-top: 2px; font-weight: 600; font-size: 10px; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 8px; }
+    .meta .cell { border: 1px dashed #bbb; padding: 2px 3px; border-radius: 3px; }
+    .label { color: var(--muted); font-size: 7px; text-transform: uppercase; letter-spacing: .03em; }
+    .value { margin-top: 1px; font-weight: 600; font-size: 8px; }
 
-    .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 6px; font-size: 10px; }
-    .row .block { border: 1px dashed #bbb; padding: 5px; border-radius: 4px; }
-    .row .block .kv { display: flex; justify-content: space-between; gap: 6px; padding: 1px 0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 8px; }
+    .row .block { border: 1px dashed #bbb; padding: 2px 3px; border-radius: 3px; }
+    .row .block .kv { display: flex; justify-content: space-between; gap: 4px; padding: 0; line-height: 1.3; }
 
-    .tables { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 6px; }
-    table { width: 100%; border-collapse: collapse; font-size: 10px; }
-    th, td { padding: 3px; border-bottom: 1px solid #e5e5e5; }
-    th { text-align: left; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-    tfoot td { font-weight: 700; }
+    .tables { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 3px; flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 8px; }
+    th, td { padding: 1px 2px; border-bottom: 1px solid #e5e5e5; line-height: 1.2; }
+    th { text-align: left; font-size: 7px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    tfoot td { font-weight: 700; border-top: 1px solid #333; }
     .amount { text-align: right; white-space: nowrap; }
 
-    .signature { height: 36px; display: flex; flex-direction: column; justify-content: flex-end; }
+    .signature { height: 28px; display: flex; flex-direction: column; justify-content: flex-end; }
     .signature .line { height: 1px; background: #333; margin-top: auto; }
-    .signature .who { text-align: center; font-size: 9px; color: var(--muted); margin-top: 3px; }
+    .signature .who { text-align: center; font-size: 7px; color: var(--muted); margin-top: 2px; }
 
-    .srno { margin-top: 5px; font-size: 9px; color: var(--muted); display: flex; justify-content: space-between; }
+    .srno { font-size: 7px; color: var(--muted); display: flex; justify-content: space-between; }
 
-    .cut { position: relative; text-align: center; color: var(--cutline); margin: 2mm 0; font-size: 8px; user-select: none; }
+    .cut { position: relative; text-align: center; color: var(--cutline); margin: 2mm 0; font-size: 7px; user-select: none; }
     .cut:before, .cut:after { content: ""; position: absolute; top: 50%; width: 40%; border-top: 1px dashed var(--cutline); }
     .cut:before { left: 0; }
     .cut:after { right: 0; }
 
+    .footer-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 8px; }
+    .footer-row .block { border: 1px dashed #bbb; padding: 2px 3px; border-radius: 3px; }
+
     @media print {
       body { background: #fff; }
-      .page { box-shadow: none; padding: 4mm; }
-      .receipt { break-inside: avoid; margin-bottom: 3mm; }
-      .cut { margin: 2mm 0; }
+      .page { box-shadow: none; padding: 3mm; height: 297mm; }
+      .receipt { break-inside: avoid; }
+      .cut { margin: 1mm 0; }
     }
   </style>
 </head>
@@ -100,11 +106,12 @@
           <div class="value">{{ $employeeId ?? '—' }}</div>
         </div>
         <div class="block">
-          <div class="kv"><span>Dias trabalhados</span><span>{{ $workedDays ?? '31' }}</span></div>
-          <div class="kv"><span>Total de ausências</span><span>{{ $absences ?? '0' }}</span></div>
+          <div class="kv"><span>Dias úteis do mês</span><span>{{ $monthlyWorkingDays ?? 26 }}</span></div>
+          <div class="kv"><span>Dias trabalhados</span><span>{{ $workedDays ?? '0' }}</span></div>
         </div>
         <div class="block">
-          <div class="kv"><span>Horas extras</span><span>{{ $extraHours ?? '0' }}</span></div>
+          <div class="kv"><span>Total de ausências</span><span>{{ $absences ?? '0' }}</span></div>
+          <div class="kv"><span>Horas extras</span><span>{{ number_format($extraHours ?? 0, 2) }}</span></div>
         </div>
       </div>
 
@@ -114,22 +121,20 @@
             <tr><th>REMUNERAÇÃO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>Salário Base</td><td class="amount">{{ number_format($baseSalary ?? 175000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($transportSubsidy ?? 30000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($foodSubsidy ?? 12000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
-            @if(isset($positionSubsidy) && $positionSubsidy > 0)
-            <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($positionSubsidy, 3, '.', ' ') }}</td></tr>
-            @endif
-            @if(isset($performanceSubsidy) && $performanceSubsidy > 0)
-            <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($performanceSubsidy, 3, '.', ' ') }}</td></tr>
-            @endif
-            <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($payrollBonus ?? 6000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Horas Extras</td><td class="amount">{{ number_format($overtimeHours ?? 2734.38, 3, '.', ' ') }}</td></tr>
+            <tr><td>Salário Base</td><td class="amount">{{ number_format($baseSalary ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($transportSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($foodSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio Noturno ({{ $nightShiftDays ?? 0 }} dias)</td><td class="amount">{{ number_format($nightShiftAllowance ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Abono de Família</td><td class="amount">{{ number_format($familyAllowance ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Cargo</td><td class="amount">{{ number_format($positionSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Desempenho</td><td class="amount">{{ number_format($performanceSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Bónus Adicional</td><td class="amount">{{ number_format($payrollBonus ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Horas Extras</td><td class="amount">{{ number_format($overtimeAmount ?? 0, 2, ',', ' ') }}</td></tr>
           </tbody>
           <tfoot>
-            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($totalEarnings ?? 362734.38, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($totalEarnings ?? 0, 2, ',', ' ') }}</td></tr>
           </tfoot>
         </table>
 
@@ -138,23 +143,22 @@
             <tr><th>DESCONTO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>IRT</td><td class="amount">{{ number_format($incomeTax ?? 42351.94, 3, '.', ' ') }}</td></tr>
-            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($socialSecurity ?? 5250, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($foodSubsidyDeduction ?? 1200, 3, '.', ' ') }}</td></tr>
-            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($salaryAdvances ?? 12857.14, 3, '.', ' ') }}</td></tr>
-            @if(isset($salaryDiscountsDetailed) && $salaryDiscountsDetailed->count() > 1)
+            <tr><td>IRT</td><td class="amount">{{ number_format($incomeTax ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($socialSecurity ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($foodSubsidyDeduction ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($salaryAdvances ?? 0, 2, ',', ' ') }}</td></tr>
+            @if(isset($salaryDiscountsDetailed) && (is_array($salaryDiscountsDetailed) ? count($salaryDiscountsDetailed) > 0 : $salaryDiscountsDetailed->count() > 0))
               @foreach($salaryDiscountsDetailed as $discount)
-                <tr><td>{{ $discount['type_name'] }} ({{ $discount['count'] }})</td><td class="amount">{{ number_format($discount['total_amount'], 3, '.', ' ') }}</td></tr>
+                <tr><td>{{ $discount['type_name'] }}</td><td class="amount">{{ number_format($discount['total_amount'], 2, ',', ' ') }}</td></tr>
               @endforeach
             @else
-              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($salaryDiscounts ?? 18000, 3, '.', ' ') }}</td></tr>
+              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($salaryDiscounts ?? 0, 2, ',', ' ') }}</td></tr>
             @endif
-            <tr><td>Deduções por Faltas (12 dias)</td><td class="amount">{{ number_format($absenceDeduction ?? 91304.35, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Atrasos (1 dia)</td><td class="amount">{{ number_format($lateDeduction ?? 994.32, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Faltas (12 dias)</td><td class="amount">{{ number_format($faultDeduction ?? 3804.35, 3, '.', ' ') }}</td></tr>
+            <tr><td>Faltas ({{ $absenceDays ?? 0 }} dias)</td><td class="amount">{{ number_format($absenceDeduction ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Atrasos ({{ $lateDays ?? 0 }} dias)</td><td class="amount">{{ number_format($lateDeduction ?? 0, 2, ',', ' ') }}</td></tr>
           </tbody>
           <tfoot>
-            <tr><td>Total Descontos</td><td class="amount">{{ number_format($totalDeductions ?? 180194.13, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Descontos</td><td class="amount">{{ number_format($totalDeductions ?? 0, 2, ',', ' ') }}</td></tr>
           </tfoot>
         </table>
       </div>
@@ -162,12 +166,12 @@
       <div class="row">
         <div class="block">
           <div class="label">VENCIMENTO LÍQUIDO</div>
-          <div class="value">{{ number_format($netSalary ?? 182540.25, 3, '.', ' ') }}</div>
+          <div class="value">{{ number_format($netSalary ?? 0, 2, ',', ' ') }}</div>
         </div>
         <div class="block">
           <div class="label">DADOS BANCÁRIOS</div>
-          <div class="kv"><span>Nome do banco</span><span>{{ $bankName ?? 'ACCESS BANK' }}</span></div>
-          <div class="kv"><span>Número de conta</span><span>{{ $accountNumber ?? '123456' }}</span></div>
+          <div class="kv"><span>Nome do banco</span><span>{{ $bankName ?? 'N/A' }}</span></div>
+          <div class="kv"><span>Número de conta</span><span>{{ $accountNumber ?? 'N/A' }}</span></div>
         </div>
         <div class="block">
           <div class="signature">
@@ -184,7 +188,7 @@
         </div>
         <div class="block" style="grid-column: span 2;">
           <div class="srno">
-            <span>Sr. No. {{ $receiptNumber ?? 'July 2025' }}</span>
+            <span>Sr. No. {{ $receiptNumber ?? 'N/A' }}</span>
           </div>
         </div>
       </div>
@@ -200,11 +204,11 @@
       <div class="meta">
         <div class="cell">
           <div class="label">NOME</div>
-          <div class="value">{{ $employeeName ?? 'Ana Beatriz Lopes (Id: 14)' }}</div>
+          <div class="value">{{ $employeeName ?? 'N/A' }}</div>
         </div>
         <div class="cell">
           <div class="label">MÊS</div>
-          <div class="value">{{ $month ?? 'July 2025 • Data de referência: 31/07/2025' }}</div>
+          <div class="value">{{ $month ?? 'N/A' }}</div>
         </div>
         <div class="cell">
           <div class="label">CATEGORIA</div>
@@ -212,7 +216,7 @@
         </div>
         <div class="cell">
           <div class="label">PERÍODO DE REFERÊNCIA</div>
-          <div class="value">{{ $referencePeriod ?? '01/07/2025 - 31/07/2025' }}</div>
+          <div class="value">{{ $referencePeriod ?? 'N/A' }}</div>
         </div>
       </div>
 
@@ -222,11 +226,12 @@
           <div class="value">{{ $employeeId ?? '—' }}</div>
         </div>
         <div class="block">
-          <div class="kv"><span>Dias trabalhados</span><span>{{ $workedDays ?? '31' }}</span></div>
-          <div class="kv"><span>Total de ausências</span><span>{{ $absences ?? '0' }}</span></div>
+          <div class="kv"><span>Dias úteis do mês</span><span>{{ $monthlyWorkingDays ?? 26 }}</span></div>
+          <div class="kv"><span>Dias trabalhados</span><span>{{ $workedDays ?? '0' }}</span></div>
         </div>
         <div class="block">
-          <div class="kv"><span>Horas extras</span><span>{{ $extraHours ?? '0' }}</span></div>
+          <div class="kv"><span>Total de ausências</span><span>{{ $absences ?? '0' }}</span></div>
+          <div class="kv"><span>Horas extras</span><span>{{ number_format($extraHours ?? 0, 2) }}</span></div>
         </div>
       </div>
 
@@ -236,22 +241,20 @@
             <tr><th>REMUNERAÇÃO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>Salário Base</td><td class="amount">{{ number_format($baseSalary ?? 175000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($transportSubsidy ?? 30000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($foodSubsidy ?? 12000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 87500, 3, '.', ' ') }}</td></tr>
-            @if(isset($positionSubsidy) && $positionSubsidy > 0)
-            <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($positionSubsidy, 3, '.', ' ') }}</td></tr>
-            @endif
-            @if(isset($performanceSubsidy) && $performanceSubsidy > 0)
-            <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($performanceSubsidy, 3, '.', ' ') }}</td></tr>
-            @endif
-            <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($payrollBonus ?? 6000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Horas Extras</td><td class="amount">{{ number_format($overtimeHours ?? 2734.38, 3, '.', ' ') }}</td></tr>
+            <tr><td>Salário Base</td><td class="amount">{{ number_format($baseSalary ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($transportSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($foodSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio Noturno ({{ $nightShiftDays ?? 0 }} dias)</td><td class="amount">{{ number_format($nightShiftAllowance ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($christmasSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($holidaySubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Abono de Família</td><td class="amount">{{ number_format($familyAllowance ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Cargo</td><td class="amount">{{ number_format($positionSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Subsídio de Desempenho</td><td class="amount">{{ number_format($performanceSubsidy ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Bónus Adicional</td><td class="amount">{{ number_format($payrollBonus ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Horas Extras</td><td class="amount">{{ number_format($overtimeAmount ?? 0, 2, ',', ' ') }}</td></tr>
           </tbody>
           <tfoot>
-            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($totalEarnings ?? 362734.38, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($totalEarnings ?? 0, 2, ',', ' ') }}</td></tr>
           </tfoot>
         </table>
 
@@ -260,23 +263,22 @@
             <tr><th>DESCONTO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>IRT</td><td class="amount">{{ number_format($incomeTax ?? 42351.94, 3, '.', ' ') }}</td></tr>
-            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($socialSecurity ?? 5250, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($foodSubsidyDeduction ?? 1200, 3, '.', ' ') }}</td></tr>
-            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($salaryAdvances ?? 12857.14, 3, '.', ' ') }}</td></tr>
-            @if(isset($salaryDiscountsDetailed) && $salaryDiscountsDetailed->count() > 1)
+            <tr><td>IRT</td><td class="amount">{{ number_format($incomeTax ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($socialSecurity ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($foodSubsidyDeduction ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($salaryAdvances ?? 0, 2, ',', ' ') }}</td></tr>
+            @if(isset($salaryDiscountsDetailed) && (is_array($salaryDiscountsDetailed) ? count($salaryDiscountsDetailed) > 0 : $salaryDiscountsDetailed->count() > 0))
               @foreach($salaryDiscountsDetailed as $discount)
-                <tr><td>{{ $discount['type_name'] }} ({{ $discount['count'] }})</td><td class="amount">{{ number_format($discount['total_amount'], 3, '.', ' ') }}</td></tr>
+                <tr><td>{{ $discount['type_name'] }}</td><td class="amount">{{ number_format($discount['total_amount'], 2, ',', ' ') }}</td></tr>
               @endforeach
             @else
-              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($salaryDiscounts ?? 18000, 3, '.', ' ') }}</td></tr>
+              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($salaryDiscounts ?? 0, 2, ',', ' ') }}</td></tr>
             @endif
-            <tr><td>Deduções por Faltas (12 dias)</td><td class="amount">{{ number_format($absenceDeduction ?? 91304.35, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Atrasos (1 dia)</td><td class="amount">{{ number_format($lateDeduction ?? 994.32, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Faltas (12 dias)</td><td class="amount">{{ number_format($faultDeduction ?? 3804.35, 3, '.', ' ') }}</td></tr>
+            <tr><td>Faltas ({{ $absenceDays ?? 0 }} dias)</td><td class="amount">{{ number_format($absenceDeduction ?? 0, 2, ',', ' ') }}</td></tr>
+            <tr><td>Atrasos ({{ $lateDays ?? 0 }} dias)</td><td class="amount">{{ number_format($lateDeduction ?? 0, 2, ',', ' ') }}</td></tr>
           </tbody>
           <tfoot>
-            <tr><td>Total Descontos</td><td class="amount">{{ number_format($totalDeductions ?? 180194.13, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Descontos</td><td class="amount">{{ number_format($totalDeductions ?? 0, 2, ',', ' ') }}</td></tr>
           </tfoot>
         </table>
       </div>
@@ -284,12 +286,12 @@
       <div class="row">
         <div class="block">
           <div class="label">VENCIMENTO LÍQUIDO</div>
-          <div class="value">{{ number_format($netSalary ?? 182540.25, 3, '.', ' ') }}</div>
+          <div class="value">{{ number_format($netSalary ?? 0, 2, ',', ' ') }}</div>
         </div>
         <div class="block">
           <div class="label">DADOS BANCÁRIOS</div>
-          <div class="kv"><span>Nome do banco</span><span>{{ $bankName ?? 'ACCESS BANK' }}</span></div>
-          <div class="kv"><span>Número de conta</span><span>{{ $accountNumber ?? '123456' }}</span></div>
+          <div class="kv"><span>Nome do banco</span><span>{{ $bankName ?? 'N/A' }}</span></div>
+          <div class="kv"><span>Número de conta</span><span>{{ $accountNumber ?? 'N/A' }}</span></div>
         </div>
         <div class="block">
           <div class="signature">
@@ -306,7 +308,7 @@
         </div>
         <div class="block" style="grid-column: span 2;">
           <div class="srno">
-            <span>Sr. No. {{ $receiptNumber ?? 'July 2025' }}</span>
+            <span>Sr. No. {{ $receiptNumber ?? 'N/A' }}</span>
           </div>
         </div>
       </div>

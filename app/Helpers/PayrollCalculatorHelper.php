@@ -12,6 +12,8 @@ use App\Models\HR\OvertimeRecord;
 use App\Models\HR\SalaryAdvance;
 use App\Models\HR\SalaryDiscount;
 use App\Models\HR\Leave;
+use App\Models\HR\Shift;
+use App\Models\HR\ShiftAssignment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -110,6 +112,10 @@ class PayrollCalculatorHelper
     protected bool $vacationSubsidy = false;
     protected bool $isFoodInKind = false;
     
+    // Subsídio Noturno (Lei Angola Art. 102º - 25% adicional)
+    protected float $nightShiftAllowance = 0.0;
+    protected int $nightShiftDays = 0;
+    
     // Deduções por presença
     protected float $lateDeduction = 0.0;
     protected float $absenceDeduction = 0.0;
@@ -168,7 +174,113 @@ class PayrollCalculatorHelper
             'overtime_daily_limit' => (int) HRSetting::get('overtime_daily_limit', 2),
             'overtime_monthly_limit' => (int) HRSetting::get('overtime_monthly_limit', 48),
             'overtime_yearly_limit' => (int) HRSetting::get('overtime_yearly_limit', 200),
+            
+            // Subsídio Noturno (Lei Angola Art. 102º)
+            // Trabalho noturno (20h-06h) = +25% sobre remuneração
+            'night_shift_percentage' => (float) HRSetting::get('night_shift_percentage', 25),
         ];
+    }
+    
+    /**
+     * ===============================================
+     * CÁLCULO DO SUBSÍDIO NOTURNO
+     * ===============================================
+     * Lei Geral do Trabalho de Angola (Lei nº 7/15)
+     * Artigo 102º: Trabalho noturno (20h-06h) = +25%
+     * 
+     * Para trabalhadores em rotação com turnos noturnos,
+     * calcula-se o adicional de 25% sobre o salário
+     * proporcional aos dias trabalhados em turno noturno.
+     */
+    public function loadNightShiftData(): self
+    {
+        // Buscar atribuições de turno do funcionário no período
+        $shiftAssignments = ShiftAssignment::where('employee_id', $this->employee->id)
+            ->where(function($query) {
+                $query->where('start_date', '<=', $this->endDate->format('Y-m-d'))
+                      ->where(function($q) {
+                          $q->whereNull('end_date')
+                            ->orWhere('end_date', '>=', $this->startDate->format('Y-m-d'));
+                      });
+            })
+            ->with('shift')
+            ->get();
+        
+        if ($shiftAssignments->isEmpty()) {
+            $this->nightShiftDays = 0;
+            $this->nightShiftAllowance = 0.0;
+            return $this;
+        }
+        
+        $nightDays = 0;
+        $current = $this->startDate->copy();
+        
+        while ($current <= $this->endDate) {
+            foreach ($shiftAssignments as $assignment) {
+                // Verificar se a atribuição é válida para esta data
+                if ($current < $assignment->start_date) continue;
+                if ($assignment->end_date && $current > $assignment->end_date) continue;
+                
+                // Se tem rotação, verificar qual turno está ativo nesta data
+                if ($assignment->hasRotation()) {
+                    $activeShiftId = $assignment->getActiveShiftForDate($current);
+                    $activeShift = Shift::find($activeShiftId);
+                    
+                    if ($activeShift && $activeShift->is_night_shift) {
+                        $nightDays++;
+                    }
+                } else {
+                    // Turno fixo
+                    if ($assignment->shift && $assignment->shift->is_night_shift) {
+                        $nightDays++;
+                    }
+                }
+                break; // Um funcionário só pode ter uma atribuição ativa por dia
+            }
+            $current->addDay();
+        }
+        
+        $this->nightShiftDays = $nightDays;
+        
+        // Calcular o subsídio noturno
+        // Fórmula: (Salário Base / Dias do Mês) × Dias Noturnos × 25%
+        $workingDays = $this->hrSettings['monthly_working_days'] ?? 22;
+        $nightPercentage = ($this->hrSettings['night_shift_percentage'] ?? 25) / 100;
+        
+        if ($workingDays > 0 && $nightDays > 0) {
+            $dailySalary = $this->basicSalary / $workingDays;
+            $this->nightShiftAllowance = $dailySalary * $nightDays * $nightPercentage;
+        } else {
+            $this->nightShiftAllowance = 0.0;
+        }
+        
+        Log::info('🌙 Night Shift Calculation', [
+            'employee_id' => $this->employee->id,
+            'employee_name' => $this->employee->full_name,
+            'period' => $this->startDate->format('Y-m-d') . ' to ' . $this->endDate->format('Y-m-d'),
+            'night_days' => $this->nightShiftDays,
+            'basic_salary' => $this->basicSalary,
+            'night_percentage' => $nightPercentage * 100 . '%',
+            'night_allowance' => $this->nightShiftAllowance,
+        ]);
+        
+        return $this;
+    }
+    
+    /**
+     * Obter o valor do subsídio noturno calculado
+     */
+    public function getNightShiftAllowance(): float
+    {
+        return $this->nightShiftAllowance;
+    }
+    
+    /**
+     * Obter o número de dias trabalhados em turno noturno
+     */
+    public function getNightShiftDays(): int
+    {
+        return $this->nightShiftDays;
     }
     
     public function calculateHourlyRate(): float
@@ -406,6 +518,7 @@ class PayrollCalculatorHelper
         $this->loadSalaryAdvances();
         $this->loadSalaryDiscounts();
         $this->loadLeaveData();
+        $this->loadNightShiftData(); // Calcular subsídio noturno (Lei Angola Art. 102º)
         
         return $this;
     }
@@ -553,7 +666,7 @@ class PayrollCalculatorHelper
         $basicSalary      = $this->basicSalary;                              // Basic Salary
         $transport        = $this->transportAllowance;                       // Transport
         $foodAllowance    = $this->mealAllowance;                           // Food allowance
-        $nightAllowance   = 0.0;                                            // Nigth Allowance (não implementado)
+        $nightAllowance   = $this->nightShiftAllowance;                     // Night Allowance (Lei Angola Art. 102º - 25%)
         $totalOverTime    = $this->totalOvertimeAmount;                     // Total Over Time
         $natalAllowance   = $this->getChristmasSubsidyAmount();            // Natal Allowance
         $leaveAllowance   = $this->getVacationSubsidyAmount();             // Leave Allowance
@@ -582,11 +695,13 @@ class PayrollCalculatorHelper
             'basicSalary' => $basicSalary,
             'transport' => $transport,
             'foodAllowance' => $foodAllowance,
+            'nightAllowance' => $nightAllowance,
+            'night_shift_days' => $this->nightShiftDays,
             'totalOverTime' => $totalOverTime,
             'familyAllowance' => $familyAllowance,
             'additionalBonus' => $additionalBonus,
             'absence_deduction' => $absence,
-            'gross_before_absence' => $basicSalary + $transport + $foodAllowance + $totalOverTime + $familyAllowance + $additionalBonus,
+            'gross_before_absence' => $basicSalary + $transport + $foodAllowance + $nightAllowance + $totalOverTime + $familyAllowance + $additionalBonus,
             'gross_final' => $gross,
         ]);
         
@@ -916,6 +1031,10 @@ class PayrollCalculatorHelper
         $netSalary = $this->calculateNetSalary();
         \Log::info('✅ Net Salary calculado', ['net' => $netSalary]);
         
+        // Dias úteis do mês (para fórmulas visuais)
+        $workingDays = $this->hrSettings['monthly_working_days'] ?? 22;
+        $dailyRate = $this->hourlyRate * 8;
+        
         $this->calculationResults = [
             // Dados básicos
             'employee_id' => $this->employee->id,
@@ -964,6 +1083,10 @@ class PayrollCalculatorHelper
             'vacation_subsidy' => $this->vacationSubsidy,
             'vacation_subsidy_amount' => $this->getVacationSubsidyAmount(),
             
+            // Subsídio Noturno (Lei Angola Art. 102º - 25%)
+            'night_shift_days' => $this->nightShiftDays,
+            'night_shift_allowance' => $this->nightShiftAllowance,
+            
             // Adiantamentos e descontos
             'total_salary_advances' => $this->totalSalaryAdvances,
             'advance_deduction' => $this->advanceDeduction,
@@ -986,6 +1109,58 @@ class PayrollCalculatorHelper
             'main_salary' => $mainSalary,
             'irt_base' => $irtBase,
             'base_irt_taxable_amount' => $irtBase, // Alias para compatibilidade
+            
+            // ========================================
+            // COMPOSIÇÃO DO SALÁRIO BRUTO (EARNINGS)
+            // ========================================
+            'earnings_breakdown' => [
+                ['label' => 'Salário Base', 'value' => $this->basicSalary, 'type' => 'add'],
+                ['label' => 'Subsídio de Transporte', 'value' => $this->transportAllowance, 'type' => 'add'],
+                ['label' => 'Subsídio de Alimentação', 'value' => $this->mealAllowance, 'type' => 'add'],
+                ['label' => 'Subsídio Noturno (25%)', 'value' => $this->nightShiftAllowance, 'type' => 'add', 'days' => $this->nightShiftDays],
+                ['label' => 'Horas Extras', 'value' => $this->totalOvertimeAmount, 'type' => 'add', 'hours' => $this->totalOvertimeHours],
+                ['label' => 'Subsídio de Natal (50%)', 'value' => $this->getChristmasSubsidyAmount(), 'type' => 'add'],
+                ['label' => 'Subsídio de Férias (50%)', 'value' => $this->getVacationSubsidyAmount(), 'type' => 'add'],
+                ['label' => 'Abono de Família', 'value' => $this->familyAllowance, 'type' => 'add'],
+                ['label' => 'Subsídio de Cargo', 'value' => (float) ($this->employee->position_subsidy ?? 0), 'type' => 'add'],
+                ['label' => 'Subsídio de Desempenho', 'value' => (float) ($this->employee->performance_subsidy ?? 0), 'type' => 'add'],
+                ['label' => 'Bónus Adicional', 'value' => $this->additionalBonusAmount, 'type' => 'add'],
+                ['label' => 'Desconto por Faltas', 'value' => $this->absenceDeduction, 'type' => 'subtract', 'days' => $this->absentDays],
+            ],
+            'total_earnings' => $this->basicSalary + $this->transportAllowance + $this->mealAllowance + 
+                               $this->nightShiftAllowance + $this->totalOvertimeAmount + 
+                               $this->getChristmasSubsidyAmount() + $this->getVacationSubsidyAmount() +
+                               $this->familyAllowance + (float) ($this->employee->position_subsidy ?? 0) +
+                               (float) ($this->employee->performance_subsidy ?? 0) + $this->additionalBonusAmount,
+            
+            // ========================================
+            // COMPOSIÇÃO DAS DEDUÇÕES (DEDUCTIONS)
+            // ========================================
+            'deductions_breakdown' => [
+                ['label' => 'INSS (3%)', 'value' => $inss, 'type' => 'tax', 'rate' => '3%'],
+                ['label' => 'IRT', 'value' => $irt, 'type' => 'tax', 'bracket' => $irtDetails['bracket_number'] ?? 1],
+                ['label' => 'Adiantamentos', 'value' => $this->advanceDeduction, 'type' => 'advance'],
+                ['label' => 'Descontos Salariais', 'value' => $this->totalSalaryDiscounts, 'type' => 'discount'],
+                ['label' => 'Desconto por Atrasos', 'value' => $this->lateDeduction, 'type' => 'attendance', 'count' => $this->lateArrivals],
+                ['label' => 'Subsídio Alimentação (em espécie)', 'value' => $this->mealAllowance, 'type' => 'food_deduction'],
+            ],
+            'total_deductions_sum' => $inss + $irt + $this->advanceDeduction + $this->totalSalaryDiscounts + $this->lateDeduction + $this->mealAllowance,
+            
+            // ========================================
+            // RESUMO VISUAL (para exibição)
+            // ========================================
+            'salary_composition' => [
+                'gross_formula' => 'Base + Transporte + Alimentação + Noturno + HorasExtras + Natal + Férias + Família + Cargo + Desempenho + Bónus - Faltas',
+                'net_formula' => 'Bruto - INSS - IRT - Adiantamentos - Descontos - Atrasos - Alimentação',
+                'night_shift_formula' => "(Salário Base ÷ {$workingDays} dias) × {$this->nightShiftDays} dias × 25%",
+                'night_shift_daily_rate' => $this->hourlyRate * 8, // Valor diário correto
+                'night_shift_calculation' => [
+                    'daily_rate' => round($this->hourlyRate * 8, 2), // Valor diário base
+                    'days' => $this->nightShiftDays,
+                    'percentage' => 25,
+                    'result' => $this->nightShiftAllowance,
+                ],
+            ],
             
             // Impostos e contribuições
             'inss_3_percent' => $inss,

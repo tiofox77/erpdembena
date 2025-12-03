@@ -142,8 +142,45 @@
 
         {{-- Information Cards Section --}}
         <div class="bg-gray-50 border-y border-gray-200 p-3 flex-shrink-0">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                 
+                {{-- Night Shift Allowance Card --}}
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg p-2 border border-indigo-200 cursor-pointer hover:shadow-md transition" 
+                     x-data="{ showDetails: false }" 
+                     @click="showDetails = !showDetails">
+                    <div class="flex items-center mb-2">
+                        <div class="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-moon text-white text-xs"></i>
+                        </div>
+                        <h4 class="ml-2 font-bold text-xs text-indigo-900">Subsídio Noturno</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">Dias Noturnos</p>
+                            <p class="text-sm font-bold text-indigo-900">{{ $calculatedData['night_shift_days'] ?? 0 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">Valor (25%)</p>
+                            <p class="text-sm font-bold text-indigo-900">{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 0) }}</p>
+                        </div>
+                    </div>
+                    
+                    {{-- Night Shift Details --}}
+                    <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-indigo-200">
+                        <div class="text-[10px] bg-white p-1 rounded">
+                            <p><span class="font-semibold">Lei Angola Art. 102º</span></p>
+                            <p class="text-indigo-600">Trabalho noturno (20h-06h) = +25%</p>
+                            @if(($calculatedData['night_shift_days'] ?? 0) > 0)
+                                <p class="mt-1">
+                                    <span class="font-medium">Cálculo:</span> 
+                                    {{ number_format(($calculatedData['basic_salary'] ?? 0) / 22, 2, ',', '.') }} AOA/dia × 
+                                    {{ $calculatedData['night_shift_days'] ?? 0 }} dias × 25%
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Overtime Records Card --}}
                 <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-2 border border-purple-200 cursor-pointer hover:shadow-md transition" 
                      x-data="{ showDetails: false }" 

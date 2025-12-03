@@ -327,6 +327,9 @@ class ProcessPayrollBatch implements ShouldQueue
                 'absent_days' => $result['absent_days'] ?? 0,
                 'late_arrivals' => $result['late_arrivals'] ?? $result['late_days'] ?? 0,
                 'total_overtime_hours' => $result['total_overtime_hours'] ?? 0,
+                // Night shift allowance (Lei Angola Art. 102º - 25%)
+                'night_shift_allowance' => $result['night_shift_allowance'] ?? 0,
+                'night_shift_days' => $result['night_shift_days'] ?? 0,
                 // IRT calculation fields
                 'food_exemption' => $result['exempt_food'] ?? min($result['food_allowance'] ?? $result['food_benefit'] ?? 0, 30000),
                 'transport_exemption' => $result['exempt_transport'] ?? min($result['transport_allowance'] ?? 0, 30000),

@@ -38,7 +38,11 @@ class PayrollBatchItem extends Model
         'transport_allowance',
         'food_allowance',
         'family_allowance',
+        'position_subsidy',
+        'performance_subsidy',
         'overtime_amount',
+        'night_shift_allowance',
+        'night_shift_days',
         // Deductions
         'inss_deduction',
         'irt_deduction',
@@ -70,7 +74,11 @@ class PayrollBatchItem extends Model
         'transport_allowance' => 'decimal:2',
         'food_allowance' => 'decimal:2',
         'family_allowance' => 'decimal:2',
+        'position_subsidy' => 'decimal:2',
+        'performance_subsidy' => 'decimal:2',
         'overtime_amount' => 'decimal:2',
+        'night_shift_allowance' => 'decimal:2',
+        'night_shift_days' => 'integer',
         // Deductions
         'inss_deduction' => 'decimal:2',
         'irt_deduction' => 'decimal:2',

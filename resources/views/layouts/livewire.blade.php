@@ -871,62 +871,23 @@
         </div>
 
         <div class="sidebar-submenu" id="hrSubmenu">
+            {{-- ═══════════════════════════════════════════════════════════════
+                 VISÃO GERAL
+            ═══════════════════════════════════════════════════════════════ --}}
             @can('hr.dashboard')
             <a href="{{ route('hr.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-tachometer-alt text-gray-500"></i>
+                <i class="fas fa-tachometer-alt text-blue-500"></i>
                 <span>{{ trans('messages.dashboard') }}</span>
             </a>
             @endcan
 
+            {{-- ═══════════════════════════════════════════════════════════════
+                 GESTÃO DE PESSOAL
+            ═══════════════════════════════════════════════════════════════ --}}
             @can('hr.employees.view')
             <a href="{{ route('hr.employees') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.employees') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-id-card text-gray-500"></i>
+                <i class="fas fa-users text-indigo-500"></i>
                 <span>{{ trans('messages.employee_management') }}</span>
-            </a>
-            @endcan
-            
-            @can('hr.payroll.view')
-            <a href="{{ route('hr.salary-advances') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-advances') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-hand-holding-usd text-gray-500"></i>
-                <span>{{ trans('messages.salary_advances') }}</span>
-            </a>
-            @endcan
-            
-            @can('hr.payroll.view')
-            <a href="{{ route('hr.salary-discounts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-discounts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-minus-circle text-gray-500"></i>
-                <span>{{ trans('messages.salary_discounts') }}</span>
-            </a>
-            @endcan
-            
-            @can('hr.employees.view')
-            <a href="{{ route('hr.overtime-records') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.overtime-records') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-clock text-gray-500"></i>
-                <span>{{ trans('messages.overtime_records') }}</span>
-            </a>
-            @endcan
-            
-            {{-- Disciplinary Measures --}}
-            @can('hr.employees.view')
-            <a href="{{ route('hr.disciplinary-measures') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.disciplinary-measures') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-gavel text-gray-500"></i>
-                <span>{{ __('messages.disciplinary_measures') }}</span>
-            </a>
-            @endcan
-
-            {{-- Performance Evaluations --}}
-            @can('hr.performance.view')
-            <a href="{{ route('hr.performance-evaluations') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.performance-evaluations') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-chart-line text-gray-500"></i>
-                <span>{{ __('messages.performance_evaluations') }}</span>
-            </a>
-            @endcan
-
-            {{-- Trainings --}}
-            @can('hr.employees.view')
-            <a href="{{ route('hr.trainings') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.trainings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-graduation-cap text-gray-500"></i>
-                <span>{{ __('messages.trainings') }}</span>
             </a>
             @endcan
             
@@ -950,68 +911,127 @@
                 <span>{{ trans('messages.job_positions') }}</span>
             </a>
             @endcan
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 CONTROLE DE PONTO E TURNOS
+            ═══════════════════════════════════════════════════════════════ --}}
+            @can('hr.attendance.view')
+            <a href="{{ route('hr.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-business-time text-purple-500"></i>
+                <span>{{ trans('messages.shift_management') }}</span>
+            </a>
+            @endcan
             
             @can('hr.attendance.view')
             <a href="{{ route('hr.attendance') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.attendance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-user-clock text-gray-500"></i>
+                <i class="fas fa-user-clock text-green-500"></i>
                 <span>{{ trans('messages.attendance_absence') }}</span>
             </a>
             @endcan
             
+            @can('hr.employees.view')
+            <a href="{{ route('hr.overtime-records') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.overtime-records') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-clock text-orange-500"></i>
+                <span>{{ trans('messages.overtime_records') }}</span>
+            </a>
+            @endcan
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 FÉRIAS E LICENÇAS
+            ═══════════════════════════════════════════════════════════════ --}}
             @can('hr.leave.view')
             <a href="{{ route('hr.leave') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.leave') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-calendar-alt text-gray-500"></i>
+                <i class="fas fa-calendar-alt text-teal-500"></i>
                 <span>{{ trans('messages.leave_management') }}</span>
             </a>
             @endcan
             
             @can('hr.leave.view')
             <a href="{{ route('hr.leave-types') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.leave-types') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-tags text-gray-500"></i>
+                <i class="fas fa-list text-gray-500"></i>
                 <span>{{ trans('messages.leave_types') }}</span>
             </a>
             @endcan
-            
-            @canany(['hr.payroll.view', 'hr.payroll.process'])
-            <a href="{{ route('hr.payroll') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-money-check-alt text-gray-500"></i>
-                <span>{{ trans('messages.payroll_processing') }}</span>
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 ADIANTAMENTOS E DESCONTOS
+            ═══════════════════════════════════════════════════════════════ --}}
+            @can('hr.payroll.view')
+            <a href="{{ route('hr.salary-advances') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-advances') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-hand-holding-usd text-yellow-500"></i>
+                <span>{{ trans('messages.salary_advances') }}</span>
             </a>
-            @endcanany
+            @endcan
             
+            @can('hr.payroll.view')
+            <a href="{{ route('hr.salary-discounts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.salary-discounts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-minus-circle text-red-500"></i>
+                <span>{{ trans('messages.salary_discounts') }}</span>
+            </a>
+            @endcan
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 PROCESSAMENTO DE SALÁRIOS
+            ═══════════════════════════════════════════════════════════════ --}}
             @canany(['hr.payroll.view', 'hr.payroll.process'])
             <a href="{{ route('hr.payroll-periods') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-periods') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-calendar-week text-gray-500"></i>
+                <i class="fas fa-calendar-week text-blue-500"></i>
                 <span>{{ trans('messages.payroll_periods') }}</span>
             </a>
             @endcanany
             
             @canany(['hr.payroll.view', 'hr.payroll.process'])
+            <a href="{{ route('hr.payroll') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-money-check-alt text-green-600"></i>
+                <span>{{ trans('messages.payroll_processing') }}</span>
+            </a>
+            @endcanany
+            
+            @canany(['hr.payroll.view', 'hr.payroll.process'])
             <a href="{{ route('hr.payroll-batch') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-batch') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-layer-group text-gray-500"></i>
+                <i class="fas fa-layer-group text-indigo-600"></i>
                 <span>Payroll Batch</span>
             </a>
             @endcanany
             
             @can('hr.payroll.view')
             <a href="{{ route('hr.payroll-reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-file-pdf text-red-600"></i>
+                <i class="fas fa-file-invoice-dollar text-red-600"></i>
                 <span>Relatórios de Payroll</span>
             </a>
             @endcan
-            <!--
-            @can('hr.leave.view')
-            <a href="{{ route('hr.payroll-items') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-items') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-list-alt text-gray-500"></i>
-                <span>{{ trans('messages.payroll_items') }}</span>
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 GESTÃO DE DESEMPENHO
+            ═══════════════════════════════════════════════════════════════ --}}
+            @can('hr.performance.view')
+            <a href="{{ route('hr.performance-evaluations') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.performance-evaluations') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-chart-line text-blue-500"></i>
+                <span>{{ __('messages.performance_evaluations') }}</span>
             </a>
             @endcan
-            -->
             
-            @can('hr.attendance.view')
-            <a href="{{ route('hr.shifts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.shifts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-business-time text-gray-500"></i>
-                <span>{{ trans('messages.shift_management') }}</span>
+            @can('hr.employees.view')
+            <a href="{{ route('hr.disciplinary-measures') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.disciplinary-measures') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-gavel text-red-500"></i>
+                <span>{{ __('messages.disciplinary_measures') }}</span>
+            </a>
+            @endcan
+
+            @can('hr.employees.view')
+            <a href="{{ route('hr.trainings') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.trainings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-graduation-cap text-purple-500"></i>
+                <span>{{ __('messages.trainings') }}</span>
+            </a>
+            @endcan
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 EQUIPAMENTOS DE TRABALHO
+            ═══════════════════════════════════════════════════════════════ --}}
+            @can('hr.employees.view')
+            <a href="{{ route('hr.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                <i class="fas fa-laptop text-gray-600"></i>
+                <span>{{ trans('messages.work_equipment_control') }}</span>
             </a>
             @endcan
             
@@ -1021,14 +1041,10 @@
                 <span>{{ trans('messages.work_equipment_categories') }}</span>
             </a>
             @endcan
-            
-            @can('hr.employees.view')
-            <a href="{{ route('hr.equipment') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.equipment') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-laptop text-gray-500"></i>
-                <span>{{ trans('messages.work_equipment_control') }}</span>
-            </a>
-            @endcan
-            
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 CONFIGURAÇÕES E RELATÓRIOS
+            ═══════════════════════════════════════════════════════════════ --}}
             @can('hr.settings.view')
             <a href="{{ route('hr.banks') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.banks') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-university text-gray-500"></i>
@@ -1038,14 +1054,14 @@
             
             @can('hr.settings.view')
             <a href="{{ route('hr.settings') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.settings') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-cogs text-gray-500"></i>
+                <i class="fas fa-cogs text-gray-600"></i>
                 <span>{{ trans('messages.hr_settings') }}</span>
             </a>
             @endcan
             
             @can('hr.dashboard')
             <a href="{{ route('hr.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
-                <i class="fas fa-chart-bar text-gray-500"></i>
+                <i class="fas fa-chart-bar text-blue-600"></i>
                 <span>{{ trans('messages.reports_and_dashboard') }}</span>
             </a>
             @endcan

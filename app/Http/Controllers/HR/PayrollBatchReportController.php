@@ -91,6 +91,7 @@ class PayrollBatchReportController extends Controller
             'basic_salary' => $payrolls->sum('basic_salary'),
             'transport' => $payrolls->sum('transport_allowance'),
             'overtime' => $payrolls->sum('overtime_amount'),
+            'night_shift' => $payrolls->sum('night_shift_allowance'), // Subsídio Noturno (Lei Angola Art. 102º - 25%)
             'vacation_pay' => $payrolls->sum('vacation_subsidy_amount'),
             'food_allow' => $payrolls->sum('food_allowance'),
             'christmas_offer' => $payrolls->sum('christmas_subsidy_amount'),

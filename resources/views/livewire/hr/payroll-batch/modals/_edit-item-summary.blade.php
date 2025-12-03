@@ -38,11 +38,46 @@
                     <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['food_benefit'] ?? 0, 2) }}</span>
                 </div>
 
-                {{-- Night Allowance --}}
-                @if(($calculatedData['night_allowance'] ?? 0) > 0)
+                {{-- Night Shift Allowance (Subsídio Noturno) com detalhes --}}
+                @php
+                    $nightPct = $calculatedData['hr_settings']['night_shift_percentage'] ?? 25;
+                    $dayRate = $calculatedData['daily_rate'] ?? (($calculatedData['basic_salary'] ?? 0) / ($calculatedData['monthly_working_days'] ?? 22));
+                @endphp
+                @if(($calculatedData['night_shift_allowance'] ?? 0) > 0)
+                <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-indigo-700 font-bold flex items-center">
+                            <i class="fas fa-moon mr-2"></i>
+                            Subsídio Noturno (Lei Art. 102º)
+                        </span>
+                        <span class="text-indigo-800 font-bold text-lg tabular-nums">+{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 2) }}</span>
+                    </div>
+                    <div class="text-xs text-indigo-600 space-y-1 pl-6">
+                        <div class="flex justify-between">
+                            <span>• Dias Noturnos:</span>
+                            <span class="font-semibold">{{ $calculatedData['night_shift_days'] ?? 0 }} dias</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>• Valor Diário Base:</span>
+                            <span class="font-semibold">{{ number_format($dayRate, 2) }} AOA</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>• Percentual Noturno:</span>
+                            <span class="font-semibold">+{{ $nightPct }}%</span>
+                        </div>
+                        <div class="flex justify-between pt-1 border-t border-indigo-200">
+                            <span>• Cálculo:</span>
+                            <span class="font-semibold font-mono text-[10px]">{{ number_format($dayRate, 0) }} × {{ $calculatedData['night_shift_days'] ?? 0 }} dias × {{ $nightPct }}%</span>
+                        </div>
+                    </div>
+                </div>
+                @else
                 <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg">
-                    <span class="text-gray-700 font-medium">Night Allowance</span>
-                    <span class="text-gray-800 font-bold tabular-nums">{{ number_format($calculatedData['night_allowance'] ?? 0, 2) }}</span>
+                    <span class="text-gray-500 font-medium">
+                        <i class="fas fa-moon mr-1"></i>
+                        Subsídio Noturno
+                    </span>
+                    <span class="text-gray-400 font-bold tabular-nums">0.00</span>
                 </div>
                 @endif
 
@@ -132,8 +167,22 @@
                 </div>
             </div>
 
-            <div class="mt-4 pt-3 border-t-2 border-gray-300">
-                <div class="text-xs text-gray-600 mb-2">
+            {{-- Total Bruto com fórmula --}}
+            <div class="mt-4 pt-3 border-t-2 border-green-500 bg-green-50 rounded-lg p-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-green-800 font-bold text-base">SALÁRIO BRUTO</span>
+                    <span class="text-green-900 font-bold text-xl tabular-nums">{{ number_format($calculatedData['gross_salary'] ?? 0, 2) }}</span>
+                </div>
+                @if(isset($calculatedData['salary_composition']))
+                <div class="mt-2 text-[10px] text-green-700 font-mono bg-green-100 p-2 rounded">
+                    {{ $calculatedData['salary_composition']['gross_formula'] ?? '' }}
+                </div>
+                @endif
+            </div>
+
+            <div class="mt-3 pt-2 border-t border-gray-200">
+                <div class="text-xs text-gray-600">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                     Alimentação e Transporte: isentos até <strong>30.000 AOA</strong> cada (tributa apenas o excesso).
                 </div>
             </div>
@@ -291,6 +340,15 @@
                 </tbody>
             </table>
 
+            {{-- Fórmula do Líquido --}}
+            @if(isset($calculatedData['salary_composition']))
+            <div class="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                <div class="text-[10px] text-green-700 font-mono">
+                    <strong>Fórmula:</strong> {{ $calculatedData['salary_composition']['net_formula'] ?? '' }}
+                </div>
+            </div>
+            @endif
+
             @if(isset($calculatedData['irt_calculation_details']['bracket']))
             <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-700">
                 <strong>{{ __('messages.irt_calculation_title') }}:</strong>
@@ -362,6 +420,33 @@
             </div>
         </div>
     </div>
+
+    {{-- Night Shift Card --}}
+    @if(($calculatedData['night_shift_days'] ?? 0) > 0)
+    @php
+        $nightPercentage = $calculatedData['hr_settings']['night_shift_percentage'] ?? 25;
+        $cardDailyRate = $calculatedData['daily_rate'] ?? (($calculatedData['basic_salary'] ?? 0) / ($calculatedData['monthly_working_days'] ?? 22));
+    @endphp
+    <div class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200 mt-6">
+        <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">
+            <i class="fas fa-moon mr-2"></i>
+            Subsídio Noturno (Lei Art. 102º)
+        </h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white/60 p-3 rounded-lg text-center">
+                <p class="text-xs text-indigo-600 font-medium mb-1">Dias Noturnos</p>
+                <p class="text-lg text-indigo-800 font-bold">{{ $calculatedData['night_shift_days'] ?? 0 }} dias</p>
+            </div>
+            <div class="bg-white/60 p-3 rounded-lg text-center">
+                <p class="text-xs text-indigo-600 font-medium mb-1">Valor (+{{ $nightPercentage }}%)</p>
+                <p class="text-lg text-indigo-800 font-bold">{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 2) }} AOA</p>
+            </div>
+        </div>
+        <div class="mt-3 text-xs text-indigo-600 bg-white/50 p-2 rounded">
+            <strong>Cálculo:</strong> ({{ number_format($cardDailyRate, 2) }} AOA/dia × {{ $calculatedData['night_shift_days'] ?? 0 }} dias) × {{ $nightPercentage }}%
+        </div>
+    </div>
+    @endif
 
     {{-- Overtime Card --}}
     @if($calculatedData['total_overtime_hours'] > 0)

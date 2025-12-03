@@ -384,6 +384,32 @@
                                     @endif
                                 </div>
 
+                                {{-- Night Shift Allowance Card --}}
+                                @if(($night_shift_days ?? 0) > 0)
+                                @php
+                                    $nightShiftPct = $hr_settings['night_shift_percentage'] ?? 25;
+                                @endphp
+                                <div class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200">
+                                    <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">
+                                        <i class="fas fa-moon mr-2"></i>
+                                        Subsídio Noturno (Lei Art. 102º)
+                                    </h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-sm text-indigo-600 font-medium">Dias Noturnos</p>
+                                            <p class="text-indigo-800 font-semibold">{{ $night_shift_days ?? 0 }} dias</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-indigo-600 font-medium">Valor (+{{ $nightShiftPct }}%)</p>
+                                            <p class="text-indigo-800 font-semibold">{{ number_format($night_shift_allowance ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-xs text-indigo-600 bg-white/50 p-2 rounded">
+                                        <strong>Cálculo:</strong> ({{ number_format($daily_rate ?? 0, 2) }} AOA/dia × {{ $night_shift_days ?? 0 }} dias) × {{ $nightShiftPct }}%
+                                    </div>
+                                </div>
+                                @endif
+
                                 {{-- Salary Advances Card --}}
                                 <div class="bg-gradient-to-br from-orange-50 to-amber-100 p-6 rounded-2xl border border-orange-200">
                                     <h3 class="text-lg font-bold text-orange-800 mb-4 flex items-center">

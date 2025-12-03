@@ -509,6 +509,12 @@
                 </tr>
                 
                 <tr>
+                    <td colspan="2" class="section-header" data-i18n="night_shift">SUBSÍDIO NOTURNO (25%)</td>
+                    <td class="code">NS</td>
+                    <td class="amount">{{ number_format($totals['earnings']['night_shift'] ?? 0, 2, ',', '.') }}</td>
+                </tr>
+                
+                <tr>
                     <td colspan="2" class="section-header" data-i18n="vacation_pay">SUBSÍDIO DE FÉRIAS</td>
                     <td class="code">VP</td>
                     <td class="amount">{{ number_format($totals['earnings']['vacation_pay'], 2, ',', '.') }}</td>

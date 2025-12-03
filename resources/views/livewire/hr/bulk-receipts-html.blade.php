@@ -216,23 +216,36 @@
             <tr><th>REMUNERAÇÃO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>Salário Base</td><td class="amount">{{ number_format($receiptData[$index]['baseSalary'] ?? 175000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($receiptData[$index]['transportSubsidy'] ?? 30000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidy'] ?? 12000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($receiptData[$index]['christmasSubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($receiptData[$index]['holidaySubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($receiptData[$index]['profileBonus'] ?? 10000, 3, '.', ' ') }}</td></tr>
-            @if(isset($receiptData[$index]['positionSubsidy']) && $receiptData[$index]['positionSubsidy'] > 0)
+            <tr><td>Salário Base</td><td class="amount">{{ number_format($receiptData[$index]['baseSalary'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($receiptData[$index]['transportSubsidy'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidy'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @if(($receiptData[$index]['nightShiftAllowance'] ?? 0) > 0)
+            <tr><td>Subsídio Noturno ({{ $receiptData[$index]['nightShiftDays'] ?? 0 }} dias)</td><td class="amount">{{ number_format($receiptData[$index]['nightShiftAllowance'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['christmasSubsidy'] ?? 0) > 0)
+            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($receiptData[$index]['christmasSubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['holidaySubsidy'] ?? 0) > 0)
+            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($receiptData[$index]['holidaySubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['familyAllowance'] ?? 0) > 0)
+            <tr><td>Abono de Família</td><td class="amount">{{ number_format($receiptData[$index]['familyAllowance'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['positionSubsidy'] ?? 0) > 0)
             <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['positionSubsidy'], 3, '.', ' ') }}</td></tr>
             @endif
-            @if(isset($receiptData[$index]['performanceSubsidy']) && $receiptData[$index]['performanceSubsidy'] > 0)
+            @if(($receiptData[$index]['performanceSubsidy'] ?? 0) > 0)
             <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['performanceSubsidy'], 3, '.', ' ') }}</td></tr>
             @endif
-            <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($receiptData[$index]['payrollBonus'] ?? 6000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Horas Extras</td><td class="amount">{{ number_format($receiptData[$index]['overtimeHours'] ?? 2734.38, 3, '.', ' ') }}</td></tr>
+            @if(($receiptData[$index]['payrollBonus'] ?? 0) > 0)
+            <tr><td>Bónus Adicional</td><td class="amount">{{ number_format($receiptData[$index]['payrollBonus'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['overtimeAmount'] ?? 0) > 0)
+            <tr><td>Horas Extras</td><td class="amount">{{ number_format($receiptData[$index]['overtimeAmount'], 3, '.', ' ') }}</td></tr>
+            @endif
           </tbody>
           <tfoot>
-            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($receiptData[$index]['totalEarnings'] ?? 362734.38, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($receiptData[$index]['totalEarnings'] ?? 0, 3, '.', ' ') }}</td></tr>
           </tfoot>
         </table>
 
@@ -241,23 +254,28 @@
             <tr><th>DESCONTO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>IRT</td><td class="amount">{{ number_format($receiptData[$index]['incomeTax'] ?? 42351.94, 3, '.', ' ') }}</td></tr>
-            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($receiptData[$index]['socialSecurity'] ?? 5250, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidyDeduction'] ?? 1200, 3, '.', ' ') }}</td></tr>
-            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryAdvances'] ?? 12857.14, 3, '.', ' ') }}</td></tr>
-            @if(isset($receiptData[$index]['salaryDiscountsDetailed']) && $receiptData[$index]['salaryDiscountsDetailed']->count() > 1)
-              @foreach($receiptData[$index]['salaryDiscountsDetailed'] as $discount)
-                <tr><td>{{ $discount['type_name'] }} ({{ $discount['count'] }})</td><td class="amount">{{ number_format($discount['total_amount'], 3, '.', ' ') }}</td></tr>
-              @endforeach
-            @else
-              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryDiscounts'] ?? 18000, 3, '.', ' ') }}</td></tr>
+            <tr><td>IRT</td><td class="amount">{{ number_format($receiptData[$index]['incomeTax'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($receiptData[$index]['socialSecurity'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidyDeduction'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @if(($receiptData[$index]['salaryAdvances'] ?? 0) > 0)
+            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryAdvances'], 3, '.', ' ') }}</td></tr>
             @endif
-            <tr><td>Deduções por Faltas (12 dias)</td><td class="amount">{{ number_format($receiptData[$index]['absenceDeduction'] ?? 91304.35, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Atrasos (1 dia)</td><td class="amount">{{ number_format($receiptData[$index]['lateDeduction'] ?? 994.32, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Faltas (12 dias)</td><td class="amount">{{ number_format($receiptData[$index]['faultDeduction'] ?? 3804.35, 3, '.', ' ') }}</td></tr>
+            @if(isset($receiptData[$index]['salaryDiscountsDetailed']) && count($receiptData[$index]['salaryDiscountsDetailed']) > 0)
+              @foreach($receiptData[$index]['salaryDiscountsDetailed'] as $discount)
+                <tr><td>{{ $discount['type_name'] }}</td><td class="amount">{{ number_format($discount['total_amount'], 3, '.', ' ') }}</td></tr>
+              @endforeach
+            @elseif(($receiptData[$index]['salaryDiscounts'] ?? 0) > 0)
+              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryDiscounts'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['absenceDays'] ?? 0) > 0)
+            <tr><td>Faltas ({{ $receiptData[$index]['absenceDays'] }} dias)</td><td class="amount">{{ number_format($receiptData[$index]['absenceDeduction'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['lateDays'] ?? 0) > 0)
+            <tr><td>Atrasos ({{ $receiptData[$index]['lateDays'] }} dias)</td><td class="amount">{{ number_format($receiptData[$index]['lateDeduction'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @endif
           </tbody>
           <tfoot>
-            <tr><td>Total Descontos</td><td class="amount">{{ number_format($receiptData[$index]['totalDeductions'] ?? 180194.13, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Descontos</td><td class="amount">{{ number_format($receiptData[$index]['totalDeductions'] ?? 0, 3, '.', ' ') }}</td></tr>
           </tfoot>
         </table>
       </div>
@@ -339,23 +357,36 @@
             <tr><th>REMUNERAÇÃO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>Salário Base</td><td class="amount">{{ number_format($receiptData[$index]['baseSalary'] ?? 175000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($receiptData[$index]['transportSubsidy'] ?? 30000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidy'] ?? 12000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($receiptData[$index]['christmasSubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($receiptData[$index]['holidaySubsidy'] ?? 87500, 3, '.', ' ') }}</td></tr>
-            <tr><td>Bónus Perfil Funcionário</td><td class="amount">{{ number_format($receiptData[$index]['profileBonus'] ?? 10000, 3, '.', ' ') }}</td></tr>
-            @if(isset($receiptData[$index]['positionSubsidy']) && $receiptData[$index]['positionSubsidy'] > 0)
+            <tr><td>Salário Base</td><td class="amount">{{ number_format($receiptData[$index]['baseSalary'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>Subsídio de Transporte</td><td class="amount">{{ number_format($receiptData[$index]['transportSubsidy'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>Subsídio de Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidy'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @if(($receiptData[$index]['nightShiftAllowance'] ?? 0) > 0)
+            <tr><td>Subsídio Noturno ({{ $receiptData[$index]['nightShiftDays'] ?? 0 }} dias)</td><td class="amount">{{ number_format($receiptData[$index]['nightShiftAllowance'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['christmasSubsidy'] ?? 0) > 0)
+            <tr><td>Subsídio de Natal</td><td class="amount">{{ number_format($receiptData[$index]['christmasSubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['holidaySubsidy'] ?? 0) > 0)
+            <tr><td>Subsídio de Férias</td><td class="amount">{{ number_format($receiptData[$index]['holidaySubsidy'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['familyAllowance'] ?? 0) > 0)
+            <tr><td>Abono de Família</td><td class="amount">{{ number_format($receiptData[$index]['familyAllowance'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['positionSubsidy'] ?? 0) > 0)
             <tr><td>{{ __('messages.position_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['positionSubsidy'], 3, '.', ' ') }}</td></tr>
             @endif
-            @if(isset($receiptData[$index]['performanceSubsidy']) && $receiptData[$index]['performanceSubsidy'] > 0)
+            @if(($receiptData[$index]['performanceSubsidy'] ?? 0) > 0)
             <tr><td>{{ __('messages.performance_subsidy') }}</td><td class="amount">{{ number_format($receiptData[$index]['performanceSubsidy'], 3, '.', ' ') }}</td></tr>
             @endif
-            <tr><td>Bónus Adicional Folha</td><td class="amount">{{ number_format($receiptData[$index]['payrollBonus'] ?? 6000, 3, '.', ' ') }}</td></tr>
-            <tr><td>Horas Extras</td><td class="amount">{{ number_format($receiptData[$index]['overtimeHours'] ?? 2734.38, 3, '.', ' ') }}</td></tr>
+            @if(($receiptData[$index]['payrollBonus'] ?? 0) > 0)
+            <tr><td>Bónus Adicional</td><td class="amount">{{ number_format($receiptData[$index]['payrollBonus'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['overtimeAmount'] ?? 0) > 0)
+            <tr><td>Horas Extras</td><td class="amount">{{ number_format($receiptData[$index]['overtimeAmount'], 3, '.', ' ') }}</td></tr>
+            @endif
           </tbody>
           <tfoot>
-            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($receiptData[$index]['totalEarnings'] ?? 362734.38, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Remunerações</td><td class="amount">{{ number_format($receiptData[$index]['totalEarnings'] ?? 0, 3, '.', ' ') }}</td></tr>
           </tfoot>
         </table>
 
@@ -364,23 +395,28 @@
             <tr><th>DESCONTO</th><th class="amount">KZ</th></tr>
           </thead>
           <tbody>
-            <tr><td>IRT</td><td class="amount">{{ number_format($receiptData[$index]['incomeTax'] ?? 42351.94, 3, '.', ' ') }}</td></tr>
-            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($receiptData[$index]['socialSecurity'] ?? 5250, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidyDeduction'] ?? 1200, 3, '.', ' ') }}</td></tr>
-            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryAdvances'] ?? 12857.14, 3, '.', ' ') }}</td></tr>
-            @if(isset($receiptData[$index]['salaryDiscountsDetailed']) && $receiptData[$index]['salaryDiscountsDetailed']->count() > 1)
-              @foreach($receiptData[$index]['salaryDiscountsDetailed'] as $discount)
-                <tr><td>{{ $discount['type_name'] }} ({{ $discount['count'] }})</td><td class="amount">{{ number_format($discount['total_amount'], 3, '.', ' ') }}</td></tr>
-              @endforeach
-            @else
-              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryDiscounts'] ?? 18000, 3, '.', ' ') }}</td></tr>
+            <tr><td>IRT</td><td class="amount">{{ number_format($receiptData[$index]['incomeTax'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>INSS (3%)</td><td class="amount">{{ number_format($receiptData[$index]['socialSecurity'] ?? 0, 3, '.', ' ') }}</td></tr>
+            <tr><td>Desconto Subsídio Alimentação</td><td class="amount">{{ number_format($receiptData[$index]['foodSubsidyDeduction'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @if(($receiptData[$index]['salaryAdvances'] ?? 0) > 0)
+            <tr><td>Adiantamentos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryAdvances'], 3, '.', ' ') }}</td></tr>
             @endif
-            <tr><td>Deduções por Faltas (12 dias)</td><td class="amount">{{ number_format($receiptData[$index]['absenceDeduction'] ?? 91304.35, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Atrasos (1 dia)</td><td class="amount">{{ number_format($receiptData[$index]['lateDeduction'] ?? 994.32, 3, '.', ' ') }}</td></tr>
-            <tr><td>Desconto por Faltas (12 dias)</td><td class="amount">{{ number_format($receiptData[$index]['faultDeduction'] ?? 3804.35, 3, '.', ' ') }}</td></tr>
+            @if(isset($receiptData[$index]['salaryDiscountsDetailed']) && count($receiptData[$index]['salaryDiscountsDetailed']) > 0)
+              @foreach($receiptData[$index]['salaryDiscountsDetailed'] as $discount)
+                <tr><td>{{ $discount['type_name'] }}</td><td class="amount">{{ number_format($discount['total_amount'], 3, '.', ' ') }}</td></tr>
+              @endforeach
+            @elseif(($receiptData[$index]['salaryDiscounts'] ?? 0) > 0)
+              <tr><td>Descontos Salariais</td><td class="amount">{{ number_format($receiptData[$index]['salaryDiscounts'], 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['absenceDays'] ?? 0) > 0)
+            <tr><td>Faltas ({{ $receiptData[$index]['absenceDays'] }} dias)</td><td class="amount">{{ number_format($receiptData[$index]['absenceDeduction'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @endif
+            @if(($receiptData[$index]['lateDays'] ?? 0) > 0)
+            <tr><td>Atrasos ({{ $receiptData[$index]['lateDays'] }} dias)</td><td class="amount">{{ number_format($receiptData[$index]['lateDeduction'] ?? 0, 3, '.', ' ') }}</td></tr>
+            @endif
           </tbody>
           <tfoot>
-            <tr><td>Total Descontos</td><td class="amount">{{ number_format($receiptData[$index]['totalDeductions'] ?? 180194.13, 3, '.', ' ') }}</td></tr>
+            <tr><td>Total Descontos</td><td class="amount">{{ number_format($receiptData[$index]['totalDeductions'] ?? 0, 3, '.', ' ') }}</td></tr>
           </tfoot>
         </table>
       </div>

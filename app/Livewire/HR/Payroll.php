@@ -128,6 +128,7 @@ class Payroll extends Component
     public float $night_shift_bonus = 0.0;
     public array $night_shift_details = [];
     public int $night_shift_days = 0;
+    public array $hr_settings = [];
     
     // Leave Data
     public int $total_leave_days = 0;
@@ -1222,6 +1223,13 @@ class Payroll extends Component
             $this->exempt_transport = $results['exempt_transport'];
             $this->taxable_food = $results['taxable_food'];
             $this->exempt_food = $results['exempt_food'];
+            
+            // Subsídio Noturno (Lei Angola Art. 102º - 25%)
+            $this->night_shift_days = $results['night_shift_days'] ?? 0;
+            $this->night_shift_allowance = $results['night_shift_allowance'] ?? 0;
+            
+            // HR Settings para exibição na view
+            $this->hr_settings = $results['hr_settings'] ?? [];
             
             // Totais
             $this->total_deductions_calculated = $results['total_deductions'];

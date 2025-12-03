@@ -95,6 +95,22 @@ class Employees extends Component
     // Listeners
     protected $listeners = ['refreshEmployees' => '$refresh'];
 
+    /**
+     * Reset pagination when search changes
+     */
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Reset pagination when filters change
+     */
+    public function updatedFilters()
+    {
+        $this->resetPage();
+    }
+
     // Rules
     protected function rules()
     {
@@ -598,7 +614,18 @@ class Employees extends Component
     public function render()
     {
         $employees = Employee::with(['department', 'position', 'bank', 'salaryAdvances'])
-            ->where('full_name', 'like', "%{$this->search}%")
+            ->when($this->search, function ($query) {
+                $search = '%' . $this->search . '%';
+                return $query->where(function ($q) use ($search) {
+                    $q->where('full_name', 'like', $search)
+                      ->orWhere('email', 'like', $search)
+                      ->orWhere('phone', 'like', $search)
+                      ->orWhere('id_card', 'like', $search)
+                      ->orWhere('biometric_id', 'like', $search)
+                      ->orWhere('inss_number', 'like', $search)
+                      ->orWhere('tax_number', 'like', $search);
+                });
+            })
             ->when($this->filters['department_id'], function ($query) {
                 return $query->where('department_id', $this->filters['department_id']);
             })

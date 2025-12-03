@@ -428,10 +428,22 @@ class PayrollReceiptController extends Controller
             // NET SALARY
             $netSalary = $payroll->net_salary ?? 0;
             
-            // Dados de presença - agora salvos no payroll
-            $workedDays = $payroll->present_days ?? 22;
-            $absences = $payroll->absent_days ?? 0;
+            // Dados de presença - usar configurações de RH para dias úteis
+            $monthlyWorkingDays = (int) \App\Models\HR\HRSetting::get('monthly_working_days', 22);
+            $presentDays = $payroll->present_days ?? $monthlyWorkingDays;
+            
+            // Calcular faltas: dias úteis do mês - dias presentes
+            $absences = max(0, $monthlyWorkingDays - $presentDays);
+            
+            // Se o payroll já tem absent_days maior, usar esse valor (pode haver ajustes manuais)
+            if (($payroll->absent_days ?? 0) > $absences) {
+                $absences = $payroll->absent_days;
+            }
+            
             $extraHours = $payroll->total_overtime_hours ?? 0;
+            
+            // Dias trabalhados = dias presentes (do payroll)
+            $workedDays = $presentDays;
 
             $receiptData = [
                 'companyName' => 'Dembena Indústria e Comércio Lda',
@@ -440,6 +452,7 @@ class PayrollReceiptController extends Controller
                 'month' => $monthDisplay,
                 'category' => $employee->position->title ?? 'N/A',
                 'referencePeriod' => $period ? $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y') : 'N/A',
+                'monthlyWorkingDays' => $monthlyWorkingDays,
                 'workedDays' => $workedDays,
                 'absences' => $absences,
                 'extraHours' => $extraHours,
@@ -448,7 +461,9 @@ class PayrollReceiptController extends Controller
                 'baseSalary' => $baseSalary,
                 'transportSubsidy' => $transportSubsidy,
                 'foodSubsidy' => $foodSubsidy,
-                'overtimeHours' => $overtimeAmount,
+                'overtimeAmount' => $overtimeAmount,
+                'nightShiftAllowance' => $payroll->night_shift_allowance ?? 0,
+                'nightShiftDays' => $payroll->night_shift_days ?? 0,
                 'profileBonus' => $profileBonus,
                 'payrollBonus' => $additionalBonus, 
                 'christmasSubsidy' => $christmasSubsidy,
@@ -461,11 +476,12 @@ class PayrollReceiptController extends Controller
                 // Descontos - valores corretos da BD
                 'incomeTax' => $irtDeduction,
                 'socialSecurity' => $inssDeduction,
-                'foodSubsidyDeduction' => round($foodSubsidy * 0.10, 2), // 10% do subsídio alimentação (regra de negócio)
+                'foodSubsidyDeduction' => $foodSubsidy, // Subsídio alimentação (em espécie)
                 'salaryAdvances' => $advanceDeduction,
                 'absenceDeduction' => $absenceDeduction,
+                'absenceDays' => $absences,
                 'lateDeduction' => $lateDeduction,
-                'faultDeduction' => 0, // Não tem item separado, está em absence
+                'lateDays' => $payroll->late_arrivals ?? 0,
                 'salaryDiscounts' => $discountDeduction,
                 'totalDeductions' => $totalDeductions,
                 
@@ -590,29 +606,35 @@ class PayrollReceiptController extends Controller
                 'extraHours' => $totalOvertimeHours,
                 
                 // Remunerações baseadas nos dados reais
-                'baseSalary' => $employee->base_salary ?? 175000,
-                'transportSubsidy' => 30000, // Valor padrão mostrado na imagem
-                'foodSubsidy' => 12000,
-                'overtimeHours' => $totalOvertimeAmount ?? 2734.38,
-                'profileBonus' => 10000, // Employee Profile Bonus
-                'payrollBonus' => 6000, // Additional Payroll Bonus
-                'christmasSubsidy' => 87500, // Christmas Subsidy
-                'holidaySubsidy' => 87500, // Vacation Subsidy
-                'totalEarnings' => $latestPayroll?->gross_salary ?? 362734.38,
+                'baseSalary' => $employee->base_salary ?? 0,
+                'transportSubsidy' => $latestPayroll?->transport_allowance ?? 0,
+                'foodSubsidy' => $latestPayroll?->meal_allowance ?? 0,
+                'overtimeAmount' => $totalOvertimeAmount ?? 0,
+                'nightShiftAllowance' => $latestPayroll?->night_shift_allowance ?? 0,
+                'nightShiftDays' => $latestPayroll?->night_shift_days ?? 0,
+                'profileBonus' => $latestPayroll?->profile_bonus ?? 0,
+                'payrollBonus' => $latestPayroll?->additional_bonus ?? 0,
+                'christmasSubsidy' => $latestPayroll?->christmas_subsidy_amount ?? 0,
+                'holidaySubsidy' => $latestPayroll?->vacation_subsidy_amount ?? 0,
+                'familyAllowance' => $latestPayroll?->family_allowance ?? 0,
+                'positionSubsidy' => $employee->position_subsidy ?? 0,
+                'performanceSubsidy' => $employee->performance_subsidy ?? 0,
+                'totalEarnings' => $latestPayroll?->gross_salary ?? 0,
                 
-                // Descontos baseados na imagem
-                'lateDeduction' => 994.32, // Desconto por Atrasos (1 dia)
-                'absenceDeduction' => 91304.35, // Deduções por Faltas (12 dias)
-                'faultDeduction' => 3804.35, // Desconto por Faltas (12 dias) - diferente de absenceDeduction
-                'socialSecurity' => 5250, // INSS (3%)
-                'incomeTax' => 42351.94, // IRT
-                'foodSubsidyDeduction' => 1200, // Desconto Subsídio Alimentação (10% do subsídio)
-                'salaryDiscounts' => $salaryDiscounts->sum('total_amount') ?: 18000, // Salary Discounts (total)
-                'salaryDiscountsDetailed' => $salaryDiscounts, // Descontos detalhados por tipo
-                'salaryAdvances' => 12857.14, // Salary Advances
-                'totalDeductions' => $latestPayroll?->total_deductions ?? 180194.13,
+                // Descontos baseados nos dados reais
+                'incomeTax' => $latestPayroll?->income_tax ?? 0,
+                'socialSecurity' => $latestPayroll?->social_security ?? 0,
+                'foodSubsidyDeduction' => $latestPayroll?->meal_allowance ?? 0,
+                'salaryAdvances' => $latestPayroll?->advance_deduction ?? 0,
+                'absenceDeduction' => $latestPayroll?->absence_deduction ?? 0,
+                'absenceDays' => $absentDays ?? 0,
+                'lateDeduction' => $latestPayroll?->late_deduction ?? 0,
+                'lateDays' => $lateDays ?? 0,
+                'salaryDiscounts' => $salaryDiscounts->sum('total_amount') ?? 0,
+                'salaryDiscountsDetailed' => $salaryDiscounts,
+                'totalDeductions' => $latestPayroll?->total_deductions ?? 0,
                 
-                'netSalary' => $latestPayroll?->net_salary ?? 182540.25,
+                'netSalary' => $latestPayroll?->net_salary ?? 0,
                 'bankName' => 'ACCESS BANK',
                 'accountNumber' => '123456789',
                 'paymentMethod' => 'TRANSFERÊNCIA BANCÁRIA',

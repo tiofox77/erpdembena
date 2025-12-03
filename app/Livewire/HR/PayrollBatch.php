@@ -750,6 +750,8 @@ class PayrollBatch extends Component
                 'transport_allowance' => (float) ($this->calculatedData['transport_allowance'] ?? 0),
                 'food_allowance' => (float) ($this->calculatedData['food_benefit'] ?? 0),
                 'overtime_amount' => (float) ($this->calculatedData['total_overtime_amount'] ?? 0),
+                'night_shift_allowance' => (float) ($this->calculatedData['night_shift_allowance'] ?? 0),
+                'night_shift_days' => (int) ($this->calculatedData['night_shift_days'] ?? 0),
                 'family_allowance' => (float) ($this->calculatedData['family_allowance'] ?? 0),
                 'position_subsidy' => (float) ($this->calculatedData['position_subsidy'] ?? 0),
                 'performance_subsidy' => (float) ($this->calculatedData['performance_subsidy'] ?? 0),
@@ -812,6 +814,10 @@ class PayrollBatch extends Component
                         // Overtime
                         'total_overtime_hours' => $this->calculatedData['total_overtime_hours'] ?? 0,
                         'overtime_amount' => $this->calculatedData['total_overtime_amount'] ?? 0,
+                        
+                        // Night Shift
+                        'night_shift_allowance' => $this->calculatedData['night_shift_allowance'] ?? 0,
+                        'night_shift_days' => $this->calculatedData['night_shift_days'] ?? 0,
                         
                         // IRT calculation fields
                         'food_exemption' => $this->calculatedData['exempt_food'] ?? min($this->calculatedData['food_benefit'] ?? 0, 30000),

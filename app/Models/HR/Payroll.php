@@ -65,6 +65,9 @@ class Payroll extends Model
         'absent_days',
         'late_arrivals',
         'total_overtime_hours',
+        // Night shift allowance (Lei Angola Art. 102º - 25%)
+        'night_shift_allowance',
+        'night_shift_days',
         // IRT calculation fields
         'food_exemption',
         'transport_exemption',
@@ -114,6 +117,9 @@ class Payroll extends Model
         'present_days' => 'integer',
         'absent_days' => 'integer',
         'late_arrivals' => 'integer',
+        // Night shift casts
+        'night_shift_allowance' => 'decimal:2',
+        'night_shift_days' => 'integer',
         // IRT calculation casts
         'food_exemption' => 'decimal:2',
         'transport_exemption' => 'decimal:2',

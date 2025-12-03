@@ -6,55 +6,83 @@ namespace App\Livewire\HR\PerformanceEvaluations;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\WithFileUploads;
 use App\Models\HR\PerformanceEvaluation;
 use App\Models\HR\Employee;
-use Illuminate\Support\Facades\Storage;
+use App\Models\HR\Department;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
+/**
+ * Performance Evaluations Livewire Component
+ * Based on Quarterly Performance Appraisal Form
+ */
 class PerformanceEvaluations extends Component
 {
-    use WithPagination, WithFileUploads;
+    use WithPagination;
 
-    // Component properties
+    // Component state
     public $showModal = false;
     public $showViewModal = false;
     public $showDeleteModal = false;
     public $showEmployeeSearch = false;
     public $isEditing = false;
 
-    // Form properties
+    // Form properties - Employee Details
     public $performanceEvaluationId;
     public $employee_id;
-    public $evaluation_type = 'annual';
+    public $supervisor_id;
+    public $department_id;
+    public $selectedEmployee;
+    
+    // Evaluation Period
+    public $evaluation_quarter = 'Q4';
+    public $evaluation_year;
     public $period_start;
     public $period_end;
-    public $overall_score;
-    public $goals_achievement;
-    public $technical_skills;
-    public $soft_skills;
-    public $attendance_punctuality;
-    public $teamwork_collaboration;
-    public $initiative_innovation;
-    public $quality_of_work;
-    public $strengths;
-    public $areas_for_improvement;
-    public $development_plan;
-    public $additional_comments;
-    public $status = 'draft';
     public $evaluation_date;
-    public $next_evaluation_date;
-    public $attachments = [];
+    
+    // Performance Criteria (1-5 rating)
+    public $productivity_output;
+    public $productivity_output_remarks;
+    public $quality_of_work;
+    public $quality_of_work_remarks;
+    public $attendance_punctuality;
+    public $attendance_punctuality_remarks;
+    public $safety_compliance;
+    public $safety_compliance_remarks;
+    public $machine_operation_skills;
+    public $machine_operation_skills_remarks;
+    public $teamwork_cooperation;
+    public $teamwork_cooperation_remarks;
+    public $adaptability_learning;
+    public $adaptability_learning_remarks;
+    public $housekeeping_5s;
+    public $housekeeping_5s_remarks;
+    public $discipline_attitude;
+    public $discipline_attitude_remarks;
+    public $initiative_responsibility;
+    public $initiative_responsibility_remarks;
+    
+    // Overall Performance Summary
+    public $average_score;
+    public $performance_level;
+    public $eligible_for_bonus = false;
+    
+    // Comments
+    public $supervisor_comments;
+    public $employee_comments;
+    
+    // Status
+    public $status = 'draft';
 
-    // Search and filter properties
+    // Search and filter
     public $search = '';
     public $statusFilter = '';
-    public $typeFilter = '';
-    public $dateFilter = '';
+    public $quarterFilter = '';
+    public $yearFilter = '';
     public $perPage = 15;
 
     // Employee selection
-    public $selectedEmployee;
     public $employeeSearch = '';
     public $employees = [];
 
@@ -64,58 +92,56 @@ class PerformanceEvaluations extends Component
     {
         return [
             'employee_id' => 'required|exists:employees,id',
-            'evaluation_type' => ['required', Rule::in(array_keys(PerformanceEvaluation::EVALUATION_TYPES))],
-            'period_start' => 'required|date',
-            'period_end' => 'required|date|after_or_equal:period_start',
-            'overall_score' => 'nullable|numeric|between:0,10',
-            'goals_achievement' => 'nullable|numeric|between:0,10',
-            'technical_skills' => 'nullable|numeric|between:0,10',
-            'soft_skills' => 'nullable|numeric|between:0,10',
-            'attendance_punctuality' => 'nullable|numeric|between:0,10',
-            'teamwork_collaboration' => 'nullable|numeric|between:0,10',
-            'initiative_innovation' => 'nullable|numeric|between:0,10',
-            'quality_of_work' => 'nullable|numeric|between:0,10',
-            'strengths' => 'nullable|string|max:1000',
-            'areas_for_improvement' => 'nullable|string|max:1000',
-            'development_plan' => 'nullable|string|max:1000',
-            'additional_comments' => 'nullable|string|max:1000',
+            'supervisor_id' => 'nullable|exists:employees,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'evaluation_quarter' => ['required', Rule::in(['Q1', 'Q2', 'Q3', 'Q4'])],
+            'evaluation_year' => 'required|integer|min:2020|max:2050',
+            'evaluation_date' => 'nullable|date',
+            
+            // Performance Criteria (1-5)
+            'productivity_output' => 'nullable|integer|between:1,5',
+            'quality_of_work' => 'nullable|integer|between:1,5',
+            'attendance_punctuality' => 'nullable|integer|between:1,5',
+            'safety_compliance' => 'nullable|integer|between:1,5',
+            'machine_operation_skills' => 'nullable|integer|between:1,5',
+            'teamwork_cooperation' => 'nullable|integer|between:1,5',
+            'adaptability_learning' => 'nullable|integer|between:1,5',
+            'housekeeping_5s' => 'nullable|integer|between:1,5',
+            'discipline_attitude' => 'nullable|integer|between:1,5',
+            'initiative_responsibility' => 'nullable|integer|between:1,5',
+            
+            // Remarks
+            'productivity_output_remarks' => 'nullable|string|max:500',
+            'quality_of_work_remarks' => 'nullable|string|max:500',
+            'attendance_punctuality_remarks' => 'nullable|string|max:500',
+            'safety_compliance_remarks' => 'nullable|string|max:500',
+            'machine_operation_skills_remarks' => 'nullable|string|max:500',
+            'teamwork_cooperation_remarks' => 'nullable|string|max:500',
+            'adaptability_learning_remarks' => 'nullable|string|max:500',
+            'housekeeping_5s_remarks' => 'nullable|string|max:500',
+            'discipline_attitude_remarks' => 'nullable|string|max:500',
+            'initiative_responsibility_remarks' => 'nullable|string|max:500',
+            
+            // Summary
+            'eligible_for_bonus' => 'boolean',
+            'supervisor_comments' => 'nullable|string|max:2000',
+            'employee_comments' => 'nullable|string|max:2000',
+            
             'status' => ['required', Rule::in(array_keys(PerformanceEvaluation::STATUSES))],
-            'evaluation_date' => 'required|date',
-            'next_evaluation_date' => 'nullable|date|after:evaluation_date',
-            'attachments.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
-        ];
-    }
-
-    protected function messages(): array
-    {
-        return [
-            'employee_id.required' => __('messages.employee_required'),
-            'employee_id.exists' => __('messages.employee_invalid'),
-            'evaluation_type.required' => __('messages.evaluation_type_required'),
-            'period_start.required' => __('messages.period_start_required'),
-            'period_start.date' => __('messages.period_start_invalid_date'),
-            'period_end.required' => __('messages.period_end_required'),
-            'period_end.date' => __('messages.period_end_invalid_date'),
-            'period_end.after_or_equal' => __('messages.period_end_after_start'),
-            'evaluation_date.required' => __('messages.evaluation_date_required'),
-            'evaluation_date.date' => __('messages.evaluation_date_invalid'),
-            'next_evaluation_date.after' => __('messages.next_evaluation_date_after'),
-            '*.numeric' => __('messages.score_must_be_numeric'),
-            '*.between' => __('messages.score_between_0_and_10'),
-            'attachments.*.file' => __('messages.attachment_must_be_file'),
-            'attachments.*.mimes' => __('messages.attachment_invalid_type'),
-            'attachments.*.max' => __('messages.attachment_too_large'),
         ];
     }
 
     public function mount(): void
     {
+        $this->evaluation_year = now()->year;
         $this->evaluation_date = now()->format('Y-m-d');
+        $this->yearFilter = now()->year;
+        $this->setQuarterDates();
     }
 
     public function render()
     {
-        $evaluations = PerformanceEvaluation::with(['employee', 'evaluatedByUser'])
+        $evaluations = PerformanceEvaluation::with(['employee', 'supervisor', 'department', 'createdByUser'])
             ->when($this->search, function ($query) {
                 $query->whereHas('employee', function ($q) {
                     $q->where('full_name', 'like', '%' . $this->search . '%')
@@ -125,20 +151,44 @@ class PerformanceEvaluations extends Component
             ->when($this->statusFilter, function ($query) {
                 $query->where('status', $this->statusFilter);
             })
-            ->when($this->typeFilter, function ($query) {
-                $query->where('evaluation_type', $this->typeFilter);
+            ->when($this->quarterFilter, function ($query) {
+                $query->where('evaluation_quarter', $this->quarterFilter);
             })
-            ->when($this->dateFilter, function ($query) {
-                $query->whereDate('evaluation_date', '>=', $this->dateFilter);
+            ->when($this->yearFilter, function ($query) {
+                $query->where('evaluation_year', $this->yearFilter);
             })
-            ->latest('evaluation_date')
+            ->latest('created_at')
             ->paginate($this->perPage);
 
         return view('livewire.hr.performance-evaluations.performance-evaluations', [
             'evaluations' => $evaluations,
-            'evaluationTypes' => PerformanceEvaluation::EVALUATION_TYPES,
+            'quarters' => PerformanceEvaluation::QUARTERS,
             'statuses' => PerformanceEvaluation::STATUSES,
+            'ratings' => PerformanceEvaluation::RATINGS,
+            'criteria' => PerformanceEvaluation::CRITERIA,
+            'performanceLevels' => PerformanceEvaluation::PERFORMANCE_LEVELS,
+            'departments' => Department::orderBy('name')->get(),
+            'years' => range(now()->year, 2020),
         ]);
+    }
+
+    public function updatedEvaluationQuarter(): void
+    {
+        $this->setQuarterDates();
+    }
+
+    public function updatedEvaluationYear(): void
+    {
+        $this->setQuarterDates();
+    }
+
+    private function setQuarterDates(): void
+    {
+        if ($this->evaluation_quarter && $this->evaluation_year) {
+            $dates = PerformanceEvaluation::getQuarterDates($this->evaluation_quarter, (int) $this->evaluation_year);
+            $this->period_start = $dates['start']->format('Y-m-d');
+            $this->period_end = $dates['end']->format('Y-m-d');
+        }
     }
 
     public function openModal(): void
@@ -170,16 +220,22 @@ class PerformanceEvaluations extends Component
     public function searchEmployees(): void
     {
         $this->employees = Employee::with(['department', 'position'])
-            ->where('full_name', 'like', '%' . $this->employeeSearch . '%')
-            ->orWhere('id_card', 'like', '%' . $this->employeeSearch . '%')
+            ->where(function($query) {
+                $query->where('full_name', 'like', '%' . $this->employeeSearch . '%')
+                      ->orWhere('id_card', 'like', '%' . $this->employeeSearch . '%')
+                      ->orWhere('id', 'like', '%' . $this->employeeSearch . '%');
+            })
             ->limit(50)
             ->get();
     }
 
     public function selectEmployee($employeeId): void
     {
-        $this->selectedEmployee = Employee::find($employeeId);
+        $employee = Employee::with(['department', 'position'])->find($employeeId);
+        $this->selectedEmployee = $employee;
         $this->employee_id = $employeeId;
+        $this->department_id = $employee->department_id;
+        $this->supervisor_id = $employee->supervisor_id;
         $this->closeEmployeeSearch();
     }
 
@@ -187,74 +243,103 @@ class PerformanceEvaluations extends Component
     {
         $this->selectedEmployee = null;
         $this->employee_id = null;
+        $this->department_id = null;
+        $this->supervisor_id = null;
     }
 
-    public function calculateOverallScore(): void
+    public function calculateAverageScore(): void
     {
         $scores = [
-            $this->goals_achievement,
-            $this->technical_skills,
-            $this->soft_skills,
-            $this->attendance_punctuality,
-            $this->teamwork_collaboration,
-            $this->initiative_innovation,
+            $this->productivity_output,
             $this->quality_of_work,
+            $this->attendance_punctuality,
+            $this->safety_compliance,
+            $this->machine_operation_skills,
+            $this->teamwork_cooperation,
+            $this->adaptability_learning,
+            $this->housekeeping_5s,
+            $this->discipline_attitude,
+            $this->initiative_responsibility,
         ];
 
-        $nonNullScores = array_filter($scores, fn($score) => $score !== null && $score !== '');
+        $validScores = array_filter($scores, fn($score) => $score !== null && $score !== '');
         
-        if (!empty($nonNullScores)) {
-            $this->overall_score = round(array_sum($nonNullScores) / count($nonNullScores), 2);
+        if (!empty($validScores)) {
+            $this->average_score = round(array_sum($validScores) / count($validScores), 2);
+            $this->determinePerformanceLevel();
         }
+    }
+
+    public function determinePerformanceLevel(): void
+    {
+        if ($this->average_score === null) {
+            $this->performance_level = null;
+            return;
+        }
+
+        $this->performance_level = match(true) {
+            $this->average_score >= 4.5 => 'excellent',
+            $this->average_score >= 3.5 => 'good',
+            $this->average_score >= 2.5 => 'satisfactory',
+            default => 'needs_improvement',
+        };
     }
 
     public function save(): void
     {
         $this->validate();
-
-        $attachmentPaths = [];
-        if ($this->attachments) {
-            foreach ($this->attachments as $attachment) {
-                $attachmentPaths[] = [
-                    'name' => $attachment->getClientOriginalName(),
-                    'path' => $attachment->store('performance-evaluations', 'public'),
-                    'size' => $attachment->getSize(),
-                    'type' => $attachment->getClientMimeType(),
-                ];
-            }
-        }
+        $this->calculateAverageScore();
 
         $data = [
             'employee_id' => $this->employee_id,
-            'evaluation_type' => $this->evaluation_type,
-            'period_start' => $this->period_start ?: null,
-            'period_end' => $this->period_end ?: null,
-            'overall_score' => $this->overall_score,
-            'goals_achievement' => $this->goals_achievement,
-            'technical_skills' => $this->technical_skills,
-            'soft_skills' => $this->soft_skills,
-            'attendance_punctuality' => $this->attendance_punctuality,
-            'teamwork_collaboration' => $this->teamwork_collaboration,
-            'initiative_innovation' => $this->initiative_innovation,
+            'supervisor_id' => $this->supervisor_id,
+            'department_id' => $this->department_id,
+            'evaluation_quarter' => $this->evaluation_quarter,
+            'evaluation_year' => $this->evaluation_year,
+            'period_start' => $this->period_start,
+            'period_end' => $this->period_end,
+            'evaluation_date' => $this->evaluation_date,
+            
+            // Criteria
+            'productivity_output' => $this->productivity_output,
+            'productivity_output_remarks' => $this->productivity_output_remarks,
             'quality_of_work' => $this->quality_of_work,
-            'strengths' => $this->strengths,
-            'areas_for_improvement' => $this->areas_for_improvement,
-            'development_plan' => $this->development_plan,
-            'additional_comments' => $this->additional_comments,
+            'quality_of_work_remarks' => $this->quality_of_work_remarks,
+            'attendance_punctuality' => $this->attendance_punctuality,
+            'attendance_punctuality_remarks' => $this->attendance_punctuality_remarks,
+            'safety_compliance' => $this->safety_compliance,
+            'safety_compliance_remarks' => $this->safety_compliance_remarks,
+            'machine_operation_skills' => $this->machine_operation_skills,
+            'machine_operation_skills_remarks' => $this->machine_operation_skills_remarks,
+            'teamwork_cooperation' => $this->teamwork_cooperation,
+            'teamwork_cooperation_remarks' => $this->teamwork_cooperation_remarks,
+            'adaptability_learning' => $this->adaptability_learning,
+            'adaptability_learning_remarks' => $this->adaptability_learning_remarks,
+            'housekeeping_5s' => $this->housekeeping_5s,
+            'housekeeping_5s_remarks' => $this->housekeeping_5s_remarks,
+            'discipline_attitude' => $this->discipline_attitude,
+            'discipline_attitude_remarks' => $this->discipline_attitude_remarks,
+            'initiative_responsibility' => $this->initiative_responsibility,
+            'initiative_responsibility_remarks' => $this->initiative_responsibility_remarks,
+            
+            // Summary
+            'average_score' => $this->average_score,
+            'performance_level' => $this->performance_level,
+            'eligible_for_bonus' => $this->eligible_for_bonus,
+            'supervisor_comments' => $this->supervisor_comments,
+            'employee_comments' => $this->employee_comments,
+            
             'status' => $this->status,
-            'evaluation_date' => $this->evaluation_date ?: null,
-            'next_evaluation_date' => $this->next_evaluation_date ?: null,
-            'attachments' => $attachmentPaths,
-            'evaluated_by' => auth()->id(),
+            'created_by' => auth()->id(),
         ];
 
         if ($this->isEditing) {
             $evaluation = PerformanceEvaluation::find($this->performanceEvaluationId);
             $evaluation->update($data);
-            session()->flash('message', __('messages.evaluation_updated_successfully'));
+            session()->flash('message', 'Avaliação atualizada com sucesso!');
         } else {
             PerformanceEvaluation::create($data);
-            session()->flash('message', __('messages.evaluation_created_successfully'));
+            session()->flash('message', 'Avaliação criada com sucesso!');
         }
 
         $this->closeModal();
@@ -262,29 +347,48 @@ class PerformanceEvaluations extends Component
 
     public function edit($evaluationId): void
     {
-        $evaluation = PerformanceEvaluation::with('employee')->find($evaluationId);
+        $evaluation = PerformanceEvaluation::with(['employee', 'supervisor', 'department'])->find($evaluationId);
         
         $this->performanceEvaluationId = $evaluation->id;
         $this->employee_id = $evaluation->employee_id;
         $this->selectedEmployee = $evaluation->employee;
-        $this->evaluation_type = $evaluation->evaluation_type;
-        $this->period_start = $evaluation->period_start->format('Y-m-d');
-        $this->period_end = $evaluation->period_end->format('Y-m-d');
-        $this->overall_score = $evaluation->overall_score;
-        $this->goals_achievement = $evaluation->goals_achievement;
-        $this->technical_skills = $evaluation->technical_skills;
-        $this->soft_skills = $evaluation->soft_skills;
-        $this->attendance_punctuality = $evaluation->attendance_punctuality;
-        $this->teamwork_collaboration = $evaluation->teamwork_collaboration;
-        $this->initiative_innovation = $evaluation->initiative_innovation;
+        $this->supervisor_id = $evaluation->supervisor_id;
+        $this->department_id = $evaluation->department_id;
+        $this->evaluation_quarter = $evaluation->evaluation_quarter;
+        $this->evaluation_year = $evaluation->evaluation_year;
+        $this->period_start = $evaluation->period_start?->format('Y-m-d');
+        $this->period_end = $evaluation->period_end?->format('Y-m-d');
+        $this->evaluation_date = $evaluation->evaluation_date?->format('Y-m-d');
+        
+        // Criteria
+        $this->productivity_output = $evaluation->productivity_output;
+        $this->productivity_output_remarks = $evaluation->productivity_output_remarks;
         $this->quality_of_work = $evaluation->quality_of_work;
-        $this->strengths = $evaluation->strengths;
-        $this->areas_for_improvement = $evaluation->areas_for_improvement;
-        $this->development_plan = $evaluation->development_plan;
-        $this->additional_comments = $evaluation->additional_comments;
+        $this->quality_of_work_remarks = $evaluation->quality_of_work_remarks;
+        $this->attendance_punctuality = $evaluation->attendance_punctuality;
+        $this->attendance_punctuality_remarks = $evaluation->attendance_punctuality_remarks;
+        $this->safety_compliance = $evaluation->safety_compliance;
+        $this->safety_compliance_remarks = $evaluation->safety_compliance_remarks;
+        $this->machine_operation_skills = $evaluation->machine_operation_skills;
+        $this->machine_operation_skills_remarks = $evaluation->machine_operation_skills_remarks;
+        $this->teamwork_cooperation = $evaluation->teamwork_cooperation;
+        $this->teamwork_cooperation_remarks = $evaluation->teamwork_cooperation_remarks;
+        $this->adaptability_learning = $evaluation->adaptability_learning;
+        $this->adaptability_learning_remarks = $evaluation->adaptability_learning_remarks;
+        $this->housekeeping_5s = $evaluation->housekeeping_5s;
+        $this->housekeeping_5s_remarks = $evaluation->housekeeping_5s_remarks;
+        $this->discipline_attitude = $evaluation->discipline_attitude;
+        $this->discipline_attitude_remarks = $evaluation->discipline_attitude_remarks;
+        $this->initiative_responsibility = $evaluation->initiative_responsibility;
+        $this->initiative_responsibility_remarks = $evaluation->initiative_responsibility_remarks;
+        
+        // Summary
+        $this->average_score = $evaluation->average_score;
+        $this->performance_level = $evaluation->performance_level;
+        $this->eligible_for_bonus = $evaluation->eligible_for_bonus;
+        $this->supervisor_comments = $evaluation->supervisor_comments;
+        $this->employee_comments = $evaluation->employee_comments;
         $this->status = $evaluation->status;
-        $this->evaluation_date = $evaluation->evaluation_date->format('Y-m-d');
-        $this->next_evaluation_date = $evaluation->next_evaluation_date?->format('Y-m-d');
         
         $this->isEditing = true;
         $this->showModal = true;
@@ -292,16 +396,13 @@ class PerformanceEvaluations extends Component
 
     public function view($evaluationId): void
     {
-        $evaluation = PerformanceEvaluation::with(['employee.department', 'evaluatedByUser'])->find($evaluationId);
-        $this->performanceEvaluationId = $evaluation->id;
-        $this->selectedEmployee = $evaluation->employee;
+        $this->performanceEvaluationId = $evaluationId;
         $this->showViewModal = true;
     }
 
     public function closeViewModal(): void
     {
         $this->showViewModal = false;
-        $this->selectedEmployee = null;
         $this->performanceEvaluationId = null;
     }
 
@@ -315,18 +416,8 @@ class PerformanceEvaluations extends Component
 
     public function delete(): void
     {
-        $evaluation = PerformanceEvaluation::find($this->performanceEvaluationId);
-        
-        // Delete attachments from storage
-        if ($evaluation->attachments) {
-            foreach ($evaluation->attachments as $attachment) {
-                Storage::disk('public')->delete($attachment['path']);
-            }
-        }
-        
-        $evaluation->delete();
-        
-        session()->flash('message', __('messages.evaluation_deleted_successfully'));
+        PerformanceEvaluation::find($this->performanceEvaluationId)->delete();
+        session()->flash('message', 'Avaliação excluída com sucesso!');
         $this->closeDeleteModal();
     }
 
@@ -337,40 +428,47 @@ class PerformanceEvaluations extends Component
         $this->selectedEmployee = null;
     }
 
-    public function downloadAttachment($attachmentIndex)
-    {
-        $evaluation = PerformanceEvaluation::find($this->performanceEvaluationId);
-        
-        if ($evaluation && isset($evaluation->attachments[$attachmentIndex])) {
-            $attachment = $evaluation->attachments[$attachmentIndex];
-            return Storage::disk('public')->download($attachment['path'], $attachment['name']);
-        }
-    }
-
     private function resetForm(): void
     {
         $this->performanceEvaluationId = null;
         $this->employee_id = null;
         $this->selectedEmployee = null;
-        $this->evaluation_type = 'annual';
-        $this->period_start = '';
-        $this->period_end = '';
-        $this->overall_score = null;
-        $this->goals_achievement = null;
-        $this->technical_skills = null;
-        $this->soft_skills = null;
-        $this->attendance_punctuality = null;
-        $this->teamwork_collaboration = null;
-        $this->initiative_innovation = null;
-        $this->quality_of_work = null;
-        $this->strengths = '';
-        $this->areas_for_improvement = '';
-        $this->development_plan = '';
-        $this->additional_comments = '';
-        $this->status = 'draft';
+        $this->supervisor_id = null;
+        $this->department_id = null;
+        $this->evaluation_quarter = 'Q4';
+        $this->evaluation_year = now()->year;
         $this->evaluation_date = now()->format('Y-m-d');
-        $this->next_evaluation_date = '';
-        $this->attachments = [];
+        $this->setQuarterDates();
+        
+        // Reset criteria
+        $this->productivity_output = null;
+        $this->productivity_output_remarks = null;
+        $this->quality_of_work = null;
+        $this->quality_of_work_remarks = null;
+        $this->attendance_punctuality = null;
+        $this->attendance_punctuality_remarks = null;
+        $this->safety_compliance = null;
+        $this->safety_compliance_remarks = null;
+        $this->machine_operation_skills = null;
+        $this->machine_operation_skills_remarks = null;
+        $this->teamwork_cooperation = null;
+        $this->teamwork_cooperation_remarks = null;
+        $this->adaptability_learning = null;
+        $this->adaptability_learning_remarks = null;
+        $this->housekeeping_5s = null;
+        $this->housekeeping_5s_remarks = null;
+        $this->discipline_attitude = null;
+        $this->discipline_attitude_remarks = null;
+        $this->initiative_responsibility = null;
+        $this->initiative_responsibility_remarks = null;
+        
+        // Reset summary
+        $this->average_score = null;
+        $this->performance_level = null;
+        $this->eligible_for_bonus = false;
+        $this->supervisor_comments = null;
+        $this->employee_comments = null;
+        $this->status = 'draft';
         $this->isEditing = false;
     }
 
@@ -379,38 +477,18 @@ class PerformanceEvaluations extends Component
         $this->searchEmployees();
     }
 
-    public function updatedGoalsAchievement(): void
+    // Auto-calculate on any criteria change
+    public function updated($property): void
     {
-        $this->calculateOverallScore();
-    }
+        $criteriaFields = [
+            'productivity_output', 'quality_of_work', 'attendance_punctuality',
+            'safety_compliance', 'machine_operation_skills', 'teamwork_cooperation',
+            'adaptability_learning', 'housekeeping_5s', 'discipline_attitude',
+            'initiative_responsibility'
+        ];
 
-    public function updatedTechnicalSkills(): void
-    {
-        $this->calculateOverallScore();
-    }
-
-    public function updatedSoftSkills(): void
-    {
-        $this->calculateOverallScore();
-    }
-
-    public function updatedAttendancePunctuality(): void
-    {
-        $this->calculateOverallScore();
-    }
-
-    public function updatedTeamworkCollaboration(): void
-    {
-        $this->calculateOverallScore();
-    }
-
-    public function updatedInitiativeInnovation(): void
-    {
-        $this->calculateOverallScore();
-    }
-
-    public function updatedQualityOfWork(): void
-    {
-        $this->calculateOverallScore();
+        if (in_array($property, $criteriaFields)) {
+            $this->calculateAverageScore();
+        }
     }
 }

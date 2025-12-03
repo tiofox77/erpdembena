@@ -165,7 +165,84 @@ class SystemSettings extends Component
     {
         return [
             'runArtisanCommand' => 'runArtisanCommand',
+            'refreshUpdateState' => 'refreshUpdateState',
         ];
+    }
+    
+    /**
+     * Refresh update state from file/cache (called by polling)
+     */
+    public function refreshUpdateState()
+    {
+        $state = null;
+        $stateFile = storage_path('app/update_state.json');
+        
+        // Primeiro tentar ler do arquivo (mais confiável durante processos longos)
+        if (file_exists($stateFile)) {
+            $content = file_get_contents($stateFile);
+            $state = json_decode($content, true);
+        }
+        
+        // Se não conseguiu do arquivo, tentar do cache
+        if (!$state) {
+            $state = Cache::get('system_update_state', null);
+        }
+        
+        if ($state) {
+            $this->update_logs = $state['logs'] ?? [];
+            $this->update_progress = $state['progress'] ?? 0;
+            $this->update_status = $state['status'] ?? '';
+            $this->update_step = $state['step'] ?? 'ready';
+            $this->isUpdating = $state['is_updating'] ?? false;
+            
+            // Se completou ou falhou
+            if (in_array($this->update_step, ['completed', 'failed'])) {
+                if ($this->update_step === 'completed') {
+                    $this->update_available = false;
+                    $this->current_version = $state['new_version'] ?? $this->current_version;
+                }
+                
+                // Limpar arquivo de estado após 30 segundos
+                if (isset($state['timestamp'])) {
+                    $stateTime = \Carbon\Carbon::parse($state['timestamp']);
+                    if ($stateTime->diffInSeconds(now()) > 30) {
+                        @unlink($stateFile);
+                        Cache::forget('system_update_state');
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Save update state to file for real-time updates
+     * Using file instead of cache because cache may not work during long-running processes
+     */
+    protected function saveUpdateState()
+    {
+        $stateFile = storage_path('app/update_state.json');
+        $state = [
+            'logs' => $this->update_logs,
+            'progress' => $this->update_progress,
+            'status' => $this->update_status,
+            'step' => $this->update_step,
+            'is_updating' => $this->isUpdating,
+            'new_version' => $this->latest_version,
+            'timestamp' => now()->toDateTimeString(),
+        ];
+        
+        file_put_contents($stateFile, json_encode($state, JSON_PRETTY_PRINT));
+        
+        // Also save to cache as backup
+        Cache::put('system_update_state', $state, now()->addMinutes(30));
+    }
+    
+    /**
+     * Get state file path
+     */
+    protected function getStateFilePath()
+    {
+        return storage_path('app/update_state.json');
     }
 
     /**
@@ -506,12 +583,20 @@ class SystemSettings extends Component
             return;
         }
 
+        // Limpar arquivo de estado anterior
+        $stateFile = storage_path('app/update_state.json');
+        if (file_exists($stateFile)) {
+            @unlink($stateFile);
+        }
+        Cache::forget('system_update_state');
+
         // Show update modal instead of confirm modal
         $this->showUpdateModal = true;
         $this->update_logs = [];
         $this->update_progress = 0;
         $this->update_status = 'Aguardando confirmação...';
         $this->update_step = 'ready';
+        $this->isUpdating = false;
     }
     
     /**
@@ -767,8 +852,8 @@ class SystemSettings extends Component
             array_shift($this->update_logs);
         }
         
-        // Force Livewire to update the view
-        $this->dispatch('log-updated');
+        // SALVAR ESTADO NO CACHE PARA ATUALIZAÇÃO EM TEMPO REAL
+        $this->saveUpdateState();
         
         return true;
     }
