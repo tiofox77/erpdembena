@@ -294,9 +294,10 @@ class Payroll extends Component
         $this->selected_month = now()->format('m');
         $this->selected_year = now()->format('Y');
 
-        // Initialize filters
-        $this->filters['month'] = $this->selected_month;
-        $this->filters['year'] = $this->selected_year;
+        // Initialize filters - leave empty to show all records by default
+        // Users can filter by month/year if needed
+        $this->filters['month'] = '';
+        $this->filters['year'] = '';
         $this->createDefaultTaxSettings();
         $this->loadHRSettings();
     }
@@ -3825,7 +3826,7 @@ class Payroll extends Component
             ->when($this->search, function ($query) {
                 return $query->whereHas('employee', function ($query) {
                     $query->where('full_name', 'like', "%{$this->search}%")
-                          ->orWhere('employee_id', 'like', "%{$this->search}%")
+                          ->orWhere('id_card', 'like', "%{$this->search}%")
                           ->orWhere('email', 'like', "%{$this->search}%");
                 });
             })

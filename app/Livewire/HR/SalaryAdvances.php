@@ -150,7 +150,7 @@ class SalaryAdvances extends Component
             ->when($this->filters['search'], function ($q) {
                 $q->whereHas('employee', function ($eq) {
                     $eq->where('full_name', 'like', '%' . $this->filters['search'] . '%')
-                       ->orWhere('employee_id', 'like', '%' . $this->filters['search'] . '%');
+                       ->orWhere('id_card', 'like', '%' . $this->filters['search'] . '%');
                 });
             })
             ->when($this->filters['status'], fn($q) => $q->where('status', $this->filters['status']))

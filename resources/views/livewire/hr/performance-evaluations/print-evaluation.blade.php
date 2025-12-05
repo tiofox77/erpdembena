@@ -353,7 +353,6 @@
         {{-- Company Header with Logo --}}
         @php
             $logoPath = \App\Models\Setting::get('company_logo');
-            $logoFullPath = $logoPath ? public_path('storage/' . $logoPath) : public_path('img/logo.png');
             $companyName = \App\Models\Setting::get('company_name', 'ERP DEMBENA');
             $companyAddress = \App\Models\Setting::get('company_address', '');
             $companyPhone = \App\Models\Setting::get('company_phone', '');
@@ -364,8 +363,8 @@
         
         <div class="company-header">
             <div class="company-logo">
-                @if(file_exists($logoFullPath))
-                    <img src="{{ $logoFullPath }}" alt="{{ $companyName }}">
+                @if($logoPath)
+                    <img src="{{ asset('storage/' . $logoPath) }}" alt="{{ $companyName }}">
                 @else
                     <img src="{{ asset('img/logo.png') }}" alt="{{ $companyName }}">
                 @endif

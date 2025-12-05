@@ -445,18 +445,7 @@
                 </div>
             </div>
         <!-- Add/Edit Modal -->
-    <div x-data="{ 
-        showDeleteConfirm: false,
-        init() {
-            // Quando o componente é inicializado, verificamos se estamos no modo de edição
-            Livewire.on('modalOpened', () => {
-                // Garantir que os selects de categoria estejam atualizados na edição
-                if (@this.isEditing) {
-                    console.log('Modal aberta em modo de edição');
-                }
-            });
-        }
-    }" x-cloak>
+    <div x-data="{ showDeleteConfirm: false }" x-cloak>
         @if($showModal)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg shadow-lg w-full max-w-6xl p-6 overflow-y-auto max-h-[90vh]">

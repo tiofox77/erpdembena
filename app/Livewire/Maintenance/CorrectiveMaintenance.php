@@ -688,7 +688,7 @@ class CorrectiveMaintenance extends Component
             'failureCauses' => $this->getFailureCauses(), // Use all failure causes regardless of category
             'modeCategories' => $this->getModeCategories(),
             'causeCategories' => $this->getCauseCategories(),
-        ]);
+        ])->layout('layouts.livewire', ['title' => __('messages.corrective_maintenance')]);
     }
 
     /**

@@ -256,7 +256,7 @@ Route::middleware(['auth'])->group(function () {
     // HR Module Routes
     Route::prefix('hr')->name('hr.')->group(function() {
         // Dashboard
-        Route::middleware(['permission:hr.dashboard'])->get('/dashboard', App\Livewire\HR\Reports::class)->name('dashboard');
+        Route::middleware(['permission:hr.dashboard'])->get('/dashboard', App\Livewire\HR\HRDashboard::class)->name('dashboard');
         
         // Employees Management
         Route::middleware(['permission:hr.employees.view'])->get('/employees', App\Livewire\HR\Employees::class)->name('employees');
@@ -323,8 +323,8 @@ Route::middleware(['auth'])->group(function () {
         // Configurações de RH para Angola
         Route::middleware(['permission:hr.settings.view'])->get('/settings', App\Livewire\HR\Settings::class)->name('settings');
         
-        // Reports
-        Route::middleware(['permission:hr.dashboard'])->get('/reports', App\Livewire\HR\Reports::class)->name('reports');
+        // Reports (alias to dashboard)
+        Route::middleware(['permission:hr.dashboard'])->get('/reports', App\Livewire\HR\HRDashboard::class)->name('reports');
     });
     
     // MRP (Material Requirements Planning) Routes

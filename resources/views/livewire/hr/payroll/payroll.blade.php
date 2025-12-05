@@ -445,18 +445,6 @@
                                                 </div>
                                             @endif
                                             
-                                            @if($payroll->status === 'approved')
-                                                <div class="relative group">
-                                                    <button wire:click="markAsPaid({{ $payroll->id }})" 
-                                                            class="flex items-center justify-center w-8 h-8 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-all duration-200 hover:scale-110">
-                                                        <i class="fas fa-money-bill-wave text-sm"></i>
-                                                    </button>
-                                                    <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                                        {{ __('livewire/hr/payroll.mark_as_paid') }}
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            
                                             <div class="relative group">
                                                 <a href="{{ route('payroll.receipt.view') }}?employee_id={{ $payroll->employee_id }}" 
                                                    target="_blank"
@@ -468,23 +456,14 @@
                                                 </div>
                                             </div>
                                             
-                                            @php
-                                                $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin');
-                                                $canDelete = $isAdmin || in_array($payroll->status, ['draft', 'rejected']);
-                                            @endphp
-                                            
-                                            @if($canDelete)
+                                            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))
                                                 <div class="relative group">
                                                     <button wire:click="delete({{ $payroll->id }})" 
                                                             class="flex items-center justify-center w-8 h-8 text-red-700 bg-red-100 hover:bg-red-200 rounded-full transition-all duration-200 hover:scale-110">
                                                         <i class="fas fa-trash text-sm"></i>
                                                     </button>
                                                     <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                                        @if($isAdmin && !in_array($payroll->status, ['draft', 'rejected']))
-                                                            {{ __('livewire/hr/payroll.admin_delete') }}
-                                                        @else
-                                                            {{ __('livewire/hr/payroll.delete') }}
-                                                        @endif
+                                                        {{ __('livewire/hr/payroll.delete') }}
                                                     </div>
                                                 </div>
                                             @endif

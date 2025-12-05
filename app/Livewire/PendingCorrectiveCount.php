@@ -4,12 +4,15 @@ namespace App\Livewire;
 
 use App\Models\MaintenanceCorrective;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class PendingCorrectiveCount extends Component
 {
-    protected $listeners = [
-        'correctiveMaintenanceUpdated' => '$refresh'
-    ];
+    #[On('correctiveMaintenanceUpdated')]
+    public function refresh(): void
+    {
+        // Refresh is handled automatically
+    }
 
     public function render()
     {
