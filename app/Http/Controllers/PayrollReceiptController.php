@@ -422,8 +422,15 @@ class PayrollReceiptController extends Controller
             $lateDeduction = (float) ($payroll->late_deduction ?? 0);
             $absenceDeduction = (float) ($payroll->absence_deduction ?? 0);
             
-            // Total de deduções
-            $totalDeductions = $payroll->deductions ?? 0;
+            // Total de deduções (incluindo food allowance)
+            // Se total_deductions estiver salvo, usar esse valor. Senão, calcular manualmente
+            $totalDeductions = (float) ($payroll->total_deductions ?? $payroll->deductions ?? 0);
+            
+            // Se o total não incluir food, adicionar
+            if ($totalDeductions < ($inssDeduction + $irtDeduction + $advanceDeduction + $foodSubsidy)) {
+                $totalDeductions = $inssDeduction + $irtDeduction + $advanceDeduction + $discountDeduction + 
+                                   $lateDeduction + $absenceDeduction + $foodSubsidy;
+            }
             
             // NET SALARY
             $netSalary = $payroll->net_salary ?? 0;
@@ -475,15 +482,22 @@ class PayrollReceiptController extends Controller
                 
                 // Descontos - valores corretos da BD
                 'incomeTax' => $irtDeduction,
+                'irt' => $irtDeduction, // Alias para view
                 'socialSecurity' => $inssDeduction,
+                'social_security' => $inssDeduction, // Alias para view
                 'foodSubsidyDeduction' => $foodSubsidy, // Subsídio alimentação (em espécie)
+                'meal_deduction' => $foodSubsidy, // Alias para view
                 'salaryAdvances' => $advanceDeduction,
+                'advance' => $advanceDeduction, // Alias para view
                 'absenceDeduction' => $absenceDeduction,
+                'absences_deduction' => $absenceDeduction, // Alias para view
                 'absenceDays' => $absences,
                 'lateDeduction' => $lateDeduction,
                 'lateDays' => $payroll->late_arrivals ?? 0,
                 'salaryDiscounts' => $discountDeduction,
+                'other_deductions' => $discountDeduction + $lateDeduction, // Outras deduções
                 'totalDeductions' => $totalDeductions,
+                'total_deductions' => $totalDeductions, // Alias para view
                 
                 'netSalary' => $netSalary,
                 'bankName' => $employee->bank->name ?? $employee->bank_name ?? 'N/A',

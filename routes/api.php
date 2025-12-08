@@ -27,5 +27,11 @@ Route::get('/update-state', function () {
         return response()->json(json_decode($content, true));
     }
     
-    return response()->json(['status' => 'no_update']);
-})->middleware('web');
+    return response()->json([
+        'status' => 'Aguardando confirmação...',
+        'progress' => 0,
+        'step' => 'ready',
+        'is_updating' => false,
+        'logs' => []
+    ]);
+});

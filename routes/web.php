@@ -322,9 +322,6 @@ Route::middleware(['auth'])->group(function () {
         
         // Configurações de RH para Angola
         Route::middleware(['permission:hr.settings.view'])->get('/settings', App\Livewire\HR\Settings::class)->name('settings');
-        
-        // Reports (alias to dashboard)
-        Route::middleware(['permission:hr.dashboard'])->get('/reports', App\Livewire\HR\HRDashboard::class)->name('reports');
     });
     
     // MRP (Material Requirements Planning) Routes

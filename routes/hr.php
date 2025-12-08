@@ -11,7 +11,6 @@ use App\Livewire\HR\LeaveManagement;
 use App\Livewire\HR\Payroll;
 use App\Livewire\HR\ShiftManagement;
 use App\Livewire\HR\WorkEquipment;
-use App\Livewire\HR\Reports;
 
 Route::middleware(['auth'])->group(function () {
     // Employee Management
@@ -34,7 +33,4 @@ Route::middleware(['auth'])->group(function () {
     
     // Work Equipment Control
     Route::get('/hr/equipment', WorkEquipment::class)->name('hr.equipment');
-    
-    // Reports Dashboard
-    Route::get('/hr/reports', Reports::class)->name('hr.reports');
 });

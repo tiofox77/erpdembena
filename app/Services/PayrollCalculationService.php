@@ -480,8 +480,11 @@ class PayrollCalculationService
             'late_arrivals' => $this->lateDays, // Alias for receipts
             'advance_deduction' => $this->advanceDeduction,
             'total_salary_discounts' => $this->discountDeduction,
-            'deductions' => $this->totalDeductions,
-            'total_deductions_calculated' => $this->totalDeductions,
+            'food_deduction' => min($this->foodBenefit, 30000), // Food paid in kind, shown as deduction
+            'deductions' => $this->totalDeductions + min($this->foodBenefit, 30000), // Include food for display
+            'total_deductions' => $this->totalDeductions + min($this->foodBenefit, 30000), // Include food for display
+            'total_deductions_calculated' => $this->totalDeductions + min($this->foodBenefit, 30000),
+            'total_deductions_internal' => $this->totalDeductions, // Without food for internal calculation
             'base_irt_taxable_amount' => $this->baseIrtTaxableAmount,
             
             // IRT calculation details
@@ -527,6 +530,7 @@ class PayrollCalculationService
             'Leave Deduction' => $this->leaveDeduction,
             'Salary Advances' => $this->advanceDeduction,
             'Salary Discounts' => $this->discountDeduction,
+            'Food Allowance (in kind)' => min($this->foodBenefit, 30000),
         ];
 
         return $result;

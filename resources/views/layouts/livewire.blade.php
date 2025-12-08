@@ -1060,7 +1060,7 @@
             @endcan
             
             @can('hr.dashboard')
-            <a href="{{ route('hr.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+            <a href="{{ route('hr.dashboard') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.dashboard') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-chart-bar text-blue-600"></i>
                 <span>{{ trans('messages.reports_and_dashboard') }}</span>
             </a>

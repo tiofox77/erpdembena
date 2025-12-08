@@ -489,7 +489,7 @@
                                     <input
                                         type="number"
                                         id="year"
-                                        wire:model.live="corrective.year"
+                                        wire:model.blur="corrective.year"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.year') border-red-300 text-red-900 @enderror"
                                     >
@@ -511,7 +511,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <select
                                         id="month"
-                                        wire:model.live="corrective.month"
+                                        wire:model.blur="corrective.month"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.month') border-red-300 text-red-900 @enderror"
                                     >
@@ -539,7 +539,7 @@
                                     <input
                                         type="number"
                                         id="week"
-                                        wire:model.live="corrective.week"
+                                        wire:model.blur="corrective.week"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.week') border-red-300 text-red-900 @enderror"
                                     >
@@ -571,7 +571,7 @@
                                     <input
                                         type="text"
                                         id="system_process"
-                                        wire:model.live="corrective.system_process"
+                                        wire:model.blur="corrective.system_process"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.system_process') border-red-300 text-red-900 @enderror"
                                     >
@@ -593,7 +593,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <select
                                         id="equipment_id"
-                                        wire:model.live="corrective.equipment_id"
+                                        wire:model.blur="corrective.equipment_id"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.equipment_id') border-red-300 text-red-900 @enderror"
                                     >
@@ -620,7 +620,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <select
                                         id="status"
-                                        wire:model.live="corrective.status"
+                                        wire:model.blur="corrective.status"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.status') border-red-300 text-red-900 @enderror"
                                     >
@@ -658,7 +658,7 @@
                                     <div class="relative rounded-md shadow-sm">
                                         <select
                                             id="failure_mode_id"
-                                            wire:model.live="corrective.failure_mode_id"
+                                            wire:model.blur="corrective.failure_mode_id"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.failure_mode_id') border-red-300 text-red-900 @enderror"
                                         >
@@ -686,7 +686,7 @@
                                     <div class="relative rounded-md shadow-sm">
                                         <select
                                             id="failure_mode_category_id"
-                                            wire:model.live="corrective.failure_mode_category_id"
+                                            wire:model.blur="corrective.failure_mode_category_id"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.failure_mode_category_id') border-red-300 text-red-900 @enderror"
                                         >
@@ -719,7 +719,7 @@
                                     <div class="relative rounded-md shadow-sm">
                                         <select
                                             id="failure_cause_id"
-                                            wire:model.live="corrective.failure_cause_id"
+                                            wire:model.blur="corrective.failure_cause_id"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.failure_cause_id') border-red-300 text-red-900 @enderror"
                                         >
@@ -747,7 +747,7 @@
                                     <div class="relative rounded-md shadow-sm">
                                         <select
                                             id="failure_cause_category_id"
-                                            wire:model.live="corrective.failure_cause_category_id"
+                                            wire:model.blur="corrective.failure_cause_category_id"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.failure_cause_category_id') border-red-300 text-red-900 @enderror"
                                         >
@@ -785,7 +785,7 @@
                                         <input
                                             type="datetime-local"
                                             id="start_time"
-                                            wire:model.live="corrective.start_time"
+                                            wire:model.blur="corrective.start_time"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.start_time') border-red-300 text-red-900 @enderror"
                                         >
@@ -808,7 +808,7 @@
                                         <input
                                             type="datetime-local"
                                             id="end_time"
-                                            wire:model.live="corrective.end_time"
+                                            wire:model.blur="corrective.end_time"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.end_time') border-red-300 text-red-900 @enderror"
                                         >
@@ -831,7 +831,7 @@
                                         <input
                                             type="text"
                                             id="downtime_length"
-                                            wire:model.live="corrective.downtime_length"
+                                            wire:model.blur="corrective.downtime_length"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                             @error('corrective.downtime_length') border-red-300 text-red-900 @enderror"
                                             {{ !empty($corrective['start_time']) && !empty($corrective['end_time']) ? 'readonly' : '' }}
@@ -867,7 +867,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <textarea
                                         id="description"
-                                        wire:model.live="corrective.description"
+                                        wire:model.blur="corrective.description"
                                         rows="4"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.description') border-red-300 text-red-900 @enderror"
@@ -891,7 +891,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <textarea
                                         id="actions_taken"
-                                        wire:model.live="corrective.actions_taken"
+                                        wire:model.blur="corrective.actions_taken"
                                         rows="4"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.actions_taken') border-red-300 text-red-900 @enderror"
@@ -923,7 +923,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <select
                                         id="reported_by"
-                                        wire:model.live="corrective.reported_by"
+                                        wire:model.blur="corrective.reported_by"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.reported_by') border-red-300 text-red-900 @enderror"
                                     >
@@ -950,7 +950,7 @@
                                 <div class="relative rounded-md shadow-sm">
                                     <select
                                         id="resolved_by"
-                                        wire:model.live="corrective.resolved_by"
+                                        wire:model.blur="corrective.resolved_by"
                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs sm:text-sm py-1.5 px-2
                                         @error('corrective.resolved_by') border-red-300 text-red-900 @enderror"
                                         {{ $corrective['status'] !== 'resolved' && $corrective['status'] !== 'closed' ? 'disabled' : '' }}
