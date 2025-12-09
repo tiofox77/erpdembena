@@ -8,15 +8,23 @@
                     <i class="fas fa-clipboard-check text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold">Avaliação de Desempenho Trimestral</h1>
-                    <p class="text-indigo-100">Quarterly Performance Appraisal - Gestão de avaliações de funcionários</p>
+                    <h1 class="text-3xl font-bold">Avaliação de Desempenho</h1>
+                    <p class="text-indigo-100">Performance Appraisal - Gestão de avaliações semestrais e especiais</p>
                 </div>
             </div>
-            <button wire:click="openModal" 
-                    class="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors flex items-center space-x-2">
-                <i class="fas fa-plus"></i>
-                <span>Nova Avaliação</span>
-            </button>
+            <div class="flex items-center space-x-3">
+                <a href="{{ route('hr.performance-evaluations.print-all', ['year' => $yearFilter, 'quarter' => $quarterFilter, 'status' => $statusFilter]) }}" 
+                   target="_blank"
+                   class="bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg transition-colors flex items-center space-x-2">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Imprimir Todos</span>
+                </a>
+                <button wire:click="openModal" 
+                        class="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Nova Avaliação</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -58,9 +66,9 @@
                 </select>
             </div>
 
-            {{-- Quarter Filter --}}
+            {{-- Period Filter --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Trimestre</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Período</label>
                 <select wire:model.live="quarterFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">Todos</option>
                     @foreach($quarters as $key => $quarter)
@@ -109,7 +117,7 @@
                             Período
                         </th>
                         <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Média
+                            Média / %
                         </th>
                         <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Nível
@@ -154,9 +162,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 @if($evaluation->average_score)
-                                    <span class="text-2xl font-bold {{ $evaluation->average_score >= 4 ? 'text-green-600' : ($evaluation->average_score >= 3 ? 'text-blue-600' : ($evaluation->average_score >= 2 ? 'text-yellow-600' : 'text-red-600')) }}">
-                                        {{ number_format($evaluation->average_score, 1) }}
-                                    </span>
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-xl font-bold {{ $evaluation->average_score >= 4 ? 'text-green-600' : ($evaluation->average_score >= 3 ? 'text-blue-600' : ($evaluation->average_score >= 2 ? 'text-yellow-600' : 'text-red-600')) }}">
+                                            {{ number_format($evaluation->average_score, 1) }}
+                                        </span>
+                                        <span class="text-sm font-medium text-gray-500">
+                                            ({{ number_format($evaluation->average_score * 20, 0) }}%)
+                                        </span>
+                                    </div>
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif

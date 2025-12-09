@@ -70,10 +70,10 @@
                             @error('employee_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Quarter --}}
+                        {{-- Period --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Trimestre <span class="text-red-500">*</span>
+                                Período <span class="text-red-500">*</span>
                             </label>
                             <select wire:model.live="evaluation_quarter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 @foreach($quarters as $key => $quarter)

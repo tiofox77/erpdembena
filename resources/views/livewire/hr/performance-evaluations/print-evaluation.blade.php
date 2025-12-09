@@ -391,8 +391,8 @@
 
         {{-- Document Title --}}
         <div class="header">
-            <h1>Quarterly Performance Appraisal Paper</h1>
-            <div class="subtitle">Avaliação de Desempenho Trimestral</div>
+            <h1>PERFORMANCE APPRAISAL</h1>
+            <p>Avaliação de Desempenho {{ $evaluation->evaluation_quarter === 'SPECIAL' ? 'Especial' : 'Semestral' }}</p>
         </div>
 
         {{-- Section 1: Employee Details --}}
@@ -489,22 +489,31 @@
                     <div class="summary-box">
                         <div class="label">Average Score / Média</div>
                         <div class="value">{{ $evaluation->average_score ? number_format($evaluation->average_score, 2) : '-' }}</div>
+                        <div class="label" style="margin-top: 8px;">Percentage / Percentagem</div>
+                        <div class="value">{{ $evaluation->average_score ? number_format($evaluation->average_score * 20, 0) . '%' : '-' }}</div>
                     </div>
                     <div class="summary-box">
                         <div class="label">Performance Level / Nível</div>
-                        <div>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 3px; margin-top: 4px;">
                             @php
+                                $percentage = $evaluation->average_score ? $evaluation->average_score * 20 : 0;
                                 $levels = [
-                                    'needs_improvement' => 'Needs Improvement',
-                                    'satisfactory' => 'Satisfactory',
-                                    'good' => 'Good',
-                                    'excellent' => 'Excellent'
+                                    ['key' => 'needs_improvement', 'label' => 'Needs Improvement < 60%', 'min' => 0, 'max' => 60],
+                                    ['key' => 'satisfactory', 'label' => 'Satisfactory, 61% to 70%', 'min' => 61, 'max' => 70],
+                                    ['key' => 'good', 'label' => 'Good, 71% to 80%', 'min' => 71, 'max' => 80],
+                                    ['key' => 'very_good', 'label' => 'Very Good, 81% to 90%', 'min' => 81, 'max' => 90],
+                                    ['key' => 'excellent', 'label' => 'Excellent, > 91%', 'min' => 91, 'max' => 100],
                                 ];
                             @endphp
-                            @foreach($levels as $key => $level)
-                                <div style="display: inline-flex; align-items: center; margin: 2px 8px;">
-                                    <span class="checkbox {{ $evaluation->performance_level === $key ? 'checked' : '' }}"></span>
-                                    <span style="margin-left: 4px; font-size: 10px;">{{ $level }}</span>
+                            @foreach($levels as $level)
+                                @php
+                                    $isChecked = ($percentage >= $level['min'] && $percentage <= $level['max']) || 
+                                                 ($level['key'] === 'excellent' && $percentage > 90) ||
+                                                 ($level['key'] === 'needs_improvement' && $percentage < 61);
+                                @endphp
+                                <div style="display: flex; align-items: center;">
+                                    <span class="checkbox {{ $isChecked ? 'checked' : '' }}"></span>
+                                    <span style="margin-left: 4px; font-size: 9px;">{{ $level['label'] }}</span>
                                 </div>
                             @endforeach
                         </div>

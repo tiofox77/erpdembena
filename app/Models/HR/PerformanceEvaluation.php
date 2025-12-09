@@ -115,12 +115,11 @@ class PerformanceEvaluation extends Model
         self::RATING_EXCELLENT => 'Excellent',
     ];
 
-    // Quarters
+    // Periods (Semesters + Special)
     public const QUARTERS = [
-        'Q1' => '1º Trimestre (Jan-Mar)',
-        'Q2' => '2º Trimestre (Abr-Jun)',
-        'Q3' => '3º Trimestre (Jul-Set)',
-        'Q4' => '4º Trimestre (Out-Dez)',
+        'S1' => '1º Semestre (Jan-Jun)',
+        'S2' => '2º Semestre (Jul-Dez)',
+        'SPECIAL' => 'Avaliação Especial',
     ];
 
     // Performance Levels

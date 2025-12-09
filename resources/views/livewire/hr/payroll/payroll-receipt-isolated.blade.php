@@ -16,7 +16,7 @@
 
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; padding: 0; }
-    body { background: #f5f5f5; color: #111; font-family: var(--font); font-size: 8px; }
+    body { background: #f5f5f5; color: #111; font-family: var(--font); font-size: 10px; }
 
     @page { size: A4; margin: 5mm 5mm 5mm 5mm; }
 
@@ -28,26 +28,26 @@
 
     .receipt {
       border: var(--border); border-radius: 3px; padding: 3px; 
-      page-break-inside: avoid; font-size: 8px; flex: 1;
+      page-break-inside: avoid; font-size: 10px; flex: 1;
       display: flex; flex-direction: column;
     }
 
-    .title { text-align: center; font-weight: 800; letter-spacing: .04em; color: var(--heading); font-size: 11px; margin: 0; }
-    .company { text-align: center; margin-top: 1px; font-weight: 600; font-size: 9px; }
+    .title { text-align: center; font-weight: 800; letter-spacing: .04em; color: var(--heading); font-size: 13px; margin: 0; }
+    .company { text-align: center; margin-top: 1px; font-weight: 600; font-size: 11px; }
 
-    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 8px; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 10px; }
     .meta .cell { border: 1px dashed #bbb; padding: 2px 3px; border-radius: 3px; }
-    .label { color: var(--muted); font-size: 7px; text-transform: uppercase; letter-spacing: .03em; }
-    .value { margin-top: 1px; font-weight: 600; font-size: 8px; }
+    .label { color: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .03em; }
+    .value { margin-top: 1px; font-weight: 600; font-size: 10px; }
 
-    .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 8px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 10px; }
     .row .block { border: 1px dashed #bbb; padding: 2px 3px; border-radius: 3px; }
     .row .block .kv { display: flex; justify-content: space-between; gap: 4px; padding: 0; line-height: 1.3; }
 
     .tables { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 3px; flex: 1; }
-    table { width: 100%; border-collapse: collapse; font-size: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
     th, td { padding: 1px 2px; border-bottom: 1px solid #e5e5e5; line-height: 1.2; }
-    th { text-align: left; font-size: 7px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    th { text-align: left; font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
     tfoot td { font-weight: 700; border-top: 1px solid #333; }
     .amount { text-align: right; white-space: nowrap; }
 
@@ -62,7 +62,7 @@
     .cut:before { left: 0; }
     .cut:after { right: 0; }
 
-    .footer-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 8px; }
+    .footer-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); margin-top: 3px; font-size: 10px; }
     .footer-row .block { border: 1px dashed #bbb; padding: 2px 3px; border-radius: 3px; }
 
     @media print {

@@ -92,6 +92,28 @@ Route::middleware(['auth'])->group(function () {
         return view('livewire.hr.performance-evaluations.print-evaluation', compact('evaluation'));
     })->middleware(['auth', 'verified'])->name('hr.performance-evaluations.print');
     
+    // Performance Evaluation Print All
+    Route::get('/hr/performance-evaluations/print-all', function(\Illuminate\Http\Request $request) {
+        $query = \App\Models\HR\PerformanceEvaluation::with(['employee.department', 'employee.position', 'supervisor', 'department', 'createdByUser']);
+        
+        if ($request->filled('year')) {
+            $query->where('evaluation_year', $request->year);
+        }
+        if ($request->filled('quarter')) {
+            $query->where('evaluation_quarter', $request->quarter);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $evaluations = $query->orderBy('evaluation_year', 'desc')
+                            ->orderBy('evaluation_quarter', 'desc')
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+                            
+        return view('livewire.hr.performance-evaluations.print-all-evaluations', compact('evaluations'));
+    })->middleware(['auth', 'verified'])->name('hr.performance-evaluations.print-all');
+    
     // Trainings
     Route::get('/hr/trainings', \App\Livewire\HR\Trainings\Trainings::class)
         ->middleware(['auth', 'verified'])
