@@ -57,6 +57,7 @@ class CorrectiveMaintenance extends Component
     public $isEditing = false;
     public $deleteId = null;
     public $viewingCorrective = null;
+    public $isSaving = false;
 
     // Form data
     public $corrective = [
@@ -196,28 +197,12 @@ class CorrectiveMaintenance extends Component
         $this->dispatch('notify', type: $notificationType, message: $message);
     }
 
-    // Real-time validation
+    // Auto-calculate downtime when start and end time are set (removed real-time validation to prevent excessive requests)
     public function updated($propertyName)
     {
-        if (strpos($propertyName, 'corrective.') === 0) {
-            $this->validateOnly($propertyName);
-        }
-
-        // Auto-calculate downtime when start and end time are set
+        // Only calculate downtime - no real-time validation to prevent excessive server requests
         if ($propertyName === 'corrective.start_time' || $propertyName === 'corrective.end_time') {
             $this->calculateDowntime();
-        }
-        
-        // NÃO atualizar automaticamente a categoria quando o modo de falha é alterado
-        if ($propertyName === 'corrective.failure_mode_id' && !empty($this->corrective['failure_mode_id'])) {
-            // Apenas registrar a mudança para debug
-            $failureMode = \App\Models\FailureMode::find($this->corrective['failure_mode_id']);
-            if ($failureMode) {
-                \Log::info('Categoria atualizada automaticamente', [
-                    'failure_mode_id' => $this->corrective['failure_mode_id'],
-                    'category_id' => $failureMode->category_id
-                ]);
-            }
         }
     }
 
@@ -419,6 +404,7 @@ class CorrectiveMaintenance extends Component
         $this->showViewModal = false;
         $this->showDeleteModal = false;
         $this->isEditing = false;
+        $this->isSaving = false;
         $this->viewingCorrective = null;
         $this->deleteId = null;
         $this->resetValidation();
@@ -427,6 +413,13 @@ class CorrectiveMaintenance extends Component
     // Save or update a corrective record
     public function save()
     {
+        // Prevent multiple submissions
+        if ($this->isSaving) {
+            return;
+        }
+        
+        $this->isSaving = true;
+        
         // Validate the form data
         $this->validate();
 
@@ -530,8 +523,9 @@ class CorrectiveMaintenance extends Component
             // Save the record
             $correctiveRecord->save();
 
-            // Close the modal
+            // Close the modal and reset saving state
             $this->showModal = false;
+            $this->isSaving = false;
 
             // Show success message using named parameters
             $this->dispatch(
@@ -544,6 +538,9 @@ class CorrectiveMaintenance extends Component
 
         } catch (\Exception $e) {
             Log::error('Error saving corrective maintenance: ' . $e->getMessage());
+            
+            // Reset saving state on error
+            $this->isSaving = false;
 
             // Show error message using named parameters
             $this->dispatch(

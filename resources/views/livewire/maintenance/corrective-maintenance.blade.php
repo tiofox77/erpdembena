@@ -982,15 +982,23 @@
                             type="button"
                             class="px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             wire:click="closeModal"
+                            wire:loading.attr="disabled"
                         >
                             <i class="fas fa-times mr-1"></i> Cancel
                         </button>
                         <button
                             type="submit"
-                            class="px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            class="px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            wire:loading.attr="disabled"
+                            wire:target="save"
                         >
-                            <i class="fas {{ $isEditing ? 'fa-save' : 'fa-plus' }} mr-1"></i>
-                            {{ $isEditing ? 'Update' : 'Save' }} Record
+                            <span wire:loading.remove wire:target="save">
+                                <i class="fas {{ $isEditing ? 'fa-save' : 'fa-plus' }} mr-1"></i>
+                                {{ $isEditing ? 'Update' : 'Save' }} Record
+                            </span>
+                            <span wire:loading wire:target="save">
+                                <i class="fas fa-spinner fa-spin mr-1"></i> Saving...
+                            </span>
                         </button>
                     </div>
                 </form>
