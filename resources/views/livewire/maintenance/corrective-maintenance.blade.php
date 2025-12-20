@@ -1316,7 +1316,7 @@
             </div>
             
             <!-- Corrective Maintenance Calendar Component -->
-            <livewire:maintenance.corrective-calendar />
+            <livewire:maintenance.corrective-calendar wire:key="corrective-calendar-{{ now()->timestamp }}" />
         </div>
     </div>
 </div>

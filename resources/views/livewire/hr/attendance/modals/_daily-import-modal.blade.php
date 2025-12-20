@@ -25,6 +25,31 @@
             {{-- Modal Body --}}
             <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
                 @if(!$showDailyImportPreview)
+                    {{-- Download Sample Files --}}
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-download text-green-600 text-lg mr-3"></i>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-green-800">{{ __('messages.download_sample_files') }}</h4>
+                                    <p class="text-xs text-green-600">{{ __('messages.download_sample_description') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="{{ route('hr.attendance.sample.zktime') }}" 
+                                   class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors">
+                                    <i class="fas fa-file-excel mr-1"></i>
+                                    ZKTime Sample
+                                </a>
+                                <a href="{{ route('hr.attendance.sample.standard') }}" 
+                                   class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors">
+                                    <i class="fas fa-file-excel mr-1"></i>
+                                    Standard Sample
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Info Box --}}
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
                         <div class="flex items-start">

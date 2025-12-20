@@ -155,11 +155,11 @@
                                         @endphp
                                         <span class="px-4 py-2 {{ $hasPayments ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }} rounded-lg text-sm font-semibold">
                                             @if($isClosed)
-                                                ✓ Fechado
+                                                ✓ {{ __('messages.status_closed') }}
                                             @elseif($hasPayments)
-                                                ✓ Processado
+                                                ✓ {{ __('messages.status_processed') }}
                                             @else
-                                                ○ Aberto
+                                                ○ {{ __('messages.status_open') }}
                                             @endif
                                         </span>
                                         
@@ -169,7 +169,7 @@
                                             class="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md flex items-center justify-center"
                                         >
                                             <i class="fas fa-chart-bar mr-2"></i>
-                                            Relatório Consolidado
+                                            {{ __('messages.consolidated_report_button') }}
                                         </button>
                                         
                                         {{-- Relatório Detalhado do Batch --}}
@@ -178,7 +178,7 @@
                                             class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md flex items-center justify-center"
                                         >
                                             <i class="fas fa-file-invoice-dollar mr-2"></i>
-                                            Relatório Detalhado
+                                            {{ __('messages.detailed_report_button') }}
                                         </button>
                                     </div>
                                 </div>

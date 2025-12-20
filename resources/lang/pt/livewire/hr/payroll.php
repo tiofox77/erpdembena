@@ -171,7 +171,7 @@ return [
     
     // Additional Keys
     'generate_receipts' => 'Gerar Recibos',
-    'payroll_batches' => 'Lotes de Pagamento',
+    'payroll_batches' => 'Folha de Pagamento em Lote',
     'year' => 'Ano',
     'all_years' => 'Todos os Anos',
     'hours' => 'Horas',

@@ -82,7 +82,7 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation, WithBa
             'base_salary' => $this->parseDecimal($row['salario_base'] ?? $row['base_salary'] ?? null),
             'food_benefit' => $this->parseDecimal($row['subsidio_de_alimentacao'] ?? $row['food_benefit'] ?? null),
             'transport_benefit' => $this->parseDecimal($row['subsidio_de_transporte'] ?? $row['transport_benefit'] ?? null),
-            'bonus_amount' => $this->parseDecimal($row['valor_do_bonus'] ?? $row['bonus_amount'] ?? null),
+            'family_allowance' => $this->parseDecimal($row['abono_de_familia'] ?? $row['family_allowance'] ?? null),
             'position_subsidy' => $this->parseDecimal($row['subsidio_de_cargo'] ?? $row['position_subsidy'] ?? null),
             'performance_subsidy' => $this->parseDecimal($row['subsidio_de_desempenho'] ?? $row['performance_subsidy'] ?? null),
         ];

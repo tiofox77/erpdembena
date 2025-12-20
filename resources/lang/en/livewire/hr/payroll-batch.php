@@ -2,7 +2,7 @@
 
 return [
     // Page Headers
-    'page_title' => 'Payroll Batches',
+    'page_title' => 'Batch Payroll',
     'page_description' => 'Manage batch payroll processing',
     'create_new_batch' => 'Create New Batch',
     'clear_filters' => 'Clear Filters',
@@ -68,11 +68,11 @@ return [
     
     // Empty State
     'no_batches_found' => 'No batches found',
-    'create_first_batch' => 'Start by creating your first payroll batch.',
+    'create_first_batch' => 'Start by creating your first batch payroll.',
     'create_first_batch_button' => 'Create First Batch',
     
     // Create Batch Modal
-    'create_batch_title' => 'Create New Payroll Batch',
+    'create_batch_title' => 'Create New Batch Payroll',
     'create_batch_description' => 'Select employees and configure batch processing',
     'basic_settings' => 'Basic Settings',
     'employee_selection' => 'Employee Selection',
@@ -149,7 +149,7 @@ return [
     // Delete Modal
     'confirm_deletion' => 'Confirm Deletion',
     'action_cannot_be_undone' => 'This action cannot be undone',
-    'delete_batch_title' => 'Delete Payroll Batch',
+    'delete_batch_title' => 'Delete Batch Payroll',
     'delete_batch_message' => 'You are about to delete the batch',
     'employees_will_be_removed' => 'employee(s) will be removed from the batch',
     'period_label' => 'Period',
@@ -166,7 +166,7 @@ return [
     'created_by' => 'Created by',
     
     // Success/Error Messages
-    'batch_created_success' => 'Payroll batch created successfully!',
+    'batch_created_success' => 'Batch payroll created successfully!',
     'batch_deleted_success' => 'Batch \':name\' deleted successfully!',
     'processing_started_success' => 'Batch processing started. You will be notified when completed.',
     'batch_processed_success' => 'Batch processed successfully!',

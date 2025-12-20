@@ -141,8 +141,8 @@ return [
     'calculated_gross_salary' => 'calculado a partir do salário bruto',
     
     // Payroll Batch specific translations
-    'page_title' => 'Gestão de Lotes de Pagamento',
-    'page_description' => 'Criar e gerir lotes de folha de pagamento para múltiplos funcionários',
+    'page_title' => 'Gestão de Folha de Pagamento em Lote',
+    'page_description' => 'Criar e gerir folha de pagamento em lote para múltiplos funcionários',
     'create_new_batch' => 'Criar Novo Lote',
     'clear_filters' => 'Limpar Filtros',
     'total_batches' => 'Total de Lotes',

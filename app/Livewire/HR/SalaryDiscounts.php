@@ -292,7 +292,6 @@ class SalaryDiscounts extends Component
             'installments' => $this->installments,
             'installment_amount' => $this->installment_amount,
             'first_deduction_date' => $this->first_deduction_date,
-            'remaining_installments' => $this->installments, // Inicializa com o número total de parcelas
             'reason' => $this->reason,
             'discount_type' => $this->discount_type,
             'notes' => $this->notes,
@@ -300,6 +299,7 @@ class SalaryDiscounts extends Component
         
         if ($this->isEditing) {
             $discount = SalaryDiscount::findOrFail($this->discount_id);
+            // Não atualizar remaining_installments na edição para não resetar progresso
             $discount->update($data);
             
             // Processar upload do documento assinado
@@ -327,6 +327,10 @@ class SalaryDiscounts extends Component
                 $discount->signed_document = $path;
                 $discount->save();
             }
+            
+            // Inicializar remaining_installments apenas para novos registros
+            $discount->remaining_installments = $this->installments;
+            $discount->save();
             
             session()->flash('message', __('messages.discount_created'));
         }
@@ -558,5 +562,92 @@ class SalaryDiscounts extends Component
     public function updatedAmount(): void
     {
         $this->calculateInstallmentAmount();
+    }
+    
+    /**
+     * Gera PDF do formulário de desconto
+     */
+    public function generatePDF(int $id)
+    {
+        try {
+            $discount = SalaryDiscount::with(['employee', 'approver'])->findOrFail($id);
+            
+            $companyInfo = [
+                'name' => Setting::get('company_name', 'Empresa'),
+                'address' => Setting::get('company_address', ''),
+                'phone' => Setting::get('company_phone', ''),
+                'email' => Setting::get('company_email', ''),
+                'logo' => Setting::get('company_logo', ''),
+            ];
+            
+            $pdf = Pdf::loadView('pdf.salary-discount-form', [
+                'discount' => $discount,
+                'companyInfo' => $companyInfo,
+            ]);
+            
+            $fileName = 'desconto_' . $discount->employee->employee_id . '_' . $discount->request_date->format('Y-m-d') . '.pdf';
+            
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, $fileName);
+            
+        } catch (\Exception $e) {
+            session()->flash('error', __('messages.error_generating_pdf') . ': ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Exporta todos os descontos filtrados para PDF
+     */
+    public function exportAllPDF()
+    {
+        try {
+            $discounts = SalaryDiscount::with(['employee', 'approver'])
+                ->when($this->search, function($query) {
+                    $query->whereHas('employee', function($q) {
+                        $q->where('full_name', 'like', '%' . $this->search . '%')
+                          ->orWhere('employee_id', 'like', '%' . $this->search . '%');
+                    });
+                })
+                ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
+                ->when($this->typeFilter, fn($q) => $q->where('discount_type', $this->typeFilter))
+                ->when($this->dateFrom, fn($q) => $q->whereDate('request_date', '>=', $this->dateFrom))
+                ->when($this->dateTo, fn($q) => $q->whereDate('request_date', '<=', $this->dateTo))
+                ->orderBy($this->sortBy, $this->sortDirection)
+                ->get();
+            
+            if ($discounts->isEmpty()) {
+                session()->flash('error', __('messages.no_records_to_export'));
+                return;
+            }
+            
+            $companyInfo = [
+                'name' => Setting::get('company_name', 'Empresa'),
+                'address' => Setting::get('company_address', ''),
+                'phone' => Setting::get('company_phone', ''),
+                'email' => Setting::get('company_email', ''),
+                'logo' => Setting::get('company_logo', ''),
+            ];
+            
+            $pdf = Pdf::loadView('pdf.salary-discounts-list', [
+                'discounts' => $discounts,
+                'companyInfo' => $companyInfo,
+                'filters' => [
+                    'status' => $this->statusFilter,
+                    'type' => $this->typeFilter,
+                    'dateFrom' => $this->dateFrom,
+                    'dateTo' => $this->dateTo,
+                ]
+            ]);
+            
+            $fileName = 'descontos_lista_' . date('Y-m-d_H-i-s') . '.pdf';
+            
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, $fileName);
+            
+        } catch (\Exception $e) {
+            session()->flash('error', __('messages.error_generating_pdf') . ': ' . $e->getMessage());
+        }
     }
 }

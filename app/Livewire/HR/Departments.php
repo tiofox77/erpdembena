@@ -5,10 +5,12 @@ namespace App\Livewire\HR;
 use App\Models\HR\Department;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Storage;
 
 class Departments extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $perPage = 10;
@@ -22,11 +24,17 @@ class Departments extends Component
     public $description;
     public $manager_id;
     public $is_active = true;
+    public $org_chart;
+    public $existing_org_chart;
 
     // Modal flags
     public $showModal = false;
     public $showDeleteModal = false;
+    public $showOrgChartModal = false;
     public $isEditing = false;
+    
+    // View org chart
+    public $viewingDepartment;
 
     // Listeners
     protected $listeners = ['refreshDepartments' => '$refresh'];
@@ -72,7 +80,7 @@ class Departments extends Component
     public function create()
     {
         $this->reset([
-            'department_id', 'name', 'description', 'manager_id'
+            'department_id', 'name', 'description', 'manager_id', 'org_chart', 'existing_org_chart'
         ]);
         $this->is_active = true;
         $this->isEditing = false;
@@ -86,6 +94,8 @@ class Departments extends Component
         $this->description = $department->description;
         $this->manager_id = $department->manager_id;
         $this->is_active = $department->is_active;
+        $this->existing_org_chart = $department->org_chart;
+        $this->org_chart = null;
 
         $this->isEditing = true;
         $this->showModal = true;
@@ -101,6 +111,18 @@ class Departments extends Component
     {
         $validatedData = $this->validate();
 
+        // Handle org_chart file upload
+        if ($this->org_chart) {
+            $filename = 'org_chart_' . time() . '.' . $this->org_chart->getClientOriginalExtension();
+            $path = $this->org_chart->storeAs('org_charts', $filename, 'public');
+            $validatedData['org_chart'] = $path;
+            
+            // Delete old file if exists
+            if ($this->isEditing && $this->existing_org_chart) {
+                Storage::disk('public')->delete($this->existing_org_chart);
+            }
+        }
+
         if ($this->isEditing) {
             $department = Department::find($this->department_id);
             $department->update($validatedData);
@@ -112,9 +134,32 @@ class Departments extends Component
 
         $this->showModal = false;
         $this->reset([
-            'department_id', 'name', 'description', 'manager_id'
+            'department_id', 'name', 'description', 'manager_id', 'org_chart', 'existing_org_chart'
         ]);
         $this->is_active = true;
+    }
+    
+    public function removeOrgChart()
+    {
+        if ($this->existing_org_chart) {
+            Storage::disk('public')->delete($this->existing_org_chart);
+            
+            if ($this->department_id) {
+                $department = Department::find($this->department_id);
+                $department->update(['org_chart' => null]);
+            }
+            
+            $this->existing_org_chart = null;
+        }
+        $this->org_chart = null;
+    }
+    
+    public function downloadOrgChart($departmentId)
+    {
+        $department = Department::find($departmentId);
+        if ($department && $department->org_chart) {
+            return Storage::disk('public')->download($department->org_chart);
+        }
     }
 
     public function delete()
@@ -136,6 +181,18 @@ class Departments extends Component
         $this->showDeleteModal = false;
     }
     
+    public function viewOrgChart($departmentId)
+    {
+        $this->viewingDepartment = Department::find($departmentId);
+        $this->showOrgChartModal = true;
+    }
+    
+    public function closeOrgChartModal()
+    {
+        $this->showOrgChartModal = false;
+        $this->viewingDepartment = null;
+    }
+
     public function resetFilters()
     {
         $this->search = '';

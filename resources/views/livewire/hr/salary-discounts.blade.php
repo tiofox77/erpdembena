@@ -17,7 +17,7 @@
                         <i class="fas fa-plus mr-2"></i>
                         {{ __('messages.add_discount') }}
                     </button>
-                    <button class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center font-medium shadow-sm">
+                    <button wire:click="exportAllPDF" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center font-medium shadow-sm">
                         <i class="fas fa-file-pdf mr-2"></i>
                         {{ __('messages.export_pdf') }}
                     </button>
@@ -246,21 +246,19 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-1">
-                                    <!-- Visualizar -->
+                                    <!-- Preview/PDF -->
+                                    <a href="{{ route('hr.salary-discount-report', $discount->id) }}" 
+                                       target="_blank"
+                                       class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
+                                       title="Preview/PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    
+                                    <!-- Visualizar Modal -->
                                     <button wire:click="view({{ $discount->id }})" 
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-all duration-200"
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded-md transition-all duration-200"
                                             title="{{ __('messages.view') }}">
                                         <i class="fas fa-eye"></i>
-                                    </button>
-                                    
-                                    <!-- Gerar PDF -->
-                                    <button wire:click="generatePDF({{ $discount->id }})" 
-                                            wire:loading.attr="disabled"
-                                            wire:target="generatePDF({{ $discount->id }})"
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200 disabled:opacity-50"
-                                            title="Gerar PDF">
-                                        <i class="fas fa-file-pdf" wire:loading.remove wire:target="generatePDF({{ $discount->id }})"></i>
-                                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="generatePDF({{ $discount->id }})"></i>
                                     </button>
                                     
                                     <!-- Documento Assinado -->
@@ -278,8 +276,8 @@
                                         </span>
                                     @endif
                                     
-                                    <!-- Editar (apenas se pending ou approved) -->
-                                    @if(in_array($discount->status, ['pending', 'approved']))
+                                    <!-- Editar (pending sempre, approved apenas admin/super-admin) -->
+                                    @if($discount->status === 'pending' || ($discount->status === 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))))
                                         <button wire:click="edit({{ $discount->id }})" 
                                                 class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-all duration-200"
                                                 title="{{ __('messages.edit') }}">
@@ -310,8 +308,8 @@
                                         </button>
                                     @endif
                                     
-                                    <!-- Apagar (agora incluindo approved) -->
-                                    @if(in_array($discount->status, ['pending', 'approved', 'rejected', 'completed']))
+                                    <!-- Apagar (pending/rejected/completed sempre, approved apenas admin/super-admin) -->
+                                    @if(in_array($discount->status, ['pending', 'rejected', 'completed']) || ($discount->status === 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))))
                                         <button wire:click="confirmDelete({{ $discount->id }})" 
                                                 class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
                                                 title="{{ __('messages.delete') }}">

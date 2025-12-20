@@ -80,6 +80,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/hr/disciplinary-measures', \App\Livewire\HR\DisciplinaryMeasures\DisciplinaryMeasures::class)
         ->middleware(['auth', 'verified'])
         ->name('hr.disciplinary-measures');
+    Route::get('/hr/disciplinary-measure-report/{id}', [App\Http\Controllers\HR\DisciplinaryMeasureReportController::class, 'show'])
+        ->middleware(['auth', 'verified'])
+        ->name('hr.disciplinary-measure-report');
+    Route::get('/hr/disciplinary-measure-report/{id}/pdf', [App\Http\Controllers\HR\DisciplinaryMeasureReportController::class, 'pdf'])
+        ->middleware(['auth', 'verified'])
+        ->name('hr.disciplinary-measure-report.pdf');
 
     // Performance Evaluations
     Route::get('/hr/performance-evaluations', \App\Livewire\HR\PerformanceEvaluations\PerformanceEvaluations::class)
@@ -295,6 +301,10 @@ Route::middleware(['auth'])->group(function () {
         // Attendance Management
         Route::middleware(['permission:hr.attendance.view'])->get('/attendance', App\Livewire\HR\Attendance::class)->name('attendance');
         
+        // Attendance Sample Downloads
+        Route::middleware(['permission:hr.attendance.view'])->get('/attendance/sample/zktime', [App\Http\Controllers\HR\AttendanceSampleController::class, 'downloadZKTimeSample'])->name('attendance.sample.zktime');
+        Route::middleware(['permission:hr.attendance.view'])->get('/attendance/sample/standard', [App\Http\Controllers\HR\AttendanceSampleController::class, 'downloadStandardSample'])->name('attendance.sample.standard');
+        
         // Leave Management
         Route::middleware(['permission:hr.leave.view'])->get('/leave', App\Livewire\HR\Leaves::class)->name('leave');
         
@@ -335,9 +345,13 @@ Route::middleware(['auth'])->group(function () {
         
         // Salary Discounts Management
         Route::middleware(['permission:hr.payroll.view'])->get('/salary-discounts', App\Livewire\HR\SalaryDiscounts::class)->name('salary-discounts');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-discount-report/{id}', [App\Http\Controllers\HR\SalaryDiscountReportController::class, 'show'])->name('salary-discount-report');
+        Route::middleware(['permission:hr.payroll.view'])->get('/salary-discount-report/{id}/pdf', [App\Http\Controllers\HR\SalaryDiscountReportController::class, 'pdf'])->name('salary-discount-report.pdf');
         
         // Overtime Records Management
         Route::middleware(['permission:hr.leave.view'])->get('/overtime-records', App\Livewire\HR\OvertimeRecords::class)->name('overtime-records');
+        Route::middleware(['permission:hr.leave.view'])->get('/overtime-report/{id}', [App\Http\Controllers\HR\OvertimeReportController::class, 'show'])->name('overtime-report');
+        Route::middleware(['permission:hr.leave.view'])->get('/overtime-report/{id}/pdf', [App\Http\Controllers\HR\OvertimeReportController::class, 'pdf'])->name('overtime-report.pdf');
         
         // Equipment Management
         Route::middleware(['permission:hr.employees.view'])->get('/equipment', App\Livewire\HR\WorkEquipment::class)->name('equipment');

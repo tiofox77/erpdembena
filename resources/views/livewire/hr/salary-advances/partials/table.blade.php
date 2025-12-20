@@ -180,8 +180,8 @@
                                     </span>
                                 @endif
                                 
-                                <!-- Editar (apenas se pending ou approved) -->
-                                @if(in_array($advance->status, ['pending', 'approved']))
+                                <!-- Editar (pending sempre, approved apenas admin/super-admin) -->
+                                @if($advance->status === 'pending' || ($advance->status === 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))))
                                     <button wire:click="edit({{ $advance->id }})" 
                                             class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-all duration-200"
                                             title="{{ __('messages.edit') }}">
@@ -212,8 +212,8 @@
                                     </button>
                                 @endif
                                 
-                                <!-- Apagar -->
-                                @if(in_array($advance->status, ['pending', 'approved', 'rejected', 'completed']))
+                                <!-- Apagar (pending/rejected/completed sempre, approved apenas admin/super-admin) -->
+                                @if(in_array($advance->status, ['pending', 'rejected', 'completed']) || ($advance->status === 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))))
                                     <button wire:click="confirmDelete({{ $advance->id }})" 
                                             class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
                                             title="{{ __('messages.delete') }}">

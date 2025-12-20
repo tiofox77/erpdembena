@@ -151,6 +151,78 @@
                         </div>
                     </div>
 
+                    <!-- Org Chart Upload -->
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-sitemap text-amber-600 mr-2"></i>
+                            <h4 class="text-sm font-semibold text-gray-700">{{ __('hr.departments.org_chart') }}</h4>
+                        </div>
+                        
+                        <div>
+                            <label for="org_chart" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-file-image text-gray-400 mr-1"></i>
+                                {{ __('hr.departments.upload_org_chart') }}
+                            </label>
+                            
+                            @if($existing_org_chart)
+                                <div class="mb-3 p-3 bg-white rounded-lg border border-amber-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file-alt text-amber-500 mr-2"></i>
+                                            <span class="text-sm text-gray-700">{{ basename($existing_org_chart) }}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <a href="{{ Storage::url($existing_org_chart) }}" target="_blank" 
+                                               class="text-blue-600 hover:text-blue-800 text-sm">
+                                                <i class="fas fa-eye"></i> {{ __('hr.departments.view') }}
+                                            </a>
+                                            <button type="button" wire:click="removeOrgChart" 
+                                                    class="text-red-600 hover:text-red-800 text-sm">
+                                                <i class="fas fa-trash"></i> {{ __('hr.departments.remove') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div class="flex items-center justify-center w-full">
+                                <label for="org_chart" class="flex flex-col items-center justify-center w-full h-32 border-2 border-amber-300 border-dashed rounded-lg cursor-pointer bg-amber-50 hover:bg-amber-100 transition-colors">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-cloud-upload-alt text-amber-500 text-3xl mb-2"></i>
+                                        <p class="mb-2 text-sm text-gray-500">
+                                            <span class="font-semibold">{{ __('hr.departments.click_to_upload') }}</span>
+                                        </p>
+                                        <p class="text-xs text-gray-500">PNG, JPG, PDF (MAX. 5MB)</p>
+                                    </div>
+                                    <input id="org_chart" type="file" wire:model="org_chart" class="hidden" accept=".png,.jpg,.jpeg,.pdf" />
+                                </label>
+                            </div>
+                            
+                            @if($org_chart)
+                                <div class="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center text-green-700 text-sm">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        {{ __('hr.departments.file_selected') }}: {{ $org_chart->getClientOriginalName() }}
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div wire:loading wire:target="org_chart" class="mt-2">
+                                <div class="flex items-center text-amber-600 text-sm">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                                    {{ __('hr.departments.uploading') }}...
+                                </div>
+                            </div>
+                            
+                            @error('org_chart') 
+                                <p class="mt-1 text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+                    </div>
+
                 </form>
             </div>
 

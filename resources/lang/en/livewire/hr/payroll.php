@@ -172,7 +172,7 @@ return [
     
     // Additional Keys
     'generate_receipts' => 'Generate Receipts',
-    'payroll_batches' => 'Payroll Batches',
+    'payroll_batches' => 'Batch Payroll',
     'year' => 'Year',
     'all_years' => 'All Years',
     'hours' => 'Hours',

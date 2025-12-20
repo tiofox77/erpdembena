@@ -19,9 +19,9 @@
                         @if($this->canProcessPayroll())
                         <button
                             wire:click="openEmployeeSearch"
-                            class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-white/20"
+                            class="bg-amber-500 hover:bg-amber-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg"
                         >
-                            <i class="fas fa-search text-lg"></i>
+                            <i class="fas fa-calculator text-lg"></i>
                             <span>{{ __('livewire/hr/payroll.process_payroll') }}</span>
                         </button>
                         @endif

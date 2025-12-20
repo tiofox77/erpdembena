@@ -114,6 +114,10 @@ class HRDashboard extends Component
         $activeEmployees = (clone $employeeQuery)->where('employment_status', 'active')->count();
         $newHires = (clone $employeeQuery)->whereBetween('hire_date', [$start, $end])->count();
         
+        // Gender counts
+        $maleCount = (clone $employeeQuery)->where('employment_status', 'active')->where('gender', 'male')->count();
+        $femaleCount = (clone $employeeQuery)->where('employment_status', 'active')->where('gender', 'female')->count();
+        
         // Attendance
         $attendanceQuery = Attendance::whereBetween('date', [$start, $end]);
         if ($this->departmentId) {
@@ -170,6 +174,8 @@ class HRDashboard extends Component
             'totalEmployees' => $totalEmployees,
             'activeEmployees' => $activeEmployees,
             'newHires' => $newHires,
+            'maleCount' => $maleCount,
+            'femaleCount' => $femaleCount,
             'attendanceRate' => $attendanceRate,
             'presentCount' => $presentCount,
             'lateCount' => $lateCount,
@@ -266,6 +272,15 @@ class HRDashboard extends Component
             'data' => [
                 $this->kpis['totalAdvances'] ?? 0,
                 $this->kpis['totalDiscounts'] ?? 0,
+            ],
+        ];
+        
+        // 7. Gender Distribution (Doughnut)
+        $this->charts['gender'] = [
+            'labels' => ['Homens', 'Mulheres'],
+            'data' => [
+                $this->kpis['maleCount'] ?? 0,
+                $this->kpis['femaleCount'] ?? 0,
             ],
         ];
     }

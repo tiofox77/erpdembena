@@ -159,6 +159,12 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div class="flex space-x-2">
+                                                        <a href="{{ route('hr.disciplinary-measure-report', $measure->id) }}" 
+                                                           target="_blank"
+                                                           class="text-red-600 hover:text-red-900"
+                                                           title="Preview/PDF">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </a>
                                                         <button wire:click="view({{ $measure->id }})" class="text-blue-600 hover:text-blue-900">
                                                             <i class="fas fa-eye"></i>
                                                         </button>

@@ -1,134 +1,190 @@
 <div>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <!-- Header -->
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">
-                            <i class="fas fa-tools mr-2 text-gray-600"></i>
-                            {{ __('messages.work_equipment_categories_management') }}
-                        </h2>
-                        <button
-                            wire:click="create"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        >
-                            <i class="fas fa-plus mr-1"></i>
-                            {{ __('messages.add_work_equipment_category') }}
-                        </button>
-                    </div>
-
-                    <!-- Filters and Search -->
-                    <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div class="md:col-span-3">
-                                <label for="search" class="sr-only">{{ __('messages.search') }}</label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-search text-gray-400"></i>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        id="search"
-                                        wire:model.live.debounce.300ms="search"
-                                        placeholder="{{ __('messages.search_work_equipment_categories') }}"
-                                        class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
-                                    >
-                                </div>
+    <div class="py-4">
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-4 sm:p-6">
+                    {{-- Header --}}
+                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-lg px-6 py-8 mb-6 shadow-lg">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h1 class="text-2xl font-bold text-white flex items-center">
+                                    <i class="fas fa-folder mr-3 text-indigo-200 animate-pulse"></i>
+                                    {{ __('messages.work_equipment_categories_management') }}
+                                </h1>
+                                <p class="text-indigo-100 mt-2">{{ __('messages.manage_equipment_categories_description') }}</p>
                             </div>
-                            <div class="flex justify-end">
-                                <button
-                                    wire:click="resetFilters"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 active:bg-gray-400 focus:outline-none focus:border-gray-500 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                >
-                                    <i class="fas fa-redo mr-2"></i>
-                                    {{ __('messages.reset') }}
+                            <div>
+                                <button wire:click="create"
+                                    class="inline-flex items-center px-4 py-2 bg-white border border-transparent rounded-md font-semibold text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out transform hover:scale-105">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    {{ __('messages.add_work_equipment_category') }}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Categories Table -->
-                    <div class="overflow-x-auto bg-white rounded-lg shadow overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" wire:click="sortBy('name')">
-                                        <div class="flex items-center">
-                                            {{ __('messages.category_name') }}
-                                            @if($sortField === 'name')
-                                            <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1"></i>
-                                            @else
-                                            <i class="fas fa-sort ml-1 text-gray-400"></i>
-                                            @endif
-                                        </div>
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.description') }}
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.color') }}
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.status') }}
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ __('messages.actions') }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($categories as $category)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $category->name }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-500 truncate max-w-xs">
-                                            {{ $category->description ?? '--' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm" style="background-color: {{ $category->color }}; color: {{ $this->getContrastColor($category->color) }};">
-                                            {{ $category->color }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm {{ $category->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                            {{ $category->is_active ? __('messages.active') : __('messages.inactive') }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button wire:click="edit({{ $category->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button wire:click="confirmDelete({{ $category->id }})" class="text-red-600 hover:text-red-900">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                                        <div class="flex flex-col items-center justify-center py-6">
-                                            <i class="fas fa-folder-open text-3xl text-gray-400 mb-2"></i>
-                                            <p>{{ __('messages.no_categories_found') }}</p>
-                                            <button
-                                                wire:click="create"
-                                                class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                            >
-                                                <i class="fas fa-plus mr-1"></i>
-                                                {{ __('messages.add_work_equipment_category') }}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    {{-- Filters and Search --}}
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-filter text-gray-600 mr-2"></i>
+                                <h3 class="text-lg font-medium text-gray-700">{{ __('messages.search_and_filters') }}</h3>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6">
+                            {{-- Search Bar --}}
+                            <div class="mb-6">
+                                <div class="relative max-w-md">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        wire:model.live.debounce.300ms="search"
+                                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                        placeholder="{{ __('messages.search_work_equipment_categories') }}"
+                                    >
+                                </div>
+                            </div>
+
+                            {{-- Filter Actions --}}
+                            <div class="mt-6 flex items-center justify-between">
+                                <div class="text-sm text-gray-600">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('messages.showing') }} {{ $categories->firstItem() ?? 0 }} {{ __('messages.to') }} {{ $categories->lastItem() ?? 0 }} {{ __('messages.of') }} {{ $categories->total() }} {{ __('messages.results') }}
+                                </div>
+                                <button wire:click="resetFilters" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                    <i class="fas fa-undo mr-2"></i>
+                                    {{ __('messages.reset_filters') }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                    {{-- Categories Table --}}
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-gray-600 mr-2"></i>
+                                    <h3 class="text-lg font-medium text-gray-700">{{ __('messages.categories_list') }}</h3>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <i class="fas fa-folder text-gray-600 mr-1"></i>
+                                    {{ $categories->total() }} {{ __('messages.total') }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('name')">
+                                                <i class="fas fa-folder text-gray-400 mr-1"></i>
+                                                <span>{{ __('messages.category_name') }}</span>
+                                                @if($sortField === 'name')
+                                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1 text-indigo-600"></i>
+                                                @else
+                                                    <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                                @endif
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-align-left text-gray-400 mr-1"></i>
+                                                <span>{{ __('messages.description') }}</span>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-palette text-gray-400 mr-1"></i>
+                                                <span>{{ __('messages.color') }}</span>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+                                                <span>{{ __('messages.status') }}</span>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="px-4 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <i class="fas fa-cog text-gray-400 mr-1"></i>
+                                            <span>{{ __('messages.actions') }}</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @forelse($categories as $category)
+                                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center" style="background-color: {{ $category->color }}20;">
+                                                        <i class="fas fa-folder" style="color: {{ $category->color }};"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">
+                                                            {{ $category->name }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="text-sm text-gray-500 truncate max-w-xs">
+                                                    {{ $category->description ?? '--' }}
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style="background-color: {{ $category->color }}; color: {{ $this->getContrastColor($category->color) }};">
+                                                    {{ $category->color }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $category->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                                    {{ $category->is_active ? __('messages.active') : __('messages.inactive') }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div class="flex items-center justify-end space-x-3">
+                                                    <button wire:click="edit({{ $category->id }})" 
+                                                        class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200"
+                                                        title="{{ __('messages.edit') }}">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button wire:click="confirmDelete({{ $category->id }})" 
+                                                        class="text-red-600 hover:text-red-900 transition-colors duration-200"
+                                                        title="{{ __('messages.delete') }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="px-4 py-12 text-center text-gray-500">
+                                                <div class="flex flex-col items-center">
+                                                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                                        <i class="fas fa-folder-open text-4xl text-gray-300"></i>
+                                                    </div>
+                                                    <p class="text-lg font-medium text-gray-900 mb-1">{{ __('messages.no_categories_found') }}</p>
+                                                    <button
+                                                        wire:click="create"
+                                                        class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
+                                                    >
+                                                        <i class="fas fa-plus mr-1"></i>
+                                                        {{ __('messages.add_work_equipment_category') }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <div class="mt-4">
                         {{ $categories->links() }}
                     </div>
@@ -137,110 +193,7 @@
         </div>
     </div>
 
-    <!-- Create/Edit Modal -->
-    @if($showModal)
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-medium text-gray-900">
-                    {{ $isEditing ? __('messages.edit_work_equipment_category') : __('messages.add_work_equipment_category') }}
-                </h3>
-                <button type="button" wire:click="closeModal" class="text-gray-400 hover:text-gray-500">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form wire:submit.prevent="save">
-                <div class="space-y-6">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">
-                            {{ __('messages.category_name') }} <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="name" wire:model="name"
-                            class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('name') border-red-300 text-red-900 @enderror">
-                        @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                    
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">
-                            {{ __('messages.description') }}
-                        </label>
-                        <textarea id="description" wire:model="description" rows="3"
-                            class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('description') border-red-300 text-red-900 @enderror"
-                            placeholder="{{ __('messages.enter_category_description') }}"></textarea>
-                        @error('description') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                    
-                    <div>
-                        <label for="color" class="block text-sm font-medium text-gray-700">
-                            {{ __('messages.color') }} <span class="text-red-500">*</span>
-                        </label>
-                        <div class="mt-1 flex">
-                            <input type="color" id="color" wire:model="color" 
-                                class="mr-2 h-10 w-10 rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                            <input type="text" wire:model="color" 
-                                class="flex-1 rounded-md shadow-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 @error('color') border-red-300 text-red-900 @enderror">
-                        </div>
-                        @error('color') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="flex items-start">
-                        <div class="flex items-center h-5">
-                            <input id="is_active" wire:model="is_active" type="checkbox" 
-                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
-                        </div>
-                        <div class="ml-3 text-sm">
-                            <label for="is_active" class="font-medium text-gray-700">{{ __('messages.active') }}</label>
-                            <p class="text-gray-500">{{ __('messages.set_category_active') }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button"
-                        class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        wire:click="closeModal">
-                        {{ __('messages.cancel') }}
-                    </button>
-                    <button type="submit"
-                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        {{ $isEditing ? __('messages.update') : __('messages.save') }}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
-
-    <!-- Delete Confirmation Modal -->
-    @if($showDeleteModal)
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <div class="sm:flex sm:items-start">
-                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <i class="fas fa-exclamation-triangle text-red-600"></i>
-                </div>
-                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        {{ __('messages.delete_work_equipment_category') }}
-                    </h3>
-                    <div class="mt-2">
-                        <p class="text-sm text-gray-500">
-                            {{ __('messages.delete_work_equipment_category_warning') }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                <button wire:click="delete" type="button" 
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    {{ __('messages.delete') }}
-                </button>
-                <button wire:click="closeDeleteModal" type="button" 
-                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    {{ __('messages.cancel') }}
-                </button>
-            </div>
-        </div>
-    </div>
-    @endif
+    {{-- Modals --}}
+    @include('livewire.hr.work-equipment-categories.modals.category-modal')
+    @include('livewire.hr.work-equipment-categories.modals.delete-modal')
 </div>

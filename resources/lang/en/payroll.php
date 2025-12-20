@@ -34,10 +34,10 @@ return [
     
     // Messages and notifications
     'period_created' => 'Payroll period created successfully',
-    'period_updated' => 'Payroll period updated successfully',
-    'period_deleted' => 'Payroll period deleted successfully',
-    'processing_started' => 'Payroll processing started successfully',
-    'processing_completed' => 'Payroll processing completed successfully',
+    'batch_created_success' => 'Batch payroll created successfully!',
+    'batch_deleted_success' => 'Batch \':name\' deleted successfully!',
+    'processing_started_success' => 'Batch processing started. You will be notified when completed.',
+    'batch_processed_success' => 'Batch processed successfully!',
     'cannot_modify_closed_period' => 'Cannot modify a closed payroll period',
     'period_already_exists' => 'A payroll period already exists for the selected dates',
     
@@ -115,8 +115,8 @@ return [
     'total_irt' => 'Total IRT',
     
     // Payroll Batch specific translations
-    'page_title' => 'Payroll Batch Management',
-    'page_description' => 'Create and manage payroll batches for multiple employees',
+    'page_title' => 'Batch Payroll Management',
+    'page_description' => 'Create and manage batch payroll for multiple employees',
     'create_new_batch' => 'Create New Batch',
     'clear_filters' => 'Clear Filters',
     'total_batches' => 'Total Batches',
@@ -142,12 +142,12 @@ return [
     'process_batch' => 'Process Batch',
     'delete_batch' => 'Delete Batch',
     'no_batches_found' => 'No Batches Found',
-    'create_first_batch' => 'Create your first payroll batch to get started',
+    'create_first_batch' => 'Create your first batch payroll to get started',
     'create_first_batch_button' => 'Create First Batch',
     
     // Create Batch Modal
-    'create_batch_title' => 'Create New Payroll Batch',
-    'create_batch_description' => 'Configure and select employees for the payroll batch',
+    'create_batch_title' => 'Create New Batch Payroll',
+    'create_batch_description' => 'Configure and select employees for the batch payroll',
     'basic_settings' => 'Basic Settings',
     'employee_selection' => 'Employee Selection',
     'batch_name_required' => 'Batch Name (required)',

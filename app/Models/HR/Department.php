@@ -17,6 +17,7 @@ class Department extends Model
         'parent_id',
         'manager_id',
         'is_active',
+        'org_chart',
     ];
 
     protected $casts = [

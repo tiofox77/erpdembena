@@ -228,7 +228,28 @@
         </div>
         
         {{-- Charts Row 2 --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            {{-- Gender Distribution --}}
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-venus-mars text-pink-500"></i>
+                    Distribuição por Gênero
+                </h3>
+                <div class="h-48">
+                    <canvas id="genderChart"></canvas>
+                </div>
+                <div class="mt-2 flex justify-center gap-4 text-sm">
+                    <span class="flex items-center gap-1">
+                        <i class="fas fa-male text-blue-500"></i>
+                        <span class="font-semibold">{{ $kpis['maleCount'] ?? 0 }}</span> Homens
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <i class="fas fa-female text-pink-500"></i>
+                        <span class="font-semibold">{{ $kpis['femaleCount'] ?? 0 }}</span> Mulheres
+                    </span>
+                </div>
+            </div>
+            
             {{-- Leave Status --}}
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -380,6 +401,23 @@
                     data: {
                         labels: data.advancesDiscounts.labels,
                         datasets: [{ data: data.advancesDiscounts.data, backgroundColor: [colors.orange, colors.red] }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+            
+            // Gender Distribution
+            const genderCtx = document.getElementById('genderChart');
+            if (genderCtx && data.gender) {
+                charts.gender = new Chart(genderCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.gender.labels,
+                        datasets: [{ data: data.gender.data, backgroundColor: [colors.blue, colors.pink] }]
                     },
                     options: { 
                         responsive: true, 

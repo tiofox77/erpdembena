@@ -739,16 +739,6 @@
                                 </nav>
                             </div>
                         </div>
-                    </div>span class="w-1/3 text-sm font-medium text-gray-500 flex items-center">
-                                            <i class="fas fa-user text-gray-400 mr-1"></i>
-                                            Reportado por:
-                                        </span>
-                                        <span class="w-2/3 text-sm text-gray-900">{{ $selectedFailure['reported_by'] }}</span>
-                                    </div>
-{{ ... }}
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Avaliação de Impacto -->

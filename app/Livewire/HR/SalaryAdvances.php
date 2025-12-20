@@ -303,7 +303,12 @@ class SalaryAdvances extends Component
         $advance->installments = $this->installments;
         $advance->installment_amount = $this->installment_amount;
         $advance->first_deduction_date = $this->first_deduction_date;
-        $advance->remaining_installments = $this->installments;
+        
+        // Só atualiza remaining_installments se for novo registro
+        if (!$this->advance_id) {
+            $advance->remaining_installments = $this->installments;
+        }
+        
         $advance->reason = $this->reason;
         $advance->status = $this->status;
         $advance->notes = $this->notes;

@@ -201,7 +201,15 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-1">
-                                        <!-- Visualizar -->
+                                        <!-- Preview/PDF -->
+                                        <a href="{{ route('hr.overtime-report', $record->id) }}" 
+                                           target="_blank"
+                                           class="inline-flex items-center px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded-md transition-all duration-200"
+                                           title="Preview/PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        
+                                        <!-- Visualizar Modal -->
                                         <button wire:click="view({{ $record->id }})" 
                                                 class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-all duration-200"
                                                 title="{{ __('messages.view') }}">
@@ -222,19 +230,23 @@
                                             </button>
                                         @endif
 
-                                        <!-- Editar -->
-                                        <button wire:click="edit({{ $record->id }})" 
-                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-all duration-200"
-                                                title="{{ __('messages.edit') }}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                        <!-- Editar (pending sempre, approved/rejected apenas admin/super-admin) -->
+                                        @if($record->status === 'pending' || (in_array($record->status, ['approved', 'rejected']) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))))
+                                            <button wire:click="edit({{ $record->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endif
 
-                                        <!-- Excluir -->
-                                        <button wire:click="confirmDelete({{ $record->id }})" 
-                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
-                                                title="{{ __('messages.delete') }}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <!-- Excluir (pending sempre, approved/rejected apenas admin/super-admin) -->
+                                        @if($record->status === 'pending' || (in_array($record->status, ['approved', 'rejected']) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin'))))
+                                            <button wire:click="confirmDelete({{ $record->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-all duration-200"
+                                                    title="{{ __('messages.delete') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

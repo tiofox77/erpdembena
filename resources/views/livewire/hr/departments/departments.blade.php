@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div class="w-full px-6 py-6">
         
         {{-- Messages --}}
         @if (session()->has('message'))
@@ -266,6 +266,18 @@
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                 <div class="flex items-center space-x-1">
+                                    <i class="fas fa-users text-gray-400"></i>
+                                    <span>{{ __('hr.departments.employees') }}</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                <div class="flex items-center justify-center space-x-1">
+                                    <i class="fas fa-sitemap text-gray-400"></i>
+                                    <span>{{ __('hr.departments.org_chart') }}</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                <div class="flex items-center justify-center space-x-1">
                                     <i class="fas fa-toggle-on text-gray-400"></i>
                                     <span>{{ __('hr.departments.status') }}</span>
                                 </div>
@@ -310,7 +322,23 @@
                                     <span class="text-sm text-gray-400 italic">{{ __('hr.departments.not_assigned') }}</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <span class="text-sm font-medium text-gray-900">{{ $department->employees->count() }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                @if($department->org_chart)
+                                    <button 
+                                        wire:click="viewOrgChart({{ $department->id }})"
+                                        class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 transform hover:scale-105 shadow-sm"
+                                        title="{{ __('hr.departments.view_org_chart') }}">
+                                        <i class="fas fa-sitemap mr-1.5"></i>
+                                        <span class="text-xs font-medium">Ver</span>
+                                    </button>
+                                @else
+                                    <span class="text-xs text-gray-400 italic">{{ __('hr.departments.no_org_chart') }}</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
                                 @if($department->is_active)
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                                         <i class="fas fa-check-circle mr-1"></i>
@@ -327,22 +355,22 @@
                                 <div class="flex items-center justify-center space-x-2">
                                     <button 
                                         wire:click="edit({{ $department->id }})"
-                                        class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all duration-200 transform hover:scale-105"
+                                        class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 shadow-sm"
                                         title="{{ __('hr.departments.edit') }}">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit text-sm"></i>
                                     </button>
                                     <button 
                                         wire:click="confirmDelete({{ $department->id }})"
-                                        class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-200 transform hover:scale-105"
+                                        class="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 shadow-sm"
                                         title="{{ __('hr.departments.delete') }}">
-                                        <i class="fas fa-trash-alt"></i>
+                                        <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
                                         <i class="fas fa-building text-purple-400 text-3xl"></i>
@@ -373,4 +401,5 @@
     {{-- Modals --}}
     @include('livewire.hr.departments.modals.create-edit-modal')
     @include('livewire.hr.departments.modals.delete-modal')
+    @include('livewire.hr.departments.modals.view-org-chart-modal')
 </div>
