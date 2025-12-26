@@ -34,6 +34,7 @@ class SalaryDiscount extends Model
         'approved_at',
         'notes',
         'signed_document',
+        'created_by',
     ];
     
     /**
@@ -87,6 +88,14 @@ class SalaryDiscount extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+    
+    /**
+     * Relacionamento com User (criador)
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
     
     /**

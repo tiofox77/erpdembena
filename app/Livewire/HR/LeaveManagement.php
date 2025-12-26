@@ -215,6 +215,7 @@ class LeaveManagement extends Component
             $leave->update($validatedData);
             session()->flash('message', 'Leave request updated successfully.');
         } else {
+            $validatedData['created_by'] = Auth::id();
             Leave::create($validatedData);
             session()->flash('message', 'Leave request created successfully.');
         }
@@ -237,7 +238,7 @@ class LeaveManagement extends Component
 
     public function view($id)
     {
-        $this->currentLeave = Leave::with(['employee', 'leaveType'])
+        $this->currentLeave = Leave::with(['employee', 'leaveType', 'approver', 'creator'])
             ->findOrFail($id);
             
         $this->showViewModal = true;

@@ -350,6 +350,7 @@ Route::middleware(['auth'])->group(function () {
         
         // Overtime Records Management
         Route::middleware(['permission:hr.leave.view'])->get('/overtime-records', App\Livewire\HR\OvertimeRecords::class)->name('overtime-records');
+        Route::middleware(['permission:hr.leave.view'])->get('/overtime-night-shift', App\Livewire\HR\OvertimeNightShift::class)->name('overtime-night-shift');
         Route::middleware(['permission:hr.leave.view'])->get('/overtime-report/{id}', [App\Http\Controllers\HR\OvertimeReportController::class, 'show'])->name('overtime-report');
         Route::middleware(['permission:hr.leave.view'])->get('/overtime-report/{id}/pdf', [App\Http\Controllers\HR\OvertimeReportController::class, 'pdf'])->name('overtime-report.pdf');
         

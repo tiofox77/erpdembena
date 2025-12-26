@@ -2,8 +2,9 @@
 
 return [
     // Page Headers
-    'payroll_management' => 'Payroll Management',
-    'process_payroll' => 'Process Payroll',
+    'payroll_management' => 'Payroll Individual',
+    'process_payroll' => 'Payroll Individual',
+    'payroll_management_description' => 'Process and manage employee payrolls',
     
     // Form Fields and Labels
     'search' => 'Search',

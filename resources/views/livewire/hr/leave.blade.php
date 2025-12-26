@@ -506,6 +506,21 @@
                         </a>
                     </div>
                     @endif
+
+                    <div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                        <div>
+                            <p class="text-sm text-gray-500">{{ __('messages.created_by') }}</p>
+                            <p class="font-medium">{{ $currentLeave->creator->name ?? '-' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{{ __('messages.created_at') }}</p>
+                            <p class="font-medium">{{ $currentLeave->created_at->format('d/m/Y H:i') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{{ __('messages.updated_at') }}</p>
+                            <p class="font-medium">{{ $currentLeave->updated_at->format('d/m/Y H:i') }}</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-end space-x-3 mt-6">

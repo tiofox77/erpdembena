@@ -100,19 +100,21 @@ class PerformanceEvaluation extends Model
         'initiative_responsibility' => 'integer',
     ];
 
-    // Rating Scale Constants (1-5)
-    public const RATING_POOR = 1;
-    public const RATING_FAIR = 2;
-    public const RATING_SATISFACTORY = 3;
-    public const RATING_GOOD = 4;
+    // Rating Scale Constants (0-5)
+    public const RATING_POOR = 0;
+    public const RATING_UNSATISFACTORY = 1;
+    public const RATING_SATISFACTORY = 2;
+    public const RATING_GOOD = 3;
+    public const RATING_VERY_GOOD = 4;
     public const RATING_EXCELLENT = 5;
 
     public const RATINGS = [
-        self::RATING_POOR => 'Poor',
-        self::RATING_FAIR => 'Fair',
-        self::RATING_SATISFACTORY => 'Satisfactory',
-        self::RATING_GOOD => 'Good',
-        self::RATING_EXCELLENT => 'Excellent',
+        self::RATING_POOR => 'POOR',
+        self::RATING_UNSATISFACTORY => 'Unsatisfactory',
+        self::RATING_SATISFACTORY => 'SATISFACTORY',
+        self::RATING_GOOD => 'GOOD',
+        self::RATING_VERY_GOOD => 'V.GOOD',
+        self::RATING_EXCELLENT => 'EXCELLENT',
     ];
 
     // Periods (Semesters + Special)
@@ -339,20 +341,25 @@ class PerformanceEvaluation extends Model
     }
 
     /**
-     * Determine performance level based on average score.
-     * 1-2.49 = Needs Improvement
-     * 2.5-3.49 = Satisfactory
-     * 3.5-4.49 = Good
-     * 4.5-5 = Excellent
+     * Determine performance level based on average score percentage.
+     * Converts 0-5 scale to percentage and determines level:
+     * 0-36% = Poor (Needs Improvement)
+     * 37-61% = Unsatisfactory
+     * 62-73% = Satisfactory
+     * 74-79% = Good
+     * 80%+ = Excellent
      */
     public function determinePerformanceLevel(): string
     {
         $score = $this->average_score ?? $this->calculateAverageScore();
+        
+        // Convert 0-5 scale to percentage (0-100%)
+        $percentage = ($score / 5) * 100;
 
         return match(true) {
-            $score >= 4.5 => self::LEVEL_EXCELLENT,
-            $score >= 3.5 => self::LEVEL_GOOD,
-            $score >= 2.5 => self::LEVEL_SATISFACTORY,
+            $percentage >= 80 => self::LEVEL_EXCELLENT,
+            $percentage >= 74 => self::LEVEL_GOOD,
+            $percentage >= 62 => self::LEVEL_SATISFACTORY,
             default => self::LEVEL_NEEDS_IMPROVEMENT,
         };
     }
@@ -376,17 +383,18 @@ class PerformanceEvaluation extends Model
     }
 
     /**
-     * Get rating color for a score.
+     * Get rating color for a score (matches Excel color scheme).
      */
     public static function getRatingColor(int $rating): string
     {
         return match($rating) {
-            5 => 'bg-green-100 text-green-800',
-            4 => 'bg-blue-100 text-blue-800',
-            3 => 'bg-yellow-100 text-yellow-800',
-            2 => 'bg-orange-100 text-orange-800',
-            1 => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800',
+            5 => 'bg-blue-100 text-blue-800',          // Blue - EXCELLENT
+            4 => 'bg-green-700 text-white',            // Dark Green - V.GOOD
+            3 => 'bg-green-300 text-green-900',        // Light Green - GOOD
+            2 => 'bg-yellow-200 text-yellow-900',      // Yellow - SATISFACTORY
+            1 => 'bg-orange-300 text-orange-900',      // Orange - Unsatisfactory
+            0 => 'bg-red-300 text-red-900',            // Red - POOR
+            default => 'bg-purple-100 text-purple-800', // Purple - NO RATE
         };
     }
 

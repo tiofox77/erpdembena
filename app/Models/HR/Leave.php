@@ -32,6 +32,7 @@ class Leave extends Model
         'payment_notes',
         'affects_payroll',
         'payroll_id',
+        'created_by',
     ];
 
     protected $casts = [
@@ -83,6 +84,14 @@ class Leave extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'approved_by');
+    }
+    
+    /**
+     * Get the creator (user who created the leave request)
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
     
     /**

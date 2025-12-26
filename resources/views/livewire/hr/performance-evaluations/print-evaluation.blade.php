@@ -172,12 +172,20 @@
             font-size: 9px;
         }
 
-        /* Rating colors */
-        .rating-5 { background: #c8e6c9; }
-        .rating-4 { background: #dcedc8; }
-        .rating-3 { background: #fff9c4; }
-        .rating-2 { background: #ffe0b2; }
-        .rating-1 { background: #ffcdd2; }
+        /* Rating colors - Updated for 0-5 scale with Excel matching colors */
+        .rating-5 { background: #a7d4f7 !important; color: #1e40af !important; } /* Blue - EXCELLENT */
+        .rating-4 { background: #2d5f2e !important; color: white !important; } /* Dark Green - V.GOOD */
+        .rating-3 { background: #81c784 !important; color: #1b5e20 !important; } /* Light Green - GOOD */
+        .rating-2 { background: #fff59d !important; color: #f57f17 !important; } /* Yellow - SATISFACTORY */
+        .rating-1 { background: #ffb74d !important; color: #e65100 !important; } /* Orange - Unsatisfactory */
+        .rating-0 { background: #ef9a9a !important; color: #b71c1c !important; } /* Red - POOR */
+        
+        /* Force color printing */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
 
         /* Summary Section */
         .summary-grid {
@@ -335,10 +343,11 @@
             background: #4338ca;
         }
 
-        .level-excellent { background: #c8e6c9; }
-        .level-good { background: #dcedc8; }
-        .level-satisfactory { background: #fff9c4; }
-        .level-needs_improvement { background: #ffcdd2; }
+        /* Performance level colors */
+        .level-excellent { background: #a7d4f7 !important; color: #1e40af !important; }
+        .level-good { background: #81c784 !important; color: #1b5e20 !important; }
+        .level-satisfactory { background: #fff59d !important; color: #f57f17 !important; }
+        .level-needs_improvement { background: #ef9a9a !important; color: #b71c1c !important; }
     </style>
 </head>
 <body>
@@ -472,11 +481,12 @@
                 </table>
                 <div class="rating-scale">
                     <strong>Rating Scale:</strong>
-                    <span><strong>1</strong> = Poor</span>
-                    <span><strong>2</strong> = Fair</span>
-                    <span><strong>3</strong> = Satisfactory</span>
-                    <span><strong>4</strong> = Good</span>
-                    <span><strong>5</strong> = Excellent</span>
+                    <span style="background: #ef9a9a; padding: 2px 6px; margin: 0 3px;"><strong>0</strong> = POOR</span>
+                    <span style="background: #ffb74d; padding: 2px 6px; margin: 0 3px;"><strong>1</strong> = Unsatisfactory</span>
+                    <span style="background: #fff59d; padding: 2px 6px; margin: 0 3px;"><strong>2</strong> = SATISFACTORY</span>
+                    <span style="background: #81c784; padding: 2px 6px; margin: 0 3px;"><strong>3</strong> = GOOD</span>
+                    <span style="background: #2d5f2e; color: white; padding: 2px 6px; margin: 0 3px;"><strong>4</strong> = V.GOOD</span>
+                    <span style="background: #a7d4f7; padding: 2px 6px; margin: 0 3px;"><strong>5</strong> = EXCELLENT</span>
                 </div>
             </div>
         </div>
@@ -490,26 +500,25 @@
                         <div class="label">Average Score / Média</div>
                         <div class="value">{{ $evaluation->average_score ? number_format($evaluation->average_score, 2) : '-' }}</div>
                         <div class="label" style="margin-top: 8px;">Percentage / Percentagem</div>
-                        <div class="value">{{ $evaluation->average_score ? number_format($evaluation->average_score * 20, 0) . '%' : '-' }}</div>
+                        <div class="value">{{ $evaluation->average_score ? number_format(($evaluation->average_score / 5) * 100, 0) . '%' : '-' }}</div>
                     </div>
                     <div class="summary-box">
                         <div class="label">Performance Level / Nível</div>
                         <div style="display: grid; grid-template-columns: 1fr; gap: 3px; margin-top: 4px;">
                             @php
-                                $percentage = $evaluation->average_score ? $evaluation->average_score * 20 : 0;
+                                $percentage = $evaluation->average_score ? ($evaluation->average_score / 5) * 100 : 0;
                                 $levels = [
-                                    ['key' => 'needs_improvement', 'label' => 'Needs Improvement < 60%', 'min' => 0, 'max' => 60],
-                                    ['key' => 'satisfactory', 'label' => 'Satisfactory, 61% to 70%', 'min' => 61, 'max' => 70],
-                                    ['key' => 'good', 'label' => 'Good, 71% to 80%', 'min' => 71, 'max' => 80],
-                                    ['key' => 'very_good', 'label' => 'Very Good, 81% to 90%', 'min' => 81, 'max' => 90],
-                                    ['key' => 'excellent', 'label' => 'Excellent, > 91%', 'min' => 91, 'max' => 100],
+                                    ['key' => 'needs_improvement', 'label' => 'Needs Improvement < 62%', 'min' => 0, 'max' => 61],
+                                    ['key' => 'satisfactory', 'label' => 'Satisfactory, 62% to 73%', 'min' => 62, 'max' => 73],
+                                    ['key' => 'good', 'label' => 'Good, 74% to 79%', 'min' => 74, 'max' => 79],
+                                    ['key' => 'excellent', 'label' => 'Excellent, > 80%', 'min' => 80, 'max' => 100],
                                 ];
                             @endphp
                             @foreach($levels as $level)
                                 @php
                                     $isChecked = ($percentage >= $level['min'] && $percentage <= $level['max']) || 
-                                                 ($level['key'] === 'excellent' && $percentage > 90) ||
-                                                 ($level['key'] === 'needs_improvement' && $percentage < 61);
+                                                 ($level['key'] === 'excellent' && $percentage >= 80) ||
+                                                 ($level['key'] === 'needs_improvement' && $percentage < 62);
                                 @endphp
                                 <div style="display: flex; align-items: center;">
                                     <span class="checkbox {{ $isChecked ? 'checked' : '' }}"></span>
@@ -598,6 +607,61 @@
     </div>
 
     <script>
+        // Apply rating colors dynamically on load
+        document.addEventListener('DOMContentLoaded', function() {
+            applyRatingColors();
+        });
+
+        function applyRatingColors() {
+            // Get all rating cells
+            const ratingCells = document.querySelectorAll('.criteria-table .rating');
+            
+            ratingCells.forEach(cell => {
+                const rating = parseInt(cell.textContent.trim());
+                
+                // Remove any existing rating classes
+                cell.classList.remove('rating-0', 'rating-1', 'rating-2', 'rating-3', 'rating-4', 'rating-5');
+                
+                // Apply color based on rating
+                if (!isNaN(rating) && rating >= 0 && rating <= 5) {
+                    cell.classList.add('rating-' + rating);
+                    
+                    // Apply inline styles for print reliability
+                    switch(rating) {
+                        case 5: // EXCELLENT - Blue
+                            cell.style.backgroundColor = '#a7d4f7';
+                            cell.style.color = '#1e40af';
+                            break;
+                        case 4: // V.GOOD - Dark Green
+                            cell.style.backgroundColor = '#2d5f2e';
+                            cell.style.color = 'white';
+                            break;
+                        case 3: // GOOD - Light Green
+                            cell.style.backgroundColor = '#81c784';
+                            cell.style.color = '#1b5e20';
+                            break;
+                        case 2: // SATISFACTORY - Yellow
+                            cell.style.backgroundColor = '#fff59d';
+                            cell.style.color = '#f57f17';
+                            break;
+                        case 1: // Unsatisfactory - Orange
+                            cell.style.backgroundColor = '#ffb74d';
+                            cell.style.color = '#e65100';
+                            break;
+                        case 0: // POOR - Red
+                            cell.style.backgroundColor = '#ef9a9a';
+                            cell.style.color = '#b71c1c';
+                            break;
+                    }
+                }
+            });
+        }
+
+        // Ensure colors persist when printing
+        window.onbeforeprint = function() {
+            applyRatingColors();
+        };
+
         // Auto print on load (optional - uncomment if needed)
         // window.onload = function() { window.print(); }
     </script>

@@ -132,39 +132,98 @@ class DailyAttendanceImport implements ToCollection
                         ->first();
 
                     if ($employeeShiftCheck && $employeeShiftCheck->shift) {
-                        $shiftStart = Carbon::parse($employeeShiftCheck->shift->start_time->format('H:i'));
-                        $shiftEnd = Carbon::parse($employeeShiftCheck->shift->end_time->format('H:i'));
-                        $checkInCarbon = Carbon::parse($timeIn);
-                        
-                        // Detectar turno noturno (atravessa meia-noite)
-                        $isNightShift = $shiftStart->gt($shiftEnd);
-                        
+                        $checkInCarbon = Carbon::parse($date . ' ' . $timeIn->format('H:i'));
                         $isCompatible = false;
+                        $matchedShift = null;
                         
-                        if ($isNightShift) {
-                            // Turno noturno: verificar se está dentro do período com tolerância de 1 hora
-                            $shiftStartWithTolerance = $shiftStart->copy()->subHours(1);
-                            $shiftEndWithTolerance = $shiftEnd->copy()->addHours(1);
+                        // Se tem rotação, verificar com TODOS os shifts possíveis
+                        if ($employeeShiftCheck->hasRotation()) {
+                            $rotationShiftIds = $employeeShiftCheck->getRotationShifts();
                             
-                            if ($checkInCarbon->gte($shiftStartWithTolerance) || 
-                                $checkInCarbon->lte($shiftEndWithTolerance)) {
-                                $isCompatible = true;
+                            // Verificar compatibilidade com cada shift da rotação
+                            foreach ($rotationShiftIds as $shiftId) {
+                                $shift = \App\Models\HR\Shift::find($shiftId);
+                                if (!$shift) continue;
+                                
+                                $shiftStart = Carbon::parse($date . ' ' . $shift->start_time->format('H:i'));
+                                $shiftEnd = Carbon::parse($date . ' ' . $shift->end_time->format('H:i'));
+                                
+                                // Detectar turno noturno
+                                $shiftStartTime = Carbon::parse($shift->start_time->format('H:i'));
+                                $shiftEndTime = Carbon::parse($shift->end_time->format('H:i'));
+                                $isNightShift = $shiftStartTime->gt($shiftEndTime);
+                                
+                                if ($isNightShift) {
+                                    $shiftStartWithTolerance = $shiftStart->copy()->subHours(1);
+                                    $shiftEndWithTolerance = $shiftEnd->copy()->addHours(1);
+                                    
+                                    if ($checkInCarbon->gte($shiftStartWithTolerance) || $checkInCarbon->lte($shiftEndWithTolerance)) {
+                                        $isCompatible = true;
+                                        $matchedShift = $shift;
+                                        break;
+                                    }
+                                } else {
+                                    $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
+                                    $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
+                                    
+                                    if ($diffFromStart <= 60 || $diffFromEnd <= 60) {
+                                        $isCompatible = true;
+                                        $matchedShift = $shift;
+                                        break;
+                                    }
+                                }
                             }
                         } else {
-                            // Turno normal: verificar com tolerância de 1 hora
-                            $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
-                            $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
+                            // Turno fixo: verificar apenas com o shift atribuído
+                            $shift = $employeeShiftCheck->shift;
+                            $shiftStart = Carbon::parse($date . ' ' . $shift->start_time->format('H:i'));
+                            $shiftEnd = Carbon::parse($date . ' ' . $shift->end_time->format('H:i'));
                             
-                            if ($diffFromStart <= 60 || $diffFromEnd <= 60) {
-                                $isCompatible = true;
+                            $shiftStartTime = Carbon::parse($shift->start_time->format('H:i'));
+                            $shiftEndTime = Carbon::parse($shift->end_time->format('H:i'));
+                            $isNightShift = $shiftStartTime->gt($shiftEndTime);
+                            
+                            if ($isNightShift) {
+                                $shiftStartWithTolerance = $shiftStart->copy()->subHours(1);
+                                $shiftEndWithTolerance = $shiftEnd->copy()->addHours(1);
+                                
+                                if ($checkInCarbon->gte($shiftStartWithTolerance) || $checkInCarbon->lte($shiftEndWithTolerance)) {
+                                    $isCompatible = true;
+                                    $matchedShift = $shift;
+                                }
+                            } else {
+                                $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
+                                $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
+                                
+                                if ($diffFromStart <= 60 || $diffFromEnd <= 60) {
+                                    $isCompatible = true;
+                                    $matchedShift = $shift;
+                                }
                             }
                         }
                         
-                        // Se NÃO é compatível, adicionar aos mismatches e pular
+                        // Se NÃO é compatível com NENHUM shift, adicionar aos mismatches
                         if (!$isCompatible) {
-                            $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
-                            $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
-                            $minDiff = min($diffFromStart, $diffFromEnd);
+                            $primaryShift = $employeeShiftCheck->shift;
+                            
+                            // Coletar informações sobre rotação
+                            $hasRotation = $employeeShiftCheck->hasRotation();
+                            $rotationShifts = [];
+                            
+                            if ($hasRotation) {
+                                $rotationShiftIds = $employeeShiftCheck->getRotationShifts();
+                                foreach ($rotationShiftIds as $shiftId) {
+                                    $rotShift = \App\Models\HR\Shift::find($shiftId);
+                                    if ($rotShift) {
+                                        $rotationShifts[] = [
+                                            'id' => $rotShift->id,
+                                            'name' => $rotShift->name,
+                                            'start' => $rotShift->start_time->format('H:i'),
+                                            'end' => $rotShift->end_time->format('H:i'),
+                                        ];
+                                    }
+                                }
+                            }
                             
                             $this->shiftMismatches[] = [
                                 'employee_id' => $employee->id,
@@ -173,17 +232,20 @@ class DailyAttendanceImport implements ToCollection
                                 'date' => $date,
                                 'check_in' => $checkIn,
                                 'check_out' => $checkOut,
-                                'shift_name' => $employeeShiftCheck->shift->name,
-                                'shift_start' => $employeeShiftCheck->shift->start_time->format('H:i'),
-                                'shift_end' => $employeeShiftCheck->shift->end_time->format('H:i'),
-                                'time_difference_minutes' => $minDiff,
+                                'shift_name' => $primaryShift->name,
+                                'shift_start' => $primaryShift->start_time->format('H:i'),
+                                'shift_end' => $primaryShift->end_time->format('H:i'),
+                                'time_difference_minutes' => 0,
+                                'has_rotation' => $hasRotation,
+                                'rotation_shifts' => $rotationShifts,
                             ];
                             $this->skippedCount++;
                             $sheetSkipped++;
-                            \Log::warning('Daily import: Shift mismatch detected', [
+                            \Log::warning('Daily import: Shift mismatch - no compatible shift found', [
                                 'employee' => $employee->first_name . ' ' . $employee->last_name,
                                 'check_in' => $checkIn,
-                                'shift' => $employeeShiftCheck->shift->name,
+                                'has_rotation' => $hasRotation,
+                                'rotation_shifts_count' => count($rotationShifts),
                                 'sheet' => $sheetName
                             ]);
                             continue;

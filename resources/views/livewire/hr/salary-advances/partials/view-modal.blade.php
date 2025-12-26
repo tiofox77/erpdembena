@@ -182,6 +182,10 @@
                                             $currentAdvance = $advance_id ? \App\Models\HR\SalaryAdvance::find($advance_id) : null;
                                         @endphp
                                         <div>
+                                            <h4 class="text-xs font-medium text-gray-500">{{ __('messages.created_by') }}</h4>
+                                            <p class="text-sm font-medium text-gray-800">{{ $currentAdvance?->creator?->name ?? '-' }}</p>
+                                        </div>
+                                        <div>
                                             <h4 class="text-xs font-medium text-gray-500">{{ __('messages.created_at') }}</h4>
                                             <p class="text-sm font-medium text-gray-800">{{ $currentAdvance?->created_at ? $currentAdvance->created_at->format('d/m/Y H:i') : '-' }}</p>
                                         </div>

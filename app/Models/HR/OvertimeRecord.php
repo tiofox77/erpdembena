@@ -34,6 +34,7 @@ class OvertimeRecord extends Model
         'input_type',
         'period_type',
         'is_night_shift',
+        'created_by',
     ];
     
     /**
@@ -63,6 +64,14 @@ class OvertimeRecord extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+    
+    /**
+     * Obtém o utilizador que criou o registo de hora extra.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
     
     /**

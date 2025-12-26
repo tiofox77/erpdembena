@@ -33,14 +33,15 @@ class OvertimeRecords extends Component
     public ?string $description = null;
     public string $status = 'pending';
     public ?float $direct_hours = null; // Horas diretas (para input_type 'daily' ou 'monthly')
-    public string $input_type = 'time_range'; // 'time_range', 'daily', 'monthly'
+    public string $input_type = 'monthly'; // 'time_range', 'daily', 'monthly' - PADRÃO: monthly
     public string $period_type = 'day';
     public float $additionalHoursMultiplier = 1.375; // Multiplicador para horas extras adicionais em dia útil
-    public bool $is_night_shift = false; // Indica se é turno noturno (checkbox)
+    public bool $is_night_shift = false; // SEMPRE FALSE para overtime normal
     public ?float $night_shift_multiplier = null; // Multiplicador para turno noturno
     public ?string $created_at = null; // Data de criação para a modal de visualização
     public ?string $updated_at = null; // Data de atualização para a modal de visualização
     public ?string $approver_name = null; // Nome do aprovador para a modal de visualização
+    public ?string $creator_name = null; // Nome do criador para a modal de visualização
     
     // Limites para horas extras
     public float $dailyLimit = 2.0; // Padrão: 2 horas por dia
@@ -233,6 +234,7 @@ class OvertimeRecords extends Component
         $employees = Employee::orderBy('full_name')->get();
         
         $overtimeRecordsQuery = OvertimeRecord::with(['employee', 'approver'])
+            ->where('is_night_shift', false)
             ->when($this->filters['search'] ?? false, function ($query, $search) {
                 return $query->whereHas('employee', function ($subquery) use ($search) {
                     $subquery->where('full_name', 'like', '%' . $search . '%');
@@ -256,7 +258,7 @@ class OvertimeRecords extends Component
         $perPage = !empty($this->filters['employee_id']) ? 25 : 10;
         $overtimeRecords = $overtimeRecordsQuery->paginate($perPage);
         
-        return view('livewire.hr.overtime-records', [
+        return view('livewire.hr.overtime-records.overtime-records', [
             'overtimeRecords' => $overtimeRecords,
             'employees' => $employees,
             'summary' => $this->overtimeSummary,
@@ -284,6 +286,7 @@ class OvertimeRecords extends Component
         $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status']);
         $this->status = 'pending';
         $this->date = date('Y-m-d');
+        $this->is_night_shift = false; // Força FALSE
         $this->isEditing = false;
         $this->showModal = true;
     }
@@ -303,19 +306,51 @@ class OvertimeRecords extends Component
         $this->end_time = $overtime->end_time;
         $this->hours = (float) $overtime->hours;
         $this->rate = (float) $overtime->rate;
+        $this->hourly_rate = (float) ($overtime->hourly_rate ?? 0);
         $this->amount = (float) $overtime->amount;
         $this->description = $overtime->description;
         $this->status = $overtime->status;
         $this->input_type = $overtime->input_type ?? 'time_range';
         $this->period_type = $overtime->period_type ?? 'day';
-        $this->direct_hours = (float) $overtime->direct_hours;
-        $this->is_night_shift = (bool) ($overtime->is_night_shift ?? false);
+        $this->direct_hours = (float) ($overtime->direct_hours ?? 0);
+        $this->is_night_shift = false; // Força FALSE para overtime normal
         
         // Buscar informações do funcionário
         if ($this->employee_id) {
-            $this->loadEmployeeShift();
-            $this->loadHourlyRate();
+            $employee = Employee::with(['shiftAssignments.shift'])->find($this->employee_id);
+            
+            if ($employee) {
+                $this->employee_name = $employee->full_name ?? '';
+                $this->employee_salary = (float) ($employee->base_salary ?? 0.0);
+                
+                // Buscar o turno atual do funcionário
+                $currentShift = $employee->shiftAssignments()
+                    ->with('shift')
+                    ->where(function($query) {
+                        $today = now()->toDateString();
+                        $query->where('start_date', '<=', $today)
+                              ->where(function($q) use ($today) {
+                                  $q->where('end_date', '>=', $today)
+                                    ->orWhereNull('end_date');
+                              });
+                    })
+                    ->first();
+                    
+                if ($currentShift && $currentShift->shift) {
+                    $this->employee_shift_id = $currentShift->shift->id;
+                    $this->employee_shift_name = $currentShift->shift->name ?? '';
+                } else {
+                    $this->employee_shift_id = 0;
+                    $this->employee_shift_name = 'Sem turno atribuído';
+                }
+            }
+            
             $this->night_shift_multiplier = (float) HRSetting::get('night_shift_multiplier', 1.25);
+            
+            // Se não tem hourly_rate salvo no registro, recalcula
+            if (!$this->hourly_rate || $this->hourly_rate <= 0) {
+                $this->loadHourlyRate();
+            }
         }
         
         $this->showModal = true;
@@ -328,7 +363,7 @@ class OvertimeRecords extends Component
     {
         $this->overtime_id = $id;
         
-        $overtime = OvertimeRecord::with(['employee', 'approver'])->findOrFail($id);
+        $overtime = OvertimeRecord::with(['employee', 'approver', 'creator'])->findOrFail($id);
         
         // Dados básicos
         $this->employee_id = (int) $overtime->employee_id;
@@ -347,7 +382,7 @@ class OvertimeRecords extends Component
         $this->input_type = $overtime->input_type ?? 'time_range';
         $this->period_type = $overtime->period_type ?? 'day';
         $this->direct_hours = (float) ($overtime->direct_hours ?? 0);
-        $this->is_night_shift = (bool) ($overtime->is_night_shift ?? false);
+        $this->is_night_shift = false; // Força FALSE
         
         // Dados de turno
         if ($overtime->employee && $overtime->employee->activeShift) {
@@ -355,8 +390,9 @@ class OvertimeRecords extends Component
             $this->employee_shift_name = $overtime->employee->activeShift->shift->name ?? 'N/A';
         }
         
-        // Dados de aprovação
-        $this->approver_name = $overtime->approver->full_name ?? null;
+        // Dados de aprovação e criação
+        $this->approver_name = $overtime->approver->name ?? null;
+        $this->creator_name = $overtime->creator->name ?? null;
         $this->created_at = $overtime->created_at ? $overtime->created_at->format('Y-m-d H:i:s') : null;
         $this->updated_at = $overtime->updated_at ? $overtime->updated_at->format('Y-m-d H:i:s') : null;
         
@@ -412,10 +448,7 @@ class OvertimeRecords extends Component
             switch ($this->input_type) {
                 case 'time_range':
                     $calculatedHours = $this->calculateFromTimeRange($minOvertimeMinutes, $roundToNearest, $allowPartialHours);
-                    // Se o checkbox não estiver marcado manualmente, tenta detectar automaticamente
-                    if (!$this->is_night_shift) {
-                        $this->is_night_shift = $this->isNightShift(); // Detecta automaticamente apenas se não estiver marcado manualmente
-                    }
+                    $this->is_night_shift = false; // Força FALSE sempre
                     break;
                     
                 case 'daily':
@@ -467,6 +500,7 @@ class OvertimeRecords extends Component
             // Cálculo especial para Angola conforme legislação trabalhista
             // Em dias úteis: 1ª hora +25%, horas adicionais +37,5%
             // Em feriados/descanso: +50% (ou conforme configuração)
+            // Night Shift: usa taxa base × multiplicador noturno
             
             $totalAmount = 0;
             
@@ -494,11 +528,6 @@ class OvertimeRecords extends Component
                     
                     $totalAmount = $firstHourAmount + $additionalAmount;
                 }
-            }
-            
-            // Aplica multiplicador de turno noturno (adicional)
-            if ($this->is_night_shift) {
-                $totalAmount *= $nightShiftMultiplier;
             }
             
             // Verificação dos limites legais de horas extras
@@ -804,13 +833,6 @@ class OvertimeRecords extends Component
         $this->calculateHoursAndAmount();
     }
     
-    /**
-     * Hook para recalcular valores quando o toggle de turno noturno é alterado
-     */
-    public function updatedIsNightShift(): void
-    {
-        $this->calculateHoursAndAmount();
-    }
     
     /**
      * Salva o registo de hora extra
@@ -825,6 +847,7 @@ class OvertimeRecords extends Component
             $overtime = OvertimeRecord::findOrFail($this->overtime_id);
         } else {
             $overtime = new OvertimeRecord();
+            $overtime->created_by = Auth::id();
         }
         
         $overtime->employee_id = $this->employee_id;
@@ -835,7 +858,7 @@ class OvertimeRecords extends Component
         $overtime->description = $this->description;
         $overtime->status = $this->status;
         $overtime->input_type = $this->input_type;
-        $overtime->is_night_shift = $this->is_night_shift;
+        $overtime->is_night_shift = false; // Força FALSE
         
         // Salva os dados específicos dependendo do tipo de entrada
         if ($this->input_type === 'time_range') {
@@ -858,9 +881,10 @@ class OvertimeRecords extends Component
         
         $this->showModal = false;
         $this->resetErrorBag();
-        $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'direct_hours', 'input_type', 'period_type', 'is_night_shift']);
-        $this->input_type = 'time_range';
-        $this->period_type = 'day';
+        $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'direct_hours', 'input_type', 'period_type']);
+        $this->is_night_shift = false; // Força FALSE
+        $this->input_type = 'monthly'; // PADRÃO: monthly
+        $this->period_type = 'month';
         
         if ($this->isEditing) {
             session()->flash('message', __('messages.overtime_updated'));
@@ -947,8 +971,9 @@ class OvertimeRecords extends Component
         $this->isEditing = false;
         $this->resetErrorBag();
         $this->reset(['overtime_id', 'employee_id', 'employee_shift_id', 'employee_shift_name', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'direct_hours', 'input_type', 'period_type']);
-        $this->input_type = 'time_range';
-        $this->period_type = 'day';
+        $this->is_night_shift = false; // Força FALSE
+        $this->input_type = 'monthly'; // PADRÃO: monthly
+        $this->period_type = 'month';
     }
     
     /**

@@ -26,26 +26,12 @@
                         </button>
                         @endif
                         <button
-                            wire:click="exportPayroll"
-                            class="bg-green-500/90 hover:bg-green-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2"
-                        >
-                            <i class="fas fa-file-export text-lg"></i>
-                            <span>{{ __('livewire/hr/payroll.export') }}</span>
-                        </button>
-                        <button
                             wire:click="generateBulkReceipts"
                             class="bg-blue-500/90 hover:bg-blue-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2"
                         >
                             <i class="fas fa-receipt text-lg"></i>
-                            <span>{{ __('livewire/hr/payroll.generate_receipts') }}</span>
+                            <span>All Receipts</span>
                         </button>
-                        <a
-                            href="{{ route('hr.payroll-batch') }}"
-                            class="bg-purple-500/90 hover:bg-purple-400 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center space-x-2"
-                        >
-                            <i class="fas fa-layer-group text-lg"></i>
-                            <span>{{ __('livewire/hr/payroll.payroll_batches') }}</span>
-                        </a>
                     </div>
                 </div>
             </div>

@@ -235,7 +235,7 @@ class SalaryAdvances extends Component
     {
         $this->advance_id = $id;
         
-        $advance = SalaryAdvance::with(['employee', 'approver', 'payments'])->findOrFail($id);
+        $advance = SalaryAdvance::with(['employee', 'approver', 'creator', 'payments'])->findOrFail($id);
         $this->viewAdvance = $advance; // Atribuir o objeto completo à propriedade viewAdvance
         
         $this->employee_id = $advance->employee_id;
@@ -295,6 +295,7 @@ class SalaryAdvances extends Component
             $advance = SalaryAdvance::findOrFail($this->advance_id);
         } else {
             $advance = new SalaryAdvance();
+            $advance->created_by = Auth::id();
         }
         
         $advance->employee_id = $this->employee_id;

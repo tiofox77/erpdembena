@@ -57,7 +57,22 @@ class ShiftAssignment extends Model
      */
     public function hasRotation(): bool
     {
-        return !empty($this->rotation_pattern) && is_array($this->rotation_pattern);
+        if (empty($this->rotation_pattern)) {
+            return false;
+        }
+        
+        // Se já for array, verificar se tem shifts
+        if (is_array($this->rotation_pattern)) {
+            return isset($this->rotation_pattern['shifts']) && count($this->rotation_pattern['shifts']) > 1;
+        }
+        
+        // Se for string JSON, tentar decodificar
+        if (is_string($this->rotation_pattern)) {
+            $decoded = json_decode($this->rotation_pattern, true);
+            return $decoded && isset($decoded['shifts']) && count($decoded['shifts']) > 1;
+        }
+        
+        return false;
     }
     
     /**
@@ -93,7 +108,20 @@ class ShiftAssignment extends Model
             return [$this->shift_id];
         }
         
-        return $this->rotation_pattern['shifts'] ?? [$this->shift_id];
+        // Se for array
+        if (is_array($this->rotation_pattern)) {
+            return $this->rotation_pattern['shifts'] ?? [$this->shift_id];
+        }
+        
+        // Se for string JSON
+        if (is_string($this->rotation_pattern)) {
+            $decoded = json_decode($this->rotation_pattern, true);
+            if ($decoded && isset($decoded['shifts'])) {
+                return $decoded['shifts'];
+            }
+        }
+        
+        return [$this->shift_id];
     }
     
     /**

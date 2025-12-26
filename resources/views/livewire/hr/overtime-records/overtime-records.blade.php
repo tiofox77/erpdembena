@@ -340,5 +340,6 @@
     </div>
 
     <!-- Modais -->
-    @include('livewire.hr.overtime-records-complete')
+    @include('livewire.hr.overtime-records.overtime-records-complete')
+    @include('livewire.hr.overtime-records.overtime-view-modal')
 </div>

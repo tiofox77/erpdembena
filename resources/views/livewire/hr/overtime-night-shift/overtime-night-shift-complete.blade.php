@@ -387,82 +387,6 @@
                             </div>
                         </div>
 
-                        <!-- Seção 3.5: Configurações Especiais -->
-                        <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6">
-                            <div class="flex items-center bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 border-b border-gray-200">
-                                <i class="fas fa-cogs text-purple-600 mr-2"></i>
-                                <h3 class="text-base font-medium text-gray-700">{{ __('messages.special_settings') }}</h3>
-                            </div>
-                            <div class="p-4">
-                                <!-- Toggle para turno noturno com estilo moderno -->
-                                <div class="flex items-start">
-                                    <div>
-                                        <label for="is_night_shift" class="flex items-center cursor-pointer">
-                                            <div class="relative">
-                                                <!-- Input escondido -->
-                                                <input type="checkbox" wire:model.live="is_night_shift" id="is_night_shift" class="sr-only">
-                                                <!-- Track (fundo do toggle) -->
-                                                <div class="w-12 h-6 bg-gray-300 rounded-full shadow-inner transition-all duration-300 ease-in-out"></div>
-                                                <!-- Dot (bolinha do toggle) -->
-                                                <div class="dot absolute w-6 h-6 bg-white rounded-full shadow left-0 top-0 transition-transform duration-300 ease-in-out transform" 
-                                                    :class="{'translate-x-6 bg-purple-500': $wire.is_night_shift, 'bg-white': !$wire.is_night_shift}"></div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    <div class="ml-3">
-                                        <label for="is_night_shift" class="text-sm font-medium text-gray-700 cursor-pointer flex items-center">
-                                            <i class="fas fa-moon text-purple-600 mr-2"></i>
-                                            {{ __('messages.is_night_shift') }}
-                                        </label>
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            {{ __('messages.night_shift_info', ['multiplier' => number_format($night_shift_multiplier ?? 1.25, 2)]) }}
-                                        </p>
-                                        <!-- Indicador de carregamento durante o cálculo -->
-                                        <div wire:loading wire:target="is_night_shift" class="text-xs text-purple-600 flex items-center mt-1">
-                                            <svg class="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                            </svg>
-                                            {{ __('messages.recalculating') }}...
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Card informativo sobre turno noturno -->
-                                <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3" x-data="{ open: false }">
-                                    <div class="flex items-center justify-between cursor-pointer" @click="open = !open">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-info-circle text-purple-600 mr-2"></i>
-                                            <h4 class="text-sm font-medium text-purple-800">{{ __('messages.night_shift_details') }}</h4>
-                                        </div>
-                                        <i class="fas" :class="{'fa-chevron-down': !open, 'fa-chevron-up': open}"></i>
-                                    </div>
-                                    <div x-show="open" x-transition class="mt-2 text-xs text-purple-700">
-                                        <ul class="space-y-1.5">
-                                            <li class="flex items-center">
-                                                <div class="w-3 h-3 bg-purple-200 rounded-full mr-2 flex-shrink-0"></div>
-                                                <span>{{ __('messages.night_shift_hours') }}: <span class="font-medium">22:00 - 06:00</span></span>
-                                            </li>
-                                            <li class="flex items-center">
-                                                <div class="w-3 h-3 bg-purple-300 rounded-full mr-2 flex-shrink-0"></div>
-                                                <span>{{ __('messages.night_shift_multiplier') }}: <span class="font-medium">{{ number_format($night_shift_multiplier ?? 1.25, 2) }}x</span></span>
-                                            </li>
-                                            <li class="flex items-center">
-                                                <div class="w-3 h-3 bg-purple-400 rounded-full mr-2 flex-shrink-0"></div>
-                                                <span>{{ __('messages.night_shift_detection') }}: 
-                                                    @if($input_type === 'time_range')
-                                                    <span class="font-medium">{{ __('messages.automatic_for_time_range') }}</span>
-                                                    @else
-                                                    <span class="font-medium">{{ __('messages.manual_selection') }}</span>
-                                                    @endif
-                                                </span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Seção 4: Resultados dos Cálculos -->
                         <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6">
                             <div class="flex items-center bg-gradient-to-r from-yellow-50 to-yellow-100 px-4 py-3 border-b border-gray-200">
@@ -486,52 +410,269 @@
                                 </div>
                             </div>
                             @enderror
+                            
                             <div class="p-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                     <!-- Horas Calculadas -->
-                                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 shadow-lg transform transition-all duration-300 hover:scale-105">
                                         <div class="flex items-center justify-between">
-                                            <div>
-                                                <p class="text-sm text-gray-600">{{ __('messages.calculated_hours') }}</p>
-                                                <div wire:loading wire:target="start_time,end_time,direct_hours" class="flex items-center text-blue-600">
+                                            <div class="flex-1">
+                                                <p class="text-xs text-blue-600 font-semibold uppercase tracking-wide mb-1">{{ __('messages.calculated_hours') }}</p>
+                                                <div wire:loading wire:target="start_time,end_time,direct_hours,is_night_shift" class="flex items-center text-blue-600">
                                                     <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                                                     </svg>
                                                     {{ __('messages.calculating') }}...
                                                 </div>
-                                                <div wire:loading.remove wire:target="start_time,end_time,direct_hours">
-                                                    <p class="text-2xl font-bold text-blue-600" x-data x-effect="$el.classList.add('animate-pulse'); setTimeout(() => $el.classList.remove('animate-pulse'), 500)">
-                                                        {{ number_format($hours ?? 0, 2) }} {{ __('messages.hours') }}
+                                                <div wire:loading.remove wire:target="start_time,end_time,direct_hours,is_night_shift">
+                                                    <p class="text-3xl font-bold text-blue-700 animate-pulse">
+                                                        {{ number_format($hours ?? 0, 2) }}
                                                     </p>
+                                                    <p class="text-xs text-blue-600 mt-1">{{ __('messages.hours') }}</p>
                                                 </div>
                                             </div>
-                                            <i class="fas fa-clock text-blue-400 text-3xl"></i>
+                                            <div class="ml-4 bg-blue-200 rounded-full p-3">
+                                                <i class="fas fa-clock text-blue-700 text-2xl"></i>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <!-- Valor Total -->
-                                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200 shadow-lg transform transition-all duration-300 hover:scale-105">
                                         <div class="flex items-center justify-between">
-                                            <div>
-                                                <p class="text-sm text-gray-600">{{ __('messages.total_amount') }}</p>
-                                                <div wire:loading wire:target="start_time,end_time,direct_hours,rate" class="flex items-center text-green-600">
+                                            <div class="flex-1">
+                                                <p class="text-xs text-green-600 font-semibold uppercase tracking-wide mb-1">{{ __('messages.total_amount') }}</p>
+                                                <div wire:loading wire:target="start_time,end_time,direct_hours,rate,is_night_shift" class="flex items-center text-green-600">
                                                     <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                                                     </svg>
                                                     {{ __('messages.calculating') }}...
                                                 </div>
-                                                <div wire:loading.remove wire:target="start_time,end_time,direct_hours,rate">
-                                                    <p class="text-2xl font-bold text-green-600" x-data x-effect="$el.classList.add('animate-pulse'); setTimeout(() => $el.classList.remove('animate-pulse'), 500)">
-                                                        {{ number_format($amount ?? 0, 2) }} KZ
+                                                <div wire:loading.remove wire:target="start_time,end_time,direct_hours,rate,is_night_shift">
+                                                    <p class="text-3xl font-bold text-green-700 animate-pulse">
+                                                        {{ number_format($amount ?? 0, 2) }}
                                                     </p>
+                                                    <p class="text-xs text-green-600 mt-1">Kwanzas (KZ)</p>
                                                 </div>
                                             </div>
-                                            <i class="fas fa-money-bill-wave text-green-400 text-3xl"></i>
+                                            <div class="ml-4 bg-green-200 rounded-full p-3">
+                                                <i class="fas fa-money-bill-wave text-green-700 text-2xl"></i>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Breakdown Detalhado dos Cálculos -->
+                                @if($hours > 0 && $employee_id)
+                                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-5 border border-purple-200 mb-4">
+                                    <div class="flex items-center mb-4">
+                                        <div class="bg-purple-200 rounded-full p-2 mr-3">
+                                            <i class="fas fa-chart-line text-purple-700"></i>
+                                        </div>
+                                        <h4 class="text-sm font-bold text-purple-900">{{ __('messages.calculation_breakdown') }}</h4>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        <!-- Taxa Horária Base -->
+                                        <div class="flex items-center justify-between bg-white bg-opacity-60 rounded-lg p-3">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-coins text-yellow-600 mr-2"></i>
+                                                <span class="text-sm text-gray-700">{{ __('messages.base_hourly_rate') }}:</span>
+                                            </div>
+                                            <span class="text-sm font-bold text-gray-900">{{ number_format($hourly_rate ?? 0, 2) }} KZ/h</span>
+                                        </div>
+
+                                        <!-- Multiplicadores Ativos -->
+                                        <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-percentage text-indigo-600 mr-2"></i>
+                                                <span class="text-sm font-semibold text-gray-700">{{ __('messages.active_multipliers') }}:</span>
+                                            </div>
+                                            <div class="ml-6 space-y-2">
+                                                @php
+                                                    $isWeekend = $date ? \Carbon\Carbon::parse($date)->isWeekend() : false;
+                                                    $dayOfWeek = $date ? \Carbon\Carbon::parse($date)->locale('pt')->dayName : '';
+                                                @endphp
+                                                
+                                                @if($is_night_shift)
+                                                    <!-- Quando Night Shift está ativo, é o único multiplicador usado -->
+                                                    <div class="flex items-center text-xs">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full bg-purple-100 text-purple-800 font-medium">
+                                                            <i class="fas fa-moon mr-1"></i>
+                                                            {{ __('messages.night_shift') }}
+                                                        </span>
+                                                        <span class="ml-2 text-purple-700 font-semibold">×{{ number_format($night_shift_multiplier ?? 1.25, 2) }}</span>
+                                                    </div>
+                                                    <div class="text-xs text-purple-600 italic mt-1">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        {{ __('messages.night_shift_override') }}
+                                                    </div>
+                                                @else
+                                                    @if($isWeekend)
+                                                        <div class="flex items-center text-xs">
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full bg-orange-100 text-orange-800 font-medium">
+                                                                <i class="fas fa-calendar-week mr-1"></i>
+                                                                {{ __('messages.weekend') }} ({{ $dayOfWeek }})
+                                                            </span>
+                                                            <span class="ml-2 text-orange-700">+50% a +100%</span>
+                                                        </div>
+                                                    @else
+                                                        <div class="flex items-center text-xs space-x-2">
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
+                                                                <i class="fas fa-business-time mr-1"></i>
+                                                                {{ __('messages.weekday') }}
+                                                            </span>
+                                                            <span class="text-blue-700">1ª hora: +25% | Adicional: +37.5%</span>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <!-- Taxa com Multiplicador -->
+                                        @if($is_night_shift)
+                                            <!-- Para Night Shift, mostrar o cálculo com taxa base -->
+                                            <div class="flex items-center justify-between bg-purple-100 rounded-lg p-3">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-moon text-purple-600 mr-2"></i>
+                                                    <span class="text-sm font-semibold text-purple-900">{{ __('messages.night_shift_rate') }}:</span>
+                                                </div>
+                                                <span class="text-sm font-bold text-purple-900">
+                                                    {{ number_format(($hourly_rate ?? 0) * ($night_shift_multiplier ?? 1.25), 2) }} KZ/h
+                                                    <span class="text-xs text-purple-600 ml-1">({{ number_format($hourly_rate ?? 0, 2) }} × {{ number_format($night_shift_multiplier ?? 1.25, 2) }})</span>
+                                                </span>
+                                            </div>
+                                        @else
+                                            @php
+                                                $isWeekendCalc = $date ? \Carbon\Carbon::parse($date)->isWeekend() : false;
+                                            @endphp
+                                            
+                                            @if($isWeekendCalc)
+                                                <!-- Fim de Semana: mostra multiplicador aplicado -->
+                                                <div class="flex items-center justify-between bg-orange-100 rounded-lg p-3">
+                                                    <div class="flex items-center">
+                                                        <i class="fas fa-calendar-week text-orange-600 mr-2"></i>
+                                                        <span class="text-sm font-semibold text-orange-900">{{ __('messages.overtime_rate') }} ({{ __('messages.weekend') }}):</span>
+                                                    </div>
+                                                    <span class="text-sm font-bold text-orange-900">
+                                                        {{ number_format($rate ?? 0, 2) }} KZ/h
+                                                        <span class="text-xs text-orange-600 ml-1">({{ number_format($hourly_rate ?? 0, 2) }} × 1.5)</span>
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <!-- Dia Útil: mostra diferentes taxas para 1ª hora e adicionais -->
+                                                <div class="bg-blue-50 rounded-lg p-3 space-y-2">
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex items-center">
+                                                            <i class="fas fa-business-time text-blue-600 mr-2"></i>
+                                                            <span class="text-sm font-semibold text-blue-900">{{ __('messages.overtime_rate') }} (1ª hora):</span>
+                                                        </div>
+                                                        <span class="text-sm font-bold text-blue-900">
+                                                            {{ number_format($rate ?? 0, 2) }} KZ/h
+                                                            <span class="text-xs text-blue-600 ml-1">({{ number_format($hourly_rate ?? 0, 2) }} × 1.25)</span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between border-t border-blue-200 pt-2">
+                                                        <div class="flex items-center">
+                                                            <i class="fas fa-plus-circle text-indigo-600 mr-2"></i>
+                                                            <span class="text-xs font-medium text-indigo-800">Horas adicionais:</span>
+                                                        </div>
+                                                        <span class="text-xs font-bold text-indigo-900">
+                                                            {{ number_format(($hourly_rate ?? 0) * 1.375, 2) }} KZ/h
+                                                            <span class="text-xs text-indigo-600 ml-1">({{ number_format($hourly_rate ?? 0, 2) }} × 1.375)</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endif
+
+                                        <!-- Cálculo Final -->
+                                        <div class="bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg p-3 border-2 border-green-300">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-equals text-green-700 mr-2"></i>
+                                                    <span class="text-sm font-bold text-green-900">{{ __('messages.total_calculation') }}:</span>
+                                                </div>
+                                                <span class="text-sm font-bold text-green-900">
+                                                    @if($is_night_shift)
+                                                        {{ number_format($hours ?? 0, 2) }}h × {{ number_format(($hourly_rate ?? 0) * ($night_shift_multiplier ?? 1.25), 2) }} = {{ number_format($amount ?? 0, 2) }} KZ
+                                                    @else
+                                                        {{ number_format($hours ?? 0, 2) }}h × {{ number_format($rate ?? 0, 2) }} = {{ number_format($amount ?? 0, 2) }} KZ
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+
+                                <!-- Barras de Progresso de Limites -->
+                                @if($employee_id && $hours > 0)
+                                <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                    <div class="flex items-center mb-4">
+                                        <div class="bg-gray-200 rounded-full p-2 mr-3">
+                                            <i class="fas fa-tachometer-alt text-gray-700"></i>
+                                        </div>
+                                        <h4 class="text-sm font-bold text-gray-900">{{ __('messages.legal_limits_progress') }}</h4>
+                                    </div>
+                                    
+                                    @php
+                                        $dailyPercent = ($hours / $dailyLimit) * 100;
+                                        $dailyColor = $dailyPercent <= 70 ? 'green' : ($dailyPercent <= 90 ? 'yellow' : 'red');
+                                        
+                                        $currentMonth = $date ? \Carbon\Carbon::parse($date)->format('Y-m') : now()->format('Y-m');
+                                        $monthlyTotal = $employee_id ? \App\Models\HR\OvertimeRecord::where('employee_id', $employee_id)
+                                            ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$currentMonth])
+                                            ->where('id', '!=', $overtime_id ?: 0)
+                                            ->sum('hours') : 0;
+                                        $projectedMonthly = $monthlyTotal + $hours;
+                                        $monthlyPercent = ($projectedMonthly / $monthlyLimit) * 100;
+                                        $monthlyColor = $monthlyPercent <= 70 ? 'green' : ($monthlyPercent <= 90 ? 'yellow' : 'red');
+                                    @endphp
+                                    
+                                    <div class="space-y-4">
+                                        <!-- Limite Diário -->
+                                        <div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-xs font-medium text-gray-700">{{ __('messages.daily_limit') }}</span>
+                                                <span class="text-xs font-bold text-{{ $dailyColor }}-700">{{ number_format($hours, 2) }} / {{ number_format($dailyLimit, 2) }}h</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                <div class="bg-{{ $dailyColor }}-500 h-3 rounded-full transition-all duration-500 flex items-center justify-end pr-1" 
+                                                     style="width: {{ min($dailyPercent, 100) }}%">
+                                                    @if($dailyPercent > 10)
+                                                        <span class="text-xs font-bold text-white">{{ number_format($dailyPercent, 0) }}%</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Limite Mensal -->
+                                        <div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-xs font-medium text-gray-700">{{ __('messages.monthly_limit') }}</span>
+                                                <span class="text-xs font-bold text-{{ $monthlyColor }}-700">{{ number_format($projectedMonthly, 2) }} / {{ number_format($monthlyLimit, 2) }}h</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                <div class="bg-{{ $monthlyColor }}-500 h-3 rounded-full transition-all duration-500 flex items-center justify-end pr-1" 
+                                                     style="width: {{ min($monthlyPercent, 100) }}%">
+                                                    @if($monthlyPercent > 10)
+                                                        <span class="text-xs font-bold text-white">{{ number_format($monthlyPercent, 0) }}%</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @if($monthlyTotal > 0)
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    <i class="fas fa-info-circle mr-1"></i>
+                                                    {{ __('messages.current_month_hours') }}: {{ number_format($monthlyTotal, 2) }}h
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
 

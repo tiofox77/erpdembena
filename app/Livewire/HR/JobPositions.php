@@ -28,8 +28,6 @@ class JobPositions extends Component
     public $description;
     public $responsibilities;
     public $requirements;
-    public $salary_range_min;
-    public $salary_range_max;
     public $department_id;
     public $category_id;
     public $is_active = true;
@@ -50,8 +48,6 @@ class JobPositions extends Component
             'description' => 'nullable',
             'responsibilities' => 'nullable',
             'requirements' => 'nullable',
-            'salary_range_min' => 'nullable|numeric|min:0',
-            'salary_range_max' => 'nullable|numeric|min:0|gte:salary_range_min',
             'department_id' => 'required|exists:departments,id',
             'category_id' => 'nullable|exists:job_categories,id',
             'is_active' => 'boolean',
@@ -82,7 +78,7 @@ class JobPositions extends Component
     {
         $this->reset([
             'position_id', 'title', 'description', 'responsibilities', 'requirements',
-            'salary_range_min', 'salary_range_max', 'department_id', 'category_id'
+            'department_id', 'category_id'
         ]);
         $this->is_active = true;
         $this->isEditing = false;
@@ -96,8 +92,6 @@ class JobPositions extends Component
         $this->description = $position->description;
         $this->responsibilities = $position->responsibilities;
         $this->requirements = $position->requirements;
-        $this->salary_range_min = $position->salary_range_min;
-        $this->salary_range_max = $position->salary_range_max;
         $this->department_id = $position->department_id;
         $this->category_id = $position->category_id;
         $this->is_active = $position->is_active;
@@ -119,16 +113,16 @@ class JobPositions extends Component
         if ($this->isEditing) {
             $position = JobPosition::find($this->position_id);
             $position->update($validatedData);
-            session()->flash('message', 'Position updated successfully.');
+            $this->dispatch('success', __('messages.updated_successfully'));
         } else {
             JobPosition::create($validatedData);
-            session()->flash('message', 'Position created successfully.');
+            $this->dispatch('success', __('messages.created_successfully'));
         }
 
         $this->showModal = false;
         $this->reset([
             'position_id', 'title', 'description', 'responsibilities', 'requirements',
-            'salary_range_min', 'salary_range_max', 'department_id', 'category_id'
+            'department_id', 'category_id'
         ]);
         $this->is_active = true;
     }
@@ -138,7 +132,7 @@ class JobPositions extends Component
         $position = JobPosition::find($this->position_id);
         $position->delete();
         $this->showDeleteModal = false;
-        session()->flash('message', 'Position deleted successfully.');
+        $this->dispatch('success', __('messages.deleted_successfully'));
     }
 
     public function closeModal()

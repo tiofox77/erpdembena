@@ -2,8 +2,9 @@
 
 return [
     // Page Headers
-    'payroll_management' => 'Gestão de Folha de Pagamento',
-    'process_payroll' => 'Processar Folha de Pagamento',
+    'payroll_management' => 'Payroll Individual',
+    'process_payroll' => 'Payroll Individual',
+    'payroll_management_description' => 'Process and manage employee payrolls',
     
     // Form Fields and Labels
     'search' => 'Pesquisar',
@@ -188,7 +189,6 @@ return [
     'attendance_deductions' => 'Deduções de Assiduidade',
     
     // Page management
-    'payroll_management_description' => 'Processe e gerencie folhas de pagamento dos funcionários',
     'export' => 'Exportar',
     'total_processed' => 'Total Processadas',
     'pending_approval' => 'Pendente Aprovação',

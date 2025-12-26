@@ -59,6 +59,7 @@ class Employees extends Component
     public $base_salary;
     public $food_benefit;
     public $transport_benefit;
+    public $family_allowance;
     public $bonus_amount;
     public $position_subsidy;
     public $performance_subsidy;
@@ -139,6 +140,7 @@ class Employees extends Component
             'base_salary' => 'nullable|numeric|min:0',
             'food_benefit' => 'nullable|numeric|min:0',
             'transport_benefit' => 'nullable|numeric|min:0',
+            'family_allowance' => 'nullable|numeric|min:0',
             'bonus_amount' => 'nullable|numeric|min:0',
             'position_subsidy' => 'nullable|numeric|min:0',
             'performance_subsidy' => 'nullable|numeric|min:0',
@@ -172,7 +174,7 @@ class Employees extends Component
             'address', 'phone', 'email', 'marital_status', 'dependents', 'photo',
             'bank_id', 'bank_name', 'bank_account', 'bank_iban', 'position_id', 'department_id', 'hire_date',
             'employment_status', 'inss_number', 'base_salary', 'food_benefit', 
-            'transport_benefit', 'bonus_amount', 'position_subsidy', 'performance_subsidy'
+            'transport_benefit', 'family_allowance', 'bonus_amount', 'position_subsidy', 'performance_subsidy'
         ]);
         $this->isEditing = false;
         $this->showModal = true;
@@ -205,6 +207,7 @@ class Employees extends Component
         $this->base_salary = $employee->base_salary;
         $this->food_benefit = $employee->food_benefit;
         $this->transport_benefit = $employee->transport_benefit;
+        $this->family_allowance = $employee->family_allowance;
         $this->bonus_amount = $employee->bonus_amount;
         $this->position_subsidy = $employee->position_subsidy;
         $this->performance_subsidy = $employee->performance_subsidy;
@@ -604,6 +607,12 @@ class Employees extends Component
         $this->employment_status = $employee->employment_status;
         $this->inss_number = $employee->inss_number;
         $this->base_salary = $employee->base_salary;
+        $this->food_benefit = $employee->food_benefit;
+        $this->transport_benefit = $employee->transport_benefit;
+        $this->family_allowance = $employee->family_allowance;
+        $this->bonus_amount = $employee->bonus_amount;
+        $this->position_subsidy = $employee->position_subsidy;
+        $this->performance_subsidy = $employee->performance_subsidy;
         
         // Load employee documents
         $this->employeeDocuments = $employee->documents()->latest()->get();
@@ -784,6 +793,57 @@ class Employees extends Component
             
             $this->dispatch('notify', type: 'error', message: 'Erro ao exportar: ' . $e->getMessage());
             session()->flash('error', __('messages.export_failed') . ': ' . $e->getMessage());
+        }
+    }
+
+    public function exportPDF()
+    {
+        // Verificar permissões
+        if (!auth()->user()->hasRole(['super-admin', 'hr-manager'])) {
+            session()->flash('error', 'Você não tem permissão para exportar funcionários.');
+            return;
+        }
+
+        try {
+            // Buscar todos os funcionários com filtros aplicados
+            $employees = Employee::with(['department', 'position', 'bank'])
+                ->when($this->search, function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('full_name', 'like', '%' . $this->search . '%')
+                          ->orWhere('email', 'like', '%' . $this->search . '%')
+                          ->orWhere('phone', 'like', '%' . $this->search . '%')
+                          ->orWhere('id_card', 'like', '%' . $this->search . '%');
+                    });
+                })
+                ->when($this->filters['department_id'], function ($query) {
+                    $query->where('department_id', $this->filters['department_id']);
+                })
+                ->when($this->filters['position_id'], function ($query) {
+                    $query->where('position_id', $this->filters['position_id']);
+                })
+                ->when($this->filters['employment_status'], function ($query) {
+                    $query->where('employment_status', $this->filters['employment_status']);
+                })
+                ->when($this->filters['gender'], function ($query) {
+                    $query->where('gender', $this->filters['gender']);
+                })
+                ->orderBy($this->sortField, $this->sortDirection)
+                ->get();
+
+            $pdf = \PDF::loadView('reports.employees-list-pdf', [
+                'employees' => $employees,
+                'companyName' => config('app.name', 'Empresa'),
+                'generatedAt' => now()->format('d/m/Y H:i'),
+                'generatedBy' => auth()->user()->name,
+            ]);
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'funcionarios_' . now()->format('Y-m-d_H-i-s') . '.pdf');
+
+        } catch (\Exception $e) {
+            \Log::error('Erro na exportação PDF: ' . $e->getMessage());
+            $this->dispatch('error', __('messages.export_failed') . ': ' . $e->getMessage());
         }
     }
 

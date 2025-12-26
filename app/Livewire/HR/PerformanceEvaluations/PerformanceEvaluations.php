@@ -98,17 +98,17 @@ class PerformanceEvaluations extends Component
             'evaluation_year' => 'required|integer|min:2020|max:2050',
             'evaluation_date' => 'nullable|date',
             
-            // Performance Criteria (1-5)
-            'productivity_output' => 'nullable|integer|between:1,5',
-            'quality_of_work' => 'nullable|integer|between:1,5',
-            'attendance_punctuality' => 'nullable|integer|between:1,5',
-            'safety_compliance' => 'nullable|integer|between:1,5',
-            'machine_operation_skills' => 'nullable|integer|between:1,5',
-            'teamwork_cooperation' => 'nullable|integer|between:1,5',
-            'adaptability_learning' => 'nullable|integer|between:1,5',
-            'housekeeping_5s' => 'nullable|integer|between:1,5',
-            'discipline_attitude' => 'nullable|integer|between:1,5',
-            'initiative_responsibility' => 'nullable|integer|between:1,5',
+            // Performance Criteria (0-5)
+            'productivity_output' => 'nullable|integer|between:0,5',
+            'quality_of_work' => 'nullable|integer|between:0,5',
+            'attendance_punctuality' => 'nullable|integer|between:0,5',
+            'safety_compliance' => 'nullable|integer|between:0,5',
+            'machine_operation_skills' => 'nullable|integer|between:0,5',
+            'teamwork_cooperation' => 'nullable|integer|between:0,5',
+            'adaptability_learning' => 'nullable|integer|between:0,5',
+            'housekeeping_5s' => 'nullable|integer|between:0,5',
+            'discipline_attitude' => 'nullable|integer|between:0,5',
+            'initiative_responsibility' => 'nullable|integer|between:0,5',
             
             // Remarks
             'productivity_output_remarks' => 'nullable|string|max:500',
@@ -277,10 +277,13 @@ class PerformanceEvaluations extends Component
             return;
         }
 
+        // Convert 0-5 scale to percentage (0-100%)
+        $percentage = ($this->average_score / 5) * 100;
+
         $this->performance_level = match(true) {
-            $this->average_score >= 4.5 => 'excellent',
-            $this->average_score >= 3.5 => 'good',
-            $this->average_score >= 2.5 => 'satisfactory',
+            $percentage >= 80 => 'excellent',
+            $percentage >= 74 => 'good',
+            $percentage >= 62 => 'satisfactory',
             default => 'needs_improvement',
         };
     }

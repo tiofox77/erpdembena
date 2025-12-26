@@ -94,22 +94,52 @@
                                         {{-- Turno Atribuído --}}
                                         <div class="mt-2 bg-orange-50 border border-orange-200 rounded-lg p-3">
                                             <div class="text-xs font-semibold text-orange-800 mb-2">
-                                                <i class="fas fa-clock mr-1"></i> Turno Atribuído:
+                                                <i class="fas fa-clock mr-1"></i> 
+                                                @if(!empty($mismatch['has_rotation']))
+                                                    <i class="fas fa-sync-alt text-purple-600 mr-1"></i>
+                                                    Turnos Rotativos:
+                                                @else
+                                                    Turno Atribuído:
+                                                @endif
                                             </div>
-                                            <div class="flex items-center justify-between">
-                                                <div>
-                                                    <div class="text-sm font-bold text-gray-900">{{ $mismatch['shift_name'] }}</div>
-                                                    <div class="text-xs text-gray-600">
-                                                        {{ $mismatch['shift_start'] }} - {{ $mismatch['shift_end'] }}
+                                            
+                                            @if(!empty($mismatch['has_rotation']) && !empty($mismatch['rotation_shifts']))
+                                                {{-- Turno Rotativo: Mostrar todos os shifts da rotação --}}
+                                                <div class="space-y-2">
+                                                    @foreach($mismatch['rotation_shifts'] as $rotShift)
+                                                        <div class="flex items-center justify-between bg-white bg-opacity-50 rounded px-2 py-1">
+                                                            <div>
+                                                                <div class="text-sm font-bold text-gray-900">{{ $rotShift['name'] }}</div>
+                                                                <div class="text-xs text-gray-600">
+                                                                    {{ $rotShift['start'] }} - {{ $rotShift['end'] }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                    <div class="mt-2 p-2 bg-purple-100 rounded text-xs text-purple-800">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        <strong>Sistema verificou TODOS os turnos</strong> da rotação e nenhum foi compatível com o horário registado.
                                                     </div>
                                                 </div>
-                                                <div class="text-right">
-                                                    <div class="text-xs text-gray-600">Diferença</div>
-                                                    <div class="text-sm font-bold text-orange-600">
-                                                        {{ floor($mismatch['time_difference_minutes'] / 60) }}h {{ $mismatch['time_difference_minutes'] % 60 }}m
+                                            @else
+                                                {{-- Turno Fixo --}}
+                                                <div class="flex items-center justify-between">
+                                                    <div>
+                                                        <div class="text-sm font-bold text-gray-900">{{ $mismatch['shift_name'] }}</div>
+                                                        <div class="text-xs text-gray-600">
+                                                            {{ $mismatch['shift_start'] }} - {{ $mismatch['shift_end'] }}
+                                                        </div>
                                                     </div>
+                                                    @if($mismatch['time_difference_minutes'] > 0)
+                                                        <div class="text-right">
+                                                            <div class="text-xs text-gray-600">Diferença</div>
+                                                            <div class="text-sm font-bold text-orange-600">
+                                                                {{ floor($mismatch['time_difference_minutes'] / 60) }}h {{ $mismatch['time_difference_minutes'] % 60 }}m
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 </div>
-                                            </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

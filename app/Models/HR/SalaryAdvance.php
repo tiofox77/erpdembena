@@ -33,6 +33,7 @@ class SalaryAdvance extends Model
         'approved_at',
         'notes',
         'signed_document',
+        'created_by',
     ];
     
     /**

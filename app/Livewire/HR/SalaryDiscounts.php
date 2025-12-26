@@ -231,7 +231,7 @@ class SalaryDiscounts extends Component
     {
         $this->discount_id = $id;
         
-        $discount = SalaryDiscount::with(['employee', 'approver', 'payments'])->findOrFail($id);
+        $discount = SalaryDiscount::with(['employee', 'approver', 'creator', 'payments'])->findOrFail($id);
         $this->viewDiscount = $discount; // Atribuir o objeto completo à propriedade viewDiscount
         
         $this->employee_id = $discount->employee_id;
@@ -318,6 +318,7 @@ class SalaryDiscounts extends Component
             
             session()->flash('message', __('messages.discount_updated'));
         } else {
+            $data['created_by'] = Auth::id();
             $discount = SalaryDiscount::create($data);
             
             // Processar upload do documento assinado

@@ -137,17 +137,22 @@ class ShiftManagement extends Component
         }
     }
 
-    public function updatingSearchShift()
+    public function updatedSearchShift()
     {
         $this->resetPage();
     }
 
-    public function updatingSearchAssignment()
+    public function updatedSearchAssignment()
     {
         $this->resetPage();
     }
 
-    public function updatingFilters()
+    public function updatedFilters()
+    {
+        $this->resetPage();
+    }
+    
+    public function updatedPerPage()
     {
         $this->resetPage();
     }

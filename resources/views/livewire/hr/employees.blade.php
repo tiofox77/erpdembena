@@ -15,10 +15,20 @@
                             </div>
                             <div class="flex space-x-3">
                                 @if(auth()->user()->hasRole(['super-admin', 'hr-manager']))
-                                <!-- Export Button -->
+                                <!-- Export Excel Button -->
                                 <button wire:click="exportToExcel" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:scale-105">
                                     <i class="fas fa-file-excel mr-2"></i>
-                                    {{ __('messages.export') }}
+                                    {{ __('messages.export_excel') }}
+                                </button>
+                                
+                                <!-- Export PDF Button -->
+                                <button wire:click="exportPDF" 
+                                    wire:loading.attr="disabled"
+                                    wire:target="exportPDF"
+                                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50">
+                                    <i class="fas fa-file-pdf mr-2"></i>
+                                    <span wire:loading.remove wire:target="exportPDF">{{ __('messages.export_pdf') }}</span>
+                                    <span wire:loading wire:target="exportPDF">{{ __('messages.exporting') }}...</span>
                                 </button>
                                 
                                 <!-- Import Button -->

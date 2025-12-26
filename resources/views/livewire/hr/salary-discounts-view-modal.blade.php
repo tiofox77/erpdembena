@@ -197,6 +197,24 @@
                                         <p class="text-sm text-gray-800">{{ $notes }}</p>
                                     </div>
                                 @endif
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                                    @php
+                                        $currentDiscount = $discount_id ? \App\Models\HR\SalaryDiscount::find($discount_id) : null;
+                                    @endphp
+                                    <div>
+                                        <h4 class="text-xs font-medium text-gray-500">{{ __('messages.created_by') }}</h4>
+                                        <p class="text-sm font-medium text-gray-800">{{ $currentDiscount?->creator?->name ?? '-' }}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-medium text-gray-500">{{ __('messages.created_at') }}</h4>
+                                        <p class="text-sm font-medium text-gray-800">{{ $currentDiscount?->created_at ? $currentDiscount->created_at->format('d/m/Y H:i') : '-' }}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-medium text-gray-500">{{ __('messages.updated_at') }}</h4>
+                                        <p class="text-sm font-medium text-gray-800">{{ $currentDiscount?->updated_at ? $currentDiscount->updated_at->format('d/m/Y H:i') : '-' }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

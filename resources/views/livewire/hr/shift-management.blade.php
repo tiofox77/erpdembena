@@ -49,7 +49,7 @@
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-search text-gray-400"></i>
                                     </div>
-                                    <input type="text" wire:model.debounce.300ms="searchShift" 
+                                    <input type="text" wire:model.live.debounce.300ms="searchShift" 
                                            placeholder="{{ __('shifts.search_shifts_placeholder') }}" 
                                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200">
                                 </div>
@@ -57,7 +57,7 @@
                             
                             <!-- Filtro de Status -->
                             <div>
-                                <select wire:model="filters.is_active" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
+                                <select wire:model.live="filters.is_active" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
                                     <option value="">{{ __('shifts.all_status') }}</option>
                                     <option value="1">{{ __('shifts.active') }}</option>
                                     <option value="0">{{ __('shifts.inactive') }}</option>
@@ -248,7 +248,7 @@
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-search text-gray-400"></i>
                                     </div>
-                                    <input wire:model.debounce.300ms="searchAssignment" type="text" 
+                                    <input wire:model.live.debounce.300ms="searchAssignment" type="text" 
                                            placeholder="{{ __('shifts.search_employee_placeholder') }}" 
                                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200">
                                 </div>
@@ -256,7 +256,7 @@
                             
                             <!-- Departamento -->
                             <div>
-                                <select wire:model="filters.department_id" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
+                                <select wire:model.live="filters.department_id" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
                                     <option value="">{{ __('shifts.all_departments') }}</option>
                                     @foreach($departments as $department)
                                         <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -266,7 +266,7 @@
                             
                             <!-- Turno -->
                             <div>
-                                <select wire:model="filters.shift_id" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
+                                <select wire:model.live="filters.shift_id" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
                                     <option value="">{{ __('shifts.all_shifts') }}</option>
                                     @foreach($shiftsForSelect as $shiftOption)
                                         <option value="{{ $shiftOption->id }}">{{ $shiftOption->name }}</option>
@@ -287,7 +287,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <!-- Registros por página -->
                             <div>
-                                <select wire:model="perPage" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
+                                <select wire:model.live="perPage" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-all duration-200">
                                     <option value="10">{{ __('shifts.records_per_page', ['count' => 10]) }}</option>
                                     <option value="25">{{ __('shifts.records_per_page', ['count' => 25]) }}</option>
                                     <option value="50">{{ __('shifts.records_per_page', ['count' => 50]) }}</option>
