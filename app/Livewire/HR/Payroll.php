@@ -678,14 +678,50 @@ class Payroll extends Component
      */
     private function loadOvertimeData(Carbon $startDate, Carbon $endDate): void
     {
-        $overtimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $this->employee_id)
+        $allRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $this->employee_id)
             ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->where('status', 'approved')
             ->get();
 
-        $this->total_overtime_hours = $overtimeRecords->sum('hours');
-        $this->total_overtime_amount = $overtimeRecords->sum('amount');
-        $this->overtimeRecords = $overtimeRecords->toArray();
+        \Log::info('🔍 Loading Overtime Data', [
+            'employee_id' => $this->employee_id,
+            'total_records' => $allRecords->count(),
+            'all_records' => $allRecords->toArray(),
+        ]);
+
+        // Separar overtime regular e night allowance
+        // Usar filter ao invés de where para garantir comparação correta de booleanos
+        $regularOvertime = $allRecords->filter(function($record) {
+            return !$record->is_night_shift || $record->is_night_shift == 0;
+        });
+        $nightAllowance = $allRecords->filter(function($record) {
+            return $record->is_night_shift == 1 || $record->is_night_shift === true;
+        });
+
+        \Log::info('📊 Overtime Separation', [
+            'regular_count' => $regularOvertime->count(),
+            'night_allowance_count' => $nightAllowance->count(),
+            'regular_records' => $regularOvertime->toArray(),
+            'night_allowance_records' => $nightAllowance->toArray(),
+        ]);
+
+        // Overtime Regular
+        $this->total_overtime_hours = $regularOvertime->sum('hours');
+        $this->total_overtime_amount = $regularOvertime->sum('amount');
+        $this->overtimeRecords = $regularOvertime->toArray();
+
+        // Night Allowance
+        $this->night_shift_days = $nightAllowance->sum('direct_hours');
+        $this->night_shift_allowance = $nightAllowance->sum('amount');
+        $this->night_shift_details = $nightAllowance->toArray();
+
+        \Log::info('✅ Overtime Data Loaded', [
+            'overtime_hours' => $this->total_overtime_hours,
+            'overtime_amount' => $this->total_overtime_amount,
+            'night_shift_days' => $this->night_shift_days,
+            'night_shift_allowance' => $this->night_shift_allowance,
+            'night_shift_details_count' => count($this->night_shift_details),
+        ]);
     }
 
     /**
@@ -3823,30 +3859,30 @@ class Payroll extends Component
         
         $query = PayrollModel::query()
             ->with(['employee', 'payrollPeriod'])
-            ->when($this->search, function ($query) {
+            ->when(!empty($this->search), function ($query) {
                 return $query->whereHas('employee', function ($query) {
                     $query->where('full_name', 'like', "%{$this->search}%")
                           ->orWhere('id_card', 'like', "%{$this->search}%")
                           ->orWhere('email', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->filters['department_id'], function ($query) {
+            ->when(!empty($this->filters['department_id']), function ($query) {
                 return $query->whereHas('employee', function ($query) {
                     $query->where('department_id', $this->filters['department_id']);
                 });
             })
-            ->when($this->filters['period_id'], function ($query) {
+            ->when(!empty($this->filters['period_id']), function ($query) {
                 return $query->where('payroll_period_id', $this->filters['period_id']);
             })
-            ->when($this->filters['status'], function ($query) {
+            ->when(!empty($this->filters['status']), function ($query) {
                 return $query->where('status', $this->filters['status']);
             })
-            ->when($this->filters['month'], function ($query) {
+            ->when(!empty($this->filters['month']), function ($query) {
                 return $query->whereHas('payrollPeriod', function ($subQuery) {
                     $subQuery->whereMonth('start_date', $this->filters['month']);
                 });
             })
-            ->when($this->filters['year'], function ($query) {
+            ->when(!empty($this->filters['year']), function ($query) {
                 return $query->whereHas('payrollPeriod', function ($subQuery) {
                     $subQuery->whereYear('start_date', $this->filters['year']);
                 });

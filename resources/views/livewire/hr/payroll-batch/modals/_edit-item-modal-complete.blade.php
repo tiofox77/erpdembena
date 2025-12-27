@@ -160,7 +160,7 @@
                             <p class="text-sm font-bold text-indigo-900">{{ $calculatedData['night_shift_days'] ?? 0 }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">Valor (25%)</p>
+                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">Valor (20%)</p>
                             <p class="text-sm font-bold text-indigo-900">{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 0) }}</p>
                         </div>
                     </div>
@@ -169,12 +169,12 @@
                     <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-indigo-200">
                         <div class="text-[10px] bg-white p-1 rounded">
                             <p><span class="font-semibold">Lei Angola Art. 102º</span></p>
-                            <p class="text-indigo-600">Trabalho noturno (20h-06h) = +25%</p>
+                            <p class="text-indigo-600">Trabalho noturno (20h-06h) = +20%</p>
                             @if(($calculatedData['night_shift_days'] ?? 0) > 0)
                                 <p class="mt-1">
                                     <span class="font-medium">Cálculo:</span> 
                                     {{ number_format(($calculatedData['basic_salary'] ?? 0) / 22, 2, ',', '.') }} AOA/dia × 
-                                    {{ $calculatedData['night_shift_days'] ?? 0 }} dias × 25%
+                                    {{ $calculatedData['night_shift_days'] ?? 0 }} dias × 20%
                                 </p>
                             @endif
                         </div>

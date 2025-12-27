@@ -40,7 +40,7 @@
 
                 {{-- Night Shift Allowance (Subsídio Noturno) com detalhes --}}
                 @php
-                    $nightPct = $calculatedData['hr_settings']['night_shift_percentage'] ?? 25;
+                    $nightPct = $calculatedData['hr_settings']['night_shift_percentage'] ?? 20;
                     $dayRate = $calculatedData['daily_rate'] ?? (($calculatedData['basic_salary'] ?? 0) / ($calculatedData['monthly_working_days'] ?? 22));
                 @endphp
                 @if(($calculatedData['night_shift_allowance'] ?? 0) > 0)
@@ -424,7 +424,7 @@
     {{-- Night Shift Card --}}
     @if(($calculatedData['night_shift_days'] ?? 0) > 0)
     @php
-        $nightPercentage = $calculatedData['hr_settings']['night_shift_percentage'] ?? 25;
+        $nightPercentage = $calculatedData['hr_settings']['night_shift_percentage'] ?? 20;
         $cardDailyRate = $calculatedData['daily_rate'] ?? (($calculatedData['basic_salary'] ?? 0) / ($calculatedData['monthly_working_days'] ?? 22));
     @endphp
     <div class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200 mt-6">

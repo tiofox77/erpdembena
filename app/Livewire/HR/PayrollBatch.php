@@ -66,6 +66,9 @@ class PayrollBatch extends Component
     
     // Related data from other tables
     public array $overtimeRecords = [];
+    public array $night_shift_details = [];
+    public float $night_shift_days = 0;
+    public float $night_shift_allowance = 0;
     public array $salaryAdvances = [];
     public array $salaryDiscounts = [];
     
@@ -622,16 +625,29 @@ class PayrollBatch extends Component
             $period = $this->editingItem->payrollBatch->payrollPeriod;
             $employee = $this->editingItem->employee;
             
-            // Carregar overtime records do período e calcular total
-            $overtimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $employee->id)
+            // Carregar overtime records do período e separar regular e night allowance
+            $allOvertimeRecords = \App\Models\HR\OvertimeRecord::where('employee_id', $employee->id)
                 ->whereBetween('date', [$period->start_date, $period->end_date])
                 ->where('status', 'approved')
                 ->get();
             
-            $this->overtimeRecords = $overtimeRecords->toArray();
+            // Separar overtime regular e night allowance
+            $regularOvertime = $allOvertimeRecords->filter(function($record) {
+                return !$record->is_night_shift || $record->is_night_shift == 0;
+            });
+            $nightAllowance = $allOvertimeRecords->filter(function($record) {
+                return $record->is_night_shift == 1 || $record->is_night_shift === true;
+            });
+            
+            $this->overtimeRecords = $regularOvertime->toArray();
+            $this->night_shift_details = $nightAllowance->toArray();
             
             // Sempre usar valor do banco para overtime (não editável)
-            $this->edit_overtime_amount = (float) $overtimeRecords->sum('amount');
+            $this->edit_overtime_amount = (float) $regularOvertime->sum('amount');
+            
+            // Carregar também night allowance separadamente
+            $this->night_shift_days = $nightAllowance->sum('direct_hours');
+            $this->night_shift_allowance = $nightAllowance->sum('amount');
             
             // Carregar salary advances do período e calcular dedução total
             $salaryAdvances = \App\Models\HR\SalaryAdvance::where('employee_id', $employee->id)
@@ -890,6 +906,9 @@ class PayrollBatch extends Component
         
         // Clear related data
         $this->overtimeRecords = [];
+        $this->night_shift_details = [];
+        $this->night_shift_days = 0;
+        $this->night_shift_allowance = 0;
         $this->salaryAdvances = [];
         $this->salaryDiscounts = [];
     }
@@ -1128,10 +1147,16 @@ class PayrollBatch extends Component
             Log::info('💰 Executando cálculo... [MODAL BATCH EDIT]');
             $this->calculatedData = $calculator->calculate();
             
+            // Adicionar night shift data manualmente carregado ao calculatedData
+            $this->calculatedData['night_shift_days'] = $this->night_shift_days;
+            $this->calculatedData['night_shift_allowance'] = $this->night_shift_allowance;
+            
             Log::info('✅ Cálculo concluído', [
                 'calculatedData_keys' => !empty($this->calculatedData) ? array_keys($this->calculatedData) : 'VAZIO',
                 'gross_salary' => $this->calculatedData['gross_salary'] ?? 'N/A',
                 'net_salary' => $this->calculatedData['net_salary'] ?? 'N/A',
+                'night_shift_days' => $this->calculatedData['night_shift_days'] ?? 'N/A',
+                'night_shift_allowance' => $this->calculatedData['night_shift_allowance'] ?? 'N/A',
             ]);
             
             // Atualizar propriedades de exibição

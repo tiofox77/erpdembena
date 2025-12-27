@@ -384,10 +384,43 @@
                                     @endif
                                 </div>
 
+                                {{-- Night Allowance Card --}}
+                                @if(($night_shift_allowance ?? 0) > 0 || ($night_shift_days ?? 0) > 0)
+                                <div class="bg-gradient-to-br from-indigo-50 to-purple-100 p-6 rounded-2xl border border-indigo-200">
+                                    <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">
+                                        <i class="fas fa-moon mr-2"></i>
+                                        {{ __('messages.night_allowance') }}
+                                    </h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-sm text-indigo-600 font-medium">{{ __('messages.days_worked') }}</p>
+                                            <p class="text-indigo-800 font-semibold">{{ number_format($night_shift_days ?? 0, 1) }} {{ __('messages.days') }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-indigo-600 font-medium">{{ __('messages.amount') }}</p>
+                                            <p class="text-indigo-800 font-semibold">{{ number_format($night_shift_allowance ?? 0, 2) }} {{ __('messages.currency_aoa') }}</p>
+                                        </div>
+                                    </div>
+                                    @if(isset($night_shift_details) && count($night_shift_details) > 0)
+                                        <div class="mt-4">
+                                            <p class="text-sm text-indigo-600 font-medium mb-2">{{ __('messages.details') }}</p>
+                                            <div class="max-h-32 overflow-y-auto space-y-1">
+                                                @foreach($night_shift_details as $night)
+                                                    <div class="text-xs bg-indigo-100 px-2 py-1 rounded flex justify-between">
+                                                        <span>{{ $night['date'] ?? 'N/A' }}</span>
+                                                        <span>{{ number_format($night['direct_hours'] ?? 0, 1) }} {{ __('messages.days') }} - {{ number_format($night['amount'] ?? 0, 2) }} {{ __('messages.currency_aoa') }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                                @endif
+
                                 {{-- Night Shift Allowance Card --}}
                                 @if(($night_shift_days ?? 0) > 0)
                                 @php
-                                    $nightShiftPct = $hr_settings['night_shift_percentage'] ?? 25;
+                                    $nightShiftPct = $hr_settings['night_shift_percentage'] ?? 20;
                                 @endphp
                                 <div class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200">
                                     <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">

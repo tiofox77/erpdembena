@@ -371,16 +371,29 @@
 
         {{-- Resumo Financeiro --}}
         <div class="financial-summary">
-            <h3 data-i18n="overtime_summary">{{ __('messages.overtime_summary') }}</h3>
+            <h3 data-i18n="overtime_summary">
+                @if($overtime->is_night_shift)
+                    {{ __('messages.night_allowance') }}
+                @else
+                    {{ __('messages.overtime_summary') }}
+                @endif
+            </h3>
             <div class="financial-grid">
                 <div class="financial-item">
                     <p data-i18n="date">{{ __('messages.date') }}</p>
                     <p>{{ $overtime->date->format('d/m/Y') }}</p>
                 </div>
+                @if($overtime->is_night_shift)
+                <div class="financial-item">
+                    <p data-i18n="days_worked">{{ __('messages.days_worked') }}</p>
+                    <p>{{ number_format($overtime->direct_hours, 1) }} {{ __('messages.days') }}</p>
+                </div>
+                @else
                 <div class="financial-item">
                     <p data-i18n="hours">{{ __('messages.hours') }}</p>
                     <p>{{ number_format($overtime->hours, 2) }}h</p>
                 </div>
+                @endif
                 <div class="financial-item">
                     <p data-i18n="amount">{{ __('messages.amount') }}</p>
                     <p>{{ number_format($overtime->amount, 2, ',', '.') }} Kz</p>
@@ -390,22 +403,51 @@
 
         {{-- Detalhes do Overtime --}}
         <div class="info-section">
-            <h3><i class="fas fa-info-circle"></i> <span data-i18n="overtime_details">{{ __('messages.overtime_details') }}</span></h3>
+            <h3><i class="fas fa-info-circle"></i> 
+                <span data-i18n="overtime_details">
+                    @if($overtime->is_night_shift)
+                        {{ __('messages.night_allowance') }} {{ __('messages.details') }}
+                    @else
+                        {{ __('messages.overtime_details') }}
+                    @endif
+                </span>
+            </h3>
             <div class="info-grid">
-                @if($overtime->input_type === 'time_range' && $overtime->start_time && $overtime->end_time)
-                <div class="info-item">
-                    <span class="info-label">{{ __('messages.start_time') }}:</span>
-                    <span class="info-value">{{ $overtime->start_time }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">{{ __('messages.end_time') }}:</span>
-                    <span class="info-value">{{ $overtime->end_time }}</span>
-                </div>
+                @if($overtime->is_night_shift)
+                    {{-- Night Allowance Details --}}
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.days_worked') }}:</span>
+                        <span class="info-value">{{ number_format($overtime->direct_hours, 1) }} {{ __('messages.days') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.daily_rate') }}:</span>
+                        <span class="info-value">{{ number_format($overtime->rate, 2, ',', '.') }} Kz/dia</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.subtotal') }}:</span>
+                        <span class="info-value">{{ number_format($overtime->direct_hours * $overtime->rate, 2, ',', '.') }} Kz</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.night_shift_bonus') }} (20%):</span>
+                        <span class="info-value">{{ number_format($overtime->amount, 2, ',', '.') }} Kz</span>
+                    </div>
+                @else
+                    {{-- Regular Overtime Details --}}
+                    @if($overtime->input_type === 'time_range' && $overtime->start_time && $overtime->end_time)
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.start_time') }}:</span>
+                        <span class="info-value">{{ $overtime->start_time }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.end_time') }}:</span>
+                        <span class="info-value">{{ $overtime->end_time }}</span>
+                    </div>
+                    @endif
+                    <div class="info-item">
+                        <span class="info-label">{{ __('messages.hourly_rate') }}:</span>
+                        <span class="info-value">{{ number_format($overtime->hourly_rate, 2, ',', '.') }} Kz/h</span>
+                    </div>
                 @endif
-                <div class="info-item">
-                    <span class="info-label">{{ __('messages.hourly_rate') }}:</span>
-                    <span class="info-value">{{ number_format($overtime->hourly_rate, 2, ',', '.') }} Kz/h</span>
-                </div>
                 <div class="info-item">
                     <span class="info-label">{{ __('messages.status') }}:</span>
                     <span class="info-value">

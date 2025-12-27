@@ -26,7 +26,7 @@
             <div class="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-t-lg px-6 py-4 flex justify-between items-center">
                 <h3 class="text-xl font-medium text-white flex items-center">
                     <i class="fas fa-moon mr-3"></i>
-                    View Night Shift Overtime
+                    {{ __('messages.view') }} {{ __('messages.night_allowance') }}
                 </h3>
                 <button type="button" wire:click="closeViewModal" 
                         class="text-white hover:text-gray-200 focus:outline-none transition-all duration-200 ease-in-out transform hover:scale-110">
@@ -59,39 +59,65 @@
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                     <div class="flex items-center bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 border-b border-gray-200">
                         <i class="fas fa-moon text-purple-600 mr-2"></i>
-                        <h3 class="text-base font-medium text-gray-700">Night Shift Overtime Details</h3>
+                        <h3 class="text-base font-medium text-gray-700">{{ __('messages.night_allowance') }} {{ __('messages.details') }}</h3>
                     </div>
                     <div class="p-4 space-y-4">
-                        @if($input_type === 'time_range')
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500">{{ __('messages.start_time') }}</h4>
-                                    <p class="text-sm font-medium text-gray-800">{{ $start_time ?? '-' }}</p>
+                        <!-- Calculation Breakdown -->
+                        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
+                            <div class="flex items-center mb-3">
+                                <div class="bg-purple-200 rounded-full p-2 mr-2">
+                                    <i class="fas fa-chart-line text-purple-700"></i>
                                 </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500">{{ __('messages.end_time') }}</h4>
-                                    <p class="text-sm font-medium text-gray-800">{{ $end_time ?? '-' }}</p>
+                                <h4 class="text-sm font-bold text-purple-900">{{ __('messages.calculation_breakdown') }}</h4>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <!-- Dias Trabalhados -->
+                                <div class="flex items-center justify-between bg-white bg-opacity-60 rounded-lg p-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calendar-day text-blue-600 mr-2"></i>
+                                        <span class="text-xs text-gray-700">{{ __('messages.days_worked') }}:</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-gray-900">{{ number_format($direct_hours ?? 0, 1) }} {{ __('messages.days') }}</span>
                                 </div>
-                            </div>
-                        @else
-                            <div>
-                                <h4 class="text-xs font-medium text-gray-500">{{ __('messages.direct_hours') }} ({{ ucfirst($period_type) }})</h4>
-                                <p class="text-sm font-medium text-gray-800">{{ number_format($direct_hours ?? 0, 2) }} {{ __('messages.hours') }}</p>
-                            </div>
-                        @endif
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <h4 class="text-xs font-medium text-gray-500">{{ __('messages.hours') }}</h4>
-                                <p class="text-sm font-medium text-gray-800">{{ number_format($hours ?? 0, 2) }}</p>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-medium text-gray-500">{{ __('messages.hourly_rate') }}</h4>
-                                <p class="text-sm font-medium text-gray-800">{{ number_format($rate ?? 0, 2) }} AOA</p>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-medium text-gray-500">{{ __('messages.total_amount') }}</h4>
-                                <p class="text-sm font-bold text-purple-600">{{ number_format($amount ?? 0, 2) }} AOA</p>
+                                <!-- Taxa Diária -->
+                                <div class="flex items-center justify-between bg-white bg-opacity-60 rounded-lg p-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-coins text-yellow-600 mr-2"></i>
+                                        <span class="text-xs text-gray-700">{{ __('messages.daily_rate') }}:</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-gray-900">{{ number_format($rate ?? 0, 2) }} KZ/dia</span>
+                                </div>
+
+                                <!-- Subtotal -->
+                                <div class="flex items-center justify-between bg-blue-100 rounded-lg p-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calculator text-blue-600 mr-2"></i>
+                                        <span class="text-xs font-semibold text-blue-900">{{ __('messages.subtotal') }}:</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-blue-900">
+                                        {{ number_format(($direct_hours ?? 0) * ($rate ?? 0), 2) }} KZ
+                                        <span class="text-xs text-blue-600 ml-1">({{ number_format($direct_hours ?? 0, 1) }} × {{ number_format($rate ?? 0, 2) }})</span>
+                                    </span>
+                                </div>
+
+                                <!-- Night Allowance (20%) -->
+                                <div class="flex items-center justify-between bg-purple-100 rounded-lg p-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-moon text-purple-600 mr-2"></i>
+                                        <span class="text-xs font-semibold text-purple-900">{{ __('messages.night_shift_bonus') }} (20%):</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-purple-900">{{ number_format($amount ?? 0, 2) }} KZ</span>
+                                </div>
+
+                                <!-- Info -->
+                                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-2">
+                                    <div class="flex items-center text-xs text-indigo-700">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        <span>{{ __('messages.night_shift_payment_info') }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

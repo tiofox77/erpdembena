@@ -5,12 +5,12 @@
             <div class="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-purple-700 px-4 py-3">
                 <h3 class="text-lg font-medium text-white flex items-center">
                     <i class="fas fa-moon mr-2 animate-pulse"></i>
-                    Overtime Night Shift Records
+                    {{ __('messages.night_allowance') }}
                 </h3>
                 <div class="flex items-center space-x-2">
                     <button wire:click="create" class="inline-flex items-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md transition-all duration-200 transform hover:scale-105">
                         <i class="fas fa-plus mr-2"></i>
-                        Add Night Shift Overtime
+                        {{ __('messages.add_overtime') }}
                     </button>
                 </div>
             </div>
@@ -118,8 +118,8 @@
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center space-x-2">
-                                    <i class="fas fa-clock text-purple-600"></i>
-                                    <span>{{ __('messages.hours') }}</span>
+                                    <i class="fas fa-calendar-day text-purple-600"></i>
+                                    <span>{{ __('messages.days_worked') }}</span>
                                 </div>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -174,8 +174,8 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
-                                        <i class="fas fa-clock text-purple-500 mr-2"></i>
-                                        <span class="text-sm font-semibold text-gray-900">{{ number_format($record->hours, 2) }} h</span>
+                                        <i class="fas fa-calendar-day text-purple-500 mr-2"></i>
+                                        <span class="text-sm font-semibold text-gray-900">{{ number_format($record->direct_hours ?? 0, 1) }} {{ __('messages.days') }}</span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

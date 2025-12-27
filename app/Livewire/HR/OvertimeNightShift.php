@@ -28,12 +28,14 @@ class OvertimeNightShift extends Component
     public ?string $end_time = null;
     public ?float $rate = null;
     public ?float $hourly_rate = null;
+    public ?float $daily_rate = null;
+    public ?float $days = null;
     public ?float $hours = null;
     public ?float $amount = null;
     public ?string $description = null;
     public string $status = 'pending';
     public ?float $direct_hours = null;
-    public string $input_type = 'monthly'; // 'time_range', 'daily', 'monthly' - PADRÃO: monthly
+    public string $input_type = 'days'; // FIXO: days
     public string $period_type = 'day';
     public float $additionalHoursMultiplier = 1.375;
     public bool $is_night_shift = true; // SEMPRE TRUE para night shift
@@ -144,16 +146,11 @@ class OvertimeNightShift extends Component
             'rate' => 'required|numeric|min:0',
             'description' => 'nullable|string|max:255',
             'status' => 'required|in:pending,approved,rejected',
-            'input_type' => 'required|in:time_range,daily,monthly',
+            'input_type' => 'required|in:days',
+            'days' => 'required|numeric|min:0.5|max:31',
         ];
         
-        if ($this->input_type === 'time_range') {
-            $rules['start_time'] = 'required';
-            $rules['end_time'] = 'required|after:start_time';
-        } else {
-            $rules['direct_hours'] = 'required|numeric|min:0.01|max:744';
-            $rules['period_type'] = 'required|in:day,month';
-        }
+        // Removido - agora só usa dias
         
         return $rules;
     }
@@ -251,10 +248,11 @@ class OvertimeNightShift extends Component
     
     public function create(): void
     {
-        $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status']);
+        $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'days', 'daily_rate']);
         $this->status = 'pending';
         $this->date = date('Y-m-d');
-        $this->is_night_shift = true; // Força TRUE
+        $this->is_night_shift = true;
+        $this->input_type = 'days';
         $this->isEditing = false;
         $this->showModal = true;
     }
@@ -273,18 +271,14 @@ class OvertimeNightShift extends Component
         $this->isEditing = true;
         $this->employee_id = (int) $overtime->employee_id;
         $this->date = $overtime->date->format('Y-m-d');
-        $this->start_time = $overtime->start_time;
-        $this->end_time = $overtime->end_time;
+        $this->days = (float) ($overtime->direct_hours ?? 0);
+        $this->daily_rate = (float) $overtime->rate;
         $this->hours = (float) $overtime->hours;
-        $this->rate = (float) $overtime->rate;
-        $this->hourly_rate = (float) ($overtime->hourly_rate ?? 0);
         $this->amount = (float) $overtime->amount;
         $this->description = $overtime->description;
         $this->status = $overtime->status;
-        $this->input_type = $overtime->input_type ?? 'time_range';
-        $this->period_type = $overtime->period_type ?? 'day';
-        $this->direct_hours = (float) ($overtime->direct_hours ?? 0);
-        $this->is_night_shift = true; // Sempre TRUE
+        $this->input_type = 'days';
+        $this->is_night_shift = true;
         
         if ($this->employee_id) {
             $this->loadEmployeeInfo();
@@ -349,65 +343,45 @@ class OvertimeNightShift extends Component
                     }
                 }
                 
-                // Para night shift, sempre usa taxa base × multiplicador noturno
-                $nightShiftMultiplier = (float) HRSetting::get('night_shift_multiplier', 1.25);
-                $this->rate = round($this->hourly_rate * $nightShiftMultiplier, 2);
+                // Para night shift, calcula daily rate
+                $monthlyWorkingDays = (int) HRSetting::get('monthly_working_days', 22);
+                $this->daily_rate = round($employee->base_salary / $monthlyWorkingDays, 2);
+                $this->rate = $this->daily_rate;
             }
         } catch (\Exception $e) {
-            $this->hourly_rate = (float) HRSetting::get('default_hourly_rate', 10.00);
-            $this->rate = $this->hourly_rate * 1.25;
+            $monthlyWorkingDays = (int) HRSetting::get('monthly_working_days', 22);
+            $this->daily_rate = round(10000 / $monthlyWorkingDays, 2);
+            $this->rate = $this->daily_rate;
         }
     }
     
     public function calculateHoursAndAmount(): void
     {
         try {
-            $this->resetErrorBag(['time_diff', 'direct_hours', 'start_time', 'end_time', 'legal_limit']);
+            $this->resetErrorBag(['days', 'calculation']);
             
             if (!$this->employee_id || !$this->date) {
                 return;
             }
             
-            if (!$this->rate) {
+            if (!$this->daily_rate) {
                 $this->loadHourlyRate();
             }
             
-            $calculatedHours = 0;
-            
-            switch ($this->input_type) {
-                case 'time_range':
-                    if ($this->start_time && $this->end_time) {
-                        $start = new \DateTime($this->start_time);
-                        $end = new \DateTime($this->end_time);
-                        
-                        if ($end <= $start) {
-                            $end->add(new \DateInterval('P1D'));
-                        }
-                        
-                        $interval = $start->diff($end);
-                        $totalMinutes = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
-                        $calculatedHours = $totalMinutes / 60;
-                    }
-                    break;
-                    
-                case 'daily':
-                case 'monthly':
-                    if ($this->direct_hours && $this->direct_hours > 0) {
-                        $calculatedHours = (float) $this->direct_hours;
-                    }
-                    break;
-            }
-            
-            if ($calculatedHours <= 0) {
+            if (!$this->days || $this->days <= 0) {
                 $this->hours = 0;
                 $this->amount = 0;
                 return;
             }
             
-            $this->hours = round($calculatedHours, 2);
+            // Calcular valor total: dias × daily_rate
+            $totalValue = $this->days * $this->daily_rate;
             
-            // Night shift sempre usa: horas × (taxa_base × multiplicador_noturno)
-            $this->amount = round($this->hours * $this->rate, 2);
+            // Night shift overtime = 20% do valor total
+            $this->amount = round($totalValue * 0.20, 2);
+            
+            // Hours não é usado mas mantemos para compatibilidade
+            $this->hours = $this->days * 8; // Assumindo 8h por dia
             
         } catch (\Exception $e) {
             $this->addError('calculation', __('messages.overtime_calculation_error') . ': ' . $e->getMessage());
@@ -438,6 +412,11 @@ class OvertimeNightShift extends Component
         $this->calculateHoursAndAmount();
     }
     
+    public function updatedDays(): void
+    {
+        $this->calculateHoursAndAmount();
+    }
+    
     public function updatedDirectHours(): void
     {
         $this->calculateHoursAndAmount();
@@ -463,22 +442,16 @@ class OvertimeNightShift extends Component
         $overtime->employee_id = $this->employee_id;
         $overtime->date = $this->date;
         $overtime->hours = $this->hours;
-        $overtime->rate = $this->rate;
+        $overtime->rate = $this->daily_rate;
         $overtime->amount = $this->amount;
         $overtime->description = $this->description;
         $overtime->status = $this->status;
-        $overtime->input_type = $this->input_type;
-        $overtime->is_night_shift = true; // SEMPRE TRUE
-        
-        if ($this->input_type === 'time_range') {
-            $overtime->start_time = $this->start_time;
-            $overtime->end_time = $this->end_time;
-            $overtime->period_type = null;
-        } else {
-            $overtime->start_time = null;
-            $overtime->end_time = null;
-            $overtime->period_type = $this->period_type;
-        }
+        $overtime->input_type = 'days';
+        $overtime->is_night_shift = true;
+        $overtime->direct_hours = $this->days; // Armazena dias em direct_hours
+        $overtime->start_time = null;
+        $overtime->end_time = null;
+        $overtime->period_type = 'day';
         
         if ($this->status === 'approved' && $overtime->approved_by === null) {
             $overtime->approved_by = Auth::id();
@@ -489,10 +462,9 @@ class OvertimeNightShift extends Component
         
         $this->showModal = false;
         $this->resetErrorBag();
-        $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'direct_hours', 'input_type', 'period_type']);
-        $this->is_night_shift = true; // Mantém TRUE
-        $this->input_type = 'monthly'; // PADRÃO: monthly
-        $this->period_type = 'month';
+        $this->reset(['overtime_id', 'employee_id', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'days', 'daily_rate']);
+        $this->is_night_shift = true;
+        $this->input_type = 'days';
         
         if ($this->isEditing) {
             session()->flash('message', __('messages.overtime_updated'));
@@ -514,17 +486,15 @@ class OvertimeNightShift extends Component
         $this->employee_id = (int) $overtime->employee_id;
         $this->employee_name = $overtime->employee->full_name ?? '';
         $this->date = $overtime->date->format('Y-m-d');
-        $this->start_time = $overtime->start_time;
-        $this->end_time = $overtime->end_time;
+        $this->days = (float) ($overtime->direct_hours ?? 0);
+        $this->direct_hours = (float) ($overtime->direct_hours ?? 0); // Para o view modal
+        $this->daily_rate = (float) $overtime->rate;
+        $this->rate = (float) $overtime->rate; // Para o view modal
         $this->hours = (float) $overtime->hours;
-        $this->rate = (float) $overtime->rate;
-        $this->hourly_rate = (float) $overtime->hourly_rate;
         $this->amount = (float) $overtime->amount;
         $this->description = $overtime->description;
         $this->status = $overtime->status;
-        $this->input_type = $overtime->input_type ?? 'time_range';
-        $this->period_type = $overtime->period_type ?? 'day';
-        $this->direct_hours = (float) ($overtime->direct_hours ?? 0);
+        $this->input_type = 'days';
         $this->is_night_shift = true;
         
         $this->approver_name = $overtime->approver->name ?? null;
@@ -540,10 +510,9 @@ class OvertimeNightShift extends Component
         $this->showModal = false;
         $this->isEditing = false;
         $this->resetErrorBag();
-        $this->reset(['overtime_id', 'employee_id', 'employee_shift_id', 'employee_shift_name', 'date', 'start_time', 'end_time', 'rate', 'hours', 'amount', 'description', 'status', 'direct_hours', 'input_type', 'period_type']);
+        $this->reset(['overtime_id', 'employee_id', 'employee_shift_id', 'employee_shift_name', 'date', 'rate', 'hours', 'amount', 'description', 'status', 'days', 'daily_rate']);
         $this->is_night_shift = true;
-        $this->input_type = 'monthly'; // PADRÃO: monthly
-        $this->period_type = 'month';
+        $this->input_type = 'days';
     }
     
     public function closeViewModal(): void

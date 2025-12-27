@@ -939,7 +939,7 @@
             @can('hr.employees.view')
             <a href="{{ route('hr.overtime-night-shift') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.overtime-night-shift') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-moon text-indigo-500"></i>
-                <span>Overtime Night Shift</span>
+                <span>{{ __('messages.night_allowance') }}</span>
             </a>
             @endcan
 

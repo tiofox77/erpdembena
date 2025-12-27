@@ -42,17 +42,63 @@
                         </div>
                         <div class="p-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                <!-- Funcionário com Busca -->
+                                <div x-data="{ 
+                                    open: false, 
+                                    search: '{{ $employee_id ? ($employees->firstWhere('id', $employee_id)->full_name ?? '') : '' }}'
+                                }" 
+                                x-init="search = '{{ $employee_id ? ($employees->firstWhere('id', $employee_id)->full_name ?? '') : '' }}'"
+                                @click.away="open = false">
+                                    <label for="employee_search" class="block text-sm font-medium text-gray-700 mb-2">
                                         <i class="fas fa-user mr-1 text-gray-400"></i>
                                         {{ __('messages.employee') }} *
                                     </label>
-                                    <select id="employee_id" wire:model="employee_id" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm">
-                                        <option value="">{{ __('messages.select_employee') }}</option>
-                                        @foreach($employees as $employee)
-                                            <option value="{{ $employee->id }}">{{ $employee->full_name }} - {{ $employee->employee_id }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="relative">
+                                        <input 
+                                            type="text" 
+                                            x-model="search"
+                                            value="{{ $employee_id ? ($employees->firstWhere('id', $employee_id)->full_name ?? '') : '' }}"
+                                            @click="open = true"
+                                            @input="open = true"
+                                            placeholder="{{ __('messages.search_employee') }}"
+                                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm pl-10"
+                                        >
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-search text-gray-400"></i>
+                                        </div>
+                                        
+                                        <!-- Dropdown -->
+                                        <div 
+                                            x-show="open"
+                                            x-transition
+                                            class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                        >
+                                            @forelse($employees as $employee)
+                                                <div 
+                                                    x-show="search === '' || '{{ strtolower($employee->full_name) }}'.includes(search.toLowerCase())"
+                                                    wire:click="$set('employee_id', {{ $employee->id }})"
+                                                    @click="open = false; search = '{{ $employee->full_name }}'"
+                                                    class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-red-50 {{ $employee_id == $employee->id ? 'bg-red-100' : '' }}"
+                                                >
+                                                    <span class="font-medium block truncate {{ $employee_id == $employee->id ? 'text-red-600' : 'text-gray-900' }}">
+                                                        {{ $employee->full_name }}
+                                                        @if($employee->employee_id)
+                                                        <span class="text-gray-500 text-xs ml-2">{{ $employee->employee_id }}</span>
+                                                        @endif
+                                                    </span>
+                                                    @if($employee_id == $employee->id)
+                                                    <span class="absolute inset-y-0 right-0 flex items-center pr-4 text-red-600">
+                                                        <i class="fas fa-check"></i>
+                                                    </span>
+                                                    @endif
+                                                </div>
+                                            @empty
+                                                <div class="py-2 pl-3 pr-9 text-gray-500 text-sm">
+                                                    {{ __('messages.no_employees_found') }}
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                    </div>
                                     @error('employee_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 
