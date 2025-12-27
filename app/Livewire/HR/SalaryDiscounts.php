@@ -206,7 +206,7 @@ class SalaryDiscounts extends Component
         $discount = SalaryDiscount::findOrFail($id);
         
         $this->discount_id = $discount->id;
-        $this->employee_id = $discount->employee_id;
+        $this->employee_id = (int) $discount->employee_id;
         $this->request_date = $discount->request_date->format('Y-m-d');
         $this->amount = (float) $discount->amount;
         $this->installments = $discount->installments;

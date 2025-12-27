@@ -36,10 +36,10 @@
 
                 <!-- Formulário -->
                 <form wire:submit.prevent="save">
-                    <div class="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    <div class="p-6 max-h-[calc(100vh-200px)]" style="overflow-y: auto; overflow-x: visible;">
                         
                         <!-- Seção 1: Informações Básicas -->
-                        <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6">
+                        <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-visible mb-6">
                             <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200">
                                 <i class="fas fa-user-clock text-blue-600 mr-2"></i>
                                 <h3 class="text-base font-medium text-gray-700">{{ __('messages.basic_information') }}</h3>
@@ -47,7 +47,7 @@
                             <div class="p-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <!-- Funcionário com Busca -->
-                                    <div x-data="{ 
+                                    <div class="relative z-50" x-data="{ 
                                         open: false, 
                                         search: '{{ $employee_id ? ($employees->firstWhere('id', $employee_id)->full_name ?? '') : '' }}'
                                     }" 
@@ -74,7 +74,7 @@
                                             <div 
                                                 x-show="open"
                                                 x-transition
-                                                class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                                class="absolute z-[9999] mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
                                             >
                                                 @forelse($employees as $employee)
                                                     <div 
@@ -304,15 +304,25 @@
 
                                 <!-- Breakdown Detalhado dos Cálculos -->
                                 @if($days > 0 && $employee_id)
-                                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-5 border border-purple-200 mb-4">
-                                    <div class="flex items-center mb-4">
-                                        <div class="bg-purple-200 rounded-full p-2 mr-3">
-                                            <i class="fas fa-chart-line text-purple-700"></i>
+                                <div x-data="{ showDetails: false }" class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-5 border border-purple-200 mb-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center">
+                                            <div class="bg-purple-200 rounded-full p-2 mr-3">
+                                                <i class="fas fa-chart-line text-purple-700"></i>
+                                            </div>
+                                            <h4 class="text-sm font-bold text-purple-900">{{ __('messages.calculation_breakdown') }}</h4>
                                         </div>
-                                        <h4 class="text-sm font-bold text-purple-900">{{ __('messages.calculation_breakdown') }}</h4>
+                                        <button 
+                                            type="button"
+                                            @click="showDetails = !showDetails"
+                                            class="flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 transform hover:scale-110"
+                                            :title="showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'"
+                                        >
+                                            <i class="fas fa-question text-sm"></i>
+                                        </button>
                                     </div>
                                     
-                                    <div class="space-y-3">
+                                    <div x-show="showDetails" x-collapse class="space-y-3">
                                         <!-- Dias Trabalhados -->
                                         <div class="flex items-center justify-between bg-white bg-opacity-60 rounded-lg p-3">
                                             <div class="flex items-center">

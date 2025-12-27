@@ -44,15 +44,25 @@
                     $dayRate = $calculatedData['daily_rate'] ?? (($calculatedData['basic_salary'] ?? 0) / ($calculatedData['monthly_working_days'] ?? 22));
                 @endphp
                 @if(($calculatedData['night_shift_allowance'] ?? 0) > 0)
-                <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                <div x-data="{ showDetails: false }" class="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-indigo-700 font-bold flex items-center">
                             <i class="fas fa-moon mr-2"></i>
                             Subsídio Noturno (Lei Art. 102º)
                         </span>
-                        <span class="text-indigo-800 font-bold text-lg tabular-nums">+{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 2) }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-indigo-800 font-bold text-lg tabular-nums">+{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 2) }}</span>
+                            <button 
+                                type="button"
+                                @click="showDetails = !showDetails"
+                                class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-200 transform hover:scale-110"
+                                :title="showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'"
+                            >
+                                <i class="fas fa-question text-xs"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="text-xs text-indigo-600 space-y-1 pl-6">
+                    <div x-show="showDetails" x-collapse class="text-xs text-indigo-600 space-y-1 pl-6">
                         <div class="flex justify-between">
                             <span>• Dias Noturnos:</span>
                             <span class="font-semibold">{{ $calculatedData['night_shift_days'] ?? 0 }} dias</span>
@@ -427,23 +437,39 @@
         $nightPercentage = $calculatedData['hr_settings']['night_shift_percentage'] ?? 20;
         $cardDailyRate = $calculatedData['daily_rate'] ?? (($calculatedData['basic_salary'] ?? 0) / ($calculatedData['monthly_working_days'] ?? 22));
     @endphp
-    <div class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200 mt-6">
-        <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">
-            <i class="fas fa-moon mr-2"></i>
-            Subsídio Noturno (Lei Art. 102º)
-        </h3>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white/60 p-3 rounded-lg text-center">
-                <p class="text-xs text-indigo-600 font-medium mb-1">Dias Noturnos</p>
-                <p class="text-lg text-indigo-800 font-bold">{{ $calculatedData['night_shift_days'] ?? 0 }} dias</p>
-            </div>
-            <div class="bg-white/60 p-3 rounded-lg text-center">
-                <p class="text-xs text-indigo-600 font-medium mb-1">Valor (+{{ $nightPercentage }}%)</p>
-                <p class="text-lg text-indigo-800 font-bold">{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 2) }} AOA</p>
+    <div x-data="{ showNightDetails: false }" class="bg-gradient-to-br from-indigo-50 to-blue-100 p-6 rounded-2xl border border-indigo-200 mt-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-indigo-800 flex items-center">
+                <i class="fas fa-moon mr-2"></i>
+                Subsídio Noturno (Lei Art. 102º)
+            </h3>
+            <div class="flex items-center gap-3">
+                <span class="text-2xl font-bold text-indigo-800">+{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 2) }} AOA</span>
+                <button 
+                    type="button"
+                    @click="showNightDetails = !showNightDetails"
+                    class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-200 transform hover:scale-110"
+                    :title="showNightDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'"
+                >
+                    <i class="fas fa-question text-sm"></i>
+                </button>
             </div>
         </div>
-        <div class="mt-3 text-xs text-indigo-600 bg-white/50 p-2 rounded">
-            <strong>Cálculo:</strong> ({{ number_format($cardDailyRate, 2) }} AOA/dia × {{ $calculatedData['night_shift_days'] ?? 0 }} dias) × {{ $nightPercentage }}%
+        
+        <div x-show="showNightDetails" x-collapse>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div class="bg-white/60 p-3 rounded-lg text-center">
+                    <p class="text-xs text-indigo-600 font-medium mb-1">Dias Noturnos</p>
+                    <p class="text-lg text-indigo-800 font-bold">{{ $calculatedData['night_shift_days'] ?? 0 }} dias</p>
+                </div>
+                <div class="bg-white/60 p-3 rounded-lg text-center">
+                    <p class="text-xs text-indigo-600 font-medium mb-1">Percentual</p>
+                    <p class="text-lg text-indigo-800 font-bold">+{{ $nightPercentage }}%</p>
+                </div>
+            </div>
+            <div class="text-xs text-indigo-600 bg-white/50 p-2 rounded">
+                <strong>Cálculo:</strong> ({{ number_format($cardDailyRate, 2) }} AOA/dia × {{ $calculatedData['night_shift_days'] ?? 0 }} dias) × {{ $nightPercentage }}%
+            </div>
         </div>
     </div>
     @endif

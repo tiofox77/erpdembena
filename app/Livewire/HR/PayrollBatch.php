@@ -1139,6 +1139,15 @@ class PayrollBatch extends Component
             $calculator->setOvertimeAmount($this->edit_overtime_amount);
             $calculator->setAdvanceDeduction($this->edit_advance_deduction);
             
+            // Configurar night shift allowance manualmente carregado dos OvertimeRecords
+            // IMPORTANTE: Isso sobrescreve o cálculo automático do loadNightShiftData()
+            $calculator->setNightShiftAllowance($this->night_shift_allowance, $this->night_shift_days);
+            
+            Log::info('🌙 Night Shift configurado manualmente', [
+                'night_shift_days' => $this->night_shift_days,
+                'night_shift_allowance' => $this->night_shift_allowance,
+            ]);
+            
             // Configurar food in kind (apenas para exibição - food SEMPRE é deduzido)
             $isFoodInKind = (bool)($employee->is_food_in_kind ?? false);
             $calculator->setFoodInKind($isFoodInKind);
@@ -1146,10 +1155,6 @@ class PayrollBatch extends Component
             // Calcular
             Log::info('💰 Executando cálculo... [MODAL BATCH EDIT]');
             $this->calculatedData = $calculator->calculate();
-            
-            // Adicionar night shift data manualmente carregado ao calculatedData
-            $this->calculatedData['night_shift_days'] = $this->night_shift_days;
-            $this->calculatedData['night_shift_allowance'] = $this->night_shift_allowance;
             
             Log::info('✅ Cálculo concluído', [
                 'calculatedData_keys' => !empty($this->calculatedData) ? array_keys($this->calculatedData) : 'VAZIO',

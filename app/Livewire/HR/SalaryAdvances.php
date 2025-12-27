@@ -211,7 +211,7 @@ class SalaryAdvances extends Component
         $this->isEditing = true;
         
         $advance = SalaryAdvance::findOrFail($id);
-        $this->employee_id = $advance->employee_id;
+        $this->employee_id = (int) $advance->employee_id;
         $this->request_date = $advance->request_date->format('Y-m-d');
         $this->amount = (float) $advance->amount; // Conversão explícita para float
         $this->installments = $advance->installments;

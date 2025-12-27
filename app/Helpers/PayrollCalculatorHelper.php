@@ -553,6 +553,15 @@ class PayrollCalculatorHelper
         return $this;
     }
     
+    public function setNightShiftAllowance(float $amount, int $days = 0): self
+    {
+        $this->nightShiftAllowance = $amount;
+        if ($days > 0) {
+            $this->nightShiftDays = $days;
+        }
+        return $this;
+    }
+    
     public function setAdvanceDeduction(float $amount): self
     {
         $this->advanceDeduction = $amount;
