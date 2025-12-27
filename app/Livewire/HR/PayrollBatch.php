@@ -1141,7 +1141,7 @@ class PayrollBatch extends Component
             
             // Configurar night shift allowance manualmente carregado dos OvertimeRecords
             // IMPORTANTE: Isso sobrescreve o cálculo automático do loadNightShiftData()
-            $calculator->setNightShiftAllowance($this->night_shift_allowance, $this->night_shift_days);
+            $calculator->setNightShiftAllowance($this->night_shift_allowance, (int) $this->night_shift_days);
             
             Log::info('🌙 Night Shift configurado manualmente', [
                 'night_shift_days' => $this->night_shift_days,
