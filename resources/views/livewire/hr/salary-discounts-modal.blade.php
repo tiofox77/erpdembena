@@ -35,7 +35,7 @@
             <div class="p-6 space-y-6">
                 <form wire:submit.prevent="save" class="space-y-6">
                     <!-- Funcionário -->
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                    <div class="bg-white rounded-lg shadow-md border border-gray-200">
                         <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200">
                             <i class="fas fa-user text-blue-600 mr-2"></i>
                             <h3 class="text-base font-medium text-gray-700">{{ __('messages.employee_information') }}</h3>
@@ -71,7 +71,7 @@
                                         <div 
                                             x-show="open"
                                             x-transition
-                                            class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                            class="absolute z-[9999] mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
                                         >
                                             @forelse($employees as $employee)
                                                 <div 
@@ -115,7 +115,7 @@
                     </div>
 
                     <!-- Informações do Desconto -->
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                    <div class="bg-white rounded-lg shadow-md border border-gray-200">
                         <div class="flex items-center bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 border-b border-gray-200">
                             <i class="fas fa-minus-circle text-green-600 mr-2"></i>
                             <h3 class="text-base font-medium text-gray-700">{{ __('messages.discount_information') }}</h3>
@@ -153,7 +153,7 @@
                     </div>
 
                     <!-- Informações de Parcelamento -->
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                    <div class="bg-white rounded-lg shadow-md border border-gray-200">
                         <div class="flex items-center bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 border-b border-gray-200">
                             <i class="fas fa-calculator text-purple-600 mr-2"></i>
                             <h3 class="text-base font-medium text-gray-700">{{ __('messages.installment_information') }}</h3>
@@ -196,7 +196,7 @@
                     </div>
 
                     <!-- Motivo e Observações -->
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                    <div class="bg-white rounded-lg shadow-md border border-gray-200">
                         <div class="flex items-center bg-gradient-to-r from-yellow-50 to-yellow-100 px-4 py-3 border-b border-gray-200">
                             <i class="fas fa-clipboard-list text-yellow-600 mr-2"></i>
                             <h3 class="text-base font-medium text-gray-700">{{ __('messages.additional_information') }}</h3>

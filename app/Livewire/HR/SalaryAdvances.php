@@ -214,7 +214,7 @@ class SalaryAdvances extends Component
         $this->employee_id = (int) $advance->employee_id;
         $this->request_date = $advance->request_date->format('Y-m-d');
         $this->amount = (float) $advance->amount; // Conversão explícita para float
-        $this->installments = $advance->installments;
+        $this->installments = (int) $advance->installments;
         $this->installment_amount = (float) $advance->installment_amount; // Conversão explícita para float
         $this->first_deduction_date = $advance->first_deduction_date->format('Y-m-d');
         $this->reason = $advance->reason;
@@ -238,10 +238,10 @@ class SalaryAdvances extends Component
         $advance = SalaryAdvance::with(['employee', 'approver', 'creator', 'payments'])->findOrFail($id);
         $this->viewAdvance = $advance; // Atribuir o objeto completo à propriedade viewAdvance
         
-        $this->employee_id = $advance->employee_id;
+        $this->employee_id = (int) $advance->employee_id;
         $this->request_date = $advance->request_date->format('Y-m-d');
         $this->amount = (float) $advance->amount;
-        $this->installments = $advance->installments;
+        $this->installments = (int) $advance->installments;
         $this->installment_amount = (float) $advance->installment_amount;
         $this->first_deduction_date = $advance->first_deduction_date->format('Y-m-d');
         $this->reason = $advance->reason;

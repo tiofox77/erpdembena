@@ -16,14 +16,14 @@
                             @if($this->isEmployeeOnLeave($editingItem->employee_id, $editingItem->payrollBatch->payroll_period_id))
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/30 text-white border border-white/50 backdrop-blur-sm">
                                     <i class="fas fa-umbrella-beach mr-1"></i>
-                                    Em Férias
+                                    {{ trans('messages.on_leave') }}
                                 </span>
                             @endif
                         </div>
                         <p class="text-orange-100 text-sm">BI: {{ $editingItem->employee->id_card }} | {{ $editingItem->employee->department->name ?? 'N/A' }}</p>
                         <p class="text-orange-200 text-xs mt-0.5">
                             <i class="fas fa-calendar-alt mr-1"></i>
-                            Período: {{ $editingItem->payrollBatch->payrollPeriod->name }}
+                            {{ trans('messages.period') }}: {{ $editingItem->payrollBatch->payrollPeriod->name }}
                         </p>
                     </div>
                 </div>
@@ -42,10 +42,10 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm text-yellow-700">
-                        <strong>Aguarde...</strong> Calculando dados do payroll...
+                        <strong>{{ trans('messages.wait') }}</strong> {{ trans('messages.calculating_payroll_data') }}
                     </p>
                     <p class="text-xs text-yellow-600 mt-1">
-                        Se esta mensagem persistir, verifique os logs do sistema.
+                        {{ trans('messages.if_message_persists_check_logs') }}
                     </p>
                 </div>
             </div>
@@ -56,7 +56,7 @@
         <div class="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-200 p-4 flex-shrink-0">
             <h3 class="text-base font-bold text-teal-800 mb-3 flex items-center">
                 <i class="fas fa-edit text-teal-600 mr-2"></i>
-                Campos Editáveis - Ajuste o Pagamento
+                {{ trans('messages.editable_fields_adjust_payment') }}
             </h3>
             
             {{-- Primeira Linha: Valores Monetários --}}
@@ -66,20 +66,20 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-plus-circle text-teal-600 mr-1"></i>
-                        Bónus Adicional
+                        {{ trans('messages.additional_bonus') }}
                     </label>
                     <div class="relative">
                         <input 
                             type="number" 
                             step="0.01"
                             min="0"
-                            wire:model.live="edit_additional_bonus"
+                            wire:model.lazy="edit_additional_bonus"
                             class="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
                             placeholder="0.00 AOA"
                         >
                         <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">AOA</span>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Bónus extra para este pagamento</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ trans('messages.extra_bonus_for_payment') }}</p>
                 </div>
 
             </div>
@@ -91,7 +91,7 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-gift text-emerald-600 mr-1"></i>
-                        Subsídio de Natal (50%)
+                        {{ trans('messages.christmas_subsidy') }} (50%)
                     </label>
                     <div class="flex items-center h-[52px] bg-white border border-gray-300 rounded-xl px-4">
                         <label class="inline-flex items-center cursor-pointer">
@@ -101,18 +101,18 @@
                                 class="w-5 h-5 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
                             >
                             <span class="ml-3 text-sm font-medium text-gray-700">
-                                Incluir Subsídio de Natal
+                                {{ trans('messages.include_christmas_subsidy') }}
                             </span>
                         </label>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">50% do salário base</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ trans('messages.percent_of_base_salary') }}</p>
                 </div>
 
                 {{-- Vacation Subsidy --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-umbrella-beach text-blue-600 mr-1"></i>
-                        Subsídio de Férias (50%)
+                        {{ trans('messages.vacation_subsidy') }} (50%)
                     </label>
                     <div class="flex items-center h-[52px] bg-white border border-gray-300 rounded-xl px-4">
                         <label class="inline-flex items-center cursor-pointer">
@@ -122,11 +122,11 @@
                                 class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                             >
                             <span class="ml-3 text-sm font-medium text-gray-700">
-                                Incluir Subsídio de Férias
+                                {{ trans('messages.include_vacation_subsidy') }}
                             </span>
                         </label>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">50% do salário base</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ trans('messages.percent_of_base_salary') }}</p>
                 </div>
 
             </div>
@@ -135,7 +135,7 @@
             <div class="mt-3 bg-blue-100 border border-blue-300 rounded-lg p-2 flex items-center">
                 <i class="fas fa-info-circle text-blue-600 mr-2 text-sm"></i>
                 <p class="text-xs text-blue-800">
-                    <strong>Nota:</strong> Os valores serão recalculados automaticamente ao alterar os campos acima.
+                    <strong>{{ trans('messages.note') }}:</strong> {{ trans('messages.values_recalculated_automatically') }}
                 </p>
             </div>
         </div>
@@ -152,15 +152,15 @@
                         <div class="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center">
                             <i class="fas fa-moon text-white text-xs"></i>
                         </div>
-                        <h4 class="ml-2 font-bold text-xs text-indigo-900">Subsídio Noturno</h4>
+                        <h4 class="ml-2 font-bold text-xs text-indigo-900">{{ trans('messages.night_shift_allowance') }}</h4>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">Dias Noturnos</p>
+                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">{{ trans('messages.night_shift_days') }}</p>
                             <p class="text-sm font-bold text-indigo-900">{{ $calculatedData['night_shift_days'] ?? 0 }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">Valor (20%)</p>
+                            <p class="text-[10px] text-indigo-700 font-medium mb-0.5">{{ trans('messages.value_percent') }}</p>
                             <p class="text-sm font-bold text-indigo-900">{{ number_format($calculatedData['night_shift_allowance'] ?? 0, 0) }}</p>
                         </div>
                     </div>
@@ -168,13 +168,13 @@
                     {{-- Night Shift Details --}}
                     <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-indigo-200">
                         <div class="text-[10px] bg-white p-1 rounded">
-                            <p><span class="font-semibold">Lei Angola Art. 102º</span></p>
-                            <p class="text-indigo-600">Trabalho noturno (20h-06h) = +20%</p>
+                            <p><span class="font-semibold">{{ trans('messages.angola_law_art_102') }}</span></p>
+                            <p class="text-indigo-600">{{ trans('messages.night_work_20h_06h') }}</p>
                             @if(($calculatedData['night_shift_days'] ?? 0) > 0)
                                 <p class="mt-1">
-                                    <span class="font-medium">Cálculo:</span> 
+                                    <span class="font-medium">{{ trans('messages.calculation') }}:</span> 
                                     {{ number_format(($calculatedData['basic_salary'] ?? 0) / 22, 2, ',', '.') }} AOA/dia × 
-                                    {{ $calculatedData['night_shift_days'] ?? 0 }} dias × 20%
+                                    {{ $calculatedData['night_shift_days'] ?? 0 }} {{ trans('messages.days') }} × 20%
                                 </p>
                             @endif
                         </div>
@@ -193,11 +193,11 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-[10px] text-purple-700 font-medium mb-0.5">Total Hours</p>
+                            <p class="text-[10px] text-purple-700 font-medium mb-0.5">{{ trans('messages.total_hours') }}</p>
                             <p class="text-sm font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_hours'] ?? 0, 2) }}h</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-purple-700 font-medium mb-0.5">Amount</p>
+                            <p class="text-[10px] text-purple-700 font-medium mb-0.5">{{ trans('messages.amount') }}</p>
                             <p class="text-sm font-bold text-purple-900">{{ number_format($calculatedData['total_overtime_amount'] ?? 0, 0) }}</p>
                         </div>
                     </div>
@@ -213,7 +213,7 @@
                                 @endif
                             </div>
                         @empty
-                            <p class="text-[10px] text-purple-600">Sem registros</p>
+                            <p class="text-[10px] text-purple-600">{{ trans('messages.no_records') }}</p>
                         @endforelse
                     </div>
                 </div>
@@ -230,11 +230,11 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-[10px] text-orange-700 font-medium mb-0.5">Total Advances</p>
+                            <p class="text-[10px] text-orange-700 font-medium mb-0.5">{{ trans('messages.total_advances') }}</p>
                             <p class="text-sm font-bold text-orange-900">{{ number_format($calculatedData['total_advances'] ?? 0, 0) }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-orange-700 font-medium mb-0.5">Deduction</p>
+                            <p class="text-[10px] text-orange-700 font-medium mb-0.5">{{ trans('messages.deduction') }}</p>
                             <p class="text-sm font-bold text-orange-900">{{ number_format($calculatedData['advance_deduction'] ?? 0, 0) }}</p>
                         </div>
                     </div>
@@ -246,11 +246,11 @@
                                 <span class="font-semibold">{{ \Carbon\Carbon::parse($advance['request_date'] ?? $advance['first_deduction_date'])->format('d/m/Y') }}</span>: 
                                 {{ number_format($advance['amount'] ?? 0, 0) }} AOA
                                 @if(($advance['remaining_installments'] ?? 0) > 0)
-                                    <span class="text-orange-600">(Restante: {{ $advance['remaining_installments'] }} parcelas)</span>
+                                    <span class="text-orange-600">({{ trans('messages.remaining_installments') }}: {{ $advance['remaining_installments'] }} {{ trans('messages.installments_plural') }})</span>
                                 @endif
                             </div>
                         @empty
-                            <p class="text-[10px] text-orange-600">Sem adiantamentos</p>
+                            <p class="text-[10px] text-orange-600">{{ trans('messages.no_advances') }}</p>
                         @endforelse
                     </div>
                 </div>
@@ -267,11 +267,11 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <p class="text-[10px] text-red-700 font-medium mb-0.5">Total Discounts</p>
+                            <p class="text-[10px] text-red-700 font-medium mb-0.5">{{ trans('messages.total_discounts') }}</p>
                             <p class="text-sm font-bold text-red-900">{{ number_format($calculatedData['total_salary_discounts'] ?? 0, 0) }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-red-700 font-medium mb-0.5">Active</p>
+                            <p class="text-[10px] text-red-700 font-medium mb-0.5">{{ trans('messages.active') }}</p>
                             <p class="text-sm font-bold text-red-900">{{ count($salaryDiscounts) }}</p>
                         </div>
                     </div>
@@ -280,7 +280,7 @@
                     <div x-show="showDetails" x-cloak class="mt-2 pt-2 border-t border-red-200 space-y-1">
                         @forelse($salaryDiscounts as $discount)
                             <div class="text-[10px] bg-white p-1 rounded">
-                                <span class="font-semibold">{{ $discount['reason'] ?? 'Desconto' }}</span>: 
+                                <span class="font-semibold">{{ $discount['reason'] ?? trans('messages.discount') }}</span>: 
                                 {{ number_format($discount['installment_amount'] ?? $discount['amount'] ?? 0, 0) }} AOA
                                 @if(($discount['remaining_installments'] ?? 0) > 1)
                                     <span class="text-red-600">({{ $discount['remaining_installments'] }} parcelas)</span>
@@ -288,7 +288,7 @@
                                 <span class="text-gray-600">[{{ ucfirst($discount['discount_type'] ?? 'others') }}]</span>
                             </div>
                         @empty
-                            <p class="text-[10px] text-red-600">Sem descontos</p>
+                            <p class="text-[10px] text-red-600">{{ trans('messages.no_discounts') }}</p>
                         @endforelse
                     </div>
                 </div>
@@ -306,7 +306,7 @@
             <div class="flex justify-between items-center">
                 <div class="text-sm text-gray-600 flex items-center">
                     <i class="fas fa-info-circle text-blue-500 mr-1"></i>
-                    Os valores são calculados automaticamente pelo sistema
+                    {{ trans('messages.values_calculated_automatically') }}
                 </div>
                 <div class="flex space-x-3">
                     <button
@@ -317,8 +317,8 @@
                     >
                         <i class="fas fa-times mr-2" wire:loading.remove wire:target="saveEditedItem"></i>
                         <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="saveEditedItem"></i>
-                        <span wire:loading.remove wire:target="saveEditedItem">Cancelar</span>
-                        <span wire:loading wire:target="saveEditedItem">Aguarde...</span>
+                        <span wire:loading.remove wire:target="saveEditedItem">{{ trans('messages.cancel') }}</span>
+                        <span wire:loading wire:target="saveEditedItem">{{ trans('messages.wait') }}</span>
                     </button>
                     <button
                         wire:click="saveEditedItem"
@@ -328,8 +328,8 @@
                     >
                         <i class="fas fa-save mr-2" wire:loading.remove wire:target="saveEditedItem"></i>
                         <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="saveEditedItem"></i>
-                        <span wire:loading.remove wire:target="saveEditedItem">Salvar Alterações</span>
-                        <span wire:loading wire:target="saveEditedItem">Salvando...</span>
+                        <span wire:loading.remove wire:target="saveEditedItem">{{ trans('messages.save_changes') }}</span>
+                        <span wire:loading wire:target="saveEditedItem">{{ trans('messages.saving') }}</span>
                     </button>
                 </div>
             </div>

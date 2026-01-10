@@ -36,10 +36,10 @@
 
                 <!-- Formulário -->
                 <form wire:submit.prevent="save">
-                    <div class="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    <div class="p-6 max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-visible">
                         
                         <!-- Seção 1: Informações Básicas -->
-                        <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6">
+                        <div class="bg-white rounded-lg shadow-md border border-gray-200 mb-6">
                             <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200">
                                 <i class="fas fa-user-clock text-blue-600 mr-2"></i>
                                 <h3 class="text-base font-medium text-gray-700">{{ __('messages.basic_information') }}</h3>
@@ -74,7 +74,7 @@
                                             <div 
                                                 x-show="open"
                                                 x-transition
-                                                class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                                class="absolute z-[9999] mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
                                             >
                                                 @forelse($employees as $employee)
                                                     <div 
@@ -118,7 +118,7 @@
                                             {{ __('messages.date') }} <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
-                                            <input type="date" wire:model.live="date" id="date"
+                                            <input type="date" wire:model.lazy="date" id="date"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-calendar text-gray-400"></i>
@@ -246,7 +246,7 @@
                                                 {{ __('messages.start_time') }} <span class="text-red-500">*</span>
                                             </label>
                                             <div class="relative">
-                                                <input type="time" wire:model.live="start_time" id="start_time"
+                                                <input type="time" wire:model.lazy="start_time" id="start_time"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <i class="fas fa-play text-gray-400"></i>
@@ -271,7 +271,7 @@
                                                 {{ __('messages.end_time') }} <span class="text-red-500">*</span>
                                             </label>
                                             <div class="relative">
-                                                <input type="time" wire:model.live="end_time" id="end_time"
+                                                <input type="time" wire:model.lazy="end_time" id="end_time"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <i class="fas fa-stop text-gray-400"></i>
@@ -317,7 +317,7 @@
                                                 <span class="ml-1 text-xs font-medium text-blue-600">{{ $input_type === 'daily' ? __('messages.only_overtime_hours') : __('messages.total_monthly_overtime') }}</span>
                                             </label>
                                             <div class="relative">
-                                                <input type="number" step="0.01" wire:model.live="direct_hours" id="direct_hours"
+                                                <input type="number" step="0.01" wire:model.lazy="direct_hours" id="direct_hours"
                                                     placeholder="{{ $input_type === 'daily' ? __('messages.daily_example_placeholder') : __('messages.monthly_example_placeholder') }}"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -377,7 +377,7 @@
                                                 {{ __('messages.hourly_rate') }} <span class="text-red-500">*</span>
                                             </label>
                                             <div class="relative">
-                                                <input type="number" step="0.01" min="0" wire:model.live="rate" id="hourly_rate"
+                                                <input type="number" step="0.01" min="0" wire:model.lazy="rate" id="hourly_rate"
                                                     placeholder="{{ __('messages.enter_hourly_rate') }}"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -408,7 +408,7 @@
                                                 {{ __('messages.hourly_rate') }} <span class="text-red-500">*</span>
                                             </label>
                                             <div class="relative">
-                                                <input type="number" step="0.01" min="0" wire:model.live="rate" id="hourly_rate_range"
+                                                <input type="number" step="0.01" min="0" wire:model.lazy="rate" id="hourly_rate_range"
                                                     placeholder="{{ __('messages.enter_hourly_rate') }}"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

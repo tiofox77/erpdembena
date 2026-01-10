@@ -9,7 +9,7 @@
                         <i class="fas fa-chart-line text-2xl text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-white">Dashboard RH</h1>
+                        <h1 class="text-2xl font-bold text-white">{{ trans('messages.hr_dashboard') }}</h1>
                         <p class="text-blue-100 text-sm">
                             {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
                         </p>
@@ -19,21 +19,21 @@
                 {{-- Filters --}}
                 <div class="flex flex-wrap items-center gap-3">
                     <select wire:model.live="period" class="px-4 py-2 rounded-lg bg-white/20 border-white/30 text-white text-sm focus:ring-white focus:border-white [&>option]:text-gray-800">
-                        <option value="current_month">Mês Atual</option>
-                        <option value="last_month">Mês Anterior</option>
-                        <option value="current_quarter">Trimestre</option>
-                        <option value="current_year">Ano</option>
+                        <option value="current_month">{{ trans('messages.current_month') }}</option>
+                        <option value="last_month">{{ trans('messages.last_month') }}</option>
+                        <option value="current_quarter">{{ trans('messages.current_quarter') }}</option>
+                        <option value="current_year">{{ trans('messages.current_year') }}</option>
                     </select>
                     
                     <select wire:model.live="departmentId" class="px-4 py-2 rounded-lg bg-white/20 border-white/30 text-white text-sm focus:ring-white focus:border-white [&>option]:text-gray-800">
-                        <option value="">Todos Departamentos</option>
+                        <option value="">{{ trans('messages.all_departments') }}</option>
                         @foreach($departments as $dept)
                             <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                         @endforeach
                     </select>
                     
                     <select wire:model.live="payrollPeriodId" class="px-4 py-2 rounded-lg bg-white/20 border-white/30 text-white text-sm focus:ring-white focus:border-white [&>option]:text-gray-800">
-                        <option value="">Período Salarial</option>
+                        <option value="">{{ trans('messages.payroll_period') }}</option>
                         @foreach($payrollPeriods as $pp)
                             <option value="{{ $pp->id }}">{{ $pp->name }}</option>
                         @endforeach
@@ -48,25 +48,25 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center gap-1 py-2 overflow-x-auto">
                 <a href="{{ route('hr.employees') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-users"></i> Funcionários
+                    <i class="fas fa-users"></i> {{ trans('messages.employees') }}
                 </a>
                 <a href="{{ route('hr.attendance') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-fingerprint"></i> Presenças
+                    <i class="fas fa-fingerprint"></i> {{ trans('messages.attendance') }}
                 </a>
                 <a href="{{ route('hr.payroll') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-money-bill-wave"></i> Folha Salarial
+                    <i class="fas fa-money-bill-wave"></i> {{ trans('messages.payroll') }}
                 </a>
                 <a href="{{ route('hr.payroll-batch') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-layer-group"></i> Processamento
+                    <i class="fas fa-layer-group"></i> {{ trans('messages.processing') }}
                 </a>
                 <a href="{{ route('hr.leave') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-calendar-times"></i> Licenças
+                    <i class="fas fa-calendar-times"></i> {{ trans('messages.leaves') }}
                 </a>
                 <a href="{{ route('hr.overtime-records') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-clock"></i> Horas Extra
+                    <i class="fas fa-clock"></i> {{ trans('messages.overtime') }}
                 </a>
                 <a href="{{ route('hr.salary-advances') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition whitespace-nowrap">
-                    <i class="fas fa-hand-holding-usd"></i> Adiantamentos
+                    <i class="fas fa-hand-holding-usd"></i> {{ trans('messages.advances') }}
                 </a>
             </div>
         </div>
@@ -83,7 +83,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">{{ number_format($kpis['totalEmployees'] ?? 0) }}</p>
-                <p class="text-xs text-gray-500">Total Funcionários</p>
+                <p class="text-xs text-gray-500">{{ trans('messages.total_employees') }}</p>
             </div>
             
             {{-- Active --}}
@@ -94,7 +94,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">{{ number_format($kpis['activeEmployees'] ?? 0) }}</p>
-                <p class="text-xs text-gray-500">Activos</p>
+                <p class="text-xs text-gray-500">{{ trans('messages.active') }}</p>
             </div>
             
             {{-- Attendance Rate --}}
@@ -105,7 +105,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">{{ $kpis['attendanceRate'] ?? 0 }}%</p>
-                <p class="text-xs text-gray-500">Taxa Presença</p>
+                <p class="text-xs text-gray-500">{{ trans('messages.attendance_rate') }}</p>
             </div>
             
             {{-- Overtime Hours --}}
@@ -116,7 +116,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">{{ number_format($kpis['totalOvertimeHours'] ?? 0, 1) }}h</p>
-                <p class="text-xs text-gray-500">Horas Extra</p>
+                <p class="text-xs text-gray-500">{{ trans('messages.overtime_hours') }}</p>
             </div>
             
             {{-- Pending Leaves --}}
@@ -127,7 +127,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">{{ $kpis['pendingLeaves'] ?? 0 }}</p>
-                <p class="text-xs text-gray-500">Licenças Pendentes</p>
+                <p class="text-xs text-gray-500">{{ trans('messages.pending_leaves') }}</p>
             </div>
             
             {{-- New Hires --}}
@@ -138,7 +138,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">{{ $kpis['newHires'] ?? 0 }}</p>
-                <p class="text-xs text-gray-500">Novas Contratações</p>
+                <p class="text-xs text-gray-500">{{ trans('messages.new_hires') }}</p>
             </div>
         </div>
         
@@ -151,8 +151,8 @@
                         <i class="fas fa-money-bill-wave text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-emerald-100 text-sm">Folha Salarial</p>
-                        <p class="text-xs text-emerald-200">{{ $kpis['payrollCount'] ?? 0 }} registros</p>
+                        <p class="text-emerald-100 text-sm">{{ trans('messages.payroll') }}</p>
+                        <p class="text-xs text-emerald-200">{{ $kpis['payrollCount'] ?? 0 }} {{ trans('messages.records') }}</p>
                     </div>
                 </div>
                 <p class="text-3xl font-bold">{{ number_format($kpis['totalPayroll'] ?? 0, 0, ',', '.') }}</p>
@@ -166,7 +166,7 @@
                         <i class="fas fa-hand-holding-usd text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-amber-100 text-sm">Adiantamentos</p>
+                        <p class="text-amber-100 text-sm">{{ trans('messages.advances') }}</p>
                     </div>
                 </div>
                 <p class="text-3xl font-bold">{{ number_format($kpis['totalAdvances'] ?? 0, 0, ',', '.') }}</p>
@@ -180,7 +180,7 @@
                         <i class="fas fa-minus-circle text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-red-100 text-sm">Descontos</p>
+                        <p class="text-red-100 text-sm">{{ trans('messages.discounts') }}</p>
                     </div>
                 </div>
                 <p class="text-3xl font-bold">{{ number_format($kpis['totalDiscounts'] ?? 0, 0, ',', '.') }}</p>
@@ -194,7 +194,7 @@
                         <i class="fas fa-coins text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-purple-100 text-sm">Custo Horas Extra</p>
+                        <p class="text-purple-100 text-sm">{{ trans('messages.overtime_cost') }}</p>
                     </div>
                 </div>
                 <p class="text-3xl font-bold">{{ number_format($kpis['totalOvertimeCost'] ?? 0, 0, ',', '.') }}</p>
@@ -208,7 +208,7 @@
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-building text-blue-500"></i>
-                    Funcionários por Departamento
+                    {{ trans('messages.employees_by_department') }}
                 </h3>
                 <div class="h-64">
                     <canvas id="departmentChart"></canvas>
@@ -219,7 +219,7 @@
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-fingerprint text-green-500"></i>
-                    Resumo de Presenças
+                    {{ trans('messages.attendance_summary') }}
                 </h3>
                 <div class="h-64">
                     <canvas id="attendanceChart"></canvas>
@@ -233,7 +233,7 @@
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-venus-mars text-pink-500"></i>
-                    Distribuição por Gênero
+                    {{ trans('messages.gender_distribution') }}
                 </h3>
                 <div class="h-48">
                     <canvas id="genderChart"></canvas>
@@ -241,11 +241,11 @@
                 <div class="mt-2 flex justify-center gap-4 text-sm">
                     <span class="flex items-center gap-1">
                         <i class="fas fa-male text-blue-500"></i>
-                        <span class="font-semibold">{{ $kpis['maleCount'] ?? 0 }}</span> Homens
+                        <span class="font-semibold">{{ $kpis['maleCount'] ?? 0 }}</span> {{ trans('messages.men') }}
                     </span>
                     <span class="flex items-center gap-1">
                         <i class="fas fa-female text-pink-500"></i>
-                        <span class="font-semibold">{{ $kpis['femaleCount'] ?? 0 }}</span> Mulheres
+                        <span class="font-semibold">{{ $kpis['femaleCount'] ?? 0 }}</span> {{ trans('messages.women') }}
                     </span>
                 </div>
             </div>
@@ -254,7 +254,7 @@
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-calendar-times text-orange-500"></i>
-                    Status das Licenças
+                    {{ trans('messages.leave_status') }}
                 </h3>
                 <div class="h-48">
                     <canvas id="leavesChart"></canvas>
@@ -265,7 +265,7 @@
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-clock text-purple-500"></i>
-                    Horas Extra por Dept.
+                    {{ trans('messages.overtime_by_dept') }}
                 </h3>
                 <div class="h-48">
                     <canvas id="overtimeChart"></canvas>
@@ -276,7 +276,7 @@
             <div class="bg-white rounded-xl shadow-sm border p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-balance-scale text-amber-500"></i>
-                    Adiant. vs Descontos
+                    {{ trans('messages.advances_vs_discounts') }}
                 </h3>
                 <div class="h-48">
                     <canvas id="advDiscChart"></canvas>
@@ -288,7 +288,7 @@
         <div class="bg-white rounded-xl shadow-sm border p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-chart-line text-emerald-500"></i>
-                Evolução da Folha Salarial
+                {{ trans('messages.payroll_evolution') }}
             </h3>
             <div class="h-64">
                 <canvas id="payrollTrendChart"></canvas>
@@ -382,7 +382,7 @@
                     type: 'bar',
                     data: {
                         labels: data.overtimeByDept.labels,
-                        datasets: [{ label: 'Horas', data: data.overtimeByDept.data, backgroundColor: colors.purple, borderRadius: 4 }]
+                        datasets: [{ label: '{{ trans('messages.hours') }}', data: data.overtimeByDept.data, backgroundColor: colors.purple, borderRadius: 4 }]
                     },
                     options: { 
                         responsive: true, 
@@ -435,7 +435,7 @@
                     data: {
                         labels: data.payrollTrend.labels,
                         datasets: [{
-                            label: 'Folha Salarial',
+                            label: '{{ trans('messages.payroll') }}',
                             data: data.payrollTrend.data,
                             borderColor: colors.emerald,
                             backgroundColor: colors.emerald + '33',

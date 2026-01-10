@@ -209,7 +209,7 @@ class SalaryDiscounts extends Component
         $this->employee_id = (int) $discount->employee_id;
         $this->request_date = $discount->request_date->format('Y-m-d');
         $this->amount = (float) $discount->amount;
-        $this->installments = $discount->installments;
+        $this->installments = (int) $discount->installments;
         $this->installment_amount = (float) $discount->installment_amount;
         $this->first_deduction_date = $discount->first_deduction_date->format('Y-m-d');
         $this->reason = $discount->reason;

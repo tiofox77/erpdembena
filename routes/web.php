@@ -72,9 +72,6 @@ Route::middleware(['auth'])->group(function () {
         // Redirect to appropriate dashboard
         return redirect($dashboardUrl);
     })->name('dashboard');
-
-    // HR Guide Pages
-    Route::get('/hr/payroll-guide', App\Livewire\HR\PayrollGuide::class)->name('hr.payroll-guide');
     
     // Disciplinary Measures
     Route::get('/hr/disciplinary-measures', \App\Livewire\HR\DisciplinaryMeasures\DisciplinaryMeasures::class)
@@ -326,6 +323,16 @@ Route::middleware(['auth'])->group(function () {
         
         // Payroll Batch Management
         Route::middleware(['permission:hr.payroll.view|hr.payroll.process'])->get('/payroll-batch', App\Livewire\HR\PayrollBatch::class)->name('payroll-batch');
+        
+        // HR Reports Central Area
+        Route::middleware(['permission:hr.payroll.view'])->get('/reports', App\Livewire\HR\HRReports::class)->name('reports');
+        
+        // Detailed Reports
+        Route::middleware(['permission:hr.payroll.view'])->get('/reports/payroll', App\Livewire\HR\Reports\PayrollReport::class)->name('reports.payroll');
+        Route::middleware(['permission:hr.leave.view'])->get('/reports/overtime', App\Livewire\HR\Reports\OvertimeReport::class)->name('reports.overtime');
+        Route::middleware(['permission:hr.payroll.view'])->get('/reports/advances', App\Livewire\HR\Reports\AdvancesReport::class)->name('reports.advances');
+        Route::middleware(['permission:hr.payroll.view'])->get('/reports/discounts', App\Livewire\HR\Reports\DiscountsReport::class)->name('reports.discounts');
+        Route::middleware(['permission:hr.leave.view'])->get('/reports/leave', App\Livewire\HR\Reports\LeaveReport::class)->name('reports.leave');
         
         // Payroll Reports
         Route::middleware(['permission:hr.payroll.view'])->get('/payroll-reports', App\Livewire\HR\PayrollReports::class)->name('payroll-reports');

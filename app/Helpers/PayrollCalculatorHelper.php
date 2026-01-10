@@ -772,13 +772,27 @@ class PayrollCalculatorHelper
      * CONFORME ESPECIFICAÇÃO DA IMAGEM:
      * Base INSS = Gross Salary (JÁ COM Absence deduzida)
      * 
-     * IMPORTANTE: Na especificação de Angola, a base do INSS é o Gross Salary
-     * que já tem a ausência deduzida.
+     * IMPORTANTE ANGOLA: Subsídio de Férias NÃO paga INSS
+     * Base INSS = Gross Salary - Vacation Subsidy
      */
     public function calculateINSSBase(): float
     {
         // Base INSS = Gross Salary (COM Absence já deduzida)
-        return $this->calculateGrossSalary();
+        $grossSalary = $this->calculateGrossSalary();
+        
+        // EXCLUIR subsídio de férias da base do INSS (férias não pagam INSS em Angola)
+        $vacationSubsidy = $this->getVacationSubsidyAmount();
+        
+        $inssBase = $grossSalary - $vacationSubsidy;
+        
+        \Log::info('🧮 Base INSS Calculation', [
+            'gross_salary' => $grossSalary,
+            'vacation_subsidy' => $vacationSubsidy,
+            'inss_base' => $inssBase,
+            'vacation_excluded' => $vacationSubsidy > 0 ? 'SIM' : 'NÃO',
+        ]);
+        
+        return max(0.0, $inssBase);
     }
     
     /**

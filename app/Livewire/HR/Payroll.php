@@ -683,10 +683,19 @@ class Payroll extends Component
             ->where('status', 'approved')
             ->get();
 
-        \Log::info('🔍 Loading Overtime Data', [
+        \Log::info('🔍 Loading Overtime Records', [
             'employee_id' => $this->employee_id,
+            'employee_name' => $this->selectedEmployee ? $this->selectedEmployee->full_name : 'N/A',
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
             'total_records' => $allRecords->count(),
-            'all_records' => $allRecords->toArray(),
+            'records_raw' => $allRecords->map(fn($r) => [
+                'id' => $r->id,
+                'date' => $r->date,
+                'is_night_shift' => $r->is_night_shift,
+                'direct_hours' => $r->direct_hours,
+                'amount' => $r->amount,
+            ])->toArray(),
         ]);
 
         // Separar overtime regular e night allowance
@@ -1188,6 +1197,17 @@ class Payroll extends Component
                 'christmas' => $this->christmas_subsidy,
                 'vacation' => $this->vacation_subsidy,
             ]);
+            
+            // Configurar night shift allowance dos OvertimeRecords (já carregados em loadOvertimeData)
+            // IMPORTANTE: Isso sobrescreve o cálculo automático do loadNightShiftData() baseado em ShiftAssignments
+            if ($this->night_shift_allowance > 0 || $this->night_shift_days > 0) {
+                $calculator->setNightShiftAllowance($this->night_shift_allowance, (int) $this->night_shift_days);
+                \Log::info('🌙 Night Shift configurado manualmente dos OvertimeRecords', [
+                    'night_shift_days' => $this->night_shift_days,
+                    'night_shift_allowance' => $this->night_shift_allowance,
+                ]);
+            }
+            
             // Food in kind apenas para exibição - food SEMPRE é deduzido (regra de negócio)
             $calculator->setFoodInKind($this->is_food_in_kind ?? false);
             
@@ -1201,6 +1221,8 @@ class Payroll extends Component
                 'net_salary' => $results['net_salary'] ?? 'NULL',
                 'christmas_subsidy_amount' => $results['christmas_subsidy_amount'] ?? 'NULL',
                 'vacation_subsidy_amount' => $results['vacation_subsidy_amount'] ?? 'NULL',
+                'night_shift_allowance_from_calculator' => $results['night_shift_allowance'] ?? 'NULL',
+                'night_shift_days_from_calculator' => $results['night_shift_days'] ?? 'NULL',
             ]);
             
             // Atribuir resultados às propriedades do componente
@@ -1265,6 +1287,13 @@ class Payroll extends Component
             $this->night_shift_days = $results['night_shift_days'] ?? 0;
             $this->night_shift_allowance = $results['night_shift_allowance'] ?? 0;
             
+            \Log::info('🌙 Night Shift atribuído às propriedades do componente', [
+                'this->night_shift_days' => $this->night_shift_days,
+                'this->night_shift_allowance' => $this->night_shift_allowance,
+                'from_results_days' => $results['night_shift_days'] ?? 'NULL',
+                'from_results_allowance' => $results['night_shift_allowance'] ?? 'NULL',
+            ]);
+            
             // HR Settings para exibição na view
             $this->hr_settings = $results['hr_settings'] ?? [];
             
@@ -1316,132 +1345,8 @@ class Payroll extends Component
         }
     }
     
-    /**
-     * Método legado de cálculo (mantido como fallback)
-     * @deprecated Use calculatePayrollComponents() que usa o PayrollCalculatorHelper
-     */
-    private function calculatePayrollComponentsLegacy(): void
-    {
-        if (!$this->selectedEmployee || !$this->basic_salary) {
-            return;
-        }
-
-        // Reset calculations
-        $this->gross_salary = 0.0;
-        $this->total_deductions = 0.0;
-        $this->net_salary = 0.0;
-
-        // Base salary original (sem proporcionalidade)
-        $grossAmount = $this->basic_salary;
-
-        // Add Christmas subsidy (50% of base salary)
-        if ($this->christmas_subsidy) {
-            $grossAmount += ($this->basic_salary * 0.5);
-        }
-
-        // Add Vacation subsidy (50% of base salary)
-        if ($this->vacation_subsidy) {
-            $grossAmount += ($this->basic_salary * 0.5);
-        }
-
-        // Add additional bonus (from payroll form, separate from employee record)
-        if ($this->additional_bonus_amount > 0) {
-            $grossAmount += $this->additional_bonus_amount;
-        }
-        
-        // Add employee record family allowance (from employee profile) - fully taxable, not affected by absences
-        if ($this->family_allowance > 0) {
-            $grossAmount += $this->family_allowance;
-        }
-
-        // Add allowances with tax-exempt limits (Angola tax rules)
-        $grossAmount += $this->getTaxableTransportAllowance(); // Transport only (proportional by days worked)
-        // $grossAmount += $this->meal_allowance; // Food benefit excluded from gross salary (fully exempt)
-        $grossAmount += $this->getTaxableHousingAllowance();
-        $grossAmount += $this->performance_bonus; // Fully taxable
-        $grossAmount += $this->custom_bonus; // Fully taxable
-
-        // Add overtime amount if available
-        if ($this->total_overtime_amount > 0) {
-            $grossAmount += $this->total_overtime_amount;
-        }
-
-        // Calculate night shift allowance (20% additional)
-        $nightShiftAmount = $this->calculateNightShiftAmount();
-        if ($nightShiftAmount > 0) {
-            $grossAmount += $nightShiftAmount;
-        }
-
-        $this->gross_salary = $grossAmount;
-
-        // Load tax settings
-        $taxSettings = $this->loadTaxSettings();
-        
-        // Calculate deductions
-        $deductions = 0.0;
-        
-        // INSS (Social Security) - based on gross salary with maximum limit
-        $inssBase = $this->gross_salary;
-        if ($taxSettings['inss_max_salary'] > 0 && $inssBase > $taxSettings['inss_max_salary']) {
-            $inssBase = $taxSettings['inss_max_salary'];
-        }
-        $this->social_security = $inssBase * ($taxSettings['inss_rate'] / 100);
-        $deductions += $this->social_security;
-        
-        // Calculate IRT using progressive tax brackets based on MC (Matéria Coletável)
-        // MC = Gross Salary - INSS
-        $materiaColetavel = max(0, $this->gross_salary - $this->social_security);
-        $this->income_tax = IRTTaxBracket::calculateIRT($materiaColetavel);
-        $deductions += $this->income_tax;
-
-        // Salary advances deduction
-        if ($this->advance_deduction > 0) {
-            $deductions += $this->advance_deduction;
-        }
-
-        // Salary discounts
-        if ($this->total_salary_discounts > 0) {
-            $deductions += $this->total_salary_discounts;
-        }
-        
-        // Attendance deductions
-        if ($this->late_deduction > 0) {
-            $deductions += $this->late_deduction;
-        }
-        if ($this->absence_deduction > 0) {
-            $deductions += $this->absence_deduction;
-        }
-
-        // Other deductions
-        $deductions += $this->other_deductions;
-
-        $this->total_deductions = $deductions;
-        
-        // Calcular e atribuir valores às novas propriedades
-        $this->main_salary = $this->getMainSalaryProperty();
-        $this->base_irt_taxable_amount = $materiaColetavel;
-        $this->deductions_irt = $this->income_tax;
-        
-        // Calcular INSS 3% (empregador) e 8% (empregado)
-        $inssEmployeeRate = 8.0; // 8% para empregado
-        $inssEmployerRate = 3.0; // 3% para empregador
-        $this->inss_3_percent = $inssBase * ($inssEmployerRate / 100);
-        $this->inss_8_percent = $inssBase * ($inssEmployeeRate / 100);
-        
-        // Garantir que absence_deduction_amount seja preenchido
-        $this->absence_deduction_amount = (float)($this->absence_deduction ?? 0);
-        $this->total_deductions_calculated = $deductions;
-        
-        // Adicionar subsídio de alimentação às deduções (não pago)
-        $foodBenefit = (float) ($this->selectedEmployee->food_benefit ?? $this->meal_allowance ?? 0);
-        if ($foodBenefit > 0) {
-            $deductions += $foodBenefit;
-            $this->total_deductions = $deductions;
-        }
-        
-        $this->net_salary = max(0, $this->gross_salary - $this->total_deductions);
-    }
-
+    // ✅ REMOVIDO: calculatePayrollComponentsLegacy() - Deprecated, substituído por calculatePayrollComponents() com PayrollCalculatorHelper
+    
     // ✅ REMOVIDO: getChristmasSubsidyAmountProperty() - Valor já calculado pelo helper em $this->christmas_subsidy_amount
 
     // ✅ REMOVIDO: getVacationSubsidyAmountProperty() - Valor já calculado pelo helper em $this->vacation_subsidy_amount
@@ -3031,6 +2936,11 @@ class Payroll extends Component
                 'absent_days' => $this->absent_days,
                 'late_arrivals' => $this->late_arrivals,
                 'total_overtime_hours' => $this->total_overtime_hours,
+                
+                // Night Shift (Subsídio Noturno - Lei Art. 102º)
+                'night_shift_allowance' => $this->night_shift_allowance,
+                'night_shift_days' => $this->night_shift_days,
+                
                 // IRT calculation fields
                 'food_exemption' => min($this->meal_allowance, 30000),
                 'transport_exemption' => min($this->transport_allowance, 30000),
@@ -3045,6 +2955,10 @@ class Payroll extends Component
                 'basic_salary' => $this->basic_salary,
                 'gross_salary' => $this->gross_salary,
                 'net_salary' => $this->net_salary,
+                'night_shift_allowance' => $this->night_shift_allowance,
+                'night_shift_days' => $this->night_shift_days,
+                'night_shift_allowance_in_array' => $payrollData['night_shift_allowance'] ?? 'NOT_SET',
+                'night_shift_days_in_array' => $payrollData['night_shift_days'] ?? 'NOT_SET',
                 'isEditing' => $this->isEditing
             ]);
 

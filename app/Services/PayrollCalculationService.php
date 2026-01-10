@@ -60,6 +60,8 @@ class PayrollCalculationService
     protected float $profileBonus = 0.0;
     protected float $additionalBonus = 0.0;
     protected float $overtimeAmount = 0.0;
+    protected float $nightShiftAllowance = 0.0;
+    protected int $nightShiftDays = 0;
     
     // Deductions
     protected float $irtAmount = 0.0;
@@ -280,16 +282,40 @@ class PayrollCalculationService
     }
 
     /**
-     * Load overtime data
+     * Load overtime data - separar regular overtime e night shift
      */
     protected function loadOvertimeData(): void
     {
-        $this->overtimeRecords = OvertimeRecord::where('employee_id', $this->employee->id)
+        $allRecords = OvertimeRecord::where('employee_id', $this->employee->id)
             ->whereBetween('date', [$this->startDate->format('Y-m-d'), $this->endDate->format('Y-m-d')])
             ->where('status', 'approved')
             ->get();
 
-        $this->overtimeAmount = $this->overtimeRecords->sum('amount');
+        // Separar overtime regular e night allowance
+        $regularOvertime = $allRecords->filter(function($record) {
+            return !$record->is_night_shift || $record->is_night_shift == 0;
+        });
+        
+        $nightAllowance = $allRecords->filter(function($record) {
+            return $record->is_night_shift == 1 || $record->is_night_shift === true;
+        });
+
+        // Overtime Regular
+        $this->overtimeRecords = $regularOvertime;
+        $this->overtimeAmount = $regularOvertime->sum('amount');
+        
+        // Night Shift Allowance
+        $this->nightShiftDays = (int) $nightAllowance->sum('direct_hours');
+        $this->nightShiftAllowance = (float) $nightAllowance->sum('amount');
+        
+        Log::info('PayrollCalculationService: Overtime loaded', [
+            'employee_id' => $this->employee->id,
+            'regular_overtime_count' => $regularOvertime->count(),
+            'regular_overtime_amount' => $this->overtimeAmount,
+            'night_shift_count' => $nightAllowance->count(),
+            'night_shift_days' => $this->nightShiftDays,
+            'night_shift_allowance' => $this->nightShiftAllowance,
+        ]);
     }
 
     /**
@@ -369,6 +395,9 @@ class PayrollCalculationService
 
         // Add overtime
         $gross += $this->overtimeAmount;
+        
+        // Add night shift allowance (Lei Angola Art. 102º - 20%)
+        $gross += $this->nightShiftAllowance;
 
         $this->grossSalary = $gross;
     }
@@ -462,6 +491,11 @@ class PayrollCalculationService
             'additional_bonus_amount' => $this->additionalBonus, // Alias for receipts
             'overtime_amount' => $this->overtimeAmount,
             'total_overtime_hours' => $this->overtimeRecords->sum('hours'),
+            
+            // Night Shift (Subsídio Noturno - Lei Angola Art. 102º - 20%)
+            'night_shift_allowance' => $this->nightShiftAllowance,
+            'night_shift_days' => $this->nightShiftDays,
+            
             'allowances' => $this->transportAllowance + $this->foodBenefit,
             'bonuses' => $this->profileBonus + (float) ($this->employee->position_subsidy ?? 0.0) + (float) ($this->employee->performance_subsidy ?? 0.0) + $this->additionalBonus + $this->christmasSubsidy + $this->vacationSubsidy,
             'overtime' => $this->overtimeAmount,

@@ -118,7 +118,7 @@
                                             {{ __('messages.date') }} <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
-                                            <input type="date" wire:model.live="date" id="date"
+                                            <input type="date" wire:model.lazy="date" id="date"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-calendar text-gray-400"></i>
@@ -213,7 +213,7 @@
                                             {{ __('messages.number_of_days') }} <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
-                                            <input type="number" step="0.5" min="0.5" max="31" wire:model.live="days" id="days"
+                                            <input type="number" step="0.5" min="0.5" max="31" wire:model.lazy="days" id="days"
                                                 placeholder="Ex: 7"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm bg-white pl-10">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

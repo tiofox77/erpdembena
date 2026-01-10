@@ -34,7 +34,7 @@
                 
                 <form wire:submit.prevent="save">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="mb-6 bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 transition-all duration-200 ease-in-out hover:shadow-md">
+                        <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 transition-all duration-200 ease-in-out hover:shadow-md">
                             <div class="flex items-center bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-gray-200">
                                 <i class="fas fa-info-circle text-blue-600 mr-2"></i>
                                 <h2 class="text-base font-medium text-gray-700">{{ __('messages.advance_information') }}</h2>
@@ -67,7 +67,7 @@
                                         <div 
                                             x-show="open"
                                             x-transition
-                                            class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                                            class="absolute z-[9999] mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
                                         >
                                             @forelse($employees as $employee)
                                                 <div 
@@ -160,7 +160,7 @@
                             </div>
                         </div>
                         
-                        <div class="mb-6 bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 transition-all duration-200 ease-in-out hover:shadow-md">
+                        <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 transition-all duration-200 ease-in-out hover:shadow-md">
                             <div class="flex items-center bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 border-b border-gray-200">
                                 <i class="fas fa-comment-alt text-green-600 mr-2"></i>
                                 <h2 class="text-base font-medium text-gray-700">{{ __('messages.additional_information') }}</h2>

@@ -1004,7 +1004,7 @@
             @can('hr.payroll.view')
             <a href="{{ route('hr.payroll-reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.payroll-reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
                 <i class="fas fa-file-invoice-dollar text-red-600"></i>
-                <span>Relatórios de Payroll</span>
+                <span>{{ trans('messages.payroll_reports') }}</span>
             </a>
             @endcan
 
@@ -1064,6 +1064,63 @@
                 <i class="fas fa-cogs text-gray-600"></i>
                 <span>{{ trans('messages.hr_settings') }}</span>
             </a>
+            @endcan
+
+            {{-- ═══════════════════════════════════════════════════════════════
+                 RELATÓRIOS
+            ═══════════════════════════════════════════════════════════════ --}}
+            @can('hr.payroll.view')
+            <div class="sidebar-submenu-item hover:bg-gray-50 transition duration-200 cursor-pointer" id="hrReportsMenu">
+                <i class="fas fa-file-chart-line text-emerald-600"></i>
+                <span>{{ trans('messages.reports') }}</span>
+                <i class="fas fa-chevron-down dropdown-indicator ml-auto text-gray-400"></i>
+            </div>
+            
+            <div class="sidebar-submenu pl-4" id="hrReportsSubmenu">
+                <a href="{{ route('hr.reports') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-chart-bar text-emerald-600"></i>
+                    <span>{{ trans('messages.reports_overview') }}</span>
+                </a>
+                
+                {{-- Relatórios de Payroll --}}
+                @can('hr.payroll.view')
+                <a href="{{ route('hr.reports.payroll') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports.payroll') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-file-invoice-dollar text-emerald-600"></i>
+                    <span>{{ trans('messages.payroll_report') }}</span>
+                </a>
+                @endcan
+                
+                {{-- Relatórios de Tempo & Presença --}}
+                @can('hr.leave.view')
+                <a href="{{ route('hr.reports.overtime') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports.overtime') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-clock text-purple-600"></i>
+                    <span>{{ trans('messages.overtime_report') }}</span>
+                </a>
+                @endcan
+                
+                {{-- Relatórios Financeiros --}}
+                @can('hr.payroll.view')
+                <a href="{{ route('hr.reports.advances') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports.advances') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-hand-holding-usd text-amber-600"></i>
+                    <span>{{ trans('messages.advances_report') }}</span>
+                </a>
+                @endcan
+                
+                @can('hr.payroll.view')
+                <a href="{{ route('hr.reports.discounts') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports.discounts') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-minus-circle text-red-600"></i>
+                    <span>{{ trans('messages.discounts_report') }}</span>
+                </a>
+                @endcan
+                
+                {{-- Relatórios de Funcionários --}}
+                @can('hr.leave.view')
+                <a href="{{ route('hr.reports.leave') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports.leave') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-calendar-times text-orange-600"></i>
+                    <span>{{ trans('messages.leave_report') }}</span>
+                </a>
+                @endcan
+            </div>
             @endcan
             
         </div>
@@ -1400,6 +1457,7 @@
             setupMenuToggle('supplyChainMenu', 'supplyChainSubmenu');
             setupMenuToggle('supplyChainReportsMenu', 'supplyChainReportsSubmenu');
             setupMenuToggle('hrMenu', 'hrSubmenu');
+            setupMenuToggle('hrReportsMenu', 'hrReportsSubmenu');
             setupMenuToggle('systemMenu', 'systemSubmenu');
             setupMenuToggle('settingsMenu', 'settingsSubmenu');
             setupMenuToggle('reportsHistoryMenu', 'reportsHistorySubmenu');
@@ -1422,6 +1480,7 @@
                     ['supplyChainMenu', 'supplyChainSubmenu'],
                     ['supplyChainReportsMenu', 'supplyChainReportsSubmenu'],
                     ['hrMenu', 'hrSubmenu'],
+                    ['hrReportsMenu', 'hrReportsSubmenu'],
                     ['systemMenu', 'systemSubmenu'],
                     ['settingsMenu', 'settingsSubmenu'],
                     ['reportsHistoryMenu', 'reportsHistorySubmenu'],
