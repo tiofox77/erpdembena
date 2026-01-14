@@ -17,7 +17,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
 {
     public function query(): Builder
     {
-        return Employee::with(['department', 'position', 'bank'])
+        return Employee::with(['department', 'position.category', 'bank'])
             ->orderBy('full_name');
     }
 
@@ -37,6 +37,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             __('messages.dependents'),
             __('messages.address'),
             __('messages.department'),
+            __('messages.job_category'),
             __('messages.position'),
             __('messages.hire_date'),
             __('messages.employment_status'),
@@ -69,6 +70,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->dependents ?? 0,
             $employee->address,
             $employee->department?->name,
+            $employee->position?->category?->name,
             $employee->position?->title,
             $employee->hire_date?->format('d/m/Y'),
             $this->translateEmploymentStatus($employee->employment_status),

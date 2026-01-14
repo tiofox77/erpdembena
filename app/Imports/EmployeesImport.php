@@ -7,6 +7,7 @@ namespace App\Imports;
 use App\Models\HR\Employee;
 use App\Models\HR\Department;
 use App\Models\HR\JobPosition;
+use App\Models\HR\JobCategory;
 use App\Models\HR\Bank;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -72,6 +73,7 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation, WithBa
             'dependents' => (int)($row['dependentes'] ?? $row['dependents'] ?? 0),
             'address' => $this->convertToString($row['endereco'] ?? $row['address'] ?? null),
             'department_id' => $this->getDepartmentId($row['departamento'] ?? $row['department'] ?? null),
+            'job_category_id' => $this->getJobCategoryId($row['categoria_profissional'] ?? $row['job_category'] ?? null),
             'position_id' => $this->getPositionId($row['posicao'] ?? $row['position'] ?? null),
             'hire_date' => $this->parseDate($row['data_de_contratacao'] ?? $row['hire_date'] ?? null),
             'employment_status' => $this->parseEmploymentStatus($row['estado_do_emprego'] ?? $row['employment_status'] ?? 'active'),
@@ -300,6 +302,19 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation, WithBa
             ->first();
 
         return $department?->id;
+    }
+
+    private function getJobCategoryId(?string $categoryName): ?int
+    {
+        if (!$categoryName) {
+            return null;
+        }
+
+        $category = JobCategory::where('name', 'like', '%' . trim($categoryName) . '%')
+            ->where('is_active', true)
+            ->first();
+
+        return $category?->id;
     }
 
     private function getPositionId(?string $positionTitle): ?int
