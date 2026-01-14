@@ -2355,6 +2355,8 @@ return [
     'set_position_active' => 'Set this position as active',
     'all_categories' => 'All Categories',
     'select_category' => 'Select Category',
+    'job_category' => 'Job Category',
+    'filtering_positions_by_category' => 'Filtering positions by selected category',
     'all_statuses' => 'All Statuses',
     'all_genders' => 'All Genders',
     'all_salaries' => 'All Salary Ranges',

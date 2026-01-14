@@ -1263,6 +1263,27 @@
                                     @enderror
                                 </div>
 
+                                <!-- Job Category -->
+                                <div class="space-y-2">
+                                    <label for="job_category_id" class="flex items-center text-sm font-medium text-gray-700">
+                                        <i class="fas fa-briefcase text-indigo-500 mr-2"></i>
+                                        {{ __('messages.job_category') }}
+                                    </label>
+                                    <div class="relative">
+                                        <select id="job_category_id"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none bg-white"
+                                            wire:model.live="job_category_id">
+                                            <option value="">{{ __('messages.select_category') }}</option>
+                                            @foreach($jobCategories as $category)
+                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Position -->
                                 <div class="space-y-2">
                                     <label for="position_id" class="flex items-center text-sm font-medium text-gray-700">

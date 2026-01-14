@@ -6,6 +6,7 @@ use App\Models\HR\Department;
 use App\Models\HR\Employee;
 use App\Models\HR\EmployeeDocument;
 use App\Models\HR\JobPosition;
+use App\Models\HR\JobCategory;
 use App\Models\HR\Bank;
 use App\Exports\EmployeesExport;
 use App\Imports\EmployeesImport;
@@ -52,6 +53,7 @@ class Employees extends Component
     public $bank_account;
     public $bank_iban;
     public $position_id;
+    public $job_category_id;
     public $department_id;
     public $hire_date;
     public $employment_status;
@@ -679,12 +681,14 @@ class Employees extends Component
             ->paginate($this->perPage);
 
         $departments = Department::where('is_active', true)->get();
-        $positions = JobPosition::where('is_active', true)->get();
+        $jobCategories = JobCategory::where('is_active', true)->orderBy('name')->get();
+        $positions = JobPosition::where('is_active', true)->orderBy('title')->get();
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
 
         return view('livewire.hr.employees', [
             'employees' => $employees,
             'departments' => $departments,
+            'jobCategories' => $jobCategories,
             'positions' => $positions,
             'banks' => $banks,
         ])->layout('layouts.livewire', [
