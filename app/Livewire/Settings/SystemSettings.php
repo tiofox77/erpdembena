@@ -1952,6 +1952,7 @@ class SystemSettings extends Component
                 'config:clear',
                 'view:clear',
                 'route:clear',
+                'opcache:optimize',
                 'migrate',
                 'storage:link',
             ];
