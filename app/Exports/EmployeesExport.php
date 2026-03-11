@@ -78,12 +78,12 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->bank_account,
             $employee->bank_iban,
             $employee->inss_number,
-            $employee->base_salary ? number_format((float) $employee->base_salary, 2, ',', '.') : null,
-            $employee->food_benefit ? number_format((float) $employee->food_benefit, 2, ',', '.') : null,
-            $employee->transport_benefit ? number_format((float) $employee->transport_benefit, 2, ',', '.') : null,
-            $employee->position_subsidy ? number_format((float) $employee->position_subsidy, 2, ',', '.') : null,
-            $employee->performance_subsidy ? number_format((float) $employee->performance_subsidy, 2, ',', '.') : null,
-            $employee->family_allowance ? number_format((float) $employee->family_allowance, 2, ',', '.') : null,
+            $employee->base_salary !== null ? number_format((float) $employee->base_salary, 2, ',', '.') : null,
+            $employee->food_benefit !== null ? number_format((float) $employee->food_benefit, 2, ',', '.') : null,
+            $employee->transport_benefit !== null ? number_format((float) $employee->transport_benefit, 2, ',', '.') : null,
+            $employee->position_subsidy !== null ? number_format((float) $employee->position_subsidy, 2, ',', '.') : null,
+            $employee->performance_subsidy !== null ? number_format((float) $employee->performance_subsidy, 2, ',', '.') : null,
+            $employee->family_allowance !== null ? number_format((float) $employee->family_allowance, 2, ',', '.') : null,
         ];
     }
 

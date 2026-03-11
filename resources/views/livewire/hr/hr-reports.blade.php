@@ -126,6 +126,21 @@
                             {{ trans('messages.view_report') }} <i class="fas fa-arrow-right ml-2"></i>
                         </div>
                     </a>
+
+                    {{-- Attendance Report --}}
+                    <a href="{{ route('hr.reports.attendance') }}" class="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition group">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
+                                <i class="fas fa-clipboard-check text-green-600 text-xl"></i>
+                            </div>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">{{ $stats['total_employees'] }}</span>
+                        </div>
+                        <h3 class="text-base font-semibold text-gray-800 mb-2">{{ trans('messages.attendance_report') }}</h3>
+                        <p class="text-sm text-gray-500">{{ trans('messages.attendance_report_desc') }}</p>
+                        <div class="mt-4 flex items-center text-green-600 text-sm font-medium">
+                            {{ trans('messages.view_report') }} <i class="fas fa-arrow-right ml-2"></i>
+                        </div>
+                    </a>
                 </div>
             </div>
 

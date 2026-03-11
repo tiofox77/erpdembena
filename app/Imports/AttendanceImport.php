@@ -10,7 +10,6 @@ use App\Models\HR\HRSetting;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
@@ -20,7 +19,6 @@ class AttendanceImport implements
     ToModel, 
     WithHeadingRow, 
     WithValidation, 
-    WithBatchInserts, 
     WithChunkReading,
     SkipsOnError
 {
@@ -40,8 +38,6 @@ class AttendanceImport implements
 
     public function model(array $row): ?Attendance
     {
-        \Log::info('Processing row', ['row' => $row]);
-        
         // Detecta formato ZKTime (tem coluna "Time" e "Attendance State")
         if ($this->hasZKTimeColumns($row)) {
             $this->isZKTimeFormat = true;
@@ -51,12 +47,9 @@ class AttendanceImport implements
         // Skip empty rows
         $empId = $this->getRowValue($row, ['emp_id', 'empid', 'employee_id']);
         if (empty($empId)) {
-            \Log::warning('Skipping row - empty Emp ID');
             $this->skippedCount++;
             return null;
         }
-        
-        \Log::info('Found Emp ID', ['emp_id' => $empId]);
 
         // Find employee by biometric_id
         $employee = Employee::where('biometric_id', (string)$empId)->first();
@@ -68,7 +61,6 @@ class AttendanceImport implements
             }
             $this->errors[] = "Funcionário não encontrado (Emp ID: {$empId})";
             $this->skippedCount++;
-            \Log::warning('Employee not found in system', ['emp_id' => $empId]);
             return null;
         }
 
@@ -83,11 +75,6 @@ class AttendanceImport implements
         // Check if we already processed this employee+date in this import
         $employeeDateKey = $employee->id . '_' . $date->format('Y-m-d');
         if (isset($this->processedEmployeeDates[$employeeDateKey])) {
-            \Log::warning('Skipping duplicate row', [
-                'employee' => $employee->full_name,
-                'date' => $date->format('Y-m-d'),
-                'emp_id' => $empId
-            ]);
             $this->skippedCount++;
             return null;
         }
@@ -104,31 +91,12 @@ class AttendanceImport implements
         $checkInRaw = $this->getRowValue($row, ['check_in', 'checkin', 'check_in', 'entrada']);
         $checkOutRaw = $this->getRowValue($row, ['check_out', 'checkout', 'check_out', 'saida']);
         
-        \Log::info('Parsing times for employee', [
-            'emp_id' => $empId,
-            'employee' => $employee->full_name,
-            'check_in_raw' => $checkInRaw,
-            'check_out_raw' => $checkOutRaw
-        ]);
-        
         // Detect multiple times (e.g., "12:09 17:10")
         $checkInTimes = $this->parseMultipleTimes($checkInRaw);
         $checkOutTimes = $this->parseMultipleTimes($checkOutRaw);
         
-        \Log::info('Detected times', [
-            'emp_id' => $empId,
-            'check_in_times' => $checkInTimes,
-            'check_out_times' => $checkOutTimes,
-            'has_conflict' => (count($checkInTimes) > 1 || count($checkOutTimes) > 1)
-        ]);
-        
         // If multiple times detected, store conflict for user confirmation
         if ((count($checkInTimes) > 1 || count($checkOutTimes) > 1)) {
-            \Log::warning('Time conflict detected', [
-                'emp_id' => $empId,
-                'employee' => $employee->full_name
-            ]);
-            
             $this->timeConflicts[] = [
                 'employee_id' => $employee->id,
                 'employee_name' => $employee->full_name,
@@ -157,10 +125,7 @@ class AttendanceImport implements
         }
 
         // Calculate hourly rate
-        $baseSalary = $employee->base_salary ?? 0;
-        $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
-        $monthlyHours = $weeklyHours * 4.33;
-        $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+        $hourlyRate = self::calculateHourlyRate($employee);
 
         // Prepare attendance data (only fields that exist in database)
         $attendanceData = [
@@ -192,13 +157,7 @@ class AttendanceImport implements
         
         // Create and explicitly save the model
         $attendance = new Attendance($attendanceData);
-        try {
-            $saved = $attendance->save();
-            \Log::info('Attendance saved', ['success' => $saved, 'id' => $attendance->id]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to save attendance', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            throw $e;
-        }
+        $attendance->save();
         
         return null; // Return null because we already saved it
     }
@@ -210,11 +169,6 @@ class AttendanceImport implements
         // 2. Formato tradicional tem 'date'
         // 3. Validação é feita manualmente no método model()
         return [];
-    }
-
-    public function batchSize(): int
-    {
-        return 500;
     }
 
     public function chunkSize(): int
@@ -288,6 +242,136 @@ class AttendanceImport implements
     }
 
     /**
+     * Calculate hourly rate for an employee (reusable helper)
+     */
+    public static function calculateHourlyRate(Employee $employee): float
+    {
+        $baseSalary = $employee->base_salary ?? 0;
+        $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
+        $monthlyHours = $weeklyHours * 4.33;
+        return $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+    }
+
+    /**
+     * Determine attendance status based on check-in time vs shift start
+     * Returns 'late' if check-in is more than tolerance minutes after shift start
+     */
+    public static function determineStatus(?string $checkIn, ?string $checkOut, Employee $employee, string $date, int $toleranceMinutes = 15): string
+    {
+        if (!$checkIn && !$checkOut) {
+            return 'absent';
+        }
+
+        if (!$checkIn) {
+            return 'present'; // Only check-out, treat as present
+        }
+
+        // Check if employee has a shift assignment
+        $shiftAssignment = \App\Models\HR\ShiftAssignment::where('employee_id', $employee->id)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('end_date')
+                  ->orWhereDate('end_date', '>=', $date);
+            })
+            ->with('shift')
+            ->first();
+
+        if (!$shiftAssignment || !$shiftAssignment->shift) {
+            return 'present';
+        }
+
+        // Determine the active shift (consider rotations)
+        $activeShift = $shiftAssignment->shift;
+        if ($shiftAssignment->hasRotation()) {
+            $activeShiftId = $shiftAssignment->getActiveShiftForDate(Carbon::parse($date));
+            if ($activeShiftId) {
+                $activeShift = \App\Models\HR\Shift::find($activeShiftId) ?? $activeShift;
+            }
+        }
+
+        $shiftStart = Carbon::parse($date . ' ' . $activeShift->start_time->format('H:i'));
+        $checkInCarbon = Carbon::parse($date . ' ' . $checkIn);
+
+        // For night shifts, adjust comparison
+        $shiftStartTime = Carbon::parse($activeShift->start_time->format('H:i'));
+        $shiftEndTime = Carbon::parse($activeShift->end_time->format('H:i'));
+        $isNightShift = $shiftStartTime->gt($shiftEndTime);
+
+        if ($isNightShift && $checkInCarbon->lt($shiftStart->copy()->subHours(6))) {
+            // Check-in is early morning (e.g., 05:00 for 20:00-06:00 shift) - not late
+            return 'present';
+        }
+
+        $minutesLate = $checkInCarbon->diffInMinutes($shiftStart, false);
+
+        if ($minutesLate < -$toleranceMinutes) {
+            // Check-in is more than tolerance minutes after shift start
+            return 'late';
+        }
+
+        return 'present';
+    }
+
+    /**
+     * Check if check-in time is compatible with any of the employee's shifts
+     * Returns [bool $isCompatible, ?Shift $matchedShift]
+     */
+    public static function checkShiftCompatibility(string $checkInTime, Employee $employee, string $date, int $toleranceMinMinutes = 60): array
+    {
+        $shiftAssignment = \App\Models\HR\ShiftAssignment::where('employee_id', $employee->id)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('end_date')
+                  ->orWhereDate('end_date', '>=', $date);
+            })
+            ->with('shift')
+            ->first();
+
+        if (!$shiftAssignment || !$shiftAssignment->shift) {
+            return [true, null]; // No shift assigned, accept any time
+        }
+
+        $checkInCarbon = Carbon::parse($date . ' ' . $checkInTime);
+        $shiftsToCheck = [];
+
+        if ($shiftAssignment->hasRotation()) {
+            $rotationShiftIds = $shiftAssignment->getRotationShifts();
+            foreach ($rotationShiftIds as $shiftId) {
+                $shift = \App\Models\HR\Shift::find($shiftId);
+                if ($shift) $shiftsToCheck[] = $shift;
+            }
+        } else {
+            $shiftsToCheck[] = $shiftAssignment->shift;
+        }
+
+        foreach ($shiftsToCheck as $shift) {
+            $shiftStart = Carbon::parse($date . ' ' . $shift->start_time->format('H:i'));
+            $shiftEnd = Carbon::parse($date . ' ' . $shift->end_time->format('H:i'));
+            $shiftStartTime = Carbon::parse($shift->start_time->format('H:i'));
+            $shiftEndTime = Carbon::parse($shift->end_time->format('H:i'));
+            $isNightShift = $shiftStartTime->gt($shiftEndTime);
+
+            if ($isNightShift) {
+                // Night shift: check-in should be near shift start (evening) or still within shift (early morning)
+                $shiftStartWithTolerance = $shiftStart->copy()->subMinutes($toleranceMinMinutes);
+                $shiftEndWithTolerance = $shiftEnd->copy()->addMinutes($toleranceMinMinutes);
+
+                if ($checkInCarbon->gte($shiftStartWithTolerance) || $checkInCarbon->lte($shiftEndWithTolerance)) {
+                    return [true, $shift];
+                }
+            } else {
+                // Day shift: check-in should be within tolerance of shift START only
+                $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
+                if ($diffFromStart <= $toleranceMinMinutes) {
+                    return [true, $shift];
+                }
+            }
+        }
+
+        return [false, $shiftAssignment->shift];
+    }
+
+    /**
      * Parse multiple times from a string (e.g., "12:09 17:10" -> ["12:09", "17:10"])
      */
     private function parseMultipleTimes(?string $timeValue): array
@@ -330,13 +414,13 @@ class AttendanceImport implements
             
             foreach ($formats as $format) {
                 try {
-                    return Carbon::createFromFormat($format, $dateValue);
+                    return Carbon::createFromFormat($format, $dateValue)->startOfDay();
                 } catch (\Exception $e) {
                     continue;
                 }
             }
 
-            return Carbon::parse($dateValue);
+            return Carbon::parse($dateValue)->startOfDay();
         } catch (\Exception $e) {
             return null;
         }
@@ -395,7 +479,7 @@ class AttendanceImport implements
         foreach ($keys as $key) {
             $normalizedKey = strtolower(str_replace(['_', '-', ' '], '', $key));
             foreach (array_keys($row) as $rowKey) {
-                $normalizedRowKey = strtolower(str_replace(['_', '-', ' '], '', $rowKey));
+                $normalizedRowKey = strtolower(str_replace(['_', '-', ' '], '', (string) $rowKey));
                 if ($normalizedKey === $normalizedRowKey && $row[$rowKey] !== null && $row[$rowKey] !== '') {
                     return $row[$rowKey];
                 }
@@ -524,148 +608,52 @@ class AttendanceImport implements
                 $checkInTime = !empty($record['check_ins']) ? $record['check_ins'][0] : null;
                 
                 if ($checkInTime) {
-                    $employeeShiftCheck = \App\Models\HR\ShiftAssignment::where('employee_id', $employee->id)
-                        ->whereDate('start_date', '<=', $record['date'])
-                        ->where(function($q) use ($record) {
-                            $q->whereNull('end_date')
-                              ->orWhereDate('end_date', '>=', $record['date']);
-                        })
-                        ->with('shift')
-                        ->first();
-
-                    if ($employeeShiftCheck && $employeeShiftCheck->shift) {
-                        $baseDate = $record['date'];
-                        $checkInCarbon = Carbon::parse($baseDate . ' ' . $checkInTime);
-                        $isCompatible = false;
-                        $matchedShift = null;
+                    [$isCompatible, $primaryShift] = self::checkShiftCompatibility($checkInTime, $employee, $record['date']);
+                    
+                    if (!$isCompatible && $primaryShift) {
+                        $checkOutTime = !empty($record['check_outs']) ? $record['check_outs'][0] : null;
                         
-                        // Se tem rotação, verificar com TODOS os shifts possíveis
-                        if ($employeeShiftCheck->hasRotation()) {
-                            $rotationShiftIds = $employeeShiftCheck->getRotationShifts();
-                            
-                            \Log::info('Checking rotation shifts', [
-                                'employee' => $record['employee_name'],
-                                'rotation_shifts' => $rotationShiftIds,
-                                'check_in' => $checkInTime
-                            ]);
-                            
-                            // Verificar compatibilidade com cada shift da rotação
-                            foreach ($rotationShiftIds as $shiftId) {
-                                $shift = \App\Models\HR\Shift::find($shiftId);
-                                if (!$shift) continue;
-                                
-                                $shiftStart = Carbon::parse($baseDate . ' ' . $shift->start_time->format('H:i'));
-                                $shiftEnd = Carbon::parse($baseDate . ' ' . $shift->end_time->format('H:i'));
-                                
-                                // Detectar turno noturno
-                                $shiftStartTime = Carbon::parse($shift->start_time->format('H:i'));
-                                $shiftEndTime = Carbon::parse($shift->end_time->format('H:i'));
-                                $isNightShift = $shiftStartTime->gt($shiftEndTime);
-                                
-                                if ($isNightShift) {
-                                    $shiftStartWithTolerance = $shiftStart->copy()->subHours(1);
-                                    $shiftEndWithTolerance = $shiftEnd->copy()->addHours(1);
-                                    
-                                    if ($checkInCarbon->gte($shiftStartWithTolerance) || $checkInCarbon->lte($shiftEndWithTolerance)) {
-                                        $isCompatible = true;
-                                        $matchedShift = $shift;
-                                        break;
-                                    }
-                                } else {
-                                    $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
-                                    $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
-                                    
-                                    if ($diffFromStart <= 60 || $diffFromEnd <= 60) {
-                                        $isCompatible = true;
-                                        $matchedShift = $shift;
-                                        break;
-                                    }
-                                }
-                            }
-                        } else {
-                            // Turno fixo: verificar apenas com o shift atribuído
-                            $shift = $employeeShiftCheck->shift;
-                            $shiftStart = Carbon::parse($baseDate . ' ' . $shift->start_time->format('H:i'));
-                            $shiftEnd = Carbon::parse($baseDate . ' ' . $shift->end_time->format('H:i'));
-                            
-                            $shiftStartTime = Carbon::parse($shift->start_time->format('H:i'));
-                            $shiftEndTime = Carbon::parse($shift->end_time->format('H:i'));
-                            $isNightShift = $shiftStartTime->gt($shiftEndTime);
-                            
-                            if ($isNightShift) {
-                                $shiftStartWithTolerance = $shiftStart->copy()->subHours(1);
-                                $shiftEndWithTolerance = $shiftEnd->copy()->addHours(1);
-                                
-                                if ($checkInCarbon->gte($shiftStartWithTolerance) || $checkInCarbon->lte($shiftEndWithTolerance)) {
-                                    $isCompatible = true;
-                                    $matchedShift = $shift;
-                                }
-                            } else {
-                                $diffFromStart = abs($checkInCarbon->diffInMinutes($shiftStart));
-                                $diffFromEnd = abs($checkInCarbon->diffInMinutes($shiftEnd));
-                                
-                                if ($diffFromStart <= 60 || $diffFromEnd <= 60) {
-                                    $isCompatible = true;
-                                    $matchedShift = $shift;
+                        // Gather rotation info for the mismatch record
+                        $shiftAssignment = \App\Models\HR\ShiftAssignment::where('employee_id', $employee->id)
+                            ->whereDate('start_date', '<=', $record['date'])
+                            ->where(function($q) use ($record) {
+                                $q->whereNull('end_date')
+                                  ->orWhereDate('end_date', '>=', $record['date']);
+                            })
+                            ->first();
+                        
+                        $hasRotation = $shiftAssignment && $shiftAssignment->hasRotation();
+                        $rotationShifts = [];
+                        if ($hasRotation) {
+                            foreach ($shiftAssignment->getRotationShifts() as $shiftId) {
+                                $rotShift = \App\Models\HR\Shift::find($shiftId);
+                                if ($rotShift) {
+                                    $rotationShifts[] = [
+                                        'id' => $rotShift->id,
+                                        'name' => $rotShift->name,
+                                        'start' => $rotShift->start_time->format('H:i'),
+                                        'end' => $rotShift->end_time->format('H:i'),
+                                    ];
                                 }
                             }
                         }
                         
-                        \Log::info('Shift compatibility check', [
-                            'employee' => $record['employee_name'],
+                        $this->shiftMismatches[] = [
+                            'employee_id' => $record['employee_id'],
+                            'employee_name' => $record['employee_name'],
+                            'emp_id' => $record['emp_id'],
+                            'date' => $record['date'],
                             'check_in' => $checkInTime,
-                            'has_rotation' => $employeeShiftCheck->hasRotation(),
-                            'is_compatible' => $isCompatible,
-                            'matched_shift' => $matchedShift ? $matchedShift->name : 'none'
-                        ]);
-                        
-                        // Se NÃO é compatível com NENHUM shift, adicionar aos mismatches
-                        if (!$isCompatible) {
-                            $checkOutTime = !empty($record['check_outs']) ? $record['check_outs'][0] : null;
-                            $primaryShift = $employeeShiftCheck->shift;
-                            
-                            // Coletar informações sobre rotação
-                            $hasRotation = $employeeShiftCheck->hasRotation();
-                            $rotationShifts = [];
-                            
-                            if ($hasRotation) {
-                                $rotationShiftIds = $employeeShiftCheck->getRotationShifts();
-                                foreach ($rotationShiftIds as $shiftId) {
-                                    $rotShift = \App\Models\HR\Shift::find($shiftId);
-                                    if ($rotShift) {
-                                        $rotationShifts[] = [
-                                            'id' => $rotShift->id,
-                                            'name' => $rotShift->name,
-                                            'start' => $rotShift->start_time->format('H:i'),
-                                            'end' => $rotShift->end_time->format('H:i'),
-                                        ];
-                                    }
-                                }
-                            }
-                            
-                            $this->shiftMismatches[] = [
-                                'employee_id' => $record['employee_id'],
-                                'employee_name' => $record['employee_name'],
-                                'emp_id' => $record['emp_id'],
-                                'date' => $record['date'],
-                                'check_in' => $checkInTime,
-                                'check_out' => $checkOutTime,
-                                'shift_name' => $primaryShift->name,
-                                'shift_start' => $primaryShift->start_time->format('H:i'),
-                                'shift_end' => $primaryShift->end_time->format('H:i'),
-                                'time_difference_minutes' => 0,
-                                'has_rotation' => $hasRotation,
-                                'rotation_shifts' => $rotationShifts,
-                            ];
-                            $this->skippedCount++;
-                            \Log::warning('Shift mismatch - no compatible shift found', [
-                                'employee' => $record['employee_name'],
-                                'check_in' => $checkInTime,
-                                'has_rotation' => $hasRotation,
-                                'rotation_shifts_count' => count($rotationShifts)
-                            ]);
-                            continue;
-                        }
+                            'check_out' => $checkOutTime,
+                            'shift_name' => $primaryShift->name,
+                            'shift_start' => $primaryShift->start_time->format('H:i'),
+                            'shift_end' => $primaryShift->end_time->format('H:i'),
+                            'time_difference_minutes' => 0,
+                            'has_rotation' => $hasRotation,
+                            'rotation_shifts' => $rotationShifts,
+                        ];
+                        $this->skippedCount++;
+                        continue;
                     }
                 }
                 
@@ -753,10 +741,10 @@ class AttendanceImport implements
                 }
 
                 // Calcular hourly rate
-                $baseSalary = $employee->base_salary ?? 0;
-                $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
-                $monthlyHours = $weeklyHours * 4.33;
-                $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+                $hourlyRate = self::calculateHourlyRate($employee);
+
+                // Determine status (present vs late) based on shift
+                $status = ($checkIn || $checkOut) ? self::determineStatus($checkIn, $checkOut, $employee, $record['date']) : 'absent';
 
                 // Verificar se já existe
                 $existingAttendance = Attendance::where('employee_id', $record['employee_id'])
@@ -768,7 +756,7 @@ class AttendanceImport implements
                     'date' => $record['date'],
                     'time_in' => $checkIn ? Carbon::parse($record['date'] . ' ' . $checkIn) : null,
                     'time_out' => $checkOut ? Carbon::parse($record['date'] . ' ' . $checkOut) : null,
-                    'status' => ($checkIn || $checkOut) ? 'present' : 'absent',
+                    'status' => $status,
                     'hourly_rate' => $hourlyRate,
                     'affects_payroll' => true,
                     'remarks' => 'Importado do ZKTime',
@@ -782,12 +770,6 @@ class AttendanceImport implements
                     $this->importedCount++;
                 }
 
-                \Log::info('ZKTime attendance created/updated', [
-                    'employee' => $record['employee_name'],
-                    'date' => $record['date'],
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut
-                ]);
 
             } catch (\Exception $e) {
                 \Log::error('Error finalizing ZKTime record', [

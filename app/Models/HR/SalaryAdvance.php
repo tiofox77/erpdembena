@@ -91,6 +91,14 @@ class SalaryAdvance extends Model
     }
     
     /**
+     * Alias para createdBy - compatibilidade com componentes que usam 'creator'.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    
+    /**
      * Obtém os pagamentos de parcelas deste adiantamento.
      */
     public function payments(): HasMany

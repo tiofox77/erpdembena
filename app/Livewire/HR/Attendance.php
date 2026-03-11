@@ -68,6 +68,7 @@ class Attendance extends Component
     public $selectAllEmployees = false; // Para marcar/desmarcar todos
     public $selectedShift = null; // Shift obrigatório selecionado
     public $availableShifts = []; // Shifts disponíveis
+    public $batchRemarks = ''; // Observações para batch attendance
     
     // Import properties
     public $importFile = null;
@@ -303,10 +304,7 @@ class Attendance extends Component
                 if (empty($this->hourly_rate) && $this->employee_id) {
                     $employee = Employee::find($this->employee_id);
                     if ($employee) {
-                        // Calcular valor hora com base nas configurações HR
-                        $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
-                        $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
-                        $validatedData['hourly_rate'] = $employee->base_salary > 0 ? round($employee->base_salary / $monthlyHours, 2) : 0.0;
+                        $validatedData['hourly_rate'] = \App\Imports\AttendanceImport::calculateHourlyRate($employee);
                     }
                 }
 
@@ -715,16 +713,6 @@ class Attendance extends Component
 
     public function saveBatchAttendance()
     {
-        // Log de depuração
-        \Log::info('Iniciando salvamento de presenças em lote', [
-            'selectedShift' => $this->selectedShift,
-            'selectedEmployees' => $this->selectedEmployees,
-            'selectedDate' => $this->selectedDate,
-            'batchStatus' => $this->batchStatus,
-            'batchTimeIn' => $this->batchTimeIn,
-            'batchTimeOut' => $this->batchTimeOut,
-        ]);
-        
         // Validar se um shift foi selecionado
         if (!$this->selectedShift) {
             $this->dispatch('notify', 
@@ -747,7 +735,6 @@ class Attendance extends Component
         
         foreach ($this->selectedEmployees as $employeeId) {
             try {
-                \Log::info('Processando funcionário', ['employeeId' => $employeeId]);
                 
                 // Verificar se já existe presença para este funcionário nesta data
                 $exists = AttendanceModel::where('employee_id', $employeeId)
@@ -762,17 +749,7 @@ class Attendance extends Component
                 
                 // Obter dados do funcionário para calcular taxa horária
                 $employee = Employee::find($employeeId);
-                $baseSalary = $employee->base_salary ?? 0;
-                // Calcular valor hora com base nas configurações HR
-                $weeklyHours = (float) HRSetting::get('working_hours_per_week', 44);
-                $monthlyHours = $weeklyHours * 4.33; // média de semanas no mês
-                $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
-                
-                \Log::info('Dados do funcionário obtidos', [
-                    'employee' => $employee->full_name,
-                    'baseSalary' => $baseSalary,
-                    'hourly_rate' => $hourlyRate
-                ]);
+                $hourlyRate = \App\Imports\AttendanceImport::calculateHourlyRate($employee);
                 
                 // Criar dados para salvar
                 $attendanceData = [
@@ -784,8 +761,8 @@ class Attendance extends Component
                     'affects_payroll' => true,
                 ];
                 
-                // Adicionar horários se status for 'present'
-                if ($this->batchStatus === 'present') {
+                // Adicionar horários para statuses que envolvem presença
+                if (in_array($this->batchStatus, ['present', 'late', 'half_day'])) {
                     if (!empty($this->batchTimeIn)) {
                         $attendanceData['time_in'] = Carbon::parse($this->selectedDate . ' ' . $this->batchTimeIn);
                     }
@@ -793,8 +770,6 @@ class Attendance extends Component
                         $attendanceData['time_out'] = Carbon::parse($this->selectedDate . ' ' . $this->batchTimeOut);
                     }
                 }
-                
-                \Log::info('Tentando salvar presença', ['attendanceData' => $attendanceData]);
                 
                 // Validar os dados antes de salvar
                 if (empty($attendanceData['employee_id'])) {
@@ -805,15 +780,8 @@ class Attendance extends Component
                     throw new \Exception('Data não pode estar vazia');
                 }
                 
-                // Tentar usar new + save em vez de create
                 $attendance = new AttendanceModel();
                 $attendance->fill($attendanceData);
-                
-                \Log::info('Dados preenchidos no modelo', [
-                    'model_attributes' => $attendance->getAttributes(),
-                    'fillable' => $attendance->getFillable()
-                ]);
-                
                 $saved = $attendance->save();
                 
                 if (!$saved) {
@@ -826,19 +794,12 @@ class Attendance extends Component
                 
                 $successCount++;
                 
-                \Log::info('Presença salva com sucesso', [
-                    'attendanceId' => $attendance->id,
-                    'employeeId' => $attendance->employee_id,
-                    'date' => $attendance->date
-                ]);
-                
             } catch (\Exception $e) {
                 $employee = Employee::find($employeeId);
                 $errors[] = "Erro ao salvar {$employee->full_name}: " . $e->getMessage();
-                \Log::error('Erro ao salvar presença', [
+                \Log::error('Erro ao salvar presença em lote', [
                     'employeeId' => $employeeId,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'error' => $e->getMessage()
                 ]);
             }
         }
@@ -849,15 +810,8 @@ class Attendance extends Component
                 message: __('attendance.messages.batch_saved', ['count' => $successCount])
             );
             
-            // Fechar a modal após salvar com sucesso
-            $this->closeCalendarModal();
-            
-            // Forçar atualização dos dados do calendário
-            $this->calendarData = null; // Resetar cache se existir
-            
             // Emitir evento para atualizar a interface
             $this->dispatch('attendanceUpdated');
-            \Log::info('Presenças registadas com sucesso', ['count' => $successCount]);
         }
         
         if (!empty($errors)) {
@@ -868,7 +822,6 @@ class Attendance extends Component
                     message: $error
                 );
             }
-            \Log::warning('Erros durante o registo de presenças', ['errors' => $errors]);
         }
         
         // Refresh dos dados após salvamento
@@ -897,11 +850,8 @@ class Attendance extends Component
      */
     public function refreshData()
     {
-        // Trigger component refresh to reload the attendance list
-        $this->render();
-        
-        // Log for debugging
-        \Log::info('Attendance data refreshed after save operation');
+        // Livewire automatically calls render() on next cycle
+        // This method exists as a listener target for the 'attendance-saved' event
     }
     
     public function getCalendarData()
@@ -1271,11 +1221,6 @@ class Attendance extends Component
      */
     public function processConflictResolution()
     {
-        \Log::info('Processing conflict resolution', [
-            'conflicts_count' => count($this->timeConflicts),
-            'selected_times' => $this->selectedTimes
-        ]);
-        
         try {
             // Validate that all conflicts have selected times
             $missingSelections = [];
@@ -1296,15 +1241,12 @@ class Attendance extends Component
             
             // If there are missing selections, show error
             if (!empty($missingSelections)) {
-                \Log::warning('Missing time selections', ['missing' => $missingSelections]);
                 $this->dispatch('notify', 
                     type: 'error', 
                     message: 'Por favor, selecione os horários para: ' . implode(', ', $missingSelections)
                 );
                 return;
             }
-            
-            \Log::info('All selections valid, proceeding with import');
             
             $created = 0;
             $updated = 0;
@@ -1317,16 +1259,10 @@ class Attendance extends Component
                 $employee = \App\Models\HR\Employee::find($conflict['employee_id']);
                 if (!$employee) continue;
                 
-                $baseSalary = $employee->base_salary ?? 0;
-                $weeklyHours = (float) \App\Models\HR\HRSetting::get('working_hours_per_week', 44);
-                $monthlyHours = $weeklyHours * 4.33;
-                $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+                $hourlyRate = \App\Imports\AttendanceImport::calculateHourlyRate($employee);
                 
-                // Determine status
-                $status = 'present';
-                if (!$selectedCheckIn && !$selectedCheckOut) {
-                    $status = 'absent';
-                }
+                // Determine status (including late detection)
+                $status = \App\Imports\AttendanceImport::determineStatus($selectedCheckIn, $selectedCheckOut, $employee, $conflict['date']);
                 
                 // Check if attendance already exists
                 $existingAttendance = \App\Models\HR\Attendance::where('employee_id', $conflict['employee_id'])
@@ -1354,18 +1290,8 @@ class Attendance extends Component
                     if ($existingAttendance->status != $status) $hasChanges = true;
                     
                     if ($hasChanges) {
-                        // Update existing attendance
                         $existingAttendance->update($attendanceData);
                         $updated++;
-                        \Log::info('Updated attendance', [
-                            'employee_id' => $conflict['employee_id'],
-                            'date' => $conflict['date']
-                        ]);
-                    } else {
-                        \Log::info('No changes detected, skipping', [
-                            'employee_id' => $conflict['employee_id'],
-                            'date' => $conflict['date']
-                        ]);
                     }
                 } else {
                     // Create new attendance
@@ -1373,17 +1299,8 @@ class Attendance extends Component
                     $attendanceData['date'] = $conflict['date'];
                     \App\Models\HR\Attendance::create($attendanceData);
                     $created++;
-                    \Log::info('Created new attendance', [
-                        'employee_id' => $conflict['employee_id'],
-                        'date' => $conflict['date']
-                    ]);
                 }
             }
-            
-            \Log::info('Successfully processed attendance records', [
-                'created' => $created,
-                'updated' => $updated
-            ]);
             
             // Build message
             $messageParts = [];
@@ -1407,10 +1324,7 @@ class Attendance extends Component
             $this->dispatch('attendanceUpdated');
             
         } catch (\Exception $e) {
-            \Log::error('Conflict resolution error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            \Log::error('Conflict resolution error', ['error' => $e->getMessage()]);
             $this->dispatch('notify', 
                 type: 'error', 
                 message: '❌ Erro ao processar conflitos: ' . $e->getMessage()
@@ -1423,10 +1337,6 @@ class Attendance extends Component
      */
     public function confirmIncompleteRecords()
     {
-        \Log::info('Confirming incomplete records', [
-            'count' => count($this->incompleteRecords)
-        ]);
-
         $created = 0;
         $updated = 0;
 
@@ -1437,32 +1347,44 @@ class Attendance extends Component
             }
 
             // Calcular hourly rate
-            $baseSalary = $employee->base_salary ?? 0;
-            $weeklyHours = (float) \App\Models\HR\HRSetting::get('working_hours_per_week', 44);
-            $monthlyHours = $weeklyHours * 4.33;
-            $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+            $hourlyRate = \App\Imports\AttendanceImport::calculateHourlyRate($employee);
 
             // Verificar se já existe
             $existingAttendance = \App\Models\HR\Attendance::where('employee_id', $record['employee_id'])
                 ->whereDate('date', $record['date'])
                 ->first();
 
-            // Preparar dados
-            $attendanceData = [
-                'time_in' => $record['type'] === 'check_in' ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['time']) : null,
-                'time_out' => $record['type'] === 'check_out' ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['time']) : null,
-                'status' => 'present',
-                'hourly_rate' => $hourlyRate,
-                'affects_payroll' => true,
-                'remarks' => 'Importado do ZKTime (registo incompleto confirmado)',
-            ];
+            // Preparar dados - only set the field we have, preserve existing data
+            $timeIn = $record['type'] === 'check_in' ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['time']) : null;
+            $timeOut = $record['type'] === 'check_out' ? \Carbon\Carbon::parse($record['date'] . ' ' . $record['time']) : null;
 
             if ($existingAttendance) {
-                $existingAttendance->update($attendanceData);
+                // Merge: only update the missing field, preserve the existing one
+                $updateData = [
+                    'status' => 'present',
+                    'hourly_rate' => $hourlyRate,
+                    'affects_payroll' => true,
+                    'remarks' => 'Importado do ZKTime (registo incompleto confirmado)',
+                ];
+                if ($timeIn && !$existingAttendance->time_in) {
+                    $updateData['time_in'] = $timeIn;
+                }
+                if ($timeOut && !$existingAttendance->time_out) {
+                    $updateData['time_out'] = $timeOut;
+                }
+                $existingAttendance->update($updateData);
                 $updated++;
             } else {
-                $attendanceData['employee_id'] = $record['employee_id'];
-                $attendanceData['date'] = $record['date'];
+                $attendanceData = [
+                    'employee_id' => $record['employee_id'],
+                    'date' => $record['date'],
+                    'time_in' => $timeIn,
+                    'time_out' => $timeOut,
+                    'status' => 'present',
+                    'hourly_rate' => $hourlyRate,
+                    'affects_payroll' => true,
+                    'remarks' => 'Importado do ZKTime (registo incompleto confirmado)',
+                ];
                 \App\Models\HR\Attendance::create($attendanceData);
                 $created++;
             }
@@ -1483,10 +1405,6 @@ class Attendance extends Component
      */
     public function confirmShiftMismatches()
     {
-        \Log::info('Confirming shift mismatches', [
-            'count' => count($this->shiftMismatches)
-        ]);
-
         $created = 0;
         $updated = 0;
 
@@ -1497,10 +1415,7 @@ class Attendance extends Component
             }
 
             // Calcular hourly rate
-            $baseSalary = $employee->base_salary ?? 0;
-            $weeklyHours = (float) \App\Models\HR\HRSetting::get('working_hours_per_week', 44);
-            $monthlyHours = $weeklyHours * 4.33;
-            $hourlyRate = $baseSalary > 0 ? round($baseSalary / $monthlyHours, 2) : 0.0;
+            $hourlyRate = \App\Imports\AttendanceImport::calculateHourlyRate($employee);
 
             // Verificar se já existe
             $existingAttendance = \App\Models\HR\Attendance::where('employee_id', $record['employee_id'])
@@ -1543,21 +1458,11 @@ class Attendance extends Component
      */
     public function importFromExcel()
     {
-        \Log::info('DEBUG: importFromExcel method called');
-        \Log::info('DEBUG: importFile value:', ['file' => $this->importFile]);
-        
         try {
             // Validação manual mais permissiva para arquivos Excel antigos
             if ($this->importFile) {
                 $extension = strtolower($this->importFile->getClientOriginalExtension());
                 $allowedExtensions = ['xlsx', 'xls', 'csv'];
-                
-                \Log::info('DEBUG: File info', [
-                    'mime' => $this->importFile->getMimeType(),
-                    'extension' => $extension,
-                    'name' => $this->importFile->getClientOriginalName(),
-                    'size' => $this->importFile->getSize()
-                ]);
                 
                 if (!in_array($extension, $allowedExtensions)) {
                     $this->dispatch('notify', 
@@ -1582,10 +1487,7 @@ class Attendance extends Component
                 return;
             }
             
-            \Log::info('DEBUG: Validation passed');
-
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('DEBUG: Validation failed:', $e->errors());
             $this->dispatch('notify', 
                 type: 'error', 
                 message: __('attendance.messages.validation_error', ['error' => implode(', ', $e->validator->errors()->all())])
@@ -1594,14 +1496,11 @@ class Attendance extends Component
         }
 
         try {
-            \Log::info('DEBUG: Starting import process');
             $import = new AttendanceImport();
             Excel::import($import, $this->importFile->getRealPath());
             
             // Finalizar registos pendentes do ZKTime (se houver)
             $import->finalizePendingRecords();
-            
-            \Log::info('DEBUG: Import completed successfully');
             
             $importedCount = $import->getImportedCount();
             $updatedCount = $import->getUpdatedCount();
@@ -1715,9 +1614,8 @@ class Attendance extends Component
             $this->dispatch('attendanceUpdated');
             
         } catch (\Exception $e) {
-            \Log::error('DEBUG: Import failed with exception:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            \Log::error('Attendance import failed', [
+                'error' => $e->getMessage()
             ]);
             $this->importResults = [
                 'success' => false,
@@ -1758,17 +1656,6 @@ class Attendance extends Component
 
         $attendances = $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
-
-        // Debug: verificar quantos registros estão sendo retornados
-        \Log::info('Attendance query results', [
-            'total_count' => $attendances->total(),
-            'per_page' => $this->perPage,
-            'current_page' => $attendances->currentPage(),
-            'search' => $this->search,
-            'filters' => $this->filters,
-            'sort_field' => $this->sortField,
-            'sort_direction' => $this->sortDirection
-        ]);
 
         $employees = Employee::where('employment_status', 'active')->get();
         $departments = Department::where('is_active', true)->get();

@@ -411,6 +411,7 @@ return [
     'bonus_amount' => 'Bonus Amount',
     'position_subsidy' => 'Position Subsidy',
     'performance_subsidy' => 'Performance Subsidy',
+    'family_allowance' => 'Family Allowance',
     'food_benefit' => 'Food Benefit',
     'transport_benefit' => 'Transport Benefit',
     'holiday_allowance' => 'Holiday Allowance',
@@ -4013,4 +4014,20 @@ return [
     'disciplinary_report_desc' => 'Disciplinary actions and measures tracking',
     'employee_directory' => 'Employee Directory',
     'employee_directory_desc' => 'Complete employee information and directory',
+    
+    // Attendance Report
+    'custom_period' => 'Custom Period',
+    'detailed_view' => 'Detailed View',
+    'summary_view' => 'Summary View',
+    'department_breakdown' => 'Department Breakdown',
+    'detailed_records' => 'Detailed Records',
+    'employee_summary' => 'Employee Summary',
+    'approved_leaves' => 'Approved Leaves',
+    'half_day' => 'Half Day',
+    'time_in' => 'Time In',
+    'time_out' => 'Time Out',
+    'view' => 'View',
+    'calendar_view' => 'Calendar View',
+    'no_record' => 'No Record',
+    'showing_max_employees' => 'Showing a maximum of 50 employees. Use filters to narrow results.',
 ];

@@ -80,6 +80,8 @@ class PayrollCalculatorHelper
     protected int $lateArrivals = 0;
     protected float $totalAttendanceHours = 0.0;
     protected array $attendanceData = [];
+    protected int $paidLeaveDaysInferred = 0;
+    protected int $unpaidLeaveDaysInferred = 0;
     
     // Dados de horas extras
     protected float $totalOvertimeHours = 0.0;
@@ -321,9 +323,70 @@ class PayrollCalculatorHelper
         // Dias efetivamente trabalhados (EXCLUINDO férias) para subsídio de transporte
         $this->daysWorkedEffectively = $attendances->whereIn('status', ['present', 'late', 'half_day'])->count();
         
-        // Calcular faltas: se trabalhou mais que o esperado, não há faltas
-        $this->absentDays = max(0, $this->totalWorkingDays - $this->presentDays);
         $this->lateArrivals = $attendances->where('status', 'late')->count();
+        
+        // ============================================================
+        // CROSS-REFERENCE COM LEAVE MANAGEMENT
+        // Se existem dias sem registo de presença mas cobertos por
+        // licenças aprovadas, devem ser tratados como dias de licença
+        // (pagos ou não pagos) e NÃO como faltas injustificadas
+        // ============================================================
+        $approvedLeaves = Leave::where('employee_id', $this->employee->id)
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $this->endDate->format('Y-m-d'))
+            ->where('end_date', '>=', $this->startDate->format('Y-m-d'))
+            ->with('leaveType')
+            ->get();
+        
+        $this->paidLeaveDaysInferred = 0;
+        $this->unpaidLeaveDaysInferred = 0;
+        
+        if ($approvedLeaves->isNotEmpty()) {
+            $attendanceDates = $attendances->pluck('date')
+                ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+                ->toArray();
+            
+            foreach ($approvedLeaves as $leave) {
+                $leaveStart = Carbon::parse($leave->start_date);
+                $leaveEnd = Carbon::parse($leave->end_date);
+                
+                // Limitar ao período do payroll
+                $effectiveStart = $leaveStart->greaterThan($this->startDate) ? $leaveStart->copy() : $this->startDate->copy();
+                $effectiveEnd = $leaveEnd->lessThan($this->endDate) ? $leaveEnd->copy() : $this->endDate->copy();
+                
+                $isPaid = $leave->leaveType ? $leave->leaveType->is_paid : ($leave->is_paid_leave ?? true);
+                
+                $current = $effectiveStart->copy();
+                while ($current->lte($effectiveEnd)) {
+                    if ($current->isWeekday()) {
+                        $dateStr = $current->format('Y-m-d');
+                        // Só contar dias SEM registo de presença
+                        if (!in_array($dateStr, $attendanceDates)) {
+                            if ($isPaid) {
+                                $this->paidLeaveDaysInferred++;
+                            } else {
+                                $this->unpaidLeaveDaysInferred++;
+                            }
+                        }
+                    }
+                    $current->addDay();
+                }
+            }
+            
+            // Dias de férias pagas sem presença → contar como presentes
+            $this->presentDays += $this->paidLeaveDaysInferred;
+            
+            \Log::info('🏖️ Leave Cross-Reference', [
+                'employee' => $this->employee->full_name,
+                'approved_leaves_count' => $approvedLeaves->count(),
+                'paid_leave_days_inferred' => $this->paidLeaveDaysInferred,
+                'unpaid_leave_days_inferred' => $this->unpaidLeaveDaysInferred,
+                'present_days_adjusted' => $this->presentDays,
+            ]);
+        }
+        
+        // Calcular faltas: excluir dias cobertos por licenças (pagas e não pagas)
+        $this->absentDays = max(0, $this->totalWorkingDays - $this->presentDays - $this->unpaidLeaveDaysInferred);
         
         \Log::info('📊 Cálculo de Presença', [
             'employee' => $this->employee->full_name,
@@ -370,6 +433,9 @@ class PayrollCalculatorHelper
                 $this->totalAttendanceHours += $hours;
             }
         }
+        
+        // Adicionar horas para dias de férias pagas inferidos do Leave Management
+        $this->totalAttendanceHours += ($this->paidLeaveDaysInferred * $standardWorkDay);
         
         $this->attendanceData = $attendances->toArray();
         $this->calculateAttendanceDeductions($attendances);
@@ -483,29 +549,62 @@ class PayrollCalculatorHelper
     public function loadLeaveData(): self
     {
         $leaves = Leave::where('employee_id', $this->employee->id)
-            ->where(function ($query) {
-                $query->whereBetween('start_date', [$this->startDate->format('Y-m-d'), $this->endDate->format('Y-m-d')])
-                      ->orWhereBetween('end_date', [$this->startDate->format('Y-m-d'), $this->endDate->format('Y-m-d')]);
-            })
             ->where('status', 'approved')
+            ->where('start_date', '<=', $this->endDate->format('Y-m-d'))
+            ->where('end_date', '>=', $this->startDate->format('Y-m-d'))
+            ->with('leaveType')
             ->get();
         
         $this->totalLeaveDays = 0;
         $this->unpaidLeaveDays = 0;
         
+        // Obter datas com registo de presença para evitar dupla contagem
+        $attendanceDates = collect($this->attendanceData)
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+        
         foreach ($leaves as $leave) {
-            $leaveDays = Carbon::parse($leave->start_date)->diffInDays(Carbon::parse($leave->end_date)) + 1;
-            $this->totalLeaveDays += $leaveDays;
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
             
-            $leaveType = \App\Models\HR\LeaveType::find($leave->leave_type_id);
-            if ($leaveType && !$leaveType->is_paid) {
-                $this->unpaidLeaveDays += $leaveDays;
+            // Limitar ao período do payroll
+            $effectiveStart = $leaveStart->greaterThan($this->startDate) ? $leaveStart->copy() : $this->startDate->copy();
+            $effectiveEnd = $leaveEnd->lessThan($this->endDate) ? $leaveEnd->copy() : $this->endDate->copy();
+            
+            $isPaid = $leave->leaveType ? $leave->leaveType->is_paid : ($leave->is_paid_leave ?? true);
+            
+            // Contar apenas dias úteis no período (não fins de semana)
+            $leaveDaysInPeriod = 0;
+            $unpaidDaysWithoutAttendance = 0;
+            $current = $effectiveStart->copy();
+            while ($current->lte($effectiveEnd)) {
+                if ($current->isWeekday()) {
+                    $leaveDaysInPeriod++;
+                    // Para licença não paga, contar apenas dias sem registo de presença
+                    if (!$isPaid && !in_array($current->format('Y-m-d'), $attendanceDates)) {
+                        $unpaidDaysWithoutAttendance++;
+                    }
+                }
+                $current->addDay();
+            }
+            
+            $this->totalLeaveDays += $leaveDaysInPeriod;
+            if (!$isPaid) {
+                $this->unpaidLeaveDays += $unpaidDaysWithoutAttendance;
             }
         }
         
         $dailyRate = $this->basicSalary / ($this->hrSettings['monthly_working_days'] ?? 22);
         $this->leaveDeduction = $this->unpaidLeaveDays * $dailyRate;
         $this->leaveRecords = $leaves->toArray();
+        
+        \Log::info('🏖️ Leave Data', [
+            'employee' => $this->employee->full_name,
+            'total_leave_days' => $this->totalLeaveDays,
+            'unpaid_leave_days' => $this->unpaidLeaveDays,
+            'leave_deduction' => $this->leaveDeduction,
+        ]);
         
         return $this;
     }
@@ -685,7 +784,8 @@ class PayrollCalculatorHelper
         $additionalBonus  = $this->additionalBonusAmount;                   // Additional Bonus (batch)
         
         // DEDUÇÕES (-)
-        $absence          = $this->absenceDeduction;                        // Absence
+        $absence          = $this->absenceDeduction;                        // Absence (faltas injustificadas)
+        $unpaidLeave      = $this->leaveDeduction;                          // Unpaid Leave (licença não paga)
         
         $gross = $basicSalary 
              + $transport 
@@ -698,7 +798,8 @@ class PayrollCalculatorHelper
              + $positionSubsidy
              + $performanceSubsidy
              + $additionalBonus
-             - $absence;
+             - $absence
+             - $unpaidLeave;
              
         \Log::info('📊 Gross Salary Calculation', [
             'basicSalary' => $basicSalary,
@@ -710,7 +811,10 @@ class PayrollCalculatorHelper
             'familyAllowance' => $familyAllowance,
             'additionalBonus' => $additionalBonus,
             'absence_deduction' => $absence,
-            'gross_before_absence' => $basicSalary + $transport + $foodAllowance + $nightAllowance + $totalOverTime + $familyAllowance + $additionalBonus,
+            'unpaid_leave_deduction' => $unpaidLeave,
+            'paid_leave_days_inferred' => $this->paidLeaveDaysInferred,
+            'unpaid_leave_days_inferred' => $this->unpaidLeaveDaysInferred,
+            'gross_before_deductions' => $basicSalary + $transport + $foodAllowance + $nightAllowance + $totalOverTime + $familyAllowance + $additionalBonus,
             'gross_final' => $gross,
         ]);
         
@@ -1120,6 +1224,8 @@ class PayrollCalculatorHelper
             // Licenças
             'total_leave_days' => $this->totalLeaveDays,
             'unpaid_leave_days' => $this->unpaidLeaveDays,
+            'paid_leave_days_inferred' => $this->paidLeaveDaysInferred,
+            'unpaid_leave_days_inferred' => $this->unpaidLeaveDaysInferred,
             'leave_deduction' => $this->leaveDeduction,
             'leave_records' => $this->leaveRecords,
             
@@ -1149,6 +1255,7 @@ class PayrollCalculatorHelper
                 ['label' => 'Subsídio de Desempenho', 'value' => (float) ($this->employee->performance_subsidy ?? 0), 'type' => 'add'],
                 ['label' => 'Bónus Adicional', 'value' => $this->additionalBonusAmount, 'type' => 'add'],
                 ['label' => 'Desconto por Faltas', 'value' => $this->absenceDeduction, 'type' => 'subtract', 'days' => $this->absentDays],
+                ['label' => 'Desconto Licença Não Paga', 'value' => $this->leaveDeduction, 'type' => 'subtract', 'days' => $this->unpaidLeaveDays],
             ],
             'total_earnings' => $this->basicSalary + $this->transportAllowance + $this->mealAllowance + 
                                $this->nightShiftAllowance + $this->totalOvertimeAmount + 
@@ -1173,7 +1280,7 @@ class PayrollCalculatorHelper
             // RESUMO VISUAL (para exibição)
             // ========================================
             'salary_composition' => [
-                'gross_formula' => 'Base + Transporte + Alimentação + Noturno + HorasExtras + Natal + Férias + Família + Cargo + Desempenho + Bónus - Faltas',
+                'gross_formula' => 'Base + Transporte + Alimentação + Noturno + HorasExtras + Natal + Férias + Família + Cargo + Desempenho + Bónus - Faltas - Licença Não Paga',
                 'net_formula' => 'Bruto - INSS - IRT - Adiantamentos - Descontos - Atrasos - Alimentação',
                 'night_shift_formula' => "(Salário Base ÷ {$workingDays} dias) × {$this->nightShiftDays} dias × 25%",
                 'night_shift_daily_rate' => $this->hourlyRate * 8, // Valor diário correto

@@ -333,6 +333,7 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:hr.payroll.view'])->get('/reports/advances', App\Livewire\HR\Reports\AdvancesReport::class)->name('reports.advances');
         Route::middleware(['permission:hr.payroll.view'])->get('/reports/discounts', App\Livewire\HR\Reports\DiscountsReport::class)->name('reports.discounts');
         Route::middleware(['permission:hr.leave.view'])->get('/reports/leave', App\Livewire\HR\Reports\LeaveReport::class)->name('reports.leave');
+        Route::middleware(['permission:hr.attendance.view'])->get('/reports/attendance', App\Livewire\HR\Reports\AttendanceReport::class)->name('reports.attendance');
         
         // Payroll Reports
         Route::middleware(['permission:hr.payroll.view'])->get('/payroll-reports', App\Livewire\HR\PayrollReports::class)->name('payroll-reports');

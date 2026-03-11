@@ -1120,6 +1120,14 @@
                     <span>{{ trans('messages.leave_report') }}</span>
                 </a>
                 @endcan
+                
+                {{-- Relatório de Presença --}}
+                @can('hr.attendance.view')
+                <a href="{{ route('hr.reports.attendance') }}" class="sidebar-submenu-item {{ request()->routeIs('hr.reports.attendance') ? 'active' : '' }} hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-clipboard-check text-green-600"></i>
+                    <span>{{ trans('messages.attendance_report') }}</span>
+                </a>
+                @endcan
             </div>
             @endcan
             
