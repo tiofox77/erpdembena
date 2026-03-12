@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\DirectUpdateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+// Direct Update API (token-based, no GitHub required)
+Route::prefix('direct-update')->group(function () {
+    Route::post('/apply', [DirectUpdateController::class, 'apply']);
+    Route::get('/status', [DirectUpdateController::class, 'status']);
+    Route::post('/rollback', [DirectUpdateController::class, 'rollback']);
 });
 
 // Rota para ler estado da atualização em tempo real (sem bloqueio de sessão)

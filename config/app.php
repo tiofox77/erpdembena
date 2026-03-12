@@ -44,6 +44,8 @@ return [
 
     'debug' => (bool) env('APP_DEBUG', false),
 
+    'direct_update_token' => env('DIRECT_UPDATE_TOKEN', null),
+
     /*
     |--------------------------------------------------------------------------
     | Application URL

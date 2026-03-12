@@ -516,11 +516,11 @@
                                             <button
                                                 wire:click="confirmStartUpdate"
                                                 wire:loading.attr="disabled"
-                                                wire:target="startUpdate"
+                                                wire:target="confirmStartUpdate"
                                                 class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:from-green-700 hover:to-emerald-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200 disabled:opacity-50">
                                                 <i class="fas fa-rocket mr-2"></i>
-                                                <span wire:loading.remove wire:target="startUpdate">Instalar Actualização</span>
-                                                <span wire:loading wire:target="startUpdate">Instalando...</span>
+                                                <span wire:loading.remove wire:target="confirmStartUpdate">Instalar Actualização</span>
+                                                <span wire:loading wire:target="confirmStartUpdate">Preparando...</span>
                                             </button>
                                         </div>
                                     </div>
@@ -602,6 +602,177 @@
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+
+                            <!-- Direct Update API Card -->
+                            <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden mb-8">
+                                <div class="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-4">
+                                    <h3 class="text-lg font-semibold text-white flex items-center">
+                                        <i class="fas fa-bolt mr-3"></i>
+                                        Actualização Directa (API)
+                                    </h3>
+                                    <p class="text-violet-100 text-sm mt-1">Endpoint para actualizações sem GitHub — ideal para correções rápidas</p>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <!-- API Endpoint Info -->
+                                    <div class="bg-slate-50 rounded-xl border border-slate-200 p-5">
+                                        <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center">
+                                            <i class="fas fa-link text-violet-500 mr-2"></i>
+                                            Endpoint da API
+                                        </h4>
+                                        <div class="space-y-3">
+                                            <div class="flex items-center gap-3">
+                                                <span class="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-lg">POST</span>
+                                                <code class="text-sm bg-white px-3 py-2 rounded-lg border border-slate-200 flex-1 font-mono text-slate-700">
+                                                    {{ rtrim(config('app.url'), '/') }}/api/direct-update/apply
+                                                </code>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <span class="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg">GET</span>
+                                                <code class="text-sm bg-white px-3 py-2 rounded-lg border border-slate-200 flex-1 font-mono text-slate-700">
+                                                    {{ rtrim(config('app.url'), '/') }}/api/direct-update/status
+                                                </code>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <span class="px-2.5 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded-lg">POST</span>
+                                                <code class="text-sm bg-white px-3 py-2 rounded-lg border border-slate-200 flex-1 font-mono text-slate-700">
+                                                    {{ rtrim(config('app.url'), '/') }}/api/direct-update/rollback
+                                                </code>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Token Management -->
+                                    <div class="bg-slate-50 rounded-xl border border-slate-200 p-5">
+                                        <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center">
+                                            <i class="fas fa-key text-amber-500 mr-2"></i>
+                                            Token de Autenticação
+                                        </h4>
+                                        @if(!empty($directUpdateToken))
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <div class="relative flex-1">
+                                                    <input 
+                                                        type="{{ $showDirectUpdateToken ? 'text' : 'password' }}" 
+                                                        value="{{ $directUpdateToken }}" 
+                                                        readonly
+                                                        class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl font-mono text-sm text-slate-700 pr-12">
+                                                    <button 
+                                                        wire:click="toggleDirectUpdateToken"
+                                                        type="button"
+                                                        class="absolute inset-y-0 right-0 px-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                                                        <i class="fas {{ $showDirectUpdateToken ? 'fa-eye-slash' : 'fa-eye' }}"></i>
+                                                    </button>
+                                                </div>
+                                                <button 
+                                                    onclick="navigator.clipboard.writeText('{{ $directUpdateToken }}'); window.showNotification && showNotification('Token copiado!', 'success');"
+                                                    type="button"
+                                                    class="px-4 py-3 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-all text-slate-600 hover:text-slate-800"
+                                                    title="Copiar token">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                                <p class="text-sm text-amber-700 flex items-center">
+                                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                    Nenhum token configurado. Gere um token para activar a API de actualização directa.
+                                                </p>
+                                            </div>
+                                        @endif
+                                        <button 
+                                            wire:click="generateDirectUpdateToken"
+                                            wire:loading.attr="disabled"
+                                            wire:target="generateDirectUpdateToken"
+                                            type="button"
+                                            class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-medium rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all duration-200 text-sm shadow-lg transform hover:scale-105">
+                                            <span wire:loading.remove wire:target="generateDirectUpdateToken">
+                                                <i class="fas fa-sync-alt mr-2"></i>
+                                                {{ empty($directUpdateToken) ? 'Gerar Token' : 'Regenerar Token' }}
+                                            </span>
+                                            <span wire:loading wire:target="generateDirectUpdateToken">
+                                                <i class="fas fa-spinner fa-spin mr-2"></i>
+                                                Gerando...
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Usage Example -->
+                                    <div class="bg-slate-900 rounded-xl p-5 overflow-hidden">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h4 class="text-sm font-bold text-slate-300 flex items-center">
+                                                <i class="fas fa-terminal text-green-400 mr-2"></i>
+                                                Exemplo de Uso (cURL)
+                                            </h4>
+                                            <button 
+                                                onclick="navigator.clipboard.writeText(document.getElementById('curl-example').innerText); window.showNotification && showNotification('Comando copiado!', 'success');"
+                                                class="text-xs text-slate-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-700">
+                                                <i class="fas fa-copy mr-1"></i> Copiar
+                                            </button>
+                                        </div>
+                                        <pre id="curl-example" class="text-xs text-green-400 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">curl -X POST {{ rtrim(config('app.url'), '/') }}/api/direct-update/apply \
+  -H "Content-Type: application/json" \
+  -H "X-Update-Token: YOUR_TOKEN" \
+  -d '{
+    "version": "1.3.9",
+    "description": "Bug fix release",
+    "files": [
+      {
+        "path": "app/Models/Example.php",
+        "content": "&lt;?php\n// file content here",
+        "action": "update"
+      }
+    ],
+    "migrations": true,
+    "clear_cache": true
+  }'</pre>
+                                    </div>
+
+                                    <!-- Update History -->
+                                    @if(!empty($directUpdateHistory))
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h4 class="text-sm font-bold text-slate-700 flex items-center">
+                                                <i class="fas fa-history text-slate-400 mr-2"></i>
+                                                Histórico de Actualizações Directas
+                                            </h4>
+                                            <button 
+                                                wire:click="loadDirectUpdateHistory"
+                                                type="button"
+                                                class="text-xs text-violet-600 hover:text-violet-800 transition-colors">
+                                                <i class="fas fa-sync-alt mr-1"></i> Actualizar
+                                            </button>
+                                        </div>
+                                        <div class="bg-slate-50 rounded-xl border border-slate-200 divide-y divide-slate-200 max-h-64 overflow-y-auto">
+                                            @foreach(array_slice($directUpdateHistory, 0, 10) as $entry)
+                                            <div class="px-4 py-3 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center {{ ($entry['errors_count'] ?? 0) > 0 ? 'bg-amber-100' : 'bg-green-100' }}">
+                                                        <i class="fas {{ ($entry['errors_count'] ?? 0) > 0 ? 'fa-exclamation-triangle text-amber-600' : 'fa-check text-green-600' }} text-xs"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-slate-800">
+                                                            @if(!empty($entry['version']))
+                                                                <span class="text-violet-600 font-mono">v{{ $entry['version'] }}</span> —
+                                                            @endif
+                                                            {{ $entry['description'] ?? 'Direct update' }}
+                                                        </p>
+                                                        <p class="text-xs text-slate-500">
+                                                            {{ $entry['files_processed'] ?? 0 }} ficheiro(s)
+                                                            @if(($entry['errors_count'] ?? 0) > 0)
+                                                                · <span class="text-amber-600">{{ $entry['errors_count'] }} erro(s)</span>
+                                                            @endif
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <span class="text-xs text-slate-400">
+                                                    {{ \Carbon\Carbon::parse($entry['applied_at'] ?? now())->diffForHumans() }}
+                                                </span>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -1038,14 +1209,10 @@
                                 </div>
                             @endif
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- OPcache Tab -->
-        <div class="{{ $activeTab === 'opcache' ? 'block' : 'hidden' }}" role="tabpanel">
-            <div class="space-y-6">
+
+                        <!-- OPcache Tab -->
+                        <div class="{{ $activeTab === 'opcache' ? 'block' : 'hidden' }}" role="tabpanel">
+                            <div class="space-y-6">
                 <!-- Header Card -->
                 <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl shadow-lg p-6">
                     <div class="flex items-center justify-between">
@@ -1379,6 +1546,11 @@
                         </div>
                     </div>
                 @endif
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1412,15 +1584,19 @@
                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
                 
                 <!-- Header with gradient -->
-                <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
+                <div class="bg-gradient-to-r {{ $confirmAction === 'runArtisanCommand' ? 'from-slate-600 to-slate-700' : 'from-amber-500 to-orange-500' }} px-6 py-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-                                <i class="fas fa-download text-white text-xl animate-pulse"></i>
+                                <i class="fas {{ $confirmAction === 'runArtisanCommand' ? 'fa-terminal' : 'fa-download' }} text-white text-xl animate-pulse"></i>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-lg font-bold text-white">Confirmação de Actualização</h3>
-                                <p class="text-amber-100 text-sm">Sistema v{{ $latest_version ?? '1.3.8.5' }}</p>
+                                <h3 class="text-lg font-bold text-white">
+                                    {{ $confirmAction === 'runArtisanCommand' ? 'Confirmação de Comando' : 'Confirmação de Actualização' }}
+                                </h3>
+                                <p class="{{ $confirmAction === 'runArtisanCommand' ? 'text-slate-200' : 'text-amber-100' }} text-sm">
+                                    {{ $confirmAction === 'runArtisanCommand' ? 'Artisan: ' . ($confirmData ?? '') : 'Sistema v' . ($latest_version ?? '1.3.8.5') }}
+                                </p>
                             </div>
                         </div>
                         <button 
@@ -1608,24 +1784,25 @@
                     </button>
                     <button
                         type="button"
-                        class="inline-flex w-full justify-center items-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        class="inline-flex w-full justify-center items-center rounded-xl bg-gradient-to-r {{ $confirmAction === 'runArtisanCommand' ? 'from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 focus:ring-slate-500' : 'from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 focus:ring-amber-500' }} px-6 py-3 text-sm font-bold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                         wire:click="processConfirmedAction"
-                        :disabled="$wire.isUpdating">
+                        wire:loading.attr="disabled"
+                        wire:target="processConfirmedAction">
                         
                         <!-- Loading state -->
-                        <div x-show="$wire.isUpdating" class="flex items-center">
+                        <span wire:loading wire:target="processConfirmedAction" class="flex items-center">
                             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span>Actualizando...</span>
-                        </div>
+                            <span>Executando...</span>
+                        </span>
 
                         <!-- Normal state -->
-                        <div x-show="!$wire.isUpdating" class="flex items-center">
-                            <i class="fas fa-rocket mr-2 animate-bounce"></i>
-                            Confirmar Actualização
-                        </div>
+                        <span wire:loading.remove wire:target="processConfirmedAction" class="flex items-center">
+                            <i class="fas {{ $confirmAction === 'runArtisanCommand' ? 'fa-terminal' : 'fa-rocket animate-bounce' }} mr-2"></i>
+                            {{ $confirmAction === 'runArtisanCommand' ? 'Executar Comando' : 'Confirmar Actualização' }}
+                        </span>
                     </button>
                 </div>
             </div>

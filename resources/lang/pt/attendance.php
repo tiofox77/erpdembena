@@ -148,6 +148,25 @@ return [
     'wednesday' => 'Qua',
     'work_from_home' => 'Trabalho Remoto',
     
+    // Bulk delete
+    'records_selected' => 'registo(s) selecionado(s)',
+    'select_records_to_manage' => 'Selecione ações para os registos selecionados',
+    'delete_selected' => 'Eliminar Selecionados',
+    'confirm_bulk_delete' => 'Confirmar Eliminação em Massa',
+    'about_to_delete' => 'Está prestes a eliminar :count registo(s) de presença.',
+    'delete_warning' => 'Os registos eliminados não podem ser recuperados e podem afetar os cálculos de folha de pagamento.',
+    
+    // Payroll period filter
+    'payroll_period' => 'Período de Folha',
+    'all_periods' => 'Todos os Períodos',
+    
+    // Status labels
+    'status_present' => 'Presente',
+    'status_absent' => 'Ausente',
+    'status_late' => 'Atrasado',
+    'status_half_day' => 'Meio Dia',
+    'status_leave' => 'Licença',
+
     // Notification Messages
     'messages' => [
         'saved_successfully' => 'Registo de presença criado com sucesso.',
@@ -165,6 +184,8 @@ return [
         'error_saving' => 'Erro ao salvar registo: :error',
         'error_deleting' => 'Erro ao eliminar registo: :error',
         'validation_error' => 'Erro de validação: :error',
+        'no_records_selected' => 'Nenhum registo selecionado.',
+        'bulk_deleted' => ':count registo(s) de presença eliminado(s) com sucesso.',
     ],
     
     // Additional fields

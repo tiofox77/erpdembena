@@ -116,9 +116,51 @@
                                 </div>
                                 
                                 <!-- Primary Filters Row -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+                                    <!-- Payroll Period Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                                            <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center mr-3 shadow-sm">
+                                                <i class="fas fa-money-check-alt text-amber-600 text-sm"></i>
+                                            </div>
+                                            {{ __('attendance.payroll_period') }}
+                                        </label>
+                                        <div class="relative">
+                                            <select wire:model.live="filters.payroll_period_id" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-opacity-25 bg-white py-3 pl-3 pr-10 text-sm transition-all duration-200 hover:border-amber-400 appearance-none">
+                                                <option value="">{{ __('attendance.all_periods') }}</option>
+                                                @foreach($payrollPeriods as $period)
+                                                    <option value="{{ $period->id }}">{{ $period->name }} ({{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }})</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Employee Filter -->
+                                    <div class="space-y-2">
+                                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                                            <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center mr-3 shadow-sm">
+                                                <i class="fas fa-user text-cyan-600 text-sm"></i>
+                                            </div>
+                                            {{ __('attendance.employee') }}
+                                        </label>
+                                        <div class="relative">
+                                            <select wire:model.live="filters.employee_id" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-25 bg-white py-3 pl-3 pr-10 text-sm transition-all duration-200 hover:border-cyan-400 appearance-none">
+                                                <option value="">{{ __('attendance.all_employees') }}</option>
+                                                @foreach($employees as $emp)
+                                                    <option value="{{ $emp->id }}">{{ $emp->full_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                <i class="fas fa-chevron-down text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Department Filter -->
-                                    <div class="space-y-3">
+                                    <div class="space-y-2">
                                         <label class="flex items-center text-sm font-semibold text-gray-700">
                                             <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mr-3 shadow-sm">
                                                 <i class="fas fa-building text-blue-600 text-sm"></i>
@@ -136,16 +178,13 @@
                                                 <i class="fas fa-chevron-down text-gray-400"></i>
                                             </div>
                                         </div>
-                                        @if($filters['department_id'])
-                                            <div class="flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                {{ __('attendance.filtered') }}
-                                            </div>
-                                        @endif
                                     </div>
+                                </div>
 
+                                <!-- Secondary Filters Row -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <!-- Status Filter -->
-                                    <div class="space-y-3">
+                                    <div class="space-y-2">
                                         <label class="flex items-center text-sm font-semibold text-gray-700">
                                             <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mr-3 shadow-sm">
                                                 <i class="fas fa-user-check text-green-600 text-sm"></i>
@@ -165,16 +204,10 @@
                                                 <i class="fas fa-chevron-down text-gray-400"></i>
                                             </div>
                                         </div>
-                                        @if($filters['status'])
-                                            <div class="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-md">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                {{ __('attendance.filtered') }}
-                                            </div>
-                                        @endif
                                     </div>
 
                                     <!-- Date From Filter -->
-                                    <div class="space-y-3">
+                                    <div class="space-y-2">
                                         <label class="flex items-center text-sm font-semibold text-gray-700">
                                             <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center mr-3 shadow-sm">
                                                 <i class="fas fa-calendar-plus text-indigo-600 text-sm"></i>
@@ -184,16 +217,10 @@
                                         <div class="relative">
                                             <input type="date" wire:model.live="filters.start_date" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-25 py-3 px-3 text-sm transition-all duration-200 hover:border-indigo-400">
                                         </div>
-                                        @if($filters['start_date'])
-                                            <div class="flex items-center text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                {{ __('attendance.filtered') }}
-                                            </div>
-                                        @endif
                                     </div>
 
                                     <!-- Date To Filter -->
-                                    <div class="space-y-3">
+                                    <div class="space-y-2">
                                         <label class="flex items-center text-sm font-semibold text-gray-700">
                                             <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mr-3 shadow-sm">
                                                 <i class="fas fa-calendar-minus text-purple-600 text-sm"></i>
@@ -203,12 +230,6 @@
                                         <div class="relative">
                                             <input type="date" wire:model.live="filters.end_date" class="w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 py-3 px-3 text-sm transition-all duration-200 hover:border-purple-400">
                                         </div>
-                                        @if($filters['end_date'])
-                                            <div class="flex items-center text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                {{ __('attendance.filtered') }}
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -424,6 +445,42 @@
                     
                     <!-- Attendance Records Table -->
                     @if($viewMode === 'list')
+                        <!-- Bulk Action Bar -->
+                        @if(count($selectedAttendances) > 0)
+                            <div class="mb-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-4 shadow-sm"
+                                 x-data x-transition>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                            <i class="fas fa-check-double text-red-600"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-bold text-red-800">
+                                                {{ count($selectedAttendances) }} {{ __('attendance.records_selected') }}
+                                            </span>
+                                            <p class="text-xs text-red-600">{{ __('attendance.select_records_to_manage') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <button
+                                            wire:click="confirmBulkDelete"
+                                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
+                                        >
+                                            <i class="fas fa-trash-alt mr-2"></i>
+                                            {{ __('attendance.delete_selected') }}
+                                        </button>
+                                        <button
+                                            wire:click="$set('selectedAttendances', [])"
+                                            class="inline-flex items-center px-4 py-2 bg-white border-2 border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200"
+                                        >
+                                            <i class="fas fa-times mr-2"></i>
+                                            {{ __('attendance.cancel') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                             <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                                 <div class="flex items-center justify-between">
@@ -443,6 +500,15 @@
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
+                                            <!-- Select All Checkbox -->
+                                            <th scope="col" class="px-3 py-4 text-center w-12">
+                                                <input
+                                                    type="checkbox"
+                                                    wire:model.live="selectAllOnPage"
+                                                    class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500 h-4 w-4 cursor-pointer"
+                                                    title="{{ __('attendance.select_all') }}"
+                                                >
+                                            </th>
                                             <th scope="col" class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 <div class="flex items-center space-x-1 cursor-pointer transition-colors duration-200 hover:text-gray-700" wire:click="sortBy('date')">
                                                     <i class="fas fa-calendar text-gray-400 mr-1"></i>
@@ -498,7 +564,16 @@
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         @forelse($attendances as $attendance)
-                                             <tr class="hover:bg-gray-50 transition-colors duration-200 group">
+                                             <tr class="hover:bg-gray-50 transition-colors duration-200 group {{ in_array($attendance->id, $selectedAttendances) ? 'bg-red-50' : '' }}">
+                                                 <!-- Row Checkbox -->
+                                                 <td class="px-3 py-4 text-center">
+                                                     <input
+                                                         type="checkbox"
+                                                         value="{{ $attendance->id }}"
+                                                         wire:model.live="selectedAttendances"
+                                                         class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500 h-4 w-4 cursor-pointer"
+                                                     >
+                                                 </td>
                                                  <td class="px-4 py-4">
                                                      <div class="flex items-center">
                                                          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
@@ -597,7 +672,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="px-6 py-12 text-center">
+                                                <td colspan="8" class="px-6 py-12 text-center">
                                                     <div class="flex flex-col items-center justify-center text-gray-500">
                                                         <i class="fas fa-clock text-gray-400 text-4xl mb-4"></i>
                                                         <span class="text-lg font-medium">No attendance records found</span>
@@ -672,6 +747,59 @@
     </div>
 
     {{-- Modals --}}
+    {{-- Bulk Delete Confirmation Modal --}}
+    @if($showBulkDeleteModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeBulkDeleteModal"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-3">
+                                <i class="fas fa-exclamation-triangle text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">{{ __('attendance.confirm_bulk_delete') }}</h3>
+                                <p class="text-red-100 text-sm">{{ __('attendance.this_action_cannot_be_undone') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white px-6 py-6">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-trash-alt text-red-500 text-xl mr-3"></i>
+                                <div>
+                                    <p class="text-sm font-semibold text-red-800">
+                                        {{ __('attendance.about_to_delete', ['count' => count($selectedAttendances)]) }}
+                                    </p>
+                                    <p class="text-xs text-red-600 mt-1">
+                                        {{ __('attendance.delete_warning') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+                        <button
+                            wire:click="closeBulkDeleteModal"
+                            class="inline-flex items-center px-4 py-2 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all duration-200"
+                        >
+                            {{ __('attendance.cancel') }}
+                        </button>
+                        <button
+                            wire:click="bulkDelete"
+                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
+                        >
+                            <i class="fas fa-trash-alt mr-2"></i>
+                            {{ __('attendance.delete') }} ({{ count($selectedAttendances) }})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @include('livewire.hr.attendance.modals._create-edit-modal')
     @include('livewire.hr.attendance.modals._delete-modal')
     @include('livewire.hr.attendance.modals._import-modal')

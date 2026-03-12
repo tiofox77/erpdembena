@@ -32,7 +32,14 @@ class Attendance extends Component
         'status' => '',
         'start_date' => '',
         'end_date' => '',
+        'payroll_period_id' => '',
+        'employee_id' => '',
     ];
+
+    // Bulk delete properties
+    public array $selectedAttendances = [];
+    public bool $selectAllOnPage = false;
+    public bool $showBulkDeleteModal = false;
 
     // Form properties
     public $attendance_id;
@@ -124,11 +131,15 @@ class Attendance extends Component
     public function updatingSearch()
     {
         $this->resetPage();
+        $this->selectedAttendances = [];
+        $this->selectAllOnPage = false;
     }
 
     public function updatingFilters()
     {
         $this->resetPage();
+        $this->selectedAttendances = [];
+        $this->selectAllOnPage = false;
     }
 
     public function mount()
@@ -371,11 +382,127 @@ class Attendance extends Component
     {
         $this->showDeleteModal = false;
     }
-    
+
+    /**
+     * Toggle select all checkboxes on current page
+     */
+    public function updatedSelectAllOnPage($value)
+    {
+        if ($value) {
+            // Build the same query as render() to get current page IDs
+            $query = AttendanceModel::query()
+                ->when($this->search, function ($query) {
+                    return $query->whereHas('employee', function ($query) {
+                        $query->where('full_name', 'like', "%{$this->search}%");
+                    });
+                })
+                ->when($this->filters['department_id'], function ($query) {
+                    return $query->whereHas('employee', function ($query) {
+                        $query->where('department_id', $this->filters['department_id']);
+                    });
+                })
+                ->when($this->filters['status'], function ($query) {
+                    return $query->where('status', $this->filters['status']);
+                })
+                ->when($this->filters['employee_id'], function ($query) {
+                    return $query->where('employee_id', $this->filters['employee_id']);
+                })
+                ->when($this->filters['payroll_period_id'], function ($query) {
+                    $period = \App\Models\HR\PayrollPeriod::find($this->filters['payroll_period_id']);
+                    if ($period) {
+                        return $query->whereDate('date', '>=', $period->start_date)
+                                     ->whereDate('date', '<=', $period->end_date);
+                    }
+                })
+                ->when($this->filters['start_date'], function ($query) {
+                    return $query->whereDate('date', '>=', $this->filters['start_date']);
+                })
+                ->when($this->filters['end_date'], function ($query) {
+                    return $query->whereDate('date', '<=', $this->filters['end_date']);
+                });
+
+            $this->selectedAttendances = $query->orderBy($this->sortField, $this->sortDirection)
+                ->paginate($this->perPage)
+                ->pluck('id')
+                ->map(fn ($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selectedAttendances = [];
+        }
+    }
+
+    /**
+     * Confirm bulk delete
+     */
+    public function confirmBulkDelete()
+    {
+        if (empty($this->selectedAttendances)) {
+            $this->dispatch('notify',
+                type: 'error',
+                message: __('attendance.messages.no_records_selected')
+            );
+            return;
+        }
+        $this->showBulkDeleteModal = true;
+    }
+
+    /**
+     * Execute bulk delete
+     */
+    public function bulkDelete()
+    {
+        try {
+            $count = AttendanceModel::whereIn('id', $this->selectedAttendances)->delete();
+
+            $this->dispatch('notify',
+                type: 'success',
+                message: __('attendance.messages.bulk_deleted', ['count' => $count])
+            );
+
+            $this->selectedAttendances = [];
+            $this->selectAllOnPage = false;
+            $this->showBulkDeleteModal = false;
+            $this->dispatch('attendanceUpdated');
+
+        } catch (\Exception $e) {
+            $this->dispatch('notify',
+                type: 'error',
+                message: __('attendance.messages.error_deleting', ['error' => $e->getMessage()])
+            );
+        }
+    }
+
+    /**
+     * Close bulk delete confirmation modal
+     */
+    public function closeBulkDeleteModal()
+    {
+        $this->showBulkDeleteModal = false;
+    }
+
+    /**
+     * Apply payroll period dates to filter
+     */
+    public function updatedFiltersPayrollPeriodId($value)
+    {
+        if ($value) {
+            $period = \App\Models\HR\PayrollPeriod::find($value);
+            if ($period) {
+                $this->filters['start_date'] = $period->start_date->format('Y-m-d');
+                $this->filters['end_date'] = $period->end_date->format('Y-m-d');
+            }
+        }
+        $this->selectedAttendances = [];
+        $this->selectAllOnPage = false;
+        $this->resetPage();
+    }
+
     public function resetFilters()
     {
         $this->reset('filters');
         $this->search = '';
+        $this->selectedAttendances = [];
+        $this->selectAllOnPage = false;
         $this->resetPage();
     }
     
@@ -1644,8 +1771,18 @@ class Attendance extends Component
                     $query->where('department_id', $this->filters['department_id']);
                 });
             })
+            ->when($this->filters['employee_id'], function ($query) {
+                return $query->where('employee_id', $this->filters['employee_id']);
+            })
             ->when($this->filters['status'], function ($query) {
                 return $query->where('status', $this->filters['status']);
+            })
+            ->when($this->filters['payroll_period_id'], function ($query) {
+                $period = \App\Models\HR\PayrollPeriod::find($this->filters['payroll_period_id']);
+                if ($period) {
+                    return $query->whereDate('date', '>=', $period->start_date)
+                                 ->whereDate('date', '<=', $period->end_date);
+                }
             })
             ->when($this->filters['start_date'], function ($query) {
                 return $query->whereDate('date', '>=', $this->filters['start_date']);
@@ -1657,8 +1794,9 @@ class Attendance extends Component
         $attendances = $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
-        $employees = Employee::where('employment_status', 'active')->get();
-        $departments = Department::where('is_active', true)->get();
+        $employees = Employee::where('employment_status', 'active')->orderBy('full_name')->get();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $payrollPeriods = \App\Models\HR\PayrollPeriod::orderBy('start_date', 'desc')->get();
         
         // Dados do calendário - sempre calcular fresh
         $calendarData = $this->getCalendarData();
@@ -1677,6 +1815,7 @@ class Attendance extends Component
             'attendances' => $attendances,
             'employees' => $employees,
             'departments' => $departments,
+            'payrollPeriods' => $payrollPeriods,
             'calendarData' => $calendarData,
             'currentMonthName' => $currentMonthName,
             'daysInMonth' => $daysInMonth,

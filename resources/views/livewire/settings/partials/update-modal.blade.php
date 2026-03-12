@@ -3,7 +3,7 @@
 <div class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
      x-data="{ scrollToBottom() { let el = $refs.logContainer; if(el) el.scrollTop = el.scrollHeight; } }"
      x-init="$watch('$wire.update_logs', () => { setTimeout(() => scrollToBottom(), 50) })"
-     wire:poll.1000ms>
+     wire:poll.1500ms="executeUpdateStep">
     <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-slate-700" 
          @click.stop>
         
@@ -94,13 +94,18 @@
                     ['id' => 'migrate', 'icon' => 'fa-database', 'label' => 'Migração'],
                     ['id' => 'finalize', 'icon' => 'fa-check-circle', 'label' => 'Finalizar']
                 ];
+                $stepIds = array_column($steps, 'id');
+                $currentStepIndex = array_search($update_step, $stepIds);
+                $isCompleted = ($update_step === 'completed');
+                // If step not found in array (ready, starting, failed), treat as -1
+                if ($currentStepIndex === false) $currentStepIndex = -1;
                 @endphp
                 
                 @foreach($steps as $index => $step)
                 <div class="flex flex-col items-center flex-1">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all duration-300
                         @if($update_step === $step['id']) bg-blue-500 text-white animate-pulse
-                        @elseif(array_search($step['id'], array_column($steps, 'id')) < array_search($update_step, array_column($steps, 'id')) || $update_step === 'completed') bg-green-500 text-white
+                        @elseif($index < $currentStepIndex || $isCompleted) bg-green-500 text-white
                         @else bg-slate-700 text-slate-400
                         @endif">
                         <i class="fas {{ $step['icon'] }}"></i>
@@ -109,7 +114,7 @@
                 </div>
                 @if(!$loop->last)
                 <div class="flex-1 h-0.5 bg-slate-700 self-center mb-6 mx-2
-                    @if(array_search($step['id'], array_column($steps, 'id')) < array_search($update_step, array_column($steps, 'id')) || $update_step === 'completed') bg-green-500 @endif">
+                    @if($index < $currentStepIndex || $isCompleted) bg-green-500 @endif">
                 </div>
                 @endif
                 @endforeach

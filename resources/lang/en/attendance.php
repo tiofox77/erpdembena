@@ -141,6 +141,36 @@ return array (
   'times' => 'Times',
   'total_records' => 'Total Records',
   
+  // Bulk delete
+  'records_selected' => 'record(s) selected',
+  'select_records_to_manage' => 'Select actions for the selected records',
+  'delete_selected' => 'Delete Selected',
+  'confirm_bulk_delete' => 'Confirm Bulk Delete',
+  'about_to_delete' => 'You are about to delete :count attendance record(s).',
+  'delete_warning' => 'Deleted records cannot be recovered and may affect payroll calculations.',
+  
+  // Payroll period filter
+  'payroll_period' => 'Payroll Period',
+  'all_periods' => 'All Periods',
+  
+  // Status labels
+  'status_present' => 'Present',
+  'status_absent' => 'Absent',
+  'status_late' => 'Late',
+  'status_half_day' => 'Half Day',
+  'status_leave' => 'Leave',
+
+  // Additional filter labels
+  'advanced_filters' => 'Advanced Filters',
+  'filter_description' => 'Use filters to find specific records',
+  'active_filters' => 'active filter(s)',
+  'no_filters_applied' => 'No filters applied',
+  'showing' => 'Showing',
+  'to' => 'to',
+  'of' => 'of',
+  'results' => 'results',
+  'per_page' => 'Per page',
+
   // Notification Messages
   'messages' => [
       'saved_successfully' => 'Attendance record created successfully.',
@@ -158,6 +188,8 @@ return array (
       'error_saving' => 'Error saving record: :error',
       'error_deleting' => 'Error deleting record: :error',
       'validation_error' => 'Validation error: :error',
+      'no_records_selected' => 'No records selected.',
+      'bulk_deleted' => ':count attendance record(s) deleted successfully.',
   ],
   
   // Additional fields
