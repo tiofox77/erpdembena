@@ -102,7 +102,7 @@
                         <!-- General Settings Tab -->
                         <div class="{{ $activeTab === 'general' ? 'block' : 'hidden' }}" role="tabpanel">
                             <form wire:submit.prevent="saveGeneralSettings" class="space-y-8">
-                                @if($errors->any())
+                                @if(isset($errors) && $errors->any())
                                     <div class="rounded-xl bg-red-50 border border-red-200 p-6 shadow-sm">
                                         <div class="flex items-start">
                                             <div class="flex-shrink-0">
@@ -538,7 +538,7 @@
                                 </div>
                                 <div class="p-6">
                                     <form wire:submit.prevent="saveUpdateSettings" class="space-y-6">
-                                        @if($errors->any())
+                                        @if(isset($errors) && $errors->any())
                                             <div class="bg-red-50 border border-red-200 rounded-xl p-4">
                                                 <div class="flex items-start">
                                                     <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
