@@ -1199,6 +1199,8 @@ class Attendance extends Component
     public function closeDailyImportModal()
     {
         $this->showDailyImportModal = false;
+        $this->showDailyImportPreview = false;
+        $this->dailyImportPreview = [];
         $this->reset(['dailyImportFile']);
     }
 
